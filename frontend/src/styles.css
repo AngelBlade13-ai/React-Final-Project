@@ -25,6 +25,10 @@ body {
   padding: 2rem 0 4rem;
 }
 
+.narrow-shell {
+  width: min(520px, calc(100% - 2rem));
+}
+
 .hero {
   padding: 2rem;
   border-radius: 28px;
@@ -51,7 +55,40 @@ body {
   font-size: 1.05rem;
 }
 
+.hero-link,
+button {
+  display: inline-block;
+  margin-top: 1rem;
+  border: none;
+  border-radius: 999px;
+  padding: 0.85rem 1.15rem;
+  background: linear-gradient(135deg, #f0b76b, #d17f36);
+  color: #22150c;
+  text-decoration: none;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.secondary-link,
+.secondary-button {
+  background: rgba(255, 232, 209, 0.08);
+  color: #f4efe7;
+  border: 1px solid rgba(255, 232, 209, 0.12);
+}
+
+.danger-button {
+  background: rgba(185, 76, 76, 0.16);
+  color: #ffd1d1;
+  border: 1px solid rgba(185, 76, 76, 0.28);
+}
+
 .content-grid {
+  display: grid;
+  gap: 1.25rem;
+  margin-top: 1.25rem;
+}
+
+.admin-grid {
   display: grid;
   gap: 1.25rem;
   margin-top: 1.25rem;
@@ -67,6 +104,32 @@ body {
 
 .intro-card {
   padding: 1.25rem;
+}
+
+.auth-card {
+  margin-top: 3rem;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 232, 209, 0.1);
+  background: rgba(24, 18, 14, 0.82);
+  padding: 1.5rem;
+}
+
+.auth-card label,
+.admin-form label {
+  display: block;
+  margin-top: 1rem;
+}
+
+input,
+textarea {
+  width: 100%;
+  margin-top: 0.4rem;
+  padding: 0.85rem 1rem;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 232, 209, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: #f4efe7;
+  font: inherit;
 }
 
 .section-head {
@@ -104,6 +167,46 @@ body {
   color: #d5c4b0;
 }
 
+.compact-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.hero-actions-row {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.admin-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.full-span {
+  grid-column: 1 / -1;
+}
+
+.admin-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.error-text {
+  color: #ffb7b7;
+}
+
+.back-link {
+  display: inline-block;
+  margin-top: 1rem;
+  color: #f0b76b;
+  text-decoration: none;
+}
+
 @media (max-width: 640px) {
   .page-shell {
     width: min(100% - 1rem, 100%);
@@ -113,5 +216,11 @@ body {
   .intro-card,
   .post-card {
     border-radius: 20px;
+  }
+
+  .compact-hero,
+  .admin-form {
+    grid-template-columns: 1fr;
+    display: grid;
   }
 }

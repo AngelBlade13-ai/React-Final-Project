@@ -1,38 +1,17 @@
 const express = require("express");
 const cors = require("cors");
+const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
+const config = require("./config");
+const { requireAdmin } = require("./middleware/auth");
+const { readPosts, writePosts } = require("./data/store");
+const { slugify } = require("./utils/slugify");
 
 const app = express();
 
-const posts = [
-  {
-    id: "1",
-    title: "Welcome To The Suno Blog",
-    slug: "welcome-to-the-suno-blog",
-    summary: "A starter post for the new blog site that will eventually feature your Suno song videos and writeups.",
-    content:
-      "This scaffold is intentionally simple. The next steps can add authentication, CRUD posts, video uploads, and a richer publishing flow.",
-    coverImage:
-      "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?auto=format&fit=crop&w=1200&q=80",
-    publishedAt: "2026-03-17",
-    category: "Project Update"
-  },
-  {
-    id: "2",
-    title: "How Each Song Post Could Work",
-    slug: "how-each-song-post-could-work",
-    summary: "Each entry can combine a Suno video, lyrics, a short story about the track, and any release notes you want.",
-    content:
-      "A blog format fits the project well because each song can become a post with a title, embedded media, description, and supporting text.",
-    coverImage:
-      "https://images.unsplash.com/photo-1511379938547-c1f69419868d?auto=format&fit=crop&w=1200&q=80",
-    publishedAt: "2026-03-18",
-    category: "Planning"
-  }
-];
-
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:5173"
+    origin: config.clientUrl
   })
 );
 app.use(express.json());
@@ -41,8 +20,122 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
-app.get("/api/posts", (req, res) => {
-  res.json({ posts });
+app.post("/api/admin/login", (req, res) => {
+  const { email, password } = req.body;
+
+  if (email !== config.adminEmail || password !== config.adminPassword) {
+    return res.status(401).json({ message: "Invalid admin credentials." });
+  }
+
+  const token = jwt.sign(
+    {
+      email: config.adminEmail,
+      role: "admin"
+    },
+    config.jwtSecret,
+    { expiresIn: "2h" }
+  );
+
+  return res.json({
+    token,
+    admin: {
+      email: config.adminEmail,
+      role: "admin"
+    }
+  });
+});
+
+app.get("/api/posts", async (req, res, next) => {
+  try {
+    const posts = await readPosts();
+    res.json({ posts });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/admin/posts", requireAdmin, async (req, res, next) => {
+  try {
+    const posts = await readPosts();
+    res.json({ posts });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/admin/posts", requireAdmin, async (req, res, next) => {
+  try {
+    const posts = await readPosts();
+    const newPost = {
+      id: crypto.randomUUID(),
+      title: req.body.title?.trim() || "",
+      slug: slugify(req.body.title || ""),
+      summary: req.body.summary?.trim() || "",
+      content: req.body.content?.trim() || "",
+      coverImage: req.body.coverImage?.trim() || "",
+      publishedAt: req.body.publishedAt || new Date().toISOString().slice(0, 10),
+      category: req.body.category?.trim() || "Song Post"
+    };
+
+    if (!newPost.title || !newPost.summary || !newPost.content || !newPost.coverImage) {
+      return res.status(400).json({ message: "Title, summary, content, and cover image are required." });
+    }
+
+    posts.unshift(newPost);
+    await writePosts(posts);
+    res.status(201).json({ post: newPost });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.put("/api/admin/posts/:id", requireAdmin, async (req, res, next) => {
+  try {
+    const posts = await readPosts();
+    const index = posts.findIndex((post) => post.id === req.params.id);
+
+    if (index === -1) {
+      return res.status(404).json({ message: "Post not found." });
+    }
+
+    const updated = {
+      ...posts[index],
+      title: req.body.title?.trim() || posts[index].title,
+      slug: slugify(req.body.title || posts[index].title),
+      summary: req.body.summary?.trim() || posts[index].summary,
+      content: req.body.content?.trim() || posts[index].content,
+      coverImage: req.body.coverImage?.trim() || posts[index].coverImage,
+      publishedAt: req.body.publishedAt || posts[index].publishedAt,
+      category: req.body.category?.trim() || posts[index].category
+    };
+
+    posts[index] = updated;
+    await writePosts(posts);
+    res.json({ post: updated });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.delete("/api/admin/posts/:id", requireAdmin, async (req, res, next) => {
+  try {
+    const posts = await readPosts();
+    const remaining = posts.filter((post) => post.id !== req.params.id);
+
+    if (remaining.length === posts.length) {
+      return res.status(404).json({ message: "Post not found." });
+    }
+
+    await writePosts(remaining);
+    res.json({ message: "Post deleted." });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.use((error, req, res, next) => {
+  console.error(error);
+  res.status(500).json({ message: "Internal server error." });
 });
 
 module.exports = app;
