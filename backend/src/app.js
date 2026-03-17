@@ -56,6 +56,21 @@ app.get("/api/posts", async (req, res, next) => {
   }
 });
 
+app.get("/api/posts/:slug", async (req, res, next) => {
+  try {
+    const posts = await readPosts();
+    const post = posts.find((entry) => entry.slug === req.params.slug && entry.published);
+
+    if (!post) {
+      return res.status(404).json({ message: "Release not found." });
+    }
+
+    return res.json({ post });
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.get("/api/admin/posts", requireAdmin, async (req, res, next) => {
   try {
     const posts = await readPosts();

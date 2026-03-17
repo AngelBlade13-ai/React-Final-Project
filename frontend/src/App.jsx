@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { BrowserRouter, Link, Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import { BrowserRouter, Link, Navigate, Route, Routes, useNavigate, useParams } from "react-router-dom";
 
 const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
 const tokenKey = "suno-blog-admin-token";
@@ -35,6 +35,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<PublicHome theme={theme} setTheme={setTheme} />} />
+        <Route path="/posts/:slug" element={<PublicReleasePage theme={theme} setTheme={setTheme} />} />
         <Route path="/admin/login" element={<AdminLogin theme={theme} setTheme={setTheme} />} />
         <Route
           path="/admin"
@@ -142,15 +143,90 @@ function PublicHome({ theme, setTheme }) {
                   <p className="meta">{formatPostDate(post.createdAt)}</p>
                   <h3>{post.title}</h3>
                   <p>{post.excerpt}</p>
-                  <a className="card-link" href="/">
+                  <Link className="card-link" to={`/posts/${post.slug}`}>
                     Read Entry
-                  </a>
+                  </Link>
                 </div>
               </article>
             ))}
           </div>
         </section>
       </main>
+    </div>
+  );
+}
+
+function PublicReleasePage({ theme, setTheme }) {
+  const { slug } = useParams();
+  const [post, setPost] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    async function loadPost() {
+      try {
+        const response = await fetch(`${apiBaseUrl}/posts/${slug}`);
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || "Failed to load release.");
+        }
+
+        setPost(data.post);
+      } catch (apiError) {
+        setError(apiError.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadPost();
+  }, [slug]);
+
+  return (
+    <div className="page-shell">
+      <header className="hero homepage-hero release-hero">
+        <div className="hero-header-row">
+          <Link className="back-link" to="/">
+            Back to home
+          </Link>
+          <ThemeToggle setTheme={setTheme} theme={theme} />
+        </div>
+        {loading ? <h1>Loading release...</h1> : null}
+        {error ? <p className="error-text">{error}</p> : null}
+        {post ? (
+          <div className="release-hero-copy">
+            <p className="eyebrow">Release Entry</p>
+            <h1>{post.title}</h1>
+            <p className="hero-copy">{post.excerpt}</p>
+            <p className="meta">{formatPostDate(post.createdAt)}</p>
+          </div>
+        ) : null}
+      </header>
+
+      {post ? (
+        <main className="content-grid">
+          <section className="intro-card homepage-panel">
+            <video className="release-video" controls preload="metadata" src={post.videoUrl} />
+          </section>
+
+          <section className="intro-card homepage-panel">
+            <p className="eyebrow">Release Note</p>
+            <div className="release-prose">
+              {post.content.split("\n").filter(Boolean).map((paragraph, index) => (
+                <p key={`${post.id}-content-${index}`}>{paragraph}</p>
+              ))}
+            </div>
+          </section>
+
+          {post.lyrics ? (
+            <section className="intro-card homepage-panel">
+              <p className="eyebrow">Lyrics</p>
+              <pre className="lyrics-block">{post.lyrics}</pre>
+            </section>
+          ) : null}
+        </main>
+      ) : null}
     </div>
   );
 }
