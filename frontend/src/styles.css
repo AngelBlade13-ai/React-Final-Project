@@ -14,17 +14,17 @@
 }
 
 :root[data-theme="light"] {
-  --background: #fff7fb;
-  --surface: #fffafb;
-  --surface-alt: #fff0f6;
-  --text: #3a2430;
-  --muted-text: #6e4d5e;
-  --border: #f1d7e4;
-  --primary: #f4a8c4;
-  --primary-strong: #e78fb3;
-  --secondary: #d9c2ff;
-  --shadow-lg: 0 20px 60px rgba(162, 108, 136, 0.16);
-  --shadow-md: 0 10px 28px rgba(162, 108, 136, 0.12);
+  --background: #f3d7d1;
+  --surface: #f8e4df;
+  --surface-alt: #f2d2cc;
+  --text: #3a2327;
+  --muted-text: #7a5158;
+  --border: #e8bdb7;
+  --primary: #df8f8a;
+  --primary-strong: #cb726e;
+  --secondary: #f4c9c2;
+  --shadow-lg: 0 18px 48px rgba(126, 76, 82, 0.16);
+  --shadow-md: 0 8px 22px rgba(126, 76, 82, 0.12);
 }
 
 :root[data-theme="dark"] {
@@ -47,7 +47,8 @@
 
 html {
   background:
-    radial-gradient(circle at top, color-mix(in srgb, var(--secondary) 24%, transparent), transparent 30%),
+    radial-gradient(circle at top, color-mix(in srgb, var(--primary) 18%, transparent), transparent 34%),
+    radial-gradient(circle at 82% 12%, color-mix(in srgb, var(--secondary) 22%, transparent), transparent 28%),
     linear-gradient(180deg, var(--background), color-mix(in srgb, var(--surface) 82%, var(--background)) 45%, var(--background));
 }
 
@@ -101,7 +102,7 @@ textarea {
   position: relative;
   overflow: hidden;
   background:
-    linear-gradient(135deg, color-mix(in srgb, var(--surface) 86%, var(--primary) 14%), color-mix(in srgb, var(--surface-alt) 88%, var(--secondary) 12%)),
+    linear-gradient(135deg, color-mix(in srgb, var(--surface) 88%, var(--primary) 12%), color-mix(in srgb, var(--surface-alt) 90%, var(--secondary) 10%)),
     var(--surface);
 }
 
@@ -112,7 +113,7 @@ textarea {
   width: 320px;
   height: 320px;
   border-radius: 999px;
-  background: radial-gradient(circle, color-mix(in srgb, var(--primary) 36%, transparent), transparent 68%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--primary) 28%, transparent), transparent 68%);
   pointer-events: none;
 }
 
@@ -123,7 +124,7 @@ textarea {
   width: 220px;
   height: 220px;
   border-radius: 999px;
-  background: radial-gradient(circle, color-mix(in srgb, var(--secondary) 34%, transparent), transparent 70%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--secondary) 20%, transparent), transparent 70%);
   pointer-events: none;
 }
 
@@ -208,9 +209,9 @@ button {
 .homepage-panel {
   border-radius: 30px;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--surface) 90%, var(--secondary) 10%), var(--surface)),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 86%, var(--primary) 14%), color-mix(in srgb, var(--surface) 94%, var(--surface-alt) 6%)),
     var(--surface);
-  box-shadow: 0 18px 46px color-mix(in srgb, var(--secondary) 12%, transparent);
+  box-shadow: 0 16px 36px color-mix(in srgb, var(--primary) 10%, transparent);
 }
 
 .post-card {
@@ -220,13 +221,13 @@ button {
 
 .homepage-post-card {
   border-radius: 30px;
-  border-color: color-mix(in srgb, var(--border) 86%, var(--primary) 14%);
+  border-color: color-mix(in srgb, var(--border) 78%, var(--primary) 22%);
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--surface) 88%, var(--primary) 12%), var(--surface)),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 82%, var(--primary) 18%), color-mix(in srgb, var(--surface) 92%, var(--surface-alt) 8%)),
     var(--surface);
   box-shadow:
-    0 18px 40px color-mix(in srgb, var(--primary) 10%, transparent),
-    inset 0 1px 0 color-mix(in srgb, var(--text) 6%, transparent);
+    0 14px 30px color-mix(in srgb, var(--primary) 8%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--text) 4%, transparent);
 }
 
 .auth-card {
@@ -302,6 +303,7 @@ textarea:focus {
   color: var(--primary-strong);
   font-size: 0.82rem;
   margin-bottom: 0.5rem;
+  font-weight: 700;
 }
 
 .card-link {
@@ -309,10 +311,11 @@ textarea:focus {
   margin-top: 0.75rem;
   padding: 0.7rem 0.95rem;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--surface-alt) 70%, var(--secondary) 30%);
+  background: color-mix(in srgb, var(--surface-alt) 70%, var(--primary) 18%, var(--secondary) 12%);
   color: var(--text);
   text-decoration: none;
   font-weight: 700;
+  border: 1px solid color-mix(in srgb, var(--border) 74%, var(--primary) 26%);
 }
 
 .compact-hero {
@@ -354,11 +357,11 @@ textarea:focus {
   align-self: end;
   padding: 1.25rem;
   border-radius: 26px;
-  border: 1px solid color-mix(in srgb, var(--border) 82%, var(--secondary) 18%);
+  border: 1px solid color-mix(in srgb, var(--border) 78%, var(--primary) 22%);
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-alt) 74%, var(--secondary) 26%), color-mix(in srgb, var(--surface) 92%, var(--primary) 8%)),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-alt) 72%, var(--secondary) 18%, var(--primary) 10%), color-mix(in srgb, var(--surface) 86%, var(--primary) 14%)),
     var(--surface-alt);
-  box-shadow: 0 16px 36px color-mix(in srgb, var(--secondary) 16%, transparent);
+  box-shadow: 0 14px 28px color-mix(in srgb, var(--primary) 9%, transparent);
 }
 
 .hero-note-card h2 {
