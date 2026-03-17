@@ -154,6 +154,12 @@ textarea {
   color: var(--muted-text);
 }
 
+.identity-line {
+  margin-top: 1rem;
+  color: var(--text);
+  font-style: italic;
+}
+
 .hero-link,
 button {
   display: inline-block;
@@ -219,6 +225,11 @@ button {
   overflow: hidden;
 }
 
+.release-card-link {
+  display: block;
+  text-decoration: none;
+}
+
 .homepage-post-card {
   border-radius: 30px;
   border-color: color-mix(in srgb, var(--border) 78%, var(--primary) 22%);
@@ -227,6 +238,19 @@ button {
     var(--surface);
   box-shadow:
     0 14px 30px color-mix(in srgb, var(--primary) 8%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--text) 4%, transparent);
+}
+
+.release-feed-card {
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.release-card-link:hover .release-feed-card,
+.release-card-link:focus-visible .release-feed-card {
+  transform: translateY(-4px);
+  border-color: color-mix(in srgb, var(--border) 62%, var(--primary) 38%);
+  box-shadow:
+    0 18px 40px color-mix(in srgb, var(--primary) 12%, transparent),
     inset 0 1px 0 color-mix(in srgb, var(--text) 4%, transparent);
 }
 
@@ -285,6 +309,56 @@ textarea:focus {
   display: block;
   object-fit: cover;
   background: color-mix(in srgb, var(--surface-alt) 90%, black 10%);
+}
+
+.release-card-media {
+  position: relative;
+  overflow: hidden;
+}
+
+.release-card-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, black 18%, transparent), transparent 36%, color-mix(in srgb, black 30%, transparent)),
+    linear-gradient(180deg, transparent, color-mix(in srgb, var(--background) 24%, transparent));
+  pointer-events: none;
+}
+
+.play-pill,
+.release-card-arrow {
+  position: absolute;
+  z-index: 1;
+}
+
+.play-pill {
+  top: 1rem;
+  left: 1rem;
+  padding: 0.45rem 0.8rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 62%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 74%, var(--primary) 26%);
+  color: var(--text);
+  font-size: 0.82rem;
+  font-weight: 700;
+  backdrop-filter: blur(10px);
+}
+
+.release-card-arrow {
+  right: 1rem;
+  bottom: 1rem;
+  color: #fff7fb;
+  font-size: 0.92rem;
+  font-weight: 700;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.release-card-link:hover .release-card-arrow,
+.release-card-link:focus-visible .release-card-arrow {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .post-body {
@@ -409,26 +483,58 @@ textarea:focus {
 }
 
 .release-hero {
-  padding-bottom: 2.4rem;
+  padding-bottom: 1.4rem;
 }
 
 .release-hero-copy {
   position: relative;
   z-index: 1;
   max-width: 720px;
-  margin-top: 1.5rem;
+  margin-top: 1rem;
+}
+
+.release-detail-grid {
+  gap: 1rem;
+}
+
+.release-video-panel {
+  padding: 0.9rem;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-alt) 84%, black 16%), color-mix(in srgb, var(--surface) 92%, black 8%)),
+    var(--surface);
 }
 
 .release-video {
   width: 100%;
   border-radius: 24px;
   display: block;
-  background: color-mix(in srgb, var(--surface-alt) 88%, black 12%);
+  background: color-mix(in srgb, var(--surface-alt) 82%, black 18%);
+}
+
+.release-copy-panel {
+  padding-top: 1.5rem;
 }
 
 .release-prose p {
   color: var(--muted-text);
   line-height: 1.75;
+}
+
+.lyrics-panel h2 {
+  margin: 0.25rem 0 0;
+  font-size: 1.4rem;
+}
+
+.lyrics-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.lyrics-toggle {
+  margin-top: 0;
 }
 
 .lyrics-block {
@@ -437,6 +543,11 @@ textarea:focus {
   font: inherit;
   line-height: 1.75;
   color: var(--text);
+}
+
+.lyrics-placeholder {
+  margin: 0;
+  color: var(--muted-text);
 }
 
 .upload-panel {
@@ -515,5 +626,10 @@ textarea:focus {
   .admin-form {
     grid-template-columns: 1fr;
     display: grid;
+  }
+
+  .lyrics-header {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }

@@ -35,7 +35,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<PublicHome theme={theme} setTheme={setTheme} />} />
-        <Route path="/posts/:slug" element={<PublicReleasePage theme={theme} setTheme={setTheme} />} />
+        <Route path="/release/:slug" element={<PublicReleasePage theme={theme} setTheme={setTheme} />} />
         <Route path="/admin/login" element={<AdminLogin theme={theme} setTheme={setTheme} />} />
         <Route
           path="/admin"
@@ -99,8 +99,8 @@ function PublicHome({ theme, setTheme }) {
             </p>
 
             <div className="hero-links-row">
-              <a className="hero-link" href="#recent-posts">
-                Read Recent Posts
+              <a className="hero-link" href="#latest-releases">
+                Explore Releases
               </a>
               <Link className="hero-link secondary-link" to="/admin/login">
                 Admin Login
@@ -127,29 +127,42 @@ function PublicHome({ theme, setTheme }) {
             Each post is meant to hold more than a title card. Alongside the music, I want room for release context,
             visual uploads, process notes, and the little story fragments that give each post a life of its own.
           </p>
+          <p className="identity-line">A collection of songs, stories, and moments in motion.</p>
         </section>
 
-        <section id="recent-posts">
+        <section id="latest-releases">
           <div className="section-head">
-            <h2>Latest Entries</h2>
-            <span>{loading ? "Loading..." : `${posts.length} posts`}</span>
+            <h2>Latest Releases</h2>
+            <span>{loading ? "Loading..." : `${posts.length} releases`}</span>
           </div>
 
-          <div className="post-grid">
-            {posts.map((post) => (
-              <article className="post-card homepage-post-card" key={post.id}>
-                <video className="post-media" controls preload="metadata" src={post.videoUrl} />
-                <div className="post-body">
-                  <p className="meta">{formatPostDate(post.createdAt)}</p>
-                  <h3>{post.title}</h3>
-                  <p>{post.excerpt}</p>
-                  <Link className="card-link" to={`/posts/${post.slug}`}>
-                    Read Entry
-                  </Link>
-                </div>
-              </article>
-            ))}
-          </div>
+          {!loading && posts.length === 0 ? (
+            <section className="intro-card homepage-panel empty-state-card">
+              <p className="eyebrow">No Releases Yet</p>
+              <h3>Something is coming.</h3>
+              <p>No releases have been published yet. Check back soon for the first drop.</p>
+            </section>
+          ) : (
+            <div className="post-grid">
+              {posts.map((post) => (
+                <Link className="release-card-link" key={post.id} to={`/release/${post.slug}`}>
+                  <article className="post-card homepage-post-card release-feed-card">
+                    <div className="release-card-media">
+                      <video className="post-media" muted playsInline preload="metadata" src={post.videoUrl} />
+                      <div className="release-card-overlay" />
+                      <div className="play-pill">Play</div>
+                      <div className="release-card-arrow">{"Play ->"}</div>
+                    </div>
+                    <div className="post-body">
+                      <p className="meta">{formatPostDate(post.createdAt)}</p>
+                      <h3>{post.title}</h3>
+                      <p>{post.excerpt}</p>
+                    </div>
+                  </article>
+                </Link>
+              ))}
+            </div>
+          )}
         </section>
       </main>
     </div>
@@ -161,6 +174,7 @@ function PublicReleasePage({ theme, setTheme }) {
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showLyrics, setShowLyrics] = useState(false);
 
   useEffect(() => {
     async function loadPost() {
@@ -205,12 +219,12 @@ function PublicReleasePage({ theme, setTheme }) {
       </header>
 
       {post ? (
-        <main className="content-grid">
-          <section className="intro-card homepage-panel">
+        <main className="content-grid release-detail-grid">
+          <section className="intro-card homepage-panel release-video-panel">
             <video className="release-video" controls preload="metadata" src={post.videoUrl} />
           </section>
 
-          <section className="intro-card homepage-panel">
+          <section className="intro-card homepage-panel release-copy-panel">
             <p className="eyebrow">Release Note</p>
             <div className="release-prose">
               {post.content.split("\n").filter(Boolean).map((paragraph, index) => (
@@ -220,9 +234,17 @@ function PublicReleasePage({ theme, setTheme }) {
           </section>
 
           {post.lyrics ? (
-            <section className="intro-card homepage-panel">
-              <p className="eyebrow">Lyrics</p>
-              <pre className="lyrics-block">{post.lyrics}</pre>
+            <section className="intro-card homepage-panel lyrics-panel">
+              <div className="lyrics-header">
+                <div>
+                  <p className="eyebrow">Lyrics</p>
+                  <h2>Words behind the release</h2>
+                </div>
+                <button className="secondary-button lyrics-toggle" onClick={() => setShowLyrics((current) => !current)} type="button">
+                  {showLyrics ? "Hide Lyrics" : "Show Lyrics"}
+                </button>
+              </div>
+              {showLyrics ? <pre className="lyrics-block">{post.lyrics}</pre> : <p className="lyrics-placeholder">Open the lyrics when you want to read along.</p>}
             </section>
           ) : null}
         </main>
