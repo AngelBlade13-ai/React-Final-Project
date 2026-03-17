@@ -6,5 +6,9 @@ module.exports = {
   jwtSecret: process.env.JWT_SECRET || "change-me",
   adminEmail: process.env.ADMIN_EMAIL || "admin@example.com",
   adminPassword: process.env.ADMIN_PASSWORD || "Admin123!",
-  postsFile: process.env.POSTS_FILE || path.join(__dirname, "..", "data", "posts.json")
+  postsFile: process.env.POSTS_FILE || path.join(__dirname, "..", "data", "posts.json"),
+  cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME || "",
+  cloudinaryApiKey: process.env.CLOUDINARY_API_KEY || "",
+  cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET || "",
+  cloudinaryFolder: process.env.CLOUDINARY_FOLDER || "suno-releases"
 };
