@@ -237,6 +237,7 @@ function AdminDashboard({ theme, setTheme }) {
   const [selectedVideoFile, setSelectedVideoFile] = useState(null);
   const [error, setError] = useState("");
   const [uploadError, setUploadError] = useState("");
+  const [saveMessage, setSaveMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -255,6 +256,7 @@ function AdminDashboard({ theme, setTheme }) {
   async function loadPosts() {
     try {
       setLoading(true);
+      setError("");
       const response = await fetch(`${apiBaseUrl}/admin/posts`, {
         headers: authHeaders()
       });
@@ -306,6 +308,7 @@ function AdminDashboard({ theme, setTheme }) {
 
     setUploading(true);
     setUploadError("");
+    setSaveMessage("");
 
     try {
       const uploadForm = new FormData();
@@ -326,6 +329,7 @@ function AdminDashboard({ theme, setTheme }) {
       }
 
       updateField("videoUrl", data.videoUrl);
+      setSaveMessage("Video uploaded. Save the release when you are ready.");
     } catch (apiError) {
       setUploadError(apiError.message);
     } finally {
@@ -337,6 +341,13 @@ function AdminDashboard({ theme, setTheme }) {
     event.preventDefault();
     setSaving(true);
     setError("");
+    setSaveMessage("");
+
+    if (!form.videoUrl) {
+      setSaving(false);
+      setError("Upload a video before saving this release.");
+      return;
+    }
 
     try {
       const response = await fetch(editingId ? `${apiBaseUrl}/admin/posts/${editingId}` : `${apiBaseUrl}/admin/posts`, {
@@ -355,6 +366,7 @@ function AdminDashboard({ theme, setTheme }) {
       setEditingId("");
       setSelectedVideoFile(null);
       setUploadError("");
+      setSaveMessage("Release saved successfully.");
       await loadPosts();
     } catch (apiError) {
       setError(apiError.message);
@@ -430,6 +442,7 @@ function AdminDashboard({ theme, setTheme }) {
                 <div className="video-preview-card">
                   <p className="meta">Preview</p>
                   <video className="post-media" controls preload="metadata" src={form.videoUrl} />
+                  <p className="upload-status">Hosted URL ready for this release.</p>
                 </div>
               ) : null}
               {uploadError ? <p className="error-text">{uploadError}</p> : null}
@@ -454,6 +467,7 @@ function AdminDashboard({ theme, setTheme }) {
               />
               <span>Published</span>
             </label>
+            {saveMessage ? <p className="success-text full-span">{saveMessage}</p> : null}
             {error ? <p className="error-text full-span">{error}</p> : null}
             <button type="submit">{saving ? "Saving..." : editingId ? "Update Post" : "Create Post"}</button>
           </form>

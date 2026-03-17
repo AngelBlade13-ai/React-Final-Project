@@ -455,6 +455,10 @@ textarea:focus {
   color: #c75b72;
 }
 
+.success-text {
+  color: color-mix(in srgb, #46745d 74%, var(--text) 26%);
+}
+
 .back-link {
   display: inline-block;
   margin-top: 1rem;
