@@ -25,6 +25,7 @@ function App() {
 
     return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
   });
+  const [hasAdminSession, setHasAdminSession] = useState(() => Boolean(localStorage.getItem(tokenKey)));
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -34,14 +35,23 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<PublicHome theme={theme} setTheme={setTheme} />} />
-        <Route path="/release/:slug" element={<PublicReleasePage theme={theme} setTheme={setTheme} />} />
-        <Route path="/admin/login" element={<AdminLogin theme={theme} setTheme={setTheme} />} />
+        <Route
+          path="/"
+          element={<PublicHome hasAdminSession={hasAdminSession} theme={theme} setTheme={setTheme} />}
+        />
+        <Route
+          path="/release/:slug"
+          element={<PublicReleasePage hasAdminSession={hasAdminSession} theme={theme} setTheme={setTheme} />}
+        />
+        <Route
+          path="/admin/login"
+          element={<AdminLogin setHasAdminSession={setHasAdminSession} theme={theme} setTheme={setTheme} />}
+        />
         <Route
           path="/admin"
           element={
             <ProtectedRoute>
-              <AdminDashboard theme={theme} setTheme={setTheme} />
+              <AdminDashboard setHasAdminSession={setHasAdminSession} theme={theme} setTheme={setTheme} />
             </ProtectedRoute>
           }
         />
@@ -62,7 +72,7 @@ function ThemeToggle({ theme, setTheme }) {
   );
 }
 
-function PublicHome({ theme, setTheme }) {
+function PublicHome({ hasAdminSession, theme, setTheme }) {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -102,9 +112,15 @@ function PublicHome({ theme, setTheme }) {
               <a className="hero-link" href="#latest-releases">
                 Explore Releases
               </a>
-              <Link className="hero-link secondary-link" to="/admin/login">
-                Admin Login
-              </Link>
+              {hasAdminSession ? (
+                <Link className="hero-link secondary-link" to="/admin">
+                  Manage Posts
+                </Link>
+              ) : (
+                <Link className="hero-link secondary-link" to="/admin/login">
+                  Admin Login
+                </Link>
+              )}
             </div>
           </div>
 
@@ -169,7 +185,7 @@ function PublicHome({ theme, setTheme }) {
   );
 }
 
-function PublicReleasePage({ theme, setTheme }) {
+function PublicReleasePage({ hasAdminSession, theme, setTheme }) {
   const { slug } = useParams();
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -201,9 +217,16 @@ function PublicReleasePage({ theme, setTheme }) {
     <div className="page-shell">
       <header className="hero homepage-hero release-hero">
         <div className="hero-header-row">
-          <Link className="back-link" to="/">
-            Back to home
-          </Link>
+          <div className="public-page-links">
+            <Link className="back-link" to="/">
+              Back to home
+            </Link>
+            {hasAdminSession ? (
+              <Link className="back-link" to="/admin">
+                Manage Posts
+              </Link>
+            ) : null}
+          </div>
           <ThemeToggle setTheme={setTheme} theme={theme} />
         </div>
         {loading ? <h1>Loading release...</h1> : null}
@@ -253,7 +276,7 @@ function PublicReleasePage({ theme, setTheme }) {
   );
 }
 
-function AdminLogin({ theme, setTheme }) {
+function AdminLogin({ setHasAdminSession, theme, setTheme }) {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -281,6 +304,7 @@ function AdminLogin({ theme, setTheme }) {
       }
 
       localStorage.setItem(tokenKey, data.token);
+      setHasAdminSession(true);
       navigate("/admin");
     } catch (apiError) {
       setError(apiError.message);
@@ -327,7 +351,7 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
-function AdminDashboard({ theme, setTheme }) {
+function AdminDashboard({ setHasAdminSession, theme, setTheme }) {
   const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
   const [form, setForm] = useState(emptyPost);
@@ -362,6 +386,7 @@ function AdminDashboard({ theme, setTheme }) {
 
       if (response.status === 401) {
         localStorage.removeItem(tokenKey);
+        setHasAdminSession(false);
         navigate("/admin/login");
         return;
       }
@@ -490,6 +515,7 @@ function AdminDashboard({ theme, setTheme }) {
 
   function handleLogout() {
     localStorage.removeItem(tokenKey);
+    setHasAdminSession(false);
     navigate("/admin/login");
   }
 

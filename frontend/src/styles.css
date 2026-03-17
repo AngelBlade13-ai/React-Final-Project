@@ -466,6 +466,12 @@ textarea:focus {
   flex-wrap: wrap;
 }
 
+.public-page-links {
+  display: flex;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+}
+
 .admin-form {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -626,6 +632,10 @@ textarea:focus {
   .admin-form {
     grid-template-columns: 1fr;
     display: grid;
+  }
+
+  .public-page-links {
+    gap: 0.5rem;
   }
 
   .lyrics-header {
