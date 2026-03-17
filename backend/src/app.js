@@ -48,7 +48,7 @@ app.post("/api/admin/login", (req, res) => {
 app.get("/api/posts", async (req, res, next) => {
   try {
     const posts = await readPosts();
-    res.json({ posts });
+    res.json({ posts: posts.filter((post) => post.published) });
   } catch (error) {
     next(error);
   }
@@ -70,15 +70,16 @@ app.post("/api/admin/posts", requireAdmin, async (req, res, next) => {
       id: crypto.randomUUID(),
       title: req.body.title?.trim() || "",
       slug: slugify(req.body.title || ""),
-      summary: req.body.summary?.trim() || "",
+      videoUrl: req.body.videoUrl?.trim() || "",
+      excerpt: req.body.excerpt?.trim() || "",
       content: req.body.content?.trim() || "",
-      coverImage: req.body.coverImage?.trim() || "",
-      publishedAt: req.body.publishedAt || new Date().toISOString().slice(0, 10),
-      category: req.body.category?.trim() || "Song Post"
+      lyrics: req.body.lyrics?.trim() || "",
+      createdAt: req.body.createdAt || new Date().toISOString(),
+      published: Boolean(req.body.published)
     };
 
-    if (!newPost.title || !newPost.summary || !newPost.content || !newPost.coverImage) {
-      return res.status(400).json({ message: "Title, summary, content, and cover image are required." });
+    if (!newPost.title || !newPost.videoUrl || !newPost.excerpt || !newPost.content) {
+      return res.status(400).json({ message: "Title, video URL, excerpt, and content are required." });
     }
 
     posts.unshift(newPost);
@@ -102,11 +103,12 @@ app.put("/api/admin/posts/:id", requireAdmin, async (req, res, next) => {
       ...posts[index],
       title: req.body.title?.trim() || posts[index].title,
       slug: slugify(req.body.title || posts[index].title),
-      summary: req.body.summary?.trim() || posts[index].summary,
+      videoUrl: req.body.videoUrl?.trim() || posts[index].videoUrl,
+      excerpt: req.body.excerpt?.trim() || posts[index].excerpt,
       content: req.body.content?.trim() || posts[index].content,
-      coverImage: req.body.coverImage?.trim() || posts[index].coverImage,
-      publishedAt: req.body.publishedAt || posts[index].publishedAt,
-      category: req.body.category?.trim() || posts[index].category
+      lyrics: req.body.lyrics?.trim() ?? posts[index].lyrics,
+      createdAt: posts[index].createdAt,
+      published: typeof req.body.published === "boolean" ? req.body.published : posts[index].published
     };
 
     posts[index] = updated;

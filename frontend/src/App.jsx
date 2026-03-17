@@ -7,11 +7,12 @@ const themeKey = "suno-blog-theme";
 
 const emptyPost = {
   title: "",
-  summary: "",
+  videoUrl: "",
+  excerpt: "",
   content: "",
-  coverImage: "",
-  publishedAt: "",
-  category: ""
+  lyrics: "",
+  createdAt: "",
+  published: false
 };
 
 function App() {
@@ -136,13 +137,11 @@ function PublicHome({ theme, setTheme }) {
           <div className="post-grid">
             {posts.map((post) => (
               <article className="post-card homepage-post-card" key={post.id}>
-                <img alt={post.title} src={post.coverImage} />
+                <video className="post-media" controls preload="metadata" src={post.videoUrl} />
                 <div className="post-body">
-                  <p className="meta">
-                    {post.category} | {post.publishedAt}
-                  </p>
+                  <p className="meta">{formatPostDate(post.createdAt)}</p>
                   <h3>{post.title}</h3>
-                  <p>{post.summary}</p>
+                  <p>{post.excerpt}</p>
                   <a className="card-link" href="/">
                     Read Entry
                   </a>
@@ -280,11 +279,12 @@ function AdminDashboard({ theme, setTheme }) {
     setEditingId(post.id);
     setForm({
       title: post.title,
-      summary: post.summary,
+      videoUrl: post.videoUrl,
+      excerpt: post.excerpt,
       content: post.content,
-      coverImage: post.coverImage,
-      publishedAt: post.publishedAt,
-      category: post.category
+      lyrics: post.lyrics,
+      createdAt: post.createdAt,
+      published: post.published
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -364,24 +364,28 @@ function AdminDashboard({ theme, setTheme }) {
               <input onChange={(event) => updateField("title", event.target.value)} required value={form.title} />
             </label>
             <label>
-              Category
-              <input onChange={(event) => updateField("category", event.target.value)} value={form.category} />
-            </label>
-            <label>
-              Publish Date
-              <input onChange={(event) => updateField("publishedAt", event.target.value)} type="date" value={form.publishedAt} />
+              Video URL
+              <input onChange={(event) => updateField("videoUrl", event.target.value)} required type="url" value={form.videoUrl} />
             </label>
             <label className="full-span">
-              Cover Image URL
-              <input onChange={(event) => updateField("coverImage", event.target.value)} required type="url" value={form.coverImage} />
-            </label>
-            <label className="full-span">
-              Summary
-              <textarea onChange={(event) => updateField("summary", event.target.value)} required rows="3" value={form.summary} />
+              Excerpt
+              <textarea onChange={(event) => updateField("excerpt", event.target.value)} required rows="3" value={form.excerpt} />
             </label>
             <label className="full-span">
               Content
               <textarea onChange={(event) => updateField("content", event.target.value)} required rows="8" value={form.content} />
+            </label>
+            <label className="full-span">
+              Lyrics
+              <textarea onChange={(event) => updateField("lyrics", event.target.value)} rows="8" value={form.lyrics} />
+            </label>
+            <label className="checkbox-field full-span">
+              <input
+                checked={form.published}
+                onChange={(event) => updateField("published", event.target.checked)}
+                type="checkbox"
+              />
+              <span>Published</span>
             </label>
             {error ? <p className="error-text full-span">{error}</p> : null}
             <button type="submit">{saving ? "Saving..." : editingId ? "Update Post" : "Create Post"}</button>
@@ -397,13 +401,13 @@ function AdminDashboard({ theme, setTheme }) {
           <div className="post-grid">
             {posts.map((post) => (
               <article className="post-card" key={post.id}>
-                <img alt={post.title} src={post.coverImage} />
+                <video className="post-media" controls preload="metadata" src={post.videoUrl} />
                 <div className="post-body">
                   <p className="meta">
-                    {post.category} | {post.publishedAt}
+                    {formatPostDate(post.createdAt)} | {post.published ? "Published" : "Draft"}
                   </p>
                   <h3>{post.title}</h3>
-                  <p>{post.summary}</p>
+                  <p>{post.excerpt}</p>
                   <div className="admin-actions">
                     <button className="secondary-button" onClick={() => startEdit(post)} type="button">
                       Edit
@@ -420,6 +424,15 @@ function AdminDashboard({ theme, setTheme }) {
       </main>
     </div>
   );
+}
+
+function formatPostDate(createdAt) {
+  if (!createdAt) return "Unscheduled";
+  return new Date(createdAt).toLocaleDateString(undefined, {
+    month: "long",
+    day: "numeric",
+    year: "numeric"
+  });
 }
 
 export default App;

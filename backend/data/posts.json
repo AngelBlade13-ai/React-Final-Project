@@ -2,23 +2,25 @@
   "posts": [
     {
       "id": "0ca3443d-592e-49f5-ae48-fa74c86937b9",
-      "title": "Welcome To The Suno Blog",
-      "slug": "welcome-to-the-suno-blog",
-      "summary": "A starter post for the new blog site that will eventually feature your Suno song videos and writeups.",
-      "content": "This scaffold is intentionally simple. The next steps can add authentication, CRUD posts, video uploads, and a richer publishing flow.",
-      "coverImage": "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?auto=format&fit=crop&w=1200&q=80",
-      "publishedAt": "2026-03-17",
-      "category": "Project Update"
+      "title": "Beautiful & Real Sunshine",
+      "slug": "beautiful-and-real-sunshine",
+      "videoUrl": "https://www.w3schools.com/html/mov_bbb.mp4",
+      "excerpt": "A first release post with the song video, a short note, and room for the lyrics that shaped it.",
+      "content": "This is the release format going forward: one entry per song, a short written note, and the video at the center of the post.",
+      "lyrics": "You can add full lyrics here whenever a song needs them.",
+      "createdAt": "2026-03-17T00:00:00.000Z",
+      "published": true
     },
     {
       "id": "443b4017-c60d-4deb-8ff5-c4fdaba40aee",
-      "title": "How Each Song Post Could Work",
-      "slug": "how-each-song-post-could-work",
-      "summary": "Each entry can combine a Suno video, lyrics, a short story about the track, and any release notes you want.",
-      "content": "A blog format fits the project well because each song can become a post with a title, embedded media, description, and supporting text.",
-      "coverImage": "https://images.unsplash.com/photo-1511379938547-c1f69419868d?auto=format&fit=crop&w=1200&q=80",
-      "publishedAt": "2026-03-18",
-      "category": "Planning"
+      "title": "Second Window",
+      "slug": "second-window",
+      "videoUrl": "https://www.w3schools.com/html/movie.mp4",
+      "excerpt": "A quieter draft kept in the dashboard until the post is ready to go live.",
+      "content": "Draft posts stay simple too. Add the video, write the release note, optionally paste lyrics, and publish when it feels finished.",
+      "lyrics": "",
+      "createdAt": "2026-03-18T00:00:00.000Z",
+      "published": false
     }
   ]
 }
