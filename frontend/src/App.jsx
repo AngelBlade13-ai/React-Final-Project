@@ -82,27 +82,52 @@ function PublicHome({ theme, setTheme }) {
 
   return (
     <div className="page-shell">
-      <header className="hero">
+      <header className="hero homepage-hero">
         <div className="hero-header-row">
-          <div>
-            <p className="eyebrow">Suno Blog</p>
-            <h1>Suno Sessions Blog</h1>
-            <p className="hero-copy">A clean blog-style home for your Suno music posts, release notes, embedded videos, and track stories.</p>
-          </div>
+          <p className="eyebrow">Suno Diary</p>
           <ThemeToggle setTheme={setTheme} theme={theme} />
         </div>
-        <Link className="hero-link" to="/admin/login">
-          Admin Login
-        </Link>
+
+        <div className="homepage-hero-grid">
+          <div className="hero-copy-block">
+            <h1>Soft songs, midnight notes, and the stories behind each release.</h1>
+            <p className="hero-copy">
+              A personal artist blog for sharing Suno-created music, video drops, lyrics, inspirations, and small
+              moments behind each post.
+            </p>
+
+            <div className="hero-links-row">
+              <a className="hero-link" href="#recent-posts">
+                Read Recent Posts
+              </a>
+              <Link className="hero-link secondary-link" to="/admin/login">
+                Admin Login
+              </Link>
+            </div>
+          </div>
+
+          <div className="hero-note-card">
+            <p className="note-label">Current Mood</p>
+            <h2>Dreamy in pastel, romantic at midnight.</h2>
+            <p>
+              This homepage is meant to feel like an artist journal rather than a publication dashboard. Softer
+              surfaces, gentler color transitions, and more breathing room do the heavy lifting.
+            </p>
+          </div>
+        </div>
       </header>
 
       <main className="content-grid">
-        <section className="intro-card">
-          <h2>Scaffold Direction</h2>
-          <p>This branch adds admin auth and admin-only post CRUD so you can manage the blog content from a protected dashboard.</p>
+        <section className="intro-card homepage-panel">
+          <p className="eyebrow">About The Space</p>
+          <h2>A softer home for songs and release notes</h2>
+          <p>
+            Instead of feeling editorial or product-like, the homepage now leans into a more intimate artist-facing
+            atmosphere while still keeping the content easy to browse.
+          </p>
         </section>
 
-        <section>
+        <section id="recent-posts">
           <div className="section-head">
             <h2>Recent Posts</h2>
             <span>{loading ? "Loading..." : `${posts.length} posts`}</span>
@@ -110,7 +135,7 @@ function PublicHome({ theme, setTheme }) {
 
           <div className="post-grid">
             {posts.map((post) => (
-              <article className="post-card" key={post.id}>
+              <article className="post-card homepage-post-card" key={post.id}>
                 <img alt={post.title} src={post.coverImage} />
                 <div className="post-body">
                   <p className="meta">
@@ -118,6 +143,9 @@ function PublicHome({ theme, setTheme }) {
                   </p>
                   <h3>{post.title}</h3>
                   <p>{post.summary}</p>
+                  <a className="card-link" href="/">
+                    Read Entry
+                  </a>
                 </div>
               </article>
             ))}
