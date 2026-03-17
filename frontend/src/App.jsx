@@ -234,14 +234,21 @@ function AdminDashboard({ theme, setTheme }) {
   const [posts, setPosts] = useState([]);
   const [form, setForm] = useState(emptyPost);
   const [editingId, setEditingId] = useState("");
+  const [selectedVideoFile, setSelectedVideoFile] = useState(null);
   const [error, setError] = useState("");
+  const [uploadError, setUploadError] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+
+  function authToken() {
+    return localStorage.getItem(tokenKey);
+  }
 
   function authHeaders() {
     return {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${localStorage.getItem(tokenKey)}`
+      Authorization: `Bearer ${authToken()}`
     };
   }
 
@@ -277,6 +284,8 @@ function AdminDashboard({ theme, setTheme }) {
 
   function startEdit(post) {
     setEditingId(post.id);
+    setSelectedVideoFile(null);
+    setUploadError("");
     setForm({
       title: post.title,
       videoUrl: post.videoUrl,
@@ -287,6 +296,41 @@ function AdminDashboard({ theme, setTheme }) {
       published: post.published
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function handleVideoUpload() {
+    if (!selectedVideoFile) {
+      setUploadError("Choose a video file before uploading.");
+      return;
+    }
+
+    setUploading(true);
+    setUploadError("");
+
+    try {
+      const uploadForm = new FormData();
+      uploadForm.append("video", selectedVideoFile);
+
+      const response = await fetch(`${apiBaseUrl}/uploads`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${authToken()}`
+        },
+        body: uploadForm
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Upload failed.");
+      }
+
+      updateField("videoUrl", data.videoUrl);
+    } catch (apiError) {
+      setUploadError(apiError.message);
+    } finally {
+      setUploading(false);
+    }
   }
 
   async function handleSubmit(event) {
@@ -309,6 +353,8 @@ function AdminDashboard({ theme, setTheme }) {
 
       setForm(emptyPost);
       setEditingId("");
+      setSelectedVideoFile(null);
+      setUploadError("");
       await loadPosts();
     } catch (apiError) {
       setError(apiError.message);
@@ -363,10 +409,25 @@ function AdminDashboard({ theme, setTheme }) {
               Title
               <input onChange={(event) => updateField("title", event.target.value)} required value={form.title} />
             </label>
-            <label>
-              Video URL
-              <input onChange={(event) => updateField("videoUrl", event.target.value)} required type="url" value={form.videoUrl} />
-            </label>
+            <div className="full-span upload-panel">
+              <label>
+                Video File
+                <input
+                  accept="video/mp4,video/webm,video/quicktime"
+                  onChange={(event) => setSelectedVideoFile(event.target.files?.[0] || null)}
+                  type="file"
+                />
+              </label>
+              <div className="upload-actions-row">
+                <button onClick={handleVideoUpload} type="button">
+                  {uploading ? "Uploading..." : "Upload Video"}
+                </button>
+                <span className="upload-status">
+                  {selectedVideoFile ? selectedVideoFile.name : form.videoUrl ? "Video uploaded and ready." : "No video selected yet."}
+                </span>
+              </div>
+              {uploadError ? <p className="error-text">{uploadError}</p> : null}
+            </div>
             <label className="full-span">
               Excerpt
               <textarea onChange={(event) => updateField("excerpt", event.target.value)} required rows="3" value={form.excerpt} />
