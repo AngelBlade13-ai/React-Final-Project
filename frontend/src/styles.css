@@ -432,6 +432,14 @@ textarea:focus {
   font-size: 0.92rem;
 }
 
+.video-preview-card {
+  margin-top: 1rem;
+}
+
+.video-preview-card .meta {
+  margin-top: 0;
+}
+
 .checkbox-field {
   display: flex;
   align-items: center;

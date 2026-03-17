@@ -426,6 +426,12 @@ function AdminDashboard({ theme, setTheme }) {
                   {selectedVideoFile ? selectedVideoFile.name : form.videoUrl ? "Video uploaded and ready." : "No video selected yet."}
                 </span>
               </div>
+              {form.videoUrl ? (
+                <div className="video-preview-card">
+                  <p className="meta">Preview</p>
+                  <video className="post-media" controls preload="metadata" src={form.videoUrl} />
+                </div>
+              ) : null}
               {uploadError ? <p className="error-text">{uploadError}</p> : null}
             </div>
             <label className="full-span">
