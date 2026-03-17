@@ -6,6 +6,7 @@ const config = require("./config");
 const { requireAdmin } = require("./middleware/auth");
 const { readPosts, writePosts } = require("./data/store");
 const { slugify } = require("./utils/slugify");
+const uploadRoutes = require("./routes/upload.routes");
 
 const app = express();
 
@@ -15,6 +16,7 @@ app.use(
   })
 );
 app.use(express.json());
+app.use("/api/uploads", uploadRoutes);
 
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });
