@@ -1,26 +1,15 @@
 {
   "posts": [
     {
-      "id": "0ca3443d-592e-49f5-ae48-fa74c86937b9",
-      "title": "Beautiful & Real Sunshine",
-      "slug": "beautiful-and-real-sunshine",
-      "videoUrl": "https://www.w3schools.com/html/mov_bbb.mp4",
-      "excerpt": "A first release post with the song video, a short note, and room for the lyrics that shaped it.",
-      "content": "This is the release format going forward: one entry per song, a short written note, and the video at the center of the post.",
-      "lyrics": "You can add full lyrics here whenever a song needs them.",
-      "createdAt": "2026-03-17T00:00:00.000Z",
+      "id": "f74aab82-bf1b-441d-9389-a8830d3168e8",
+      "title": "\"Hope's Song\"",
+      "slug": "hopes-song",
+      "videoUrl": "https://res.cloudinary.com/dnvbtwora/video/upload/v1773788485/suno-releases/msbxkgqxrh0umylesosc.mp4",
+      "excerpt": "An uplifting anime-opening-style track about pushing through loneliness, finding your strength, and choosing to keep moving forward no matter what.",
+      "content": "Hope’s Song is one of those tracks that came from a really simple idea: what if moving forward is enough?\n\nI wanted it to feel like an anime opening — energetic, emotional, and full of motion — but grounded in something real. The kind of song that starts in isolation and slowly builds into something stronger, not because everything gets better, but because you decide to keep going anyway.\n\nThe lyrics lean into that feeling of being closed off for a long time, unsure if hope is still meant for you, and then slowly reaching back toward it. Not perfectly, not confidently — just honestly.\n\nThe chorus is where that shift happens. It’s not about becoming fearless, it’s about accepting the scars and still choosing to chase something better. That idea carries through the whole song: staying true to yourself, even when it’s hard, and trusting that there’s still something ahead worth reaching for.\n\nIt’s not a song about having everything figured out.\nIt’s about deciding to move forward anyway.",
+      "lyrics": "[VERSE 1]\n\nUnder the cloudy sky,\nI wandered on my own for so long.\nThat little voice inside\nCould never seem to reach anyone.\n\nBehind the world I closed,\nI wondered if the light still survived.\nI held my weakness close,\nBut still I wanted to keep moving on.\n\n[PRE-CHORUS]\n\nIf I reach out my hand\nPast the tears I’ve cried,\nThere’s a future somewhere\nCalling me to try.\n\n[CHORUS]\n\nNow I’m running forward,\nFollowing my heart—\nEven all the broken days\nCan turn into strength.\n\nIt’s okay to be scarred,\nAs long as I still chase all my dreams.\nI’ll stay true to myself\nAnd reach for the light I see.\n\n[VERSE 2]\n\nEvery small hope I held\nBegins to fill my chest with a fire.\nThose trembling lonely nights\nWere never wasted moments at all.\n\nI push the door once closed,\nAnd feel the gentle wind on my back.\nToward the dream long ago,\nI take a step and I’m not turning back.\n\n[PRE-CHORUS]\n\nEven darkness around\nCan become my guide,\nIf I learn to embrace\nWho I am inside.\n\n[CHORUS]\n\nNow I’m rising higher,\nBreaking through the pain—\nEvery heartbeat in my chest\nIs lighting the way.\n\nIt’s okay if I cry,\nAs long as I keep moving ahead.\nI’ll stay true to myself\nAnd trust in the road I tread.\n\n[BRIDGE]\n\nEven when I lose my way again,\nThis small wish inside won’t disappear.\nI will stand and rise a thousand times,\nShouting out the truth— “I want to live!”\n\n[FINAL CHORUS]\n\nNow I’m running forward\nToward the endless sky—\nEven when it hurts so much,\nI know I’ll survive.\n\nAny darkness I face\nCan brighten if I don’t give it up.\nI’ll stay true to myself\nAnd fly to the future I love.",
+      "createdAt": "2026-03-17T23:01:44.532Z",
       "published": true
-    },
-    {
-      "id": "443b4017-c60d-4deb-8ff5-c4fdaba40aee",
-      "title": "Second Window",
-      "slug": "second-window",
-      "videoUrl": "https://www.w3schools.com/html/movie.mp4",
-      "excerpt": "A quieter draft kept in the dashboard until the post is ready to go live.",
-      "content": "Draft posts stay simple too. Add the video, write the release note, optionally paste lyrics, and publish when it feels finished.",
-      "lyrics": "",
-      "createdAt": "2026-03-18T00:00:00.000Z",
-      "published": false
     }
   ]
 }
