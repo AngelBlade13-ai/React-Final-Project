@@ -3,6 +3,7 @@ import { BrowserRouter, Link, Navigate, Route, Routes, useNavigate } from "react
 
 const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
 const tokenKey = "suno-blog-admin-token";
+const themeKey = "suno-blog-theme";
 
 const emptyPost = {
   title: "",
@@ -14,8 +15,26 @@ const emptyPost = {
 };
 
 function App() {
+  const [theme, setTheme] = useState(() => localStorage.getItem(themeKey) || "dark");
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem(themeKey, theme);
+  }, [theme]);
+
   return (
     <BrowserRouter>
+      <div className="page-shell">
+        <div className="theme-bar">
+          <button
+            className="theme-toggle"
+            onClick={() => setTheme((current) => (current === "dark" ? "light" : "dark"))}
+            type="button"
+          >
+            {theme === "dark" ? "Switch To Pastel" : "Switch To Midnight"}
+          </button>
+        </div>
+      </div>
       <Routes>
         <Route path="/" element={<PublicHome />} />
         <Route path="/admin/login" element={<AdminLogin />} />
