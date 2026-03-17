@@ -90,10 +90,10 @@ function PublicHome({ theme, setTheme }) {
 
         <div className="homepage-hero-grid">
           <div className="hero-copy-block">
-            <h1>Soft songs, midnight notes, and the stories behind each release.</h1>
+            <h1>A quiet corner for my Suno releases, late-night drafts, and the stories behind each song.</h1>
             <p className="hero-copy">
-              A personal artist blog for sharing Suno-created music, video drops, lyrics, inspirations, and small
-              moments behind each post.
+              This is where I archive each release with a little more context: the finished track, the video version,
+              lyric fragments, production notes, and whatever was happening around the song when it finally clicked.
             </p>
 
             <div className="hero-links-row">
@@ -107,11 +107,11 @@ function PublicHome({ theme, setTheme }) {
           </div>
 
           <div className="hero-note-card">
-            <p className="note-label">Current Mood</p>
-            <h2>Dreamy in pastel, romantic at midnight.</h2>
+            <p className="note-label">What Lives Here</p>
+            <h2>Song drops, release notes, and the small details that make each track feel personal.</h2>
             <p>
-              This homepage is meant to feel like an artist journal rather than a publication dashboard. Softer
-              surfaces, gentler color transitions, and more breathing room do the heavy lifting.
+              Think of it as part listening room, part notebook: a place for Suno posts, embedded media, lyric excerpts,
+              and the creative notes that usually stay off the timeline.
             </p>
           </div>
         </div>
@@ -119,17 +119,17 @@ function PublicHome({ theme, setTheme }) {
 
       <main className="content-grid">
         <section className="intro-card homepage-panel">
-          <p className="eyebrow">About The Space</p>
-          <h2>A softer home for songs and release notes</h2>
+          <p className="eyebrow">About This Blog</p>
+          <h2>A personal home for releases, track stories, and behind-the-song notes</h2>
           <p>
-            Instead of feeling editorial or product-like, the homepage now leans into a more intimate artist-facing
-            atmosphere while still keeping the content easy to browse.
+            Each post is meant to hold more than a title card. Alongside the music, I want room for release context,
+            visual uploads, process notes, and the little story fragments that give each post a life of its own.
           </p>
         </section>
 
         <section id="recent-posts">
           <div className="section-head">
-            <h2>Recent Posts</h2>
+            <h2>Latest Entries</h2>
             <span>{loading ? "Loading..." : `${posts.length} posts`}</span>
           </div>
 
