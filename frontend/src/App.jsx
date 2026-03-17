@@ -15,7 +15,15 @@ const emptyPost = {
 };
 
 function App() {
-  const [theme, setTheme] = useState(() => localStorage.getItem(themeKey) || "dark");
+  const [theme, setTheme] = useState(() => {
+    const savedTheme = localStorage.getItem(themeKey);
+
+    if (savedTheme === "light" || savedTheme === "dark") {
+      return savedTheme;
+    }
+
+    return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+  });
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -24,25 +32,14 @@ function App() {
 
   return (
     <BrowserRouter>
-      <div className="page-shell">
-        <div className="theme-bar">
-          <button
-            className="theme-toggle"
-            onClick={() => setTheme((current) => (current === "dark" ? "light" : "dark"))}
-            type="button"
-          >
-            {theme === "dark" ? "Switch To Pastel" : "Switch To Midnight"}
-          </button>
-        </div>
-      </div>
       <Routes>
-        <Route path="/" element={<PublicHome />} />
-        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/" element={<PublicHome theme={theme} setTheme={setTheme} />} />
+        <Route path="/admin/login" element={<AdminLogin theme={theme} setTheme={setTheme} />} />
         <Route
           path="/admin"
           element={
             <ProtectedRoute>
-              <AdminDashboard />
+              <AdminDashboard theme={theme} setTheme={setTheme} />
             </ProtectedRoute>
           }
         />
@@ -51,7 +48,19 @@ function App() {
   );
 }
 
-function PublicHome() {
+function ThemeToggle({ theme, setTheme }) {
+  return (
+    <button
+      className="theme-toggle"
+      onClick={() => setTheme((current) => (current === "dark" ? "light" : "dark"))}
+      type="button"
+    >
+      {theme === "dark" ? "Pastel Mode" : "Midnight Mode"}
+    </button>
+  );
+}
+
+function PublicHome({ theme, setTheme }) {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -74,9 +83,14 @@ function PublicHome() {
   return (
     <div className="page-shell">
       <header className="hero">
-        <p className="eyebrow">Suno Blog</p>
-        <h1>Suno Sessions Blog</h1>
-        <p className="hero-copy">A clean blog-style home for your Suno music posts, release notes, embedded videos, and track stories.</p>
+        <div className="hero-header-row">
+          <div>
+            <p className="eyebrow">Suno Blog</p>
+            <h1>Suno Sessions Blog</h1>
+            <p className="hero-copy">A clean blog-style home for your Suno music posts, release notes, embedded videos, and track stories.</p>
+          </div>
+          <ThemeToggle setTheme={setTheme} theme={theme} />
+        </div>
         <Link className="hero-link" to="/admin/login">
           Admin Login
         </Link>
@@ -114,7 +128,7 @@ function PublicHome() {
   );
 }
 
-function AdminLogin() {
+function AdminLogin({ theme, setTheme }) {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -153,8 +167,13 @@ function AdminLogin() {
   return (
     <div className="page-shell narrow-shell">
       <form className="auth-card" onSubmit={handleSubmit}>
-        <p className="eyebrow">Admin Only</p>
-        <h1>Login</h1>
+        <div className="hero-header-row auth-header-row">
+          <div>
+            <p className="eyebrow">Admin Only</p>
+            <h1>Login</h1>
+          </div>
+          <ThemeToggle setTheme={setTheme} theme={theme} />
+        </div>
         <label>
           Email
           <input onChange={(event) => setEmail(event.target.value)} required type="email" value={email} />
@@ -183,7 +202,7 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
-function AdminDashboard() {
+function AdminDashboard({ theme, setTheme }) {
   const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
   const [form, setForm] = useState(emptyPost);
@@ -298,6 +317,7 @@ function AdminDashboard() {
           <h1>Manage Posts</h1>
         </div>
         <div className="hero-actions-row">
+          <ThemeToggle setTheme={setTheme} theme={theme} />
           <Link className="hero-link secondary-link" to="/">
             View Site
           </Link>

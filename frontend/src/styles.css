@@ -144,12 +144,6 @@ button {
   border-color: color-mix(in srgb, #c75b72 48%, var(--border));
 }
 
-.theme-bar {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 1rem;
-}
-
 .theme-toggle {
   margin-top: 0;
   box-shadow: var(--shadow-md);
@@ -240,6 +234,17 @@ textarea:focus {
   gap: 1rem;
 }
 
+.hero-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.auth-header-row {
+  margin-bottom: 0.75rem;
+}
+
 .hero-actions-row {
   display: flex;
   gap: 0.75rem;
@@ -286,6 +291,7 @@ textarea:focus {
   }
 
   .compact-hero,
+  .hero-header-row,
   .admin-form {
     grid-template-columns: 1fr;
     display: grid;
