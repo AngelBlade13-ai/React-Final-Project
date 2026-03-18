@@ -220,6 +220,77 @@ button {
   box-shadow: 0 16px 36px color-mix(in srgb, var(--primary) 10%, transparent);
 }
 
+.featured-release-section {
+  display: grid;
+  gap: 1rem;
+}
+
+.featured-release-link {
+  display: block;
+  text-decoration: none;
+}
+
+.featured-release-card {
+  display: grid;
+  grid-template-columns: minmax(320px, 380px) minmax(0, 1fr);
+  align-items: stretch;
+  gap: 0;
+  overflow: hidden;
+  padding: 0;
+}
+
+.featured-release-media {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  align-self: stretch;
+  background: color-mix(in srgb, var(--surface-alt) 82%, black 18%);
+}
+
+.featured-release-video {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.featured-release-copy {
+  display: grid;
+  align-content: center;
+  gap: 0.6rem;
+  padding: 1.6rem 1.7rem 1.8rem;
+}
+
+.featured-release-copy h3 {
+  margin: 0;
+  font-size: clamp(1.8rem, 3vw, 2.8rem);
+  line-height: 0.98;
+  letter-spacing: -0.03em;
+}
+
+.featured-release-intro {
+  margin: 0;
+  color: var(--text);
+  line-height: 1.55;
+}
+
+.featured-release-excerpt {
+  margin: 0;
+  font-size: 0.98rem;
+  line-height: 1.65;
+}
+
+.featured-release-actions {
+  margin-top: 0.25rem;
+}
+
+.featured-release-actions .hero-link {
+  margin-top: 0;
+}
+
+.featured-play-pill {
+  background: color-mix(in srgb, var(--surface) 74%, transparent);
+}
+
 .post-card {
   border-radius: 24px;
   overflow: hidden;
@@ -239,6 +310,8 @@ button {
   box-shadow:
     0 14px 30px color-mix(in srgb, var(--primary) 8%, transparent),
     inset 0 1px 0 color-mix(in srgb, var(--text) 4%, transparent);
+  display: flex;
+  flex-direction: column;
 }
 
 .release-feed-card {
@@ -303,9 +376,14 @@ textarea:focus {
   gap: 1rem;
 }
 
+.latest-release-grid {
+  grid-template-columns: repeat(auto-fit, minmax(280px, 340px));
+  justify-content: start;
+}
+
 .post-media {
   width: 100%;
-  height: 220px;
+  height: 140px;
   display: block;
   object-fit: cover;
   background: color-mix(in srgb, var(--surface-alt) 90%, black 10%);
@@ -314,6 +392,13 @@ textarea:focus {
 .release-card-media {
   position: relative;
   overflow: hidden;
+  width: 100%;
+  aspect-ratio: 16 / 8;
+  background: color-mix(in srgb, var(--surface-alt) 82%, black 18%);
+}
+
+.release-card-media .post-media {
+  height: 100%;
 }
 
 .release-card-overlay {
@@ -366,12 +451,18 @@ textarea:focus {
 }
 
 .homepage-post-card .post-body {
-  padding: 1.25rem 1.2rem 1.35rem;
+  padding: 1.1rem 1.2rem 1.35rem;
+  display: grid;
+  gap: 0.45rem;
 }
 
 .homepage-post-card .post-body h3 {
-  margin: 0.2rem 0 0.65rem;
+  margin: 0.1rem 0 0.35rem;
   font-size: 1.35rem;
+}
+
+.homepage-post-card .post-body p {
+  margin: 0;
 }
 
 .meta {
@@ -492,33 +583,56 @@ textarea:focus {
   padding-bottom: 1.4rem;
 }
 
+.release-hero-layout {
+  display: grid;
+  grid-template-columns: minmax(300px, 420px) minmax(0, 1fr);
+  align-items: center;
+  gap: 1.35rem;
+  margin-top: 1.1rem;
+}
+
+.release-hero-media {
+  display: grid;
+  justify-items: center;
+}
+
 .release-hero-copy {
   position: relative;
   z-index: 1;
-  max-width: 720px;
-  margin-top: 1rem;
+  max-width: 640px;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.release-hero-copy h1 {
+  margin: 0;
+  font-size: clamp(2rem, 3.6vw, 3.1rem);
+  line-height: 0.98;
+  letter-spacing: -0.03em;
+}
+
+.release-hero-intro {
+  margin: 0;
+  color: var(--text);
+  line-height: 1.55;
 }
 
 .release-detail-grid {
   gap: 1rem;
 }
 
-.release-video-panel {
-  padding: 0.9rem;
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-alt) 84%, black 16%), color-mix(in srgb, var(--surface) 92%, black 8%)),
-    var(--surface);
-}
-
 .release-video {
-  width: 100%;
+  width: min(100%, 460px);
+  aspect-ratio: 4 / 5;
+  max-height: 620px;
   border-radius: 24px;
   display: block;
+  object-fit: cover;
   background: color-mix(in srgb, var(--surface-alt) 82%, black 18%);
 }
 
 .release-copy-panel {
-  padding-top: 1.5rem;
+  padding-top: 1.3rem;
 }
 
 .release-prose p {
@@ -632,6 +746,27 @@ textarea:focus {
   .admin-form {
     grid-template-columns: 1fr;
     display: grid;
+  }
+
+  .featured-release-card {
+    grid-template-columns: 1fr;
+  }
+
+  .featured-release-media {
+    aspect-ratio: 4 / 5;
+  }
+
+  .featured-release-copy {
+    padding: 1.25rem 1.15rem 1.35rem;
+  }
+
+  .latest-release-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .release-hero-layout {
+    grid-template-columns: 1fr;
+    gap: 1rem;
   }
 
   .public-page-links {

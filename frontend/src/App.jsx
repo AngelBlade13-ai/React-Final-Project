@@ -75,6 +75,9 @@ function ThemeToggle({ theme, setTheme }) {
 function PublicHome({ hasAdminSession, theme, setTheme }) {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const featuredPost =
+    posts.find((post) => normalizeTitle(post.title) === "hope's song") || posts[0] || null;
+  const latestPosts = featuredPost ? posts.filter((post) => post.id !== featuredPost.id) : posts;
 
   useEffect(() => {
     async function loadPosts() {
@@ -146,10 +149,40 @@ function PublicHome({ hasAdminSession, theme, setTheme }) {
           <p className="identity-line">A collection of songs, stories, and moments in motion.</p>
         </section>
 
+        {featuredPost ? (
+          <section className="featured-release-section">
+            <div className="section-head">
+              <h2>Featured Release</h2>
+              <span>Now Playing</span>
+            </div>
+
+            <Link className="featured-release-link" to={`/release/${featuredPost.slug}`}>
+              <article className="intro-card homepage-panel featured-release-card">
+                <div className="featured-release-media">
+                  <video className="featured-release-video" muted playsInline preload="metadata" src={featuredPost.videoUrl} />
+                  <div className="release-card-overlay" />
+                  <div className="play-pill featured-play-pill">Featured</div>
+                </div>
+
+                <div className="featured-release-copy">
+                  <p className="eyebrow">New Drop</p>
+                  <h3>{featuredPost.title}</h3>
+                  <p className="featured-release-intro">An emotional release entry with the song front and center, followed by the note behind it.</p>
+                  <p className="featured-release-excerpt">{featuredPost.excerpt}</p>
+                  <p className="meta">{formatPostDate(featuredPost.createdAt)}</p>
+                  <div className="featured-release-actions">
+                    <span className="hero-link">Enter Release</span>
+                  </div>
+                </div>
+              </article>
+            </Link>
+          </section>
+        ) : null}
+
         <section id="latest-releases">
           <div className="section-head">
             <h2>Latest Releases</h2>
-            <span>{loading ? "Loading..." : `${posts.length} releases`}</span>
+            <span>{loading ? "Loading..." : `${latestPosts.length} releases`}</span>
           </div>
 
           {!loading && posts.length === 0 ? (
@@ -158,9 +191,15 @@ function PublicHome({ hasAdminSession, theme, setTheme }) {
               <h3>Something is coming.</h3>
               <p>No releases have been published yet. Check back soon for the first drop.</p>
             </section>
+          ) : !loading && latestPosts.length === 0 ? (
+            <section className="intro-card homepage-panel empty-state-card">
+              <p className="eyebrow">More Soon</p>
+              <h3>The featured release is live.</h3>
+              <p>More songs will appear here as new releases are added.</p>
+            </section>
           ) : (
-            <div className="post-grid">
-              {posts.map((post) => (
+            <div className="post-grid latest-release-grid">
+              {latestPosts.map((post) => (
                 <Link className="release-card-link" key={post.id} to={`/release/${post.slug}`}>
                   <article className="post-card homepage-post-card release-feed-card">
                     <div className="release-card-media">
@@ -232,21 +271,23 @@ function PublicReleasePage({ hasAdminSession, theme, setTheme }) {
         {loading ? <h1>Loading release...</h1> : null}
         {error ? <p className="error-text">{error}</p> : null}
         {post ? (
-          <div className="release-hero-copy">
-            <p className="eyebrow">Release Entry</p>
-            <h1>{post.title}</h1>
-            <p className="hero-copy">{post.excerpt}</p>
-            <p className="meta">{formatPostDate(post.createdAt)}</p>
+          <div className="release-hero-layout">
+            <div className="release-hero-media">
+              <video className="release-video" controls preload="metadata" src={post.videoUrl} />
+            </div>
+            <div className="release-hero-copy">
+              <p className="eyebrow">Release Entry</p>
+              <h1>{post.title}</h1>
+              <p className="release-hero-intro">A focused listening view for the video, the note behind it, and the words that shaped the release.</p>
+              <p className="hero-copy">{post.excerpt}</p>
+              <p className="meta">{formatPostDate(post.createdAt)}</p>
+            </div>
           </div>
         ) : null}
       </header>
 
       {post ? (
         <main className="content-grid release-detail-grid">
-          <section className="intro-card homepage-panel release-video-panel">
-            <video className="release-video" controls preload="metadata" src={post.videoUrl} />
-          </section>
-
           <section className="intro-card homepage-panel release-copy-panel">
             <p className="eyebrow">Release Note</p>
             <div className="release-prose">
@@ -638,6 +679,10 @@ function formatPostDate(createdAt) {
     day: "numeric",
     year: "numeric"
   });
+}
+
+function normalizeTitle(title) {
+  return (title || "").replace(/["']/g, "").trim().toLowerCase();
 }
 
 export default App;
