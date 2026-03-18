@@ -1371,6 +1371,92 @@ select:focus {
   text-transform: uppercase;
 }
 
+.world-header-status-bar {
+  margin-top: 1.2rem;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.fracture-sequence-panel {
+  display: grid;
+  gap: 1rem;
+}
+
+.fractureverse-sequence-head {
+  margin-bottom: 0;
+}
+
+.fracture-sequence-strip {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.fracture-sequence-node {
+  position: relative;
+  min-height: 150px;
+  display: grid;
+  align-content: start;
+  gap: 0.35rem;
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, var(--border) 76%, var(--primary) 24%);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-alt) 68%, var(--surface) 32%), color-mix(in srgb, var(--surface) 88%, black 12%));
+  color: var(--text);
+  text-decoration: none;
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+}
+
+.fracture-sequence-node::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: calc(100% - 0.1rem);
+  width: 1rem;
+  height: 1px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--primary) 72%, transparent), transparent);
+  pointer-events: none;
+}
+
+.fracture-sequence-node:last-child::after {
+  display: none;
+}
+
+.fracture-sequence-node:hover,
+.fracture-sequence-node:focus-visible,
+.fracture-sequence-node.active {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--primary) 42%, var(--border) 58%);
+  box-shadow:
+    0 18px 36px color-mix(in srgb, var(--primary) 12%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--primary) 18%, transparent);
+}
+
+.fracture-sequence-id,
+.fracture-sequence-state {
+  font-size: 0.78rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.fracture-sequence-state {
+  color: var(--muted-text);
+}
+
+.fracture-sequence-node strong {
+  font-size: 1.02rem;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+
+.fracture-sequence-note {
+  margin: 0;
+  color: var(--muted-text);
+}
+
 .collection-fragment-shell {
   display: grid;
 }
@@ -1406,6 +1492,28 @@ select:focus {
   margin: 0;
   font-size: clamp(2rem, 3vw, 2.9rem);
   letter-spacing: -0.03em;
+}
+
+.fracture-primary-card {
+  border-color: color-mix(in srgb, var(--primary) 22%, var(--border) 78%);
+}
+
+.fracture-primary-media {
+  background:
+    radial-gradient(circle at 28% 24%, color-mix(in srgb, var(--primary) 16%, transparent), transparent 40%),
+    color-mix(in srgb, var(--surface-alt) 78%, black 22%);
+}
+
+.fracture-primary-copy {
+  gap: 0.95rem;
+}
+
+.fracture-fragment-meta {
+  margin: 0;
+  color: var(--muted-text);
+  font-size: 0.8rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
 }
 
 .collection-fragment-excerpt,
@@ -1463,6 +1571,84 @@ select:focus {
 
 .timeline-card-body h3 {
   font-size: 1.45rem;
+}
+
+.fracture-fragment-grid {
+  gap: 1.1rem;
+}
+
+.fracture-fragment-card {
+  min-height: 100%;
+  overflow: hidden;
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+}
+
+.fracture-fragment-card.active,
+.fracture-fragment-card.highlighted {
+  border-color: color-mix(in srgb, var(--primary) 30%, var(--border) 70%);
+  box-shadow:
+    0 20px 40px color-mix(in srgb, var(--primary) 12%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--primary) 14%, transparent);
+}
+
+.fracture-fragment-card.active {
+  transform: translateY(-3px);
+  filter: saturate(1.04);
+}
+
+.fracture-fragment-media {
+  aspect-ratio: 16 / 9;
+}
+
+.fracture-fragment-body {
+  display: grid;
+  gap: 0.7rem;
+  padding: 1.3rem 1.35rem 1.45rem;
+}
+
+.fracture-fragment-body h3 {
+  margin: 0;
+  font-size: 1.55rem;
+  line-height: 1.03;
+  letter-spacing: -0.03em;
+}
+
+.fracture-relation-line,
+.fracture-system-note {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.fracture-relation-line {
+  color: var(--text);
+}
+
+.fracture-system-note {
+  color: var(--muted-text);
+}
+
+.fracture-stable {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 86%, rgba(255, 255, 255, 0.03)), color-mix(in srgb, var(--surface-alt) 90%, var(--surface) 10%));
+}
+
+.fracture-divergent {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 82%, var(--primary) 18%), color-mix(in srgb, var(--surface-alt) 86%, var(--surface) 14%));
+}
+
+.fracture-collapsed {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-alt) 76%, black 24%), color-mix(in srgb, var(--surface) 82%, black 18%));
+}
+
+.fracture-unstable {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 74%, var(--primary) 26%), color-mix(in srgb, var(--surface-alt) 76%, var(--secondary) 24%));
+}
+
+.fracture-echo-card {
+  text-align: center;
 }
 
 .world-note-card h3,
@@ -1908,6 +2094,10 @@ select:focus {
     grid-template-columns: 1fr;
   }
 
+  .fracture-sequence-strip {
+    grid-template-columns: 1fr;
+  }
+
   .public-site-actions,
   .site-nav,
   .admin-subnav {
@@ -1935,6 +2125,10 @@ select:focus {
     width: 100%;
     max-width: 220px;
     margin-left: auto;
+  }
+
+  .fracture-sequence-node::after {
+    display: none;
   }
 
   .featured-release-media {

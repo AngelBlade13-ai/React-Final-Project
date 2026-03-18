@@ -127,6 +127,85 @@ const COLLECTION_THEMES = {
   }
 };
 
+const FRACTUREVERSE_FEATURED_SLUG = "shattered-trust-reimagined";
+const FRACTUREVERSE_ORDER = [
+  "the-one-you-used-to-be-reimagined",
+  "still-breathing-in-a-dying-world-reimagined",
+  "shattered-trust-reimagined",
+  "you-were-better-before-you-saved-the-world-reimagined",
+  "we-were-never-meant-to-survive-reimagined-duet"
+];
+
+const FRACTUREVERSE_WORLD = {
+  headerEyebrow: "World / Fractureverse",
+  description:
+    "A fractured reality where every choice creates a new world, and every version of love carries a different cost.\n\nHere, memory, sacrifice, collapse, obsession, and convergence exist side by side - none of them fully gone, none of them fully resolved.",
+  stats: [
+    { label: "World Status", value: "Unstable" },
+    { label: "Observed Fragments", value: "5" },
+    { label: "Primary Subjects", value: "Angel, Grissom" },
+    { label: "Current Condition", value: "Active recursion detected" }
+  ],
+  residualEcho: "Some timelines collapse. Some repeat. Some never stop trying to become real."
+};
+
+const FRACTUREVERSE_METADATA = {
+  "the-one-you-used-to-be-reimagined": {
+    fragmentId: "F-01",
+    state: "Stable",
+    perspective: "Grissom",
+    signalType: "Origin",
+    title: "The One You Used to Be",
+    description: "A preserved fragment from before the fracture - where love existed without cost.",
+    linkedTo: ["F-02", "F-04"],
+    systemNote: "Reference timeline detected. Emotional imprint preserved."
+  },
+  "still-breathing-in-a-dying-world-reimagined": {
+    fragmentId: "F-02",
+    state: "Divergent",
+    perspective: "Angel",
+    signalType: "Conflict",
+    title: "Still Breathing (In a Dying World)",
+    description:
+      "The moment she chose everything, knowing it would cost her the one thing she wanted to keep.",
+    linkedTo: ["F-01", "F-03"],
+    systemNote: "Critical divergence detected. Global stability prioritized over personal attachment."
+  },
+  "shattered-trust-reimagined": {
+    fragmentId: "F-03",
+    state: "Collapsed",
+    perspective: "Angel",
+    signalType: "Primary",
+    title: "Shattered Trust (Reimagined)",
+    description:
+      "A post-collapse fragment where trust failed, and the cost of saving everything became permanent.",
+    linkedTo: ["F-01", "F-02"],
+    systemNote: "Collapse event stabilized through force of will. Structural integrity compromised."
+  },
+  "you-were-better-before-you-saved-the-world-reimagined": {
+    fragmentId: "F-04",
+    state: "Divergent",
+    perspective: "Grissom",
+    signalType: "Conflict",
+    title: "You Were Better Before You Saved the World",
+    description:
+      "A hostile fragment where loss becomes obsession, and one version of him refuses to accept the world she chose.",
+    linkedTo: ["F-02", "F-03"],
+    systemNote: "Hostile recursion detected. Subject actively destabilizing timelines."
+  },
+  "we-were-never-meant-to-survive-reimagined-duet": {
+    fragmentId: "F-05",
+    state: "Unstable",
+    perspective: "Both",
+    signalType: "Convergence",
+    title: "We Were Never Meant to Survive",
+    description:
+      "A convergence event where opposing truths collide, and the timeline can no longer resolve itself.",
+    linkedTo: ["F-02", "F-03", "F-04"],
+    systemNote: "Convergence detected. Conflicting directives unresolved."
+  }
+};
+
 function getThemeConfig(theme) {
   return COLLECTION_THEMES[theme] || COLLECTION_THEMES.default;
 }
@@ -134,6 +213,10 @@ function getThemeConfig(theme) {
 function getPrimaryThemeForPost(post) {
   const themedCollection = (post?.collections || []).find((collection) => collection.theme);
   return themedCollection?.theme || "default";
+}
+
+function getFractureverseMeta(post) {
+  return FRACTUREVERSE_METADATA[post?.slug] || null;
 }
 
 function hasVideo(videoUrl) {
@@ -639,6 +722,7 @@ function CollectionDetailPage({ onPlayTrack }) {
   const [collections, setCollections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [activeFragmentSlug, setActiveFragmentSlug] = useState("");
 
   useEffect(() => {
     async function loadCollection() {
@@ -672,6 +756,15 @@ function CollectionDetailPage({ onPlayTrack }) {
   const themeConfig = getThemeConfig(collection?.theme);
   const timelineReleases = featuredRelease ? [featuredRelease, ...otherReleases] : releases;
   const isFractureverse = collection?.theme === "fractureverse";
+  const fractureverseReleases = isFractureverse
+    ? FRACTUREVERSE_ORDER.map((entrySlug) => releases.find((post) => post.slug === entrySlug)).filter(Boolean)
+    : [];
+  const fractureverseFeatured = fractureverseReleases.find((post) => post.slug === FRACTUREVERSE_FEATURED_SLUG) || featuredRelease;
+  const fractureverseGrid = fractureverseReleases.filter((post) => post.slug !== fractureverseFeatured?.slug);
+  const activeFragmentMeta =
+    FRACTUREVERSE_METADATA[activeFragmentSlug] ||
+    FRACTUREVERSE_METADATA[fractureverseFeatured?.slug] ||
+    FRACTUREVERSE_METADATA[FRACTUREVERSE_FEATURED_SLUG];
 
   useEffect(() => {
     const root = document.documentElement;
@@ -697,21 +790,30 @@ function CollectionDetailPage({ onPlayTrack }) {
         {collection ? (
           <div className="world-header-layout">
             <div className="world-header-inner">
-              <p className="eyebrow">{themeConfig.worldEyebrow}</p>
+              <p className="eyebrow">{isFractureverse ? FRACTUREVERSE_WORLD.headerEyebrow : themeConfig.worldEyebrow}</p>
               <h1>{collection.title}</h1>
-              <p className="hero-copy world-header-copy">{collection.description}</p>
-              <div className="collection-meta-row world-header-meta">
-                <span className="meta-badge">
-                  {isFractureverse && timelineReleases.length === 0
-                    ? "No fragments detected"
-                    : `${collection.releaseCount} releases`}
-                </span>
-                {collection.featuredRelease ? (
-                  <Link className="collection-chip" to={`/release/${collection.featuredRelease.slug}`}>
-                    Featured: {collection.featuredRelease.title}
-                  </Link>
-                ) : null}
-              </div>
+              <p className="hero-copy world-header-copy">
+                {isFractureverse ? FRACTUREVERSE_WORLD.description : collection.description}
+              </p>
+              {isFractureverse ? (
+                <div className="world-status-bar world-header-status-bar">
+                  {FRACTUREVERSE_WORLD.stats.map((item) => (
+                    <div className="world-status-item" key={item.label}>
+                      <span className="world-status-label">{item.label}</span>
+                      <strong>{item.label === "Observed Fragments" ? fractureverseReleases.length : item.value}</strong>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="collection-meta-row world-header-meta">
+                  <span className="meta-badge">{collection.releaseCount} releases</span>
+                  {collection.featuredRelease ? (
+                    <Link className="collection-chip" to={`/release/${collection.featuredRelease.slug}`}>
+                      Featured: {collection.featuredRelease.title}
+                    </Link>
+                  ) : null}
+                </div>
+              )}
             </div>
             {isFractureverse ? (
               <div aria-hidden="true" className="world-header-aside fracture-aside">
@@ -725,22 +827,98 @@ function CollectionDetailPage({ onPlayTrack }) {
       {collection ? (
         <main className={`content-grid collection-world-page${isFractureverse ? " fractureverse-page" : ""}`}>
           {isFractureverse ? (
-            <section className="intro-card homepage-panel world-status-bar">
-              <div className="world-status-item">
-                <span className="world-status-label">Current State</span>
-                <strong>Unstable</strong>
+            <section className="intro-card homepage-panel fracture-sequence-panel">
+              <div className="section-head fractureverse-sequence-head">
+                <h2>Observed Sequence</h2>
+                <span>{fractureverseReleases.length} tracked fragments</span>
               </div>
-              <div className="world-status-item">
-                <span className="world-status-label">Observed Fragments</span>
-                <strong>{timelineReleases.length}</strong>
+              <div className="fracture-sequence-strip" onMouseLeave={() => setActiveFragmentSlug("")}>
+                {fractureverseReleases.map((post) => {
+                  const meta = getFractureverseMeta(post);
+                  const isActive = activeFragmentSlug === post.slug;
+
+                  if (!meta) {
+                    return null;
+                  }
+
+                  return (
+                    <Link
+                      className={`fracture-sequence-node${isActive ? " active" : ""}`}
+                      key={post.slug}
+                      onFocus={() => setActiveFragmentSlug(post.slug)}
+                      onMouseEnter={() => setActiveFragmentSlug(post.slug)}
+                      to={`/release/${post.slug}`}
+                    >
+                      <span className="fracture-sequence-id">{meta.fragmentId}</span>
+                      <span className="fracture-sequence-state">{meta.state}</span>
+                      <strong>{meta.title}</strong>
+                    </Link>
+                  );
+                })}
               </div>
-              <div className="world-status-item">
-                <span className="world-status-label">Primary Subject</span>
-                <strong>{featuredRelease ? featuredRelease.title : "Unknown"}</strong>
-              </div>
+              {activeFragmentMeta ? (
+                <p className="fracture-sequence-note">
+                  {activeFragmentMeta.fragmentId} / {activeFragmentMeta.signalType} / Linked echoes: {activeFragmentMeta.linkedTo.join(", ")}
+                </p>
+              ) : null}
             </section>
           ) : null}
-          {featuredRelease ? (
+          {isFractureverse && fractureverseFeatured ? (
+            <section className="collection-fragment-shell">
+              <div className="section-head fractureverse-featured-head">
+                <h2>Primary Fragment</h2>
+                <span>{getFractureverseMeta(fractureverseFeatured)?.fragmentId || "F-03"} / flagship record</span>
+              </div>
+              <article className="intro-card homepage-panel collection-fragment-card fracture-primary-card">
+                <div className="collection-fragment-media fracture-primary-media">
+                  <ReleaseMedia
+                    className="featured-release-video"
+                    compact
+                    muted
+                    text="This fragment is live as a written record first. Its video can arrive later."
+                    title={fractureverseFeatured.title}
+                    videoUrl={fractureverseFeatured.videoUrl}
+                  />
+                  <div className="release-card-overlay" />
+                  <div className="play-pill featured-play-pill">
+                    {hasVideo(fractureverseFeatured.videoUrl) ? "Primary Fragment" : "Primary Fragment / Video Pending"}
+                  </div>
+                </div>
+                <div className="collection-fragment-copy fracture-primary-copy">
+                  <p className="eyebrow">Primary Fragment</p>
+                  <p className="fracture-fragment-meta">
+                    {getFractureverseMeta(fractureverseFeatured)?.fragmentId} / {getFractureverseMeta(fractureverseFeatured)?.state} /{" "}
+                    {getFractureverseMeta(fractureverseFeatured)?.perspective} / {getFractureverseMeta(fractureverseFeatured)?.signalType}
+                  </p>
+                  <h2>{getFractureverseMeta(fractureverseFeatured)?.title || fractureverseFeatured.title}</h2>
+                  <p className="collection-fragment-excerpt">
+                    {getFractureverseMeta(fractureverseFeatured)?.description || fractureverseFeatured.excerpt}
+                  </p>
+                  <p className="collection-fragment-context">
+                    {getFractureverseMeta(fractureverseFeatured)?.systemNote ||
+                      "Collapse event stabilized through force of will. Structural integrity compromised."}
+                  </p>
+                  <div className="featured-release-actions">
+                    <button
+                      className="secondary-button mini-player-trigger"
+                      disabled={!hasVideo(fractureverseFeatured.videoUrl)}
+                      onClick={() => onPlayTrack(fractureverseFeatured)}
+                      type="button"
+                    >
+                      {hasVideo(fractureverseFeatured.videoUrl) ? "Play in Mini Player" : "Video Pending"}
+                    </button>
+                    <Link className="hero-link" to={`/release/${fractureverseFeatured.slug}`}>
+                      Open Fragment
+                    </Link>
+                    <Link className="hero-link secondary-link" to={`/release/${fractureverseFeatured.slug}`}>
+                      Read Fragment Record
+                    </Link>
+                  </div>
+                </div>
+              </article>
+            </section>
+          ) : null}
+          {!isFractureverse && featuredRelease ? (
             <section className="collection-fragment-shell">
               <article className="intro-card homepage-panel collection-fragment-card">
                 <div className="collection-fragment-media">
@@ -794,9 +972,46 @@ function CollectionDetailPage({ onPlayTrack }) {
           <section>
             <div className={`section-head timeline-section-head${isFractureverse ? " fractureverse-timeline-head" : ""}`}>
               <h2>{themeConfig.listLabel}</h2>
-              <span>{isFractureverse ? `${timelineReleases.length} observed` : `${timelineReleases.length} entries`}</span>
+              <span>{isFractureverse ? `${fractureverseGrid.length} linked fragments` : `${timelineReleases.length} entries`}</span>
             </div>
-            {timelineReleases.length === 0 ? (
+            {isFractureverse ? (
+              fractureverseReleases.length === 0 ? (
+                <section className="intro-card homepage-panel empty-state-card fracture-empty-state">
+                  <p className="eyebrow">{themeConfig.noItemsEyebrow}</p>
+                  <h3>{themeConfig.noItemsTitle}</h3>
+                  <p>{themeConfig.noItemsText}</p>
+                </section>
+              ) : (
+                <div className="timeline-grid fracture-fragment-grid">
+                  {fractureverseGrid.map((post) => {
+                    const meta = getFractureverseMeta(post);
+                    const isActive = activeFragmentSlug === post.slug;
+                    const isLinked = Boolean(
+                      activeFragmentMeta &&
+                        meta &&
+                        (activeFragmentMeta.linkedTo.includes(meta.fragmentId) ||
+                          activeFragmentMeta.fragmentId === meta.fragmentId)
+                    );
+
+                    if (!meta) {
+                      return null;
+                    }
+
+                    return (
+                      <FractureFragmentCard
+                        active={isActive}
+                        highlighted={isLinked}
+                        key={post.id}
+                        meta={meta}
+                        onFocusFragment={setActiveFragmentSlug}
+                        onPlayTrack={onPlayTrack}
+                        post={post}
+                      />
+                    );
+                  })}
+                </div>
+              )
+            ) : timelineReleases.length === 0 ? (
               <section className={`intro-card homepage-panel empty-state-card${isFractureverse ? " fracture-empty-state" : ""}`}>
                 <p className="eyebrow">{themeConfig.noItemsEyebrow}</p>
                 <h3>{themeConfig.noItemsTitle}</h3>
@@ -823,10 +1038,17 @@ function CollectionDetailPage({ onPlayTrack }) {
             )}
           </section>
 
-          <section className="intro-card homepage-panel world-note-card">
-            <p className="eyebrow">{themeConfig.worldNoteTitle}</p>
-            <h3>{themeConfig.worldNoteText}</h3>
-          </section>
+          {isFractureverse ? (
+            <section className="intro-card homepage-panel world-note-card fracture-echo-card">
+              <p className="eyebrow">Residual Echo</p>
+              <h3>{FRACTUREVERSE_WORLD.residualEcho}</h3>
+            </section>
+          ) : (
+            <section className="intro-card homepage-panel world-note-card">
+              <p className="eyebrow">{themeConfig.worldNoteTitle}</p>
+              <h3>{themeConfig.worldNoteText}</h3>
+            </section>
+          )}
         </main>
       ) : null}
     </>
@@ -2060,6 +2282,58 @@ function TimelineCard({ index, onPlayTrack, post, themeConfig }) {
               {hasVideo(post.videoUrl) ? "Play in Mini Player" : "Video Pending"}
             </button>
             <span className="result-card-cta">{themeConfig.itemAction}</span>
+          </div>
+        </div>
+      </article>
+    </Link>
+  );
+}
+
+function FractureFragmentCard({ active, highlighted, meta, onFocusFragment, onPlayTrack, post }) {
+  return (
+    <Link
+      className="release-card-link"
+      onFocus={() => onFocusFragment(post.slug)}
+      onMouseEnter={() => onFocusFragment(post.slug)}
+      to={`/release/${post.slug}`}
+    >
+      <article
+        className={`post-card homepage-post-card release-feed-card fracture-fragment-card fracture-${meta.state.toLowerCase()}${
+          active ? " active" : ""
+        }${highlighted ? " highlighted" : ""}`}
+      >
+        <div className="release-card-media fracture-fragment-media">
+          <ReleaseMedia
+            className="post-media"
+            compact
+            muted
+            text={meta.systemNote}
+            title={meta.title}
+            videoUrl={post.videoUrl}
+          />
+          <div className="release-card-overlay" />
+        </div>
+        <div className="post-body fracture-fragment-body">
+          <p className="fracture-fragment-meta">
+            {meta.fragmentId} / {meta.state} / {meta.perspective} / {meta.signalType}
+          </p>
+          <h3>{meta.title}</h3>
+          <p>{meta.description}</p>
+          <p className="fracture-relation-line">Linked to: {meta.linkedTo.join(", ")}</p>
+          <p className="fracture-system-note">{meta.systemNote}</p>
+          <div className="card-action-row">
+            <button
+              className="secondary-button mini-player-trigger"
+              disabled={!hasVideo(post.videoUrl)}
+              onClick={(event) => {
+                event.preventDefault();
+                onPlayTrack(post);
+              }}
+              type="button"
+            >
+              {hasVideo(post.videoUrl) ? "Play in Mini Player" : "Video Pending"}
+            </button>
+            <span className="result-card-cta">Open Fragment</span>
           </div>
         </div>
       </article>
