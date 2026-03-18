@@ -4,7 +4,7 @@ const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const config = require("./config");
 const { requireAdmin } = require("./middleware/auth");
-const { readPosts, writePosts } = require("./data/store");
+const { readStore, writeStore } = require("./data/store");
 const { slugify } = require("./utils/slugify");
 const uploadRoutes = require("./routes/upload.routes");
 
@@ -17,6 +17,78 @@ app.use(
 );
 app.use(express.json());
 app.use("/api/uploads", uploadRoutes);
+
+function normalizeCollectionInput(input, existingCollection = {}) {
+  return {
+    ...existingCollection,
+    title: String(input.title || existingCollection.title || "").trim(),
+    slug: slugify(input.slug || input.title || existingCollection.slug || existingCollection.title || ""),
+    description: String(input.description || existingCollection.description || "").trim(),
+    featuredReleaseSlug: String(input.featuredReleaseSlug || "").trim(),
+    theme: String(input.theme || existingCollection.theme || "").trim()
+  };
+}
+
+function normalizePostInput(input, collections, existingPost = {}) {
+  const collectionSlugSet = new Set(collections.map((collection) => collection.slug));
+  const requestedCollections = Array.isArray(input.collectionSlugs)
+    ? input.collectionSlugs
+    : existingPost.collectionSlugs || [];
+
+  return {
+    ...existingPost,
+    title: String(input.title || existingPost.title || "").trim(),
+    slug: slugify(input.title || existingPost.title || ""),
+    videoUrl: String(input.videoUrl || existingPost.videoUrl || "").trim(),
+    excerpt: String(input.excerpt || existingPost.excerpt || "").trim(),
+    content: String(input.content || existingPost.content || "").trim(),
+    lyrics:
+      typeof input.lyrics === "string"
+        ? input.lyrics.trim()
+        : typeof existingPost.lyrics === "string"
+          ? existingPost.lyrics
+          : "",
+    createdAt: existingPost.createdAt || input.createdAt || new Date().toISOString(),
+    published: typeof input.published === "boolean" ? input.published : Boolean(existingPost.published),
+    collectionSlugs: [...new Set(requestedCollections.map((slug) => String(slug).trim()).filter((slug) => collectionSlugSet.has(slug)))]
+  };
+}
+
+function attachCollectionDetails(post, collections) {
+  return {
+    ...post,
+    collections: collections.filter((collection) => post.collectionSlugs.includes(collection.slug))
+  };
+}
+
+function buildCollectionSummary(collection, posts) {
+  const releases = posts.filter((post) => post.collectionSlugs.includes(collection.slug));
+  const featuredRelease =
+    releases.find((post) => post.slug === collection.featuredReleaseSlug) || releases[0] || null;
+
+  return {
+    ...collection,
+    featuredRelease,
+    releaseCount: releases.length
+  };
+}
+
+function normalizeAboutContent(input = {}, existingAbout = {}) {
+  return {
+    heroEyebrow: String(input.heroEyebrow || existingAbout.heroEyebrow || "").trim(),
+    heroTitle: String(input.heroTitle || existingAbout.heroTitle || "").trim(),
+    heroText: String(input.heroText || existingAbout.heroText || "").trim(),
+    artistEyebrow: String(input.artistEyebrow || existingAbout.artistEyebrow || "").trim(),
+    artistTitle: String(input.artistTitle || existingAbout.artistTitle || "").trim(),
+    artistText: String(input.artistText || existingAbout.artistText || "").trim(),
+    siteEyebrow: String(input.siteEyebrow || existingAbout.siteEyebrow || "").trim(),
+    siteTitle: String(input.siteTitle || existingAbout.siteTitle || "").trim(),
+    siteText: String(input.siteText || existingAbout.siteText || "").trim(),
+    quoteEyebrow: String(input.quoteEyebrow || existingAbout.quoteEyebrow || "").trim(),
+    quoteTitle: String(input.quoteTitle || existingAbout.quoteTitle || "").trim(),
+    quoteText: String(input.quoteText || existingAbout.quoteText || "").trim()
+  };
+}
 
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });
@@ -49,8 +121,12 @@ app.post("/api/admin/login", (req, res) => {
 
 app.get("/api/posts", async (req, res, next) => {
   try {
-    const posts = await readPosts();
-    res.json({ posts: posts.filter((post) => post.published) });
+    const store = await readStore();
+    const publishedPosts = store.posts
+      .filter((post) => post.published)
+      .map((post) => attachCollectionDetails(post, store.collections));
+
+    res.json({ posts: publishedPosts });
   } catch (error) {
     next(error);
   }
@@ -58,14 +134,57 @@ app.get("/api/posts", async (req, res, next) => {
 
 app.get("/api/posts/:slug", async (req, res, next) => {
   try {
-    const posts = await readPosts();
-    const post = posts.find((entry) => entry.slug === req.params.slug && entry.published);
+    const store = await readStore();
+    const post = store.posts.find((entry) => entry.slug === req.params.slug && entry.published);
 
     if (!post) {
       return res.status(404).json({ message: "Release not found." });
     }
 
-    return res.json({ post });
+    return res.json({ post: attachCollectionDetails(post, store.collections) });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/collections", async (req, res, next) => {
+  try {
+    const store = await readStore();
+    const publishedPosts = store.posts.filter((post) => post.published);
+    const collections = store.collections.map((collection) => buildCollectionSummary(collection, publishedPosts));
+
+    res.json({ collections });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/collections/:slug", async (req, res, next) => {
+  try {
+    const store = await readStore();
+    const collection = store.collections.find((entry) => entry.slug === req.params.slug);
+
+    if (!collection) {
+      return res.status(404).json({ message: "Collection not found." });
+    }
+
+    const releases = store.posts
+      .filter((post) => post.published && post.collectionSlugs.includes(collection.slug))
+      .map((post) => attachCollectionDetails(post, store.collections));
+
+    res.json({
+      collection: buildCollectionSummary(collection, releases),
+      releases
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/about", async (req, res, next) => {
+  try {
+    const store = await readStore();
+    res.json({ about: store.siteContent.about });
   } catch (error) {
     next(error);
   }
@@ -73,8 +192,11 @@ app.get("/api/posts/:slug", async (req, res, next) => {
 
 app.get("/api/admin/posts", requireAdmin, async (req, res, next) => {
   try {
-    const posts = await readPosts();
-    res.json({ posts });
+    const store = await readStore();
+    res.json({
+      posts: store.posts.map((post) => attachCollectionDetails(post, store.collections)),
+      collections: store.collections
+    });
   } catch (error) {
     next(error);
   }
@@ -82,26 +204,24 @@ app.get("/api/admin/posts", requireAdmin, async (req, res, next) => {
 
 app.post("/api/admin/posts", requireAdmin, async (req, res, next) => {
   try {
-    const posts = await readPosts();
-    const newPost = {
-      id: crypto.randomUUID(),
-      title: req.body.title?.trim() || "",
-      slug: slugify(req.body.title || ""),
-      videoUrl: req.body.videoUrl?.trim() || "",
-      excerpt: req.body.excerpt?.trim() || "",
-      content: req.body.content?.trim() || "",
-      lyrics: req.body.lyrics?.trim() || "",
-      createdAt: req.body.createdAt || new Date().toISOString(),
-      published: Boolean(req.body.published)
-    };
+    const store = await readStore();
+    const newPost = normalizePostInput(
+      {
+        ...req.body,
+        createdAt: req.body.createdAt || new Date().toISOString(),
+        published: Boolean(req.body.published)
+      },
+      store.collections,
+      { id: crypto.randomUUID() }
+    );
 
     if (!newPost.title || !newPost.videoUrl || !newPost.excerpt || !newPost.content) {
       return res.status(400).json({ message: "Title, video URL, excerpt, and content are required." });
     }
 
-    posts.unshift(newPost);
-    await writePosts(posts);
-    res.status(201).json({ post: newPost });
+    store.posts.unshift(newPost);
+    await writeStore(store);
+    res.status(201).json({ post: attachCollectionDetails(newPost, store.collections) });
   } catch (error) {
     next(error);
   }
@@ -109,28 +229,18 @@ app.post("/api/admin/posts", requireAdmin, async (req, res, next) => {
 
 app.put("/api/admin/posts/:id", requireAdmin, async (req, res, next) => {
   try {
-    const posts = await readPosts();
-    const index = posts.findIndex((post) => post.id === req.params.id);
+    const store = await readStore();
+    const index = store.posts.findIndex((post) => post.id === req.params.id);
 
     if (index === -1) {
       return res.status(404).json({ message: "Post not found." });
     }
 
-    const updated = {
-      ...posts[index],
-      title: req.body.title?.trim() || posts[index].title,
-      slug: slugify(req.body.title || posts[index].title),
-      videoUrl: req.body.videoUrl?.trim() || posts[index].videoUrl,
-      excerpt: req.body.excerpt?.trim() || posts[index].excerpt,
-      content: req.body.content?.trim() || posts[index].content,
-      lyrics: req.body.lyrics?.trim() ?? posts[index].lyrics,
-      createdAt: posts[index].createdAt,
-      published: typeof req.body.published === "boolean" ? req.body.published : posts[index].published
-    };
+    const updatedPost = normalizePostInput(req.body, store.collections, store.posts[index]);
 
-    posts[index] = updated;
-    await writePosts(posts);
-    res.json({ post: updated });
+    store.posts[index] = updatedPost;
+    await writeStore(store);
+    res.json({ post: attachCollectionDetails(updatedPost, store.collections) });
   } catch (error) {
     next(error);
   }
@@ -138,15 +248,137 @@ app.put("/api/admin/posts/:id", requireAdmin, async (req, res, next) => {
 
 app.delete("/api/admin/posts/:id", requireAdmin, async (req, res, next) => {
   try {
-    const posts = await readPosts();
-    const remaining = posts.filter((post) => post.id !== req.params.id);
+    const store = await readStore();
+    const remaining = store.posts.filter((post) => post.id !== req.params.id);
 
-    if (remaining.length === posts.length) {
+    if (remaining.length === store.posts.length) {
       return res.status(404).json({ message: "Post not found." });
     }
 
-    await writePosts(remaining);
+    store.posts = remaining;
+    await writeStore(store);
     res.json({ message: "Post deleted." });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/admin/collections", requireAdmin, async (req, res, next) => {
+  try {
+    const store = await readStore();
+    res.json({ collections: store.collections, posts: store.posts });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/admin/site-content", requireAdmin, async (req, res, next) => {
+  try {
+    const store = await readStore();
+    res.json({ siteContent: store.siteContent });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.put("/api/admin/site-content/about", requireAdmin, async (req, res, next) => {
+  try {
+    const store = await readStore();
+    const about = normalizeAboutContent(req.body, store.siteContent.about);
+
+    if (!about.heroTitle || !about.heroText || !about.artistTitle || !about.artistText) {
+      return res.status(400).json({ message: "Complete the main About sections before saving." });
+    }
+
+    store.siteContent = {
+      ...store.siteContent,
+      about
+    };
+
+    await writeStore(store);
+    res.json({ about });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/admin/collections", requireAdmin, async (req, res, next) => {
+  try {
+    const store = await readStore();
+    const collection = normalizeCollectionInput(req.body, { id: crypto.randomUUID() });
+
+    if (!collection.title || !collection.description) {
+      return res.status(400).json({ message: "Title and description are required." });
+    }
+
+    if (store.collections.some((entry) => entry.slug === collection.slug)) {
+      return res.status(400).json({ message: "A collection with that title already exists." });
+    }
+
+    store.collections.unshift(collection);
+    await writeStore(store);
+    res.status(201).json({ collection });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.put("/api/admin/collections/:id", requireAdmin, async (req, res, next) => {
+  try {
+    const store = await readStore();
+    const index = store.collections.findIndex((collection) => collection.id === req.params.id);
+
+    if (index === -1) {
+      return res.status(404).json({ message: "Collection not found." });
+    }
+
+    const previousCollection = store.collections[index];
+    const updatedCollection = normalizeCollectionInput(req.body, previousCollection);
+
+    if (!updatedCollection.title || !updatedCollection.description) {
+      return res.status(400).json({ message: "Title and description are required." });
+    }
+
+    const slugConflict = store.collections.some(
+      (collection) => collection.id !== previousCollection.id && collection.slug === updatedCollection.slug
+    );
+
+    if (slugConflict) {
+      return res.status(400).json({ message: "A collection with that title already exists." });
+    }
+
+    store.collections[index] = updatedCollection;
+    store.posts = store.posts.map((post) => ({
+      ...post,
+      collectionSlugs: post.collectionSlugs.map((slug) =>
+        slug === previousCollection.slug ? updatedCollection.slug : slug
+      )
+    }));
+
+    await writeStore(store);
+    res.json({ collection: updatedCollection });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.delete("/api/admin/collections/:id", requireAdmin, async (req, res, next) => {
+  try {
+    const store = await readStore();
+    const collection = store.collections.find((entry) => entry.id === req.params.id);
+
+    if (!collection) {
+      return res.status(404).json({ message: "Collection not found." });
+    }
+
+    store.collections = store.collections.filter((entry) => entry.id !== req.params.id);
+    store.posts = store.posts.map((post) => ({
+      ...post,
+      collectionSlugs: post.collectionSlugs.filter((slug) => slug !== collection.slug)
+    }));
+
+    await writeStore(store);
+    res.json({ message: "Collection deleted." });
   } catch (error) {
     next(error);
   }

@@ -1,5 +1,16 @@
-import { useEffect, useRef, useState } from "react";
-import { BrowserRouter, Link, Navigate, Route, Routes, useNavigate, useParams } from "react-router-dom";
+import { useDeferredValue, useEffect, useRef, useState } from "react";
+import {
+  BrowserRouter,
+  Link,
+  NavLink,
+  Navigate,
+  Outlet,
+  Route,
+  Routes,
+  useNavigate,
+  useOutletContext,
+  useParams
+} from "react-router-dom";
 
 const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
 const tokenKey = "suno-blog-admin-token";
@@ -12,8 +23,118 @@ const emptyPost = {
   content: "",
   lyrics: "",
   createdAt: "",
-  published: false
+  published: false,
+  collectionSlugs: []
 };
+
+const emptyCollection = {
+  title: "",
+  description: "",
+  featuredReleaseSlug: "",
+  theme: ""
+};
+
+const emptyAbout = {
+  heroEyebrow: "About",
+  heroTitle: "",
+  heroText: "",
+  artistEyebrow: "The Artist",
+  artistTitle: "",
+  artistText: "",
+  siteEyebrow: "The Site",
+  siteTitle: "",
+  siteText: "",
+  quoteEyebrow: "Why It Exists",
+  quoteTitle: "",
+  quoteText: ""
+};
+
+const COLLECTION_THEMES = {
+  default: {
+    worldEyebrow: "Collection",
+    worldTitlePrefix: "",
+    worldDescriptionPrefix: "",
+    featuredLabel: "Primary Release",
+    featuredAction: "View Full Record",
+    listLabel: "Latest Releases",
+    releaseNote: "Release Note",
+    lyrics: "Lyrics",
+    noItemsEyebrow: "No Published Releases",
+    noItemsTitle: "This collection exists, but nothing is live in it yet.",
+    noItemsText: "Add or publish a release to bring this lane of the archive to life.",
+    singleItemEyebrow: "Single Release Collection",
+    singleItemTitle: "This collection is currently anchored by one release.",
+    singleItemText:
+      "As more entries are added, they will stack here beneath the spotlight instead of leaving the page feeling unfinished.",
+    worldNoteTitle: "A note about this world",
+    worldNoteText: "Each collection is a different shelf in the archive, with its own tone and memory.",
+    itemName: "Release",
+    itemAction: "Open Release"
+  },
+  "soft-archive": {
+    worldEyebrow: "Soft Archive",
+    featuredLabel: "Primary Entry",
+    featuredAction: "Open Entry",
+    listLabel: "Recent Entries",
+    releaseNote: "Entry",
+    lyrics: "Words",
+    worldNoteTitle: "A note about this world",
+    worldNoteText: "Quiet songs do not need to be small. They just need enough room to stay gentle.",
+    itemName: "Entry",
+    itemAction: "Open Entry"
+  },
+  fractureverse: {
+    worldEyebrow: "Fractureverse",
+    featuredLabel: "Primary Timeline Fragment",
+    featuredAction: "View Full Record",
+    listLabel: "Timeline Fragments",
+    releaseNote: "Fragment Record",
+    lyrics: "Recovered Dialogue",
+    noItemsEyebrow: "No Fragments Detected",
+    noItemsTitle: "No fragments detected.",
+    noItemsText: "Either this world is newly formed,\nor something erased what came before.",
+    singleItemEyebrow: "Single Recorded Fragment",
+    singleItemTitle: "This world is currently anchored by one recorded fragment.",
+    singleItemText: "As more releases enter the Fractureverse, they will appear here as additional observed entries beneath the first fracture.",
+    worldNoteTitle: "Echo",
+    worldNoteText: "Some timelines collapse.\nSome repeat.\nSome are never meant to be found.",
+    itemName: "Fragment",
+    itemAction: "Open Fragment"
+  },
+  stage: {
+    worldEyebrow: "Stage",
+    featuredLabel: "Opening Act",
+    featuredAction: "Continue Act",
+    listLabel: "Acts",
+    releaseNote: "Performance Notes",
+    lyrics: "Script",
+    worldNoteTitle: "A note about this world",
+    worldNoteText: "Some songs are meant to arrive like entrances, spotlights, and final bows.",
+    itemName: "Act",
+    itemAction: "Open Act"
+  },
+  signal: {
+    worldEyebrow: "Signal",
+    featuredLabel: "Primary Transmission",
+    featuredAction: "Open Transmission",
+    listLabel: "Signals",
+    releaseNote: "Transmission Log",
+    lyrics: "Decoded Signal",
+    worldNoteTitle: "A note about this world",
+    worldNoteText: "What survives here sounds like a message from somewhere distant, imperfect, and still reaching back.",
+    itemName: "Signal",
+    itemAction: "Open Signal"
+  }
+};
+
+function getThemeConfig(theme) {
+  return COLLECTION_THEMES[theme] || COLLECTION_THEMES.default;
+}
+
+function getPrimaryThemeForPost(post) {
+  const themedCollection = (post?.collections || []).find((collection) => collection.theme);
+  return themedCollection?.theme || "default";
+}
 
 function App() {
   const [theme, setTheme] = useState(() => {
@@ -130,27 +251,18 @@ function App() {
       <audio ref={audioRef} preload="metadata" />
       <Routes>
         <Route
-          path="/"
-          element={
-            <PublicHome
-              hasAdminSession={hasAdminSession}
-              onPlayTrack={playTrack}
-              theme={theme}
-              setTheme={setTheme}
-            />
-          }
-        />
-        <Route
-          path="/release/:slug"
-          element={
-            <PublicReleasePage
-              hasAdminSession={hasAdminSession}
-              onPlayTrack={playTrack}
-              theme={theme}
-              setTheme={setTheme}
-            />
-          }
-        />
+          element={<PublicLayout hasAdminSession={hasAdminSession} theme={theme} setTheme={setTheme} />}
+        >
+          <Route index element={<PublicHome hasAdminSession={hasAdminSession} onPlayTrack={playTrack} />} />
+          <Route path="/collections" element={<CollectionsIndexPage />} />
+          <Route path="/collections/:slug" element={<CollectionDetailPage onPlayTrack={playTrack} />} />
+          <Route path="/explore" element={<ExplorePage onPlayTrack={playTrack} />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route
+            path="/release/:slug"
+            element={<PublicReleasePage hasAdminSession={hasAdminSession} onPlayTrack={playTrack} />}
+          />
+        </Route>
         <Route
           path="/admin/login"
           element={<AdminLogin setHasAdminSession={setHasAdminSession} theme={theme} setTheme={setTheme} />}
@@ -159,10 +271,15 @@ function App() {
           path="/admin"
           element={
             <ProtectedRoute>
-              <AdminDashboard setHasAdminSession={setHasAdminSession} theme={theme} setTheme={setTheme} />
+              <AdminLayout setHasAdminSession={setHasAdminSession} theme={theme} setTheme={setTheme} />
             </ProtectedRoute>
           }
-        />
+        >
+          <Route index element={<Navigate replace to="/admin/posts" />} />
+          <Route path="posts" element={<AdminPostsPage />} />
+          <Route path="collections" element={<AdminCollectionsPage />} />
+          <Route path="about" element={<AdminAboutPage />} />
+        </Route>
       </Routes>
       <MiniPlayer
         currentTrack={currentTrack}
@@ -189,79 +306,147 @@ function ThemeToggle({ theme, setTheme }) {
   );
 }
 
-function PublicHome({ hasAdminSession, onPlayTrack, theme, setTheme }) {
+function PublicLayout({ hasAdminSession, theme, setTheme }) {
+  return (
+    <div className="page-shell">
+      <header className="public-site-header">
+        <Link className="site-mark" to="/">
+          <span className="eyebrow">Suno Diary</span>
+          <strong>Releases, collections, and notes in one place.</strong>
+        </Link>
+        <div className="public-site-actions">
+          <nav className="site-nav" aria-label="Primary">
+            <NavLink className={({ isActive }) => `site-nav-link${isActive ? " active" : ""}`} to="/">
+              Home
+            </NavLink>
+            <NavLink className={({ isActive }) => `site-nav-link${isActive ? " active" : ""}`} to="/collections">
+              Collections
+            </NavLink>
+            <NavLink className={({ isActive }) => `site-nav-link${isActive ? " active" : ""}`} to="/explore">
+              Explore
+            </NavLink>
+            <NavLink className={({ isActive }) => `site-nav-link${isActive ? " active" : ""}`} to="/about">
+              About
+            </NavLink>
+          </nav>
+          <ThemeToggle setTheme={setTheme} theme={theme} />
+          {hasAdminSession ? (
+            <Link className="site-admin-link" to="/admin">
+              Manage Posts
+            </Link>
+          ) : (
+            <Link className="site-admin-link" to="/admin/login">
+              Admin Login
+            </Link>
+          )}
+        </div>
+      </header>
+      <Outlet />
+    </div>
+  );
+}
+
+function PublicHome({ hasAdminSession, onPlayTrack }) {
   const [posts, setPosts] = useState([]);
+  const [collections, setCollections] = useState([]);
   const [loading, setLoading] = useState(true);
   const featuredPost =
-    posts.find((post) => normalizeTitle(post.title) === "hope's song") || posts[0] || null;
+    posts.find((post) => normalizeTitle(post.title) === "hopes song") || posts[0] || null;
   const latestPosts = featuredPost ? posts.filter((post) => post.id !== featuredPost.id) : posts;
+  const featuredCollections = collections.slice(0, 3);
 
   useEffect(() => {
-    async function loadPosts() {
+    async function loadHomeData() {
       try {
-        const response = await fetch(`${apiBaseUrl}/posts`);
-        const data = await response.json();
-        setPosts(data.posts || []);
+        const [postsResponse, collectionsResponse] = await Promise.all([
+          fetch(`${apiBaseUrl}/posts`),
+          fetch(`${apiBaseUrl}/collections`)
+        ]);
+        const postsData = await postsResponse.json();
+        const collectionsData = await collectionsResponse.json();
+        setPosts(postsData.posts || []);
+        setCollections(collectionsData.collections || []);
       } catch (error) {
-        console.error("Failed to load posts", error);
+        console.error("Failed to load homepage data", error);
       } finally {
         setLoading(false);
       }
     }
 
-    loadPosts();
+    loadHomeData();
   }, []);
 
   return (
-    <div className="page-shell">
+    <>
       <header className="hero homepage-hero">
-        <div className="hero-header-row">
-          <p className="eyebrow">Suno Diary</p>
-          <ThemeToggle setTheme={setTheme} theme={theme} />
-        </div>
-
         <div className="homepage-hero-grid">
           <div className="hero-copy-block">
-            <h1>A quiet corner for my Suno releases, late-night drafts, and the stories behind each song.</h1>
+            <p className="eyebrow">Suno Diary</p>
+            <h1>A soft archive for releases, collections, and the stories that let each song keep breathing.</h1>
             <p className="hero-copy">
-              This is where I archive each release with a little more context: the finished track, the video version,
-              lyric fragments, production notes, and whatever was happening around the song when it finally clicked.
+              Browse curated groupings, move through release notes with more context, and treat the site less like a
+              feed and more like a small world of connected songs.
             </p>
-
             <div className="hero-links-row">
-              <a className="hero-link" href="#latest-releases">
-                Explore Releases
+              {featuredPost ? (
+                <button className="hero-link" onClick={() => onPlayTrack(featuredPost)} type="button">
+                  Play Featured Release
+                </button>
+              ) : null}
+              <a className="hero-link secondary-link" href="#latest-releases">
+                Jump to Latest Releases
               </a>
-              {hasAdminSession ? (
-                <Link className="hero-link secondary-link" to="/admin">
-                  Manage Posts
-                </Link>
-              ) : (
-                <Link className="hero-link secondary-link" to="/admin/login">
-                  Admin Login
-                </Link>
-              )}
             </div>
           </div>
 
           <div className="hero-note-card">
-            <p className="note-label">What Lives Here</p>
-            <h2>Song drops, release notes, and the small details that make each track feel personal.</h2>
+            <p className="note-label">What Changed</p>
+            <h2>Discovery is part of the identity now, not just a homepage feed.</h2>
             <p>
-              Think of it as part listening room, part notebook: a place for Suno posts, embedded media, lyric excerpts,
-              and the creative notes that usually stay off the timeline.
+              Collections organize releases into verses, moods, and projects. Explore lets you search by title and
+              written notes. About frames the artist, the site, and the reason this archive exists.
             </p>
+            <div className="hero-note-stats">
+              <span className="meta-badge">{loading ? "..." : `${posts.length} releases`}</span>
+              <span className="meta-badge subtle-badge">{loading ? "..." : `${collections.length} curated paths`}</span>
+            </div>
           </div>
         </div>
       </header>
 
       <main className="content-grid">
+        <section className="home-transition-grid">
+          <article className="intro-card homepage-panel transition-card">
+            <p className="eyebrow">Browse</p>
+            <h2>Move through the archive by collection instead of only by chronology.</h2>
+            <p>
+              Collections turn the catalog into verses, projects, moods, and small emotional shelves rather than one
+              uninterrupted stream.
+            </p>
+            <Link className="card-link" to="/collections">
+              See the collection shelves
+            </Link>
+          </article>
+          <article className="intro-card homepage-panel transition-card">
+            <p className="eyebrow">Find</p>
+            <h2>Search inside release notes, titles, and lyrics when you know the feeling but not the page.</h2>
+            <p>
+              The explore view is built for rediscovery: search by phrase, narrow by collection, and jump straight into
+              the release that fits.
+            </p>
+            <Link className="card-link" to="/explore">
+              Open explore
+            </Link>
+          </article>
+        </section>
+
         <section className="intro-card homepage-panel">
-          <p className="eyebrow">About This Blog</p>
-          <h2>A personal home for releases, track stories, and behind-the-song notes</h2>
+          <p className="eyebrow">Site Identity</p>
+          <h2>A personal home for releases, track stories, and the discovery paths between them</h2>
           <p>
-            Each post is meant to hold more than a title card. Alongside the music, I want room for release context,
-            visual uploads, process notes, and the little story fragments that give each post a life of its own.
+            Each page still keeps the music close, but now the archive has a stronger structure: releases can live in
+            more than one collection, search can surface them by title or text, and the site has space to explain the
+            artist voice behind the catalog.
           </p>
           <p className="identity-line">A collection of songs, stories, and moments in motion.</p>
         </section>
@@ -272,7 +457,6 @@ function PublicHome({ hasAdminSession, onPlayTrack, theme, setTheme }) {
               <h2>Featured Release</h2>
               <span>Now Playing</span>
             </div>
-
             <Link className="featured-release-link" to={`/release/${featuredPost.slug}`}>
               <article className="intro-card homepage-panel featured-release-card">
                 <div className="featured-release-media">
@@ -280,13 +464,21 @@ function PublicHome({ hasAdminSession, onPlayTrack, theme, setTheme }) {
                   <div className="release-card-overlay" />
                   <div className="play-pill featured-play-pill">Featured</div>
                 </div>
-
                 <div className="featured-release-copy">
                   <p className="eyebrow">New Drop</p>
                   <h3>{featuredPost.title}</h3>
-                  <p className="featured-release-intro">An emotional release entry with the song front and center, followed by the note behind it.</p>
+                  <p className="featured-release-intro">
+                    A focused release entry with the song front and center, followed by the note behind it.
+                  </p>
                   <p className="featured-release-excerpt">{featuredPost.excerpt}</p>
                   <p className="meta">{formatPostDate(featuredPost.createdAt)}</p>
+                  <div className="tag-row">
+                    {featuredPost.collections?.map((collection) => (
+                      <Link className="collection-chip" key={collection.slug} to={`/collections/${collection.slug}`}>
+                        {collection.title}
+                      </Link>
+                    ))}
+                  </div>
                   <div className="featured-release-actions">
                     <button
                       className="secondary-button mini-player-trigger"
@@ -306,12 +498,23 @@ function PublicHome({ hasAdminSession, onPlayTrack, theme, setTheme }) {
           </section>
         ) : null}
 
+        <section>
+          <div className="section-head">
+            <h2>Collections</h2>
+            <span>{loading ? "Loading..." : `${collections.length} curated paths`}</span>
+          </div>
+          <div className="collection-grid">
+            {featuredCollections.map((collection) => (
+              <CollectionCard key={collection.id} collection={collection} />
+            ))}
+          </div>
+        </section>
+
         <section id="latest-releases">
           <div className="section-head">
             <h2>Latest Releases</h2>
             <span>{loading ? "Loading..." : `${latestPosts.length} releases`}</span>
           </div>
-
           {!loading && posts.length === 0 ? (
             <section className="intro-card homepage-panel empty-state-card">
               <p className="eyebrow">No Releases Yet</p>
@@ -327,41 +530,413 @@ function PublicHome({ hasAdminSession, onPlayTrack, theme, setTheme }) {
           ) : (
             <div className="post-grid latest-release-grid">
               {latestPosts.map((post) => (
-                <Link className="release-card-link" key={post.id} to={`/release/${post.slug}`}>
-                  <article className="post-card homepage-post-card release-feed-card">
-                    <div className="release-card-media">
-                      <video className="post-media" muted playsInline preload="metadata" src={post.videoUrl} />
-                      <div className="release-card-overlay" />
-                      <div className="play-pill">Play</div>
-                      <div className="release-card-arrow">{"Play ->"}</div>
-                    </div>
-                    <div className="post-body">
-                      <p className="meta">{formatPostDate(post.createdAt)}</p>
-                      <h3>{post.title}</h3>
-                      <p>{post.excerpt}</p>
-                      <button
-                        className="secondary-button mini-player-trigger"
-                        onClick={(event) => {
-                          event.preventDefault();
-                          onPlayTrack(post);
-                        }}
-                        type="button"
-                      >
-                        Play in Mini Player
-                      </button>
-                    </div>
-                  </article>
-                </Link>
+                <ReleaseCard key={post.id} onPlayTrack={onPlayTrack} post={post} />
               ))}
             </div>
           )}
         </section>
       </main>
-    </div>
+    </>
   );
 }
 
-function PublicReleasePage({ hasAdminSession, onPlayTrack, theme, setTheme }) {
+function CollectionsIndexPage() {
+  const [collections, setCollections] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadCollections() {
+      try {
+        const response = await fetch(`${apiBaseUrl}/collections`);
+        const data = await response.json();
+        setCollections(data.collections || []);
+      } catch (error) {
+        console.error("Failed to load collections", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadCollections();
+  }, []);
+
+  return (
+    <>
+      <header className="hero homepage-hero section-hero">
+        <p className="eyebrow">Collections</p>
+        <h1>Curated groups for verses, projects, moods, and recurring worlds.</h1>
+        <p className="hero-copy">
+          Collections give the archive stronger shape: some are emotional lanes, some are projects, and some are just
+          the releases that clearly belong together.
+        </p>
+      </header>
+
+      <main className="content-grid">
+        <section>
+          <div className="section-head">
+            <h2>All Collections</h2>
+            <span>{loading ? "Loading..." : `${collections.length} collections`}</span>
+          </div>
+          {collections.length === 0 && !loading ? (
+            <section className="intro-card homepage-panel empty-state-card">
+              <p className="eyebrow">No Collections Yet</p>
+              <h3>The archive is still taking shape.</h3>
+              <p>Collections will appear here as soon as they are added.</p>
+            </section>
+          ) : (
+            <div className="collection-grid collection-index-grid">
+              {collections.map((collection) => (
+                <CollectionCard key={collection.id} collection={collection} showFeatured />
+              ))}
+            </div>
+          )}
+        </section>
+      </main>
+    </>
+  );
+}
+
+function CollectionDetailPage({ onPlayTrack }) {
+  const { slug } = useParams();
+  const [collection, setCollection] = useState(null);
+  const [releases, setReleases] = useState([]);
+  const [collections, setCollections] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    async function loadCollection() {
+      try {
+        const [collectionResponse, collectionsResponse] = await Promise.all([
+          fetch(`${apiBaseUrl}/collections/${slug}`),
+          fetch(`${apiBaseUrl}/collections`)
+        ]);
+        const data = await collectionResponse.json();
+        const collectionsData = await collectionsResponse.json();
+
+        if (!collectionResponse.ok) {
+          throw new Error(data.message || "Failed to load collection.");
+        }
+
+        setCollection(data.collection);
+        setReleases(data.releases || []);
+        setCollections(collectionsData.collections || []);
+      } catch (apiError) {
+        setError(apiError.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadCollection();
+  }, [slug]);
+
+  const featuredRelease = collection?.featuredRelease || releases[0] || null;
+  const otherReleases = releases.filter((post) => post.slug !== featuredRelease?.slug);
+  const themeConfig = getThemeConfig(collection?.theme);
+  const timelineReleases = featuredRelease ? [featuredRelease, ...otherReleases] : releases;
+
+  useEffect(() => {
+    const root = document.documentElement;
+
+    if (collection?.theme) {
+      root.setAttribute("data-collection-theme", collection.theme);
+      return () => {
+        root.removeAttribute("data-collection-theme");
+      };
+    }
+
+    root.removeAttribute("data-collection-theme");
+    return () => {
+      root.removeAttribute("data-collection-theme");
+    };
+  }, [collection?.theme]);
+
+  return (
+    <>
+      <header className={`section-hero world-header ${collection?.theme ? `world-header-${collection.theme}` : ""}`}>
+        {loading ? <h1>Loading collection...</h1> : null}
+        {error ? <p className="error-text">{error}</p> : null}
+        {collection ? (
+          <div className="world-header-inner">
+            <p className="eyebrow">{themeConfig.worldEyebrow}</p>
+            <h1>{collection.title}</h1>
+            <p className="hero-copy world-header-copy">{collection.description}</p>
+            <div className="collection-meta-row world-header-meta">
+              <span className="meta-badge">{collection.releaseCount} releases</span>
+              {collection.featuredRelease ? (
+                <Link className="collection-chip" to={`/release/${collection.featuredRelease.slug}`}>
+                  Featured: {collection.featuredRelease.title}
+                </Link>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+      </header>
+
+      {collection ? (
+        <main className="content-grid">
+          {featuredRelease ? (
+            <section className="collection-fragment-shell">
+              <article className="intro-card homepage-panel collection-fragment-card">
+                <div className="collection-fragment-media">
+                  <video className="featured-release-video" muted playsInline preload="metadata" src={featuredRelease.videoUrl} />
+                  <div className="release-card-overlay" />
+                  <div className="play-pill featured-play-pill">{themeConfig.featuredLabel}</div>
+                </div>
+                <div className="collection-fragment-copy">
+                  <p className="eyebrow">{themeConfig.featuredLabel}</p>
+                  <h2>{featuredRelease.title}</h2>
+                  <p className="collection-fragment-excerpt">{featuredRelease.excerpt}</p>
+                  <p className="collection-fragment-context">
+                    {collection.theme === "fractureverse"
+                      ? "An anchor point inside the fracture: a record that holds one possible version of the world in place."
+                      : "The featured release acts as the clearest entry point into this collection before the rest of the archive opens beneath it."}
+                  </p>
+                  <div className="tag-row">
+                    {(featuredRelease.collections || []).map((entry) => (
+                      <span className="collection-chip static-chip" key={entry.slug}>
+                        {entry.title}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="featured-release-actions">
+                    <button
+                      className="secondary-button mini-player-trigger"
+                      onClick={() => onPlayTrack(featuredRelease)}
+                      type="button"
+                    >
+                      Play in Mini Player
+                    </button>
+                    <Link className="hero-link" to={`/release/${featuredRelease.slug}`}>
+                      {themeConfig.featuredAction}
+                    </Link>
+                  </div>
+                </div>
+              </article>
+            </section>
+          ) : null}
+
+          <section>
+            <div className="section-head">
+              <h2>{themeConfig.listLabel}</h2>
+              <span>{timelineReleases.length} entries</span>
+            </div>
+            {timelineReleases.length === 0 ? (
+              <section className="intro-card homepage-panel empty-state-card">
+                <p className="eyebrow">{themeConfig.noItemsEyebrow}</p>
+                <h3>{themeConfig.noItemsTitle}</h3>
+                <p>{themeConfig.noItemsText}</p>
+              </section>
+            ) : timelineReleases.length === 1 ? (
+              <section className="intro-card homepage-panel collection-archive-note">
+                <p className="eyebrow">{themeConfig.singleItemEyebrow}</p>
+                <h3>{themeConfig.singleItemTitle}</h3>
+                <p>{themeConfig.singleItemText}</p>
+              </section>
+            ) : (
+              <div className="timeline-grid">
+                {timelineReleases.map((post, index) => (
+                  <TimelineCard
+                    index={index}
+                    key={post.id}
+                    onPlayTrack={onPlayTrack}
+                    post={post}
+                    themeConfig={themeConfig}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="intro-card homepage-panel world-note-card">
+            <p className="eyebrow">{themeConfig.worldNoteTitle}</p>
+            <h3>{themeConfig.worldNoteText}</h3>
+          </section>
+        </main>
+      ) : null}
+    </>
+  );
+}
+
+function ExplorePage({ onPlayTrack }) {
+  const [posts, setPosts] = useState([]);
+  const [collections, setCollections] = useState([]);
+  const [query, setQuery] = useState("");
+  const [selectedCollection, setSelectedCollection] = useState("all");
+  const [loading, setLoading] = useState(true);
+  const deferredQuery = useDeferredValue(query);
+  const normalizedQuery = deferredQuery.trim().toLowerCase();
+
+  useEffect(() => {
+    async function loadExploreData() {
+      try {
+        const [postsResponse, collectionsResponse] = await Promise.all([
+          fetch(`${apiBaseUrl}/posts`),
+          fetch(`${apiBaseUrl}/collections`)
+        ]);
+        const postsData = await postsResponse.json();
+        const collectionsData = await collectionsResponse.json();
+        setPosts(postsData.posts || []);
+        setCollections(collectionsData.collections || []);
+      } catch (error) {
+        console.error("Failed to load explore data", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadExploreData();
+  }, []);
+
+  const filteredPosts = posts.filter((post) => {
+    const matchesCollection =
+      selectedCollection === "all" || (post.collectionSlugs || []).includes(selectedCollection);
+    const searchHaystack = [post.title, post.excerpt, post.content, post.lyrics].join(" ").toLowerCase();
+    const matchesQuery = !normalizedQuery || searchHaystack.includes(normalizedQuery);
+
+    return matchesCollection && matchesQuery;
+  });
+
+  return (
+    <>
+      <header className="hero homepage-hero section-hero">
+        <div className="explore-hero-grid">
+          <div>
+            <p className="eyebrow">Explore</p>
+            <h1>Search the archive by title, release notes, and collection.</h1>
+            <p className="hero-copy">
+              Explore is the utility layer of the site: search by phrase, switch lanes with collection filters, and
+              move from loose memory to the exact release page you wanted.
+            </p>
+          </div>
+          <div className="hero-note-card explore-summary-card">
+            <p className="note-label">Search Surface</p>
+            <label className="search-field">
+              Find a release
+              <input
+                className="explore-search-input"
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Search titles, notes, lyrics, and excerpts"
+                type="search"
+                value={query}
+              />
+            </label>
+            <div className="collection-meta-row">
+              <span className="meta-badge">{loading ? "..." : `${filteredPosts.length} matches`}</span>
+              <span className="meta-badge subtle-badge">
+                {selectedCollection === "all"
+                  ? "All collections"
+                  : collections.find((collection) => collection.slug === selectedCollection)?.title || "Filtered"}
+              </span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="content-grid">
+        <section className="intro-card homepage-panel explore-toolbar">
+          <div className="filter-field">
+            <p className="eyebrow">Filter By Collection</p>
+            <div className="filter-chip-row">
+              <button
+                className={`filter-chip${selectedCollection === "all" ? " active" : ""}`}
+                onClick={() => setSelectedCollection("all")}
+                type="button"
+              >
+                All collections
+              </button>
+              {collections.map((collection) => (
+                <button
+                  className={`filter-chip${selectedCollection === collection.slug ? " active" : ""}`}
+                  key={collection.id}
+                  onClick={() => setSelectedCollection(collection.slug)}
+                  type="button"
+                >
+                  {collection.title}
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <div className="section-head">
+            <h2>Results</h2>
+            <span>{loading ? "Loading..." : `${filteredPosts.length} matches`}</span>
+          </div>
+
+          {!loading && filteredPosts.length === 0 ? (
+            <section className="intro-card homepage-panel empty-state-card">
+              <p className="eyebrow">No Matches</p>
+              <h3>Nothing lines up with that search yet.</h3>
+              <p>Try a broader phrase or switch the collection filter back to all collections.</p>
+            </section>
+          ) : (
+            <div className="results-grid">
+              {filteredPosts.map((post) => (
+                <ReleaseCard key={post.id} layout="horizontal" onPlayTrack={onPlayTrack} post={post} />
+              ))}
+            </div>
+          )}
+        </section>
+      </main>
+    </>
+  );
+}
+
+function AboutPage() {
+  const [about, setAbout] = useState(emptyAbout);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadAbout() {
+      try {
+        const response = await fetch(`${apiBaseUrl}/about`);
+        const data = await response.json();
+        setAbout({ ...emptyAbout, ...(data.about || {}) });
+      } catch (error) {
+        console.error("Failed to load about content", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadAbout();
+  }, []);
+
+  return (
+    <>
+      <header className="hero homepage-hero section-hero">
+        <p className="eyebrow">{about.heroEyebrow}</p>
+        <h1>{loading ? "Loading about page..." : about.heroTitle}</h1>
+        <p className="hero-copy">{about.heroText}</p>
+      </header>
+
+      <main className="content-grid about-grid">
+        <section className="intro-card homepage-panel">
+          <p className="eyebrow">{about.artistEyebrow}</p>
+          <h2>{about.artistTitle}</h2>
+          <p>{about.artistText}</p>
+        </section>
+
+        <section className="intro-card homepage-panel">
+          <p className="eyebrow">{about.siteEyebrow}</p>
+          <h2>{about.siteTitle}</h2>
+          <p>{about.siteText}</p>
+        </section>
+
+        <section className="intro-card homepage-panel about-quote-card">
+          <p className="eyebrow">{about.quoteEyebrow}</p>
+          <h2>{about.quoteTitle}</h2>
+          <p className="identity-line">{about.quoteText}</p>
+        </section>
+      </main>
+    </>
+  );
+}
+
+function PublicReleasePage({ hasAdminSession, onPlayTrack }) {
   const { slug } = useParams();
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -389,13 +964,19 @@ function PublicReleasePage({ hasAdminSession, onPlayTrack, theme, setTheme }) {
     loadPost();
   }, [slug]);
 
+  const primaryTheme = getPrimaryThemeForPost(post);
+  const labels = getThemeConfig(primaryTheme);
+
   return (
-    <div className="page-shell">
+    <>
       <header className="hero homepage-hero release-hero">
         <div className="hero-header-row">
           <div className="public-page-links">
             <Link className="back-link" to="/">
               Back to home
+            </Link>
+            <Link className="back-link" to="/collections">
+              Browse collections
             </Link>
             {hasAdminSession ? (
               <Link className="back-link" to="/admin">
@@ -403,7 +984,6 @@ function PublicReleasePage({ hasAdminSession, onPlayTrack, theme, setTheme }) {
               </Link>
             ) : null}
           </div>
-          <ThemeToggle setTheme={setTheme} theme={theme} />
         </div>
         {loading ? <h1>Loading release...</h1> : null}
         {error ? <p className="error-text">{error}</p> : null}
@@ -415,9 +995,18 @@ function PublicReleasePage({ hasAdminSession, onPlayTrack, theme, setTheme }) {
             <div className="release-hero-copy">
               <p className="eyebrow">Release Entry</p>
               <h1>{post.title}</h1>
-              <p className="release-hero-intro">A focused listening view for the video, the note behind it, and the words that shaped the release.</p>
+              <p className="release-hero-intro">
+                A focused listening view for the video, the note behind it, and the words that shaped the release.
+              </p>
               <p className="hero-copy">{post.excerpt}</p>
               <p className="meta">{formatPostDate(post.createdAt)}</p>
+              <div className="tag-row">
+                {post.collections?.map((collection) => (
+                  <Link className="collection-chip" key={collection.slug} to={`/collections/${collection.slug}`}>
+                    {collection.title}
+                  </Link>
+                ))}
+              </div>
               <div className="release-hero-actions">
                 <button className="secondary-button mini-player-trigger" onClick={() => onPlayTrack(post)} type="button">
                   Play in Mini Player
@@ -431,7 +1020,7 @@ function PublicReleasePage({ hasAdminSession, onPlayTrack, theme, setTheme }) {
       {post ? (
         <main className="content-grid release-detail-grid">
           <section className="intro-card homepage-panel release-copy-panel">
-            <p className="eyebrow">Release Note</p>
+            <p className="eyebrow">{labels.releaseNote}</p>
             <div className="release-prose">
               {post.content.split("\n").filter(Boolean).map((paragraph, index) => (
                 <p key={`${post.id}-content-${index}`}>{paragraph}</p>
@@ -443,11 +1032,11 @@ function PublicReleasePage({ hasAdminSession, onPlayTrack, theme, setTheme }) {
             <section className="intro-card homepage-panel lyrics-panel">
               <div className="lyrics-header">
                 <div>
-                  <p className="eyebrow">Lyrics</p>
-                  <h2>Words behind the release</h2>
+                  <p className="eyebrow">{labels.lyrics}</p>
+                  <h2>{labels.lyrics}</h2>
                 </div>
                 <button className="secondary-button lyrics-toggle" onClick={() => setShowLyrics((current) => !current)} type="button">
-                  {showLyrics ? "Hide Lyrics" : "Show Lyrics"}
+                  {showLyrics ? `Hide ${labels.lyrics}` : `Show ${labels.lyrics}`}
                 </button>
               </div>
               {showLyrics ? <pre className="lyrics-block">{post.lyrics}</pre> : <p className="lyrics-placeholder">Open the lyrics when you want to read along.</p>}
@@ -455,7 +1044,7 @@ function PublicReleasePage({ hasAdminSession, onPlayTrack, theme, setTheme }) {
           ) : null}
         </main>
       ) : null}
-    </div>
+    </>
   );
 }
 
@@ -534,29 +1123,46 @@ function AdminLogin({ setHasAdminSession, theme, setTheme }) {
   }
 
   return (
-    <div className="page-shell narrow-shell">
-      <form className="auth-card" onSubmit={handleSubmit}>
-        <div className="hero-header-row auth-header-row">
-          <div>
-            <p className="eyebrow">Admin Only</p>
-            <h1>Login</h1>
+    <div className="page-shell auth-shell">
+      <div className="auth-page-grid">
+        <section className="hero homepage-hero auth-intro-panel">
+          <div className="hero-header-row auth-header-row">
+            <Link className="back-link" to="/">
+              Back to site
+            </Link>
+            <ThemeToggle setTheme={setTheme} theme={theme} />
           </div>
-          <ThemeToggle setTheme={setTheme} theme={theme} />
-        </div>
-        <label>
-          Email
-          <input onChange={(event) => setEmail(event.target.value)} required type="email" value={email} />
-        </label>
-        <label>
-          Password
-          <input onChange={(event) => setPassword(event.target.value)} required type="password" value={password} />
-        </label>
-        {error ? <p className="error-text">{error}</p> : null}
-        <button type="submit">{submitting ? "Signing in..." : "Login"}</button>
-        <Link className="back-link" to="/">
-          Back to site
-        </Link>
-      </form>
+          <p className="eyebrow">Admin Only</p>
+          <h1>Step back into the archive and shape what visitors discover.</h1>
+          <p className="hero-copy">
+            The admin side manages releases, collections, and the About page. It should feel like the working room
+            behind the public-facing archive, not a disconnected utility page.
+          </p>
+          <div className="hero-note-card auth-note-card">
+            <p className="note-label">Inside The Workspace</p>
+            <h2>Posts, collections, and site identity in one place.</h2>
+            <p>Sign in to update release notes, curate collection shelves, and keep the archive voice consistent.</p>
+          </div>
+        </section>
+
+        <form className="auth-card auth-login-card" onSubmit={handleSubmit}>
+          <div className="auth-form-intro">
+            <p className="eyebrow">Welcome Back</p>
+            <h2>Admin Login</h2>
+            <p>Use your admin credentials to manage the site.</p>
+          </div>
+          <label>
+            Email
+            <input onChange={(event) => setEmail(event.target.value)} required type="email" value={email} />
+          </label>
+          <label>
+            Password
+            <input onChange={(event) => setPassword(event.target.value)} required type="password" value={password} />
+          </label>
+          {error ? <p className="error-text">{error}</p> : null}
+          <button type="submit">{submitting ? "Signing in..." : "Login"}</button>
+        </form>
+      </div>
     </div>
   );
 }
@@ -571,18 +1177,26 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
-function AdminDashboard({ setHasAdminSession, theme, setTheme }) {
+function AdminLayout({ setHasAdminSession, theme, setTheme }) {
   const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
+  const [collections, setCollections] = useState([]);
   const [form, setForm] = useState(emptyPost);
+  const [collectionForm, setCollectionForm] = useState(emptyCollection);
+  const [aboutForm, setAboutForm] = useState(emptyAbout);
   const [editingId, setEditingId] = useState("");
+  const [editingCollectionId, setEditingCollectionId] = useState("");
   const [selectedVideoFile, setSelectedVideoFile] = useState(null);
   const [error, setError] = useState("");
   const [uploadError, setUploadError] = useState("");
   const [saveMessage, setSaveMessage] = useState("");
+  const [collectionMessage, setCollectionMessage] = useState("");
+  const [aboutMessage, setAboutMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [savingCollection, setSavingCollection] = useState(false);
+  const [savingAbout, setSavingAbout] = useState(false);
 
   function authToken() {
     return localStorage.getItem(tokenKey);
@@ -595,36 +1209,59 @@ function AdminDashboard({ setHasAdminSession, theme, setTheme }) {
     };
   }
 
-  async function loadPosts() {
+  async function loadAdminData() {
     try {
       setLoading(true);
       setError("");
-      const response = await fetch(`${apiBaseUrl}/admin/posts`, {
-        headers: authHeaders()
-      });
-      const data = await response.json();
+      const [postsResponse, collectionsResponse, siteContentResponse] = await Promise.all([
+        fetch(`${apiBaseUrl}/admin/posts`, { headers: authHeaders() }),
+        fetch(`${apiBaseUrl}/admin/collections`, { headers: authHeaders() }),
+        fetch(`${apiBaseUrl}/admin/site-content`, { headers: authHeaders() })
+      ]);
 
-      if (response.status === 401) {
+      if (postsResponse.status === 401 || collectionsResponse.status === 401 || siteContentResponse.status === 401) {
         localStorage.removeItem(tokenKey);
         setHasAdminSession(false);
         navigate("/admin/login");
         return;
       }
 
-      setPosts(data.posts || []);
+      const postsData = await postsResponse.json();
+      const collectionsData = await collectionsResponse.json();
+      const siteContentData = await siteContentResponse.json();
+      setPosts(postsData.posts || []);
+      setCollections(collectionsData.collections || []);
+      setAboutForm({ ...emptyAbout, ...(siteContentData.siteContent?.about || {}) });
     } catch (apiError) {
-      setError("Failed to load admin posts.");
+      setError("Failed to load admin data.");
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    loadPosts();
+    loadAdminData();
   }, []);
 
   function updateField(key, value) {
     setForm((current) => ({ ...current, [key]: value }));
+  }
+
+  function updateCollectionForm(key, value) {
+    setCollectionForm((current) => ({ ...current, [key]: value }));
+  }
+
+  function updateAboutForm(key, value) {
+    setAboutForm((current) => ({ ...current, [key]: value }));
+  }
+
+  function togglePostCollection(slug) {
+    setForm((current) => ({
+      ...current,
+      collectionSlugs: current.collectionSlugs.includes(slug)
+        ? current.collectionSlugs.filter((entry) => entry !== slug)
+        : [...current.collectionSlugs, slug]
+    }));
   }
 
   function startEdit(post) {
@@ -638,9 +1275,32 @@ function AdminDashboard({ setHasAdminSession, theme, setTheme }) {
       content: post.content,
       lyrics: post.lyrics,
       createdAt: post.createdAt,
-      published: post.published
+      published: post.published,
+      collectionSlugs: post.collectionSlugs || []
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function startCollectionEdit(collection) {
+    setEditingCollectionId(collection.id);
+    setCollectionForm({
+      title: collection.title,
+      description: collection.description,
+      featuredReleaseSlug: collection.featuredReleaseSlug || "",
+      theme: collection.theme || ""
+    });
+  }
+
+  function resetPostForm() {
+    setForm(emptyPost);
+    setEditingId("");
+    setSelectedVideoFile(null);
+    setUploadError("");
+  }
+
+  function resetCollectionForm() {
+    setCollectionForm(emptyCollection);
+    setEditingCollectionId("");
   }
 
   async function handleVideoUpload() {
@@ -698,23 +1358,77 @@ function AdminDashboard({ setHasAdminSession, theme, setTheme }) {
         headers: authHeaders(),
         body: JSON.stringify(form)
       });
-
       const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.message || "Save failed.");
       }
 
-      setForm(emptyPost);
-      setEditingId("");
-      setSelectedVideoFile(null);
-      setUploadError("");
+      resetPostForm();
       setSaveMessage("Release saved successfully.");
-      await loadPosts();
+      await loadAdminData();
     } catch (apiError) {
       setError(apiError.message);
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleCollectionSubmit(event) {
+    event.preventDefault();
+    setSavingCollection(true);
+    setCollectionMessage("");
+    setError("");
+
+    try {
+      const response = await fetch(
+        editingCollectionId ? `${apiBaseUrl}/admin/collections/${editingCollectionId}` : `${apiBaseUrl}/admin/collections`,
+        {
+          method: editingCollectionId ? "PUT" : "POST",
+          headers: authHeaders(),
+          body: JSON.stringify(collectionForm)
+        }
+      );
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Save failed.");
+      }
+
+      resetCollectionForm();
+      setCollectionMessage("Collection saved successfully.");
+      await loadAdminData();
+    } catch (apiError) {
+      setError(apiError.message);
+    } finally {
+      setSavingCollection(false);
+    }
+  }
+
+  async function handleAboutSubmit(event) {
+    event.preventDefault();
+    setSavingAbout(true);
+    setAboutMessage("");
+    setError("");
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/admin/site-content/about`, {
+        method: "PUT",
+        headers: authHeaders(),
+        body: JSON.stringify(aboutForm)
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Save failed.");
+      }
+
+      setAboutForm({ ...emptyAbout, ...(data.about || {}) });
+      setAboutMessage("About page saved successfully.");
+    } catch (apiError) {
+      setError(apiError.message);
+    } finally {
+      setSavingAbout(false);
     }
   }
 
@@ -727,9 +1441,24 @@ function AdminDashboard({ setHasAdminSession, theme, setTheme }) {
         method: "DELETE",
         headers: authHeaders()
       });
-      await loadPosts();
+      await loadAdminData();
     } catch (apiError) {
       setError("Delete failed.");
+    }
+  }
+
+  async function handleCollectionDelete(id) {
+    const confirmed = window.confirm("Delete this collection?");
+    if (!confirmed) return;
+
+    try {
+      await fetch(`${apiBaseUrl}/admin/collections/${id}`, {
+        method: "DELETE",
+        headers: authHeaders()
+      });
+      await loadAdminData();
+    } catch (apiError) {
+      setError("Collection delete failed.");
     }
   }
 
@@ -741,12 +1470,13 @@ function AdminDashboard({ setHasAdminSession, theme, setTheme }) {
 
   return (
     <div className="page-shell">
-      <header className="hero compact-hero">
-        <div>
+      <header className="hero compact-hero admin-hero">
+        <div className="admin-hero-copy">
           <p className="eyebrow">Admin Dashboard</p>
-          <h1>Manage Posts</h1>
+          <h1>Manage Site Content</h1>
+          <p className="admin-hero-note">Posts, collections, and about content in one workspace.</p>
         </div>
-        <div className="hero-actions-row">
+        <div className="hero-actions-row admin-hero-actions">
           <ThemeToggle setTheme={setTheme} theme={theme} />
           <Link className="hero-link secondary-link" to="/">
             View Site
@@ -757,97 +1487,502 @@ function AdminDashboard({ setHasAdminSession, theme, setTheme }) {
         </div>
       </header>
 
-      <main className="admin-grid">
-        <section className="intro-card">
-          <h2>{editingId ? "Edit Post" : "Create Post"}</h2>
-          <form className="admin-form" onSubmit={handleSubmit}>
-            <label>
-              Title
-              <input onChange={(event) => updateField("title", event.target.value)} required value={form.title} />
-            </label>
-            <div className="full-span upload-panel">
-              <label>
-                Video File
-                <input
-                  accept="video/mp4,video/webm,video/quicktime"
-                  onChange={(event) => setSelectedVideoFile(event.target.files?.[0] || null)}
-                  type="file"
-                />
-              </label>
-              <div className="upload-actions-row">
-                <button onClick={handleVideoUpload} type="button">
-                  {uploading ? "Uploading..." : "Upload Video"}
-                </button>
-                <span className="upload-status">
-                  {selectedVideoFile ? selectedVideoFile.name : form.videoUrl ? "Video uploaded and ready." : "No video selected yet."}
-                </span>
-              </div>
-              {form.videoUrl ? (
-                <div className="video-preview-card">
-                  <p className="meta">Preview</p>
-                  <video className="post-media" controls preload="metadata" src={form.videoUrl} />
-                  <p className="upload-status">Hosted URL ready for this release.</p>
-                </div>
-              ) : null}
-              {uploadError ? <p className="error-text">{uploadError}</p> : null}
-            </div>
-            <label className="full-span">
-              Excerpt
-              <textarea onChange={(event) => updateField("excerpt", event.target.value)} required rows="3" value={form.excerpt} />
-            </label>
-            <label className="full-span">
-              Content
-              <textarea onChange={(event) => updateField("content", event.target.value)} required rows="8" value={form.content} />
-            </label>
-            <label className="full-span">
-              Lyrics
-              <textarea onChange={(event) => updateField("lyrics", event.target.value)} rows="8" value={form.lyrics} />
-            </label>
-            <label className="checkbox-field full-span">
-              <input
-                checked={form.published}
-                onChange={(event) => updateField("published", event.target.checked)}
-                type="checkbox"
-              />
-              <span>Published</span>
-            </label>
-            {saveMessage ? <p className="success-text full-span">{saveMessage}</p> : null}
-            {error ? <p className="error-text full-span">{error}</p> : null}
-            <button type="submit">{saving ? "Saving..." : editingId ? "Update Post" : "Create Post"}</button>
-          </form>
-        </section>
+      <nav className="admin-subnav" aria-label="Admin sections">
+        <NavLink className="admin-subnav-link" to="/admin/posts">
+          Posts
+        </NavLink>
+        <NavLink className="admin-subnav-link" to="/admin/collections">
+          Collections
+        </NavLink>
+        <NavLink className="admin-subnav-link" to="/admin/about">
+          About
+        </NavLink>
+      </nav>
 
-        <section>
-          <div className="section-head">
-            <h2>All Posts</h2>
-            <span>{loading ? "Loading..." : `${posts.length} posts`}</span>
-          </div>
+      {error ? <p className="error-text admin-error-banner">{error}</p> : null}
 
-          <div className="post-grid">
-            {posts.map((post) => (
-              <article className="post-card" key={post.id}>
-                <video className="post-media" controls preload="metadata" src={post.videoUrl} />
-                <div className="post-body">
-                  <p className="meta">
-                    {formatPostDate(post.createdAt)} | {post.published ? "Published" : "Draft"}
-                  </p>
-                  <h3>{post.title}</h3>
-                  <p>{post.excerpt}</p>
-                  <div className="admin-actions">
-                    <button className="secondary-button" onClick={() => startEdit(post)} type="button">
-                      Edit
-                    </button>
-                    <button className="danger-button" onClick={() => handleDelete(post.id)} type="button">
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-      </main>
+      <Outlet
+        context={{
+          posts,
+          collections,
+          aboutForm,
+          collectionForm,
+          editingCollectionId,
+          editingId,
+          form,
+          loading,
+          saveMessage,
+          collectionMessage,
+          aboutMessage,
+          saving,
+          savingAbout,
+          savingCollection,
+          uploading,
+          uploadError,
+          selectedVideoFile,
+          updateField,
+          updateCollectionForm,
+          updateAboutForm,
+          togglePostCollection,
+          setSelectedVideoFile,
+          handleVideoUpload,
+          handleSubmit,
+          handleCollectionSubmit,
+          handleAboutSubmit,
+          handleDelete,
+          handleCollectionDelete,
+          startEdit,
+          startCollectionEdit,
+          resetPostForm,
+          resetCollectionForm
+        }}
+      />
     </div>
+  );
+}
+
+function AdminPostsPage() {
+  const {
+    collections,
+    editingId,
+    form,
+    handleDelete,
+    handleSubmit,
+    handleVideoUpload,
+    loading,
+    posts,
+    resetPostForm,
+    saveMessage,
+    saving,
+    selectedVideoFile,
+    setSelectedVideoFile,
+    startEdit,
+    togglePostCollection,
+    updateField,
+    uploadError,
+    uploading
+  } = useAdminContext();
+
+  return (
+    <main className="admin-grid">
+      <section className="intro-card homepage-panel admin-intro-card">
+        <p className="eyebrow">Posts</p>
+        <h2>Write, edit, and publish releases without the form feeling like an afterthought.</h2>
+        <p>
+          This section is the release workspace: upload media, shape the note behind the song, and place each release
+          into the collections where it belongs.
+        </p>
+      </section>
+
+      <section className="intro-card">
+        <h2>{editingId ? "Edit Post" : "Create Post"}</h2>
+        <form className="admin-form" onSubmit={handleSubmit}>
+          <label>
+            Title
+            <input onChange={(event) => updateField("title", event.target.value)} required value={form.title} />
+          </label>
+          <div className="full-span upload-panel">
+            <label>
+              Video File
+              <input
+                accept="video/mp4,video/webm,video/quicktime"
+                onChange={(event) => setSelectedVideoFile(event.target.files?.[0] || null)}
+                type="file"
+              />
+            </label>
+            <div className="upload-actions-row">
+              <button onClick={handleVideoUpload} type="button">
+                {uploading ? "Uploading..." : "Upload Video"}
+              </button>
+              <span className="upload-status">
+                {selectedVideoFile ? selectedVideoFile.name : form.videoUrl ? "Video uploaded and ready." : "No video selected yet."}
+              </span>
+            </div>
+            {form.videoUrl ? (
+              <div className="video-preview-card">
+                <p className="meta">Preview</p>
+                <video className="post-media" controls preload="metadata" src={form.videoUrl} />
+                <p className="upload-status">Hosted URL ready for this release.</p>
+              </div>
+            ) : null}
+            {uploadError ? <p className="error-text">{uploadError}</p> : null}
+          </div>
+          <label className="full-span">
+            Excerpt
+            <textarea onChange={(event) => updateField("excerpt", event.target.value)} required rows="3" value={form.excerpt} />
+          </label>
+          <label className="full-span">
+            Content
+            <textarea onChange={(event) => updateField("content", event.target.value)} required rows="8" value={form.content} />
+          </label>
+          <label className="full-span">
+            Lyrics
+            <textarea onChange={(event) => updateField("lyrics", event.target.value)} rows="8" value={form.lyrics} />
+          </label>
+          <fieldset className="full-span collection-picker">
+            <legend>Collections</legend>
+            <div className="checkbox-pill-row">
+              {collections.map((collection) => (
+                <label className="checkbox-pill" key={collection.id}>
+                  <input
+                    checked={form.collectionSlugs.includes(collection.slug)}
+                    onChange={() => togglePostCollection(collection.slug)}
+                    type="checkbox"
+                  />
+                  <span>{collection.title}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          <label className="checkbox-field full-span">
+            <input
+              checked={form.published}
+              onChange={(event) => updateField("published", event.target.checked)}
+              type="checkbox"
+            />
+            <span>Published</span>
+          </label>
+          <div className="full-span admin-form-actions">
+            <button type="submit">{saving ? "Saving..." : editingId ? "Update Post" : "Create Post"}</button>
+            {editingId ? (
+              <button className="secondary-button" onClick={resetPostForm} type="button">
+                Cancel Edit
+              </button>
+            ) : null}
+          </div>
+          {saveMessage ? <p className="success-text full-span">{saveMessage}</p> : null}
+        </form>
+      </section>
+
+      <section>
+        <div className="section-head">
+          <h2>All Posts</h2>
+          <span>{loading ? "Loading..." : `${posts.length} posts`}</span>
+        </div>
+        <div className="post-grid">
+          {posts.map((post) => (
+            <article className="post-card" key={post.id}>
+              <video className="post-media" controls preload="metadata" src={post.videoUrl} />
+              <div className="post-body">
+                <p className="meta">
+                  {formatPostDate(post.createdAt)} | {post.published ? "Published" : "Draft"}
+                </p>
+                <h3>{post.title}</h3>
+                <p>{post.excerpt}</p>
+                <div className="tag-row compact-tag-row">
+                  {(post.collections || []).map((collection) => (
+                    <span className="collection-chip static-chip" key={collection.slug}>
+                      {collection.title}
+                    </span>
+                  ))}
+                </div>
+                <div className="admin-actions">
+                  <button className="secondary-button" onClick={() => startEdit(post)} type="button">
+                    Edit
+                  </button>
+                  <button className="danger-button" onClick={() => handleDelete(post.id)} type="button">
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+    </main>
+  );
+}
+
+function AdminCollectionsPage() {
+  const {
+    collectionForm,
+    collectionMessage,
+    collections,
+    editingCollectionId,
+    handleCollectionDelete,
+    handleCollectionSubmit,
+    loading,
+    posts,
+    resetCollectionForm,
+    savingCollection,
+    startCollectionEdit,
+    updateCollectionForm
+  } = useAdminContext();
+
+  return (
+    <main className="admin-grid">
+      <section className="intro-card homepage-panel admin-intro-card">
+        <p className="eyebrow">Collections</p>
+        <h2>Define shelves, verses, and projects that make the archive feel curated.</h2>
+        <p>
+          Collections should read like distinct worlds. Use this section to name them clearly, describe their identity,
+          and choose what leads the page.
+        </p>
+      </section>
+
+      <section className="intro-card">
+        <h2>{editingCollectionId ? "Edit Collection" : "Create Collection"}</h2>
+        <form className="admin-form" onSubmit={handleCollectionSubmit}>
+          <label>
+            Title
+            <input
+              onChange={(event) => updateCollectionForm("title", event.target.value)}
+              required
+              value={collectionForm.title}
+            />
+          </label>
+          <label>
+            Featured Release
+            <select
+              onChange={(event) => updateCollectionForm("featuredReleaseSlug", event.target.value)}
+              value={collectionForm.featuredReleaseSlug}
+            >
+              <option value="">None</option>
+              {posts.map((post) => (
+                <option key={post.id} value={post.slug}>
+                  {post.title}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Theme
+            <select onChange={(event) => updateCollectionForm("theme", event.target.value)} value={collectionForm.theme}>
+              <option value="">Default</option>
+              <option value="soft-archive">Soft Archive</option>
+              <option value="fractureverse">Fractureverse</option>
+              <option value="stage">Stage / Spotlight</option>
+              <option value="signal">Signal / Broadcast</option>
+            </select>
+          </label>
+          <label className="full-span">
+            Description
+            <textarea
+              onChange={(event) => updateCollectionForm("description", event.target.value)}
+              required
+              rows="4"
+              value={collectionForm.description}
+            />
+          </label>
+          <div className="full-span admin-form-actions">
+            <button type="submit">
+              {savingCollection ? "Saving..." : editingCollectionId ? "Update Collection" : "Create Collection"}
+            </button>
+            {editingCollectionId ? (
+              <button className="secondary-button" onClick={resetCollectionForm} type="button">
+                Cancel Edit
+              </button>
+            ) : null}
+          </div>
+          {collectionMessage ? <p className="success-text full-span">{collectionMessage}</p> : null}
+        </form>
+      </section>
+
+      <section>
+        <div className="section-head">
+          <h2>Collections</h2>
+          <span>{loading ? "Loading..." : `${collections.length} collections`}</span>
+        </div>
+        <div className="collection-grid">
+          {collections.map((collection) => (
+            <article className="intro-card homepage-panel collection-card" key={collection.id}>
+              <p className="eyebrow">Collection</p>
+              <h3>{collection.title}</h3>
+              <p>{collection.description}</p>
+              {collection.featuredReleaseSlug ? <p className="meta">Featured slug: {collection.featuredReleaseSlug}</p> : null}
+              {collection.theme ? <p className="meta">Theme: {collection.theme}</p> : null}
+              <div className="admin-actions">
+                <button className="secondary-button" onClick={() => startCollectionEdit(collection)} type="button">
+                  Edit
+                </button>
+                <button className="danger-button" onClick={() => handleCollectionDelete(collection.id)} type="button">
+                  Delete
+                </button>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+    </main>
+  );
+}
+
+function AdminAboutPage() {
+  const { aboutForm, aboutMessage, handleAboutSubmit, savingAbout, updateAboutForm } = useAdminContext();
+
+  return (
+    <main className="admin-grid">
+      <section className="intro-card homepage-panel admin-intro-card">
+        <p className="eyebrow">About</p>
+        <h2>Keep the artist and site voice aligned with the rest of the archive.</h2>
+        <p>
+          The About page explains the person, the music, and the reason the site exists. This editor should feel like a
+          narrative surface, not just a text dump.
+        </p>
+      </section>
+
+      <section className="intro-card">
+        <h2>Edit About Page</h2>
+        <form className="admin-form" onSubmit={handleAboutSubmit}>
+          <label>
+            Hero Eyebrow
+            <input onChange={(event) => updateAboutForm("heroEyebrow", event.target.value)} value={aboutForm.heroEyebrow} />
+          </label>
+          <label className="full-span">
+            Hero Title
+            <textarea onChange={(event) => updateAboutForm("heroTitle", event.target.value)} required rows="3" value={aboutForm.heroTitle} />
+          </label>
+          <label className="full-span">
+            Hero Text
+            <textarea onChange={(event) => updateAboutForm("heroText", event.target.value)} required rows="4" value={aboutForm.heroText} />
+          </label>
+          <label>
+            Artist Section Eyebrow
+            <input onChange={(event) => updateAboutForm("artistEyebrow", event.target.value)} value={aboutForm.artistEyebrow} />
+          </label>
+          <label className="full-span">
+            Artist Section Title
+            <textarea onChange={(event) => updateAboutForm("artistTitle", event.target.value)} required rows="3" value={aboutForm.artistTitle} />
+          </label>
+          <label className="full-span">
+            Artist Section Text
+            <textarea onChange={(event) => updateAboutForm("artistText", event.target.value)} required rows="5" value={aboutForm.artistText} />
+          </label>
+          <label>
+            Site Section Eyebrow
+            <input onChange={(event) => updateAboutForm("siteEyebrow", event.target.value)} value={aboutForm.siteEyebrow} />
+          </label>
+          <label className="full-span">
+            Site Section Title
+            <textarea onChange={(event) => updateAboutForm("siteTitle", event.target.value)} required rows="3" value={aboutForm.siteTitle} />
+          </label>
+          <label className="full-span">
+            Site Section Text
+            <textarea onChange={(event) => updateAboutForm("siteText", event.target.value)} required rows="5" value={aboutForm.siteText} />
+          </label>
+          <label>
+            Quote Eyebrow
+            <input onChange={(event) => updateAboutForm("quoteEyebrow", event.target.value)} value={aboutForm.quoteEyebrow} />
+          </label>
+          <label className="full-span">
+            Quote Title
+            <textarea onChange={(event) => updateAboutForm("quoteTitle", event.target.value)} required rows="2" value={aboutForm.quoteTitle} />
+          </label>
+          <label className="full-span">
+            Quote Text
+            <textarea onChange={(event) => updateAboutForm("quoteText", event.target.value)} required rows="4" value={aboutForm.quoteText} />
+          </label>
+          <div className="full-span admin-form-actions">
+            <button type="submit">{savingAbout ? "Saving..." : "Save About Page"}</button>
+          </div>
+          {aboutMessage ? <p className="success-text full-span">{aboutMessage}</p> : null}
+        </form>
+      </section>
+    </main>
+  );
+}
+
+function useAdminContext() {
+  return useOutletContext();
+}
+
+function ReleaseCard({ post, onPlayTrack, layout = "card" }) {
+  return (
+    <Link className="release-card-link" to={`/release/${post.slug}`}>
+      <article className={`post-card homepage-post-card release-feed-card ${layout === "horizontal" ? "result-card" : ""}`}>
+        <div className="release-card-media">
+          <video className="post-media" muted playsInline preload="metadata" src={post.videoUrl} />
+          <div className="release-card-overlay" />
+          <div className="play-pill">Play</div>
+          <div className="release-card-arrow">{"Play ->"}</div>
+        </div>
+        <div className="post-body">
+          <p className="meta">{formatPostDate(post.createdAt)}</p>
+          <h3>{post.title}</h3>
+          <p>{post.excerpt}</p>
+          <div className="tag-row compact-tag-row">
+            {(post.collections || []).map((collection) => (
+              <span className="collection-chip static-chip" key={collection.slug}>
+              {collection.title}
+            </span>
+          ))}
+          </div>
+          <div className="card-action-row">
+            <button
+              className="secondary-button mini-player-trigger"
+              onClick={(event) => {
+                event.preventDefault();
+                onPlayTrack(post);
+              }}
+              type="button"
+            >
+              Play in Mini Player
+            </button>
+            {layout === "horizontal" ? <span className="result-card-cta">Open release</span> : null}
+          </div>
+        </div>
+      </article>
+    </Link>
+  );
+}
+
+function TimelineCard({ index, onPlayTrack, post, themeConfig }) {
+  return (
+    <Link className="release-card-link" to={`/release/${post.slug}`}>
+      <article className="post-card homepage-post-card release-feed-card timeline-card">
+        <div className="release-card-media timeline-card-media">
+          <video className="post-media" muted playsInline preload="metadata" src={post.videoUrl} />
+          <div className="release-card-overlay" />
+        </div>
+        <div className="post-body timeline-card-body">
+          <p className="meta">
+            {themeConfig.itemName} #{String(index + 1).padStart(2, "0")}
+          </p>
+          <h3>{post.title}</h3>
+          <p>{post.excerpt}</p>
+          <div className="card-action-row">
+            <button
+              className="secondary-button mini-player-trigger"
+              onClick={(event) => {
+                event.preventDefault();
+                onPlayTrack(post);
+              }}
+              type="button"
+            >
+              Play in Mini Player
+            </button>
+            <span className="result-card-cta">{themeConfig.itemAction}</span>
+          </div>
+        </div>
+      </article>
+    </Link>
+  );
+}
+
+function CollectionCard({ collection, showFeatured = false }) {
+  return (
+    <Link className="collection-link" to={`/collections/${collection.slug}`}>
+      <article className="intro-card homepage-panel collection-card">
+        <div className="collection-card-topline">
+          <p className="eyebrow">Collection</p>
+          <span className="meta-badge subtle-badge">{collection.releaseCount} releases</span>
+        </div>
+        <h3>{collection.title}</h3>
+        <p>{collection.description}</p>
+        <div className="collection-meta-row">
+          {collection.featuredRelease ? <span className="meta-badge subtle-badge">Featured release ready</span> : null}
+          {collection.theme ? <span className="meta-badge subtle-badge">{collection.theme}</span> : null}
+          <span className="collection-card-cta">Open shelf</span>
+        </div>
+        {showFeatured && collection.featuredRelease ? (
+          <div className="featured-collection-panel">
+            <p className="meta">Featured release</p>
+            <strong>{collection.featuredRelease.title}</strong>
+            <p>{collection.featuredRelease.excerpt}</p>
+          </div>
+        ) : null}
+      </article>
+    </Link>
   );
 }
 
