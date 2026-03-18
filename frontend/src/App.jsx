@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BrowserRouter, Link, Navigate, Route, Routes, useNavigate, useParams } from "react-router-dom";
 
 const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
@@ -26,22 +26,130 @@ function App() {
     return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
   });
   const [hasAdminSession, setHasAdminSession] = useState(() => Boolean(localStorage.getItem(tokenKey)));
+  const [currentTrack, setCurrentTrack] = useState(null);
+  const [isMiniPlayerPlaying, setIsMiniPlayerPlaying] = useState(false);
+  const [playerProgress, setPlayerProgress] = useState(0);
+  const [playerDuration, setPlayerDuration] = useState(0);
+  const audioRef = useRef(null);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
     localStorage.setItem(themeKey, theme);
   }, [theme]);
 
+  useEffect(() => {
+    const audio = audioRef.current;
+
+    if (!audio) {
+      return undefined;
+    }
+
+    function syncTime() {
+      setPlayerProgress(audio.currentTime || 0);
+      setPlayerDuration(audio.duration || 0);
+    }
+
+    function handleEnded() {
+      setIsMiniPlayerPlaying(false);
+    }
+
+    audio.addEventListener("timeupdate", syncTime);
+    audio.addEventListener("loadedmetadata", syncTime);
+    audio.addEventListener("ended", handleEnded);
+
+    return () => {
+      audio.removeEventListener("timeupdate", syncTime);
+      audio.removeEventListener("loadedmetadata", syncTime);
+      audio.removeEventListener("ended", handleEnded);
+    };
+  }, []);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+
+    if (!audio || !currentTrack?.videoUrl) {
+      return;
+    }
+
+    if (audio.src !== currentTrack.videoUrl) {
+      audio.src = currentTrack.videoUrl;
+      audio.currentTime = 0;
+    }
+
+    if (isMiniPlayerPlaying) {
+      audio.play().catch(() => {
+        setIsMiniPlayerPlaying(false);
+      });
+      return;
+    }
+
+    audio.pause();
+  }, [currentTrack, isMiniPlayerPlaying]);
+
+  function playTrack(track) {
+    setCurrentTrack(track);
+    setPlayerProgress(0);
+    setPlayerDuration(0);
+    setIsMiniPlayerPlaying(true);
+  }
+
+  function toggleMiniPlayer() {
+    if (!currentTrack) return;
+    setIsMiniPlayerPlaying((current) => !current);
+  }
+
+  function closeMiniPlayer() {
+    const audio = audioRef.current;
+
+    if (audio) {
+      audio.pause();
+      audio.removeAttribute("src");
+      audio.load();
+    }
+
+    setCurrentTrack(null);
+    setIsMiniPlayerPlaying(false);
+    setPlayerProgress(0);
+    setPlayerDuration(0);
+  }
+
+  function scrubMiniPlayer(event) {
+    const audio = audioRef.current;
+    const nextTime = Number(event.target.value);
+
+    if (!audio) {
+      return;
+    }
+
+    audio.currentTime = nextTime;
+    setPlayerProgress(nextTime);
+  }
+
   return (
     <BrowserRouter>
+      <audio ref={audioRef} preload="metadata" />
       <Routes>
         <Route
           path="/"
-          element={<PublicHome hasAdminSession={hasAdminSession} theme={theme} setTheme={setTheme} />}
+          element={
+            <PublicHome
+              hasAdminSession={hasAdminSession}
+              onPlayTrack={playTrack}
+              theme={theme}
+              setTheme={setTheme}
+            />
+          }
         />
         <Route
           path="/release/:slug"
-          element={<PublicReleasePage hasAdminSession={hasAdminSession} theme={theme} setTheme={setTheme} />}
+          element={
+            <PublicReleasePage
+              hasAdminSession={hasAdminSession}
+              onPlayTrack={playTrack}
+              theme={theme}
+              setTheme={setTheme}
+            />
+          }
         />
         <Route
           path="/admin/login"
@@ -56,6 +164,15 @@ function App() {
           }
         />
       </Routes>
+      <MiniPlayer
+        currentTrack={currentTrack}
+        duration={playerDuration}
+        isPlaying={isMiniPlayerPlaying}
+        onClose={closeMiniPlayer}
+        onScrub={scrubMiniPlayer}
+        onTogglePlay={toggleMiniPlayer}
+        progress={playerProgress}
+      />
     </BrowserRouter>
   );
 }
@@ -72,7 +189,7 @@ function ThemeToggle({ theme, setTheme }) {
   );
 }
 
-function PublicHome({ hasAdminSession, theme, setTheme }) {
+function PublicHome({ hasAdminSession, onPlayTrack, theme, setTheme }) {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const featuredPost =
@@ -171,6 +288,16 @@ function PublicHome({ hasAdminSession, theme, setTheme }) {
                   <p className="featured-release-excerpt">{featuredPost.excerpt}</p>
                   <p className="meta">{formatPostDate(featuredPost.createdAt)}</p>
                   <div className="featured-release-actions">
+                    <button
+                      className="secondary-button mini-player-trigger"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        onPlayTrack(featuredPost);
+                      }}
+                      type="button"
+                    >
+                      Play in Mini Player
+                    </button>
                     <span className="hero-link">Enter Release</span>
                   </div>
                 </div>
@@ -212,6 +339,16 @@ function PublicHome({ hasAdminSession, theme, setTheme }) {
                       <p className="meta">{formatPostDate(post.createdAt)}</p>
                       <h3>{post.title}</h3>
                       <p>{post.excerpt}</p>
+                      <button
+                        className="secondary-button mini-player-trigger"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          onPlayTrack(post);
+                        }}
+                        type="button"
+                      >
+                        Play in Mini Player
+                      </button>
                     </div>
                   </article>
                 </Link>
@@ -224,7 +361,7 @@ function PublicHome({ hasAdminSession, theme, setTheme }) {
   );
 }
 
-function PublicReleasePage({ hasAdminSession, theme, setTheme }) {
+function PublicReleasePage({ hasAdminSession, onPlayTrack, theme, setTheme }) {
   const { slug } = useParams();
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -281,6 +418,11 @@ function PublicReleasePage({ hasAdminSession, theme, setTheme }) {
               <p className="release-hero-intro">A focused listening view for the video, the note behind it, and the words that shaped the release.</p>
               <p className="hero-copy">{post.excerpt}</p>
               <p className="meta">{formatPostDate(post.createdAt)}</p>
+              <div className="release-hero-actions">
+                <button className="secondary-button mini-player-trigger" onClick={() => onPlayTrack(post)} type="button">
+                  Play in Mini Player
+                </button>
+              </div>
             </div>
           </div>
         ) : null}
@@ -313,6 +455,43 @@ function PublicReleasePage({ hasAdminSession, theme, setTheme }) {
           ) : null}
         </main>
       ) : null}
+    </div>
+  );
+}
+
+function MiniPlayer({ currentTrack, duration, isPlaying, onClose, onScrub, onTogglePlay, progress }) {
+  if (!currentTrack) {
+    return null;
+  }
+
+  return (
+    <div className="mini-player-shell">
+      <div className="mini-player-card">
+        <div className="mini-player-copy">
+          <p className="eyebrow">Now Playing</p>
+          <h2>{currentTrack.title}</h2>
+        </div>
+        <div className="mini-player-controls">
+          <button className="mini-player-button" onClick={onTogglePlay} type="button">
+            {isPlaying ? "Pause" : "Play"}
+          </button>
+          <input
+            className="mini-player-progress"
+            max={duration || 0}
+            min="0"
+            onChange={onScrub}
+            step="0.1"
+            type="range"
+            value={Math.min(progress, duration || 0)}
+          />
+          <span className="mini-player-time">
+            {formatClock(progress)} / {formatClock(duration)}
+          </span>
+          <button className="mini-player-close" onClick={onClose} type="button">
+            Close
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -683,6 +862,19 @@ function formatPostDate(createdAt) {
 
 function normalizeTitle(title) {
   return (title || "").replace(/["']/g, "").trim().toLowerCase();
+}
+
+function formatClock(value) {
+  if (!Number.isFinite(value) || value <= 0) {
+    return "0:00";
+  }
+
+  const minutes = Math.floor(value / 60);
+  const seconds = Math.floor(value % 60)
+    .toString()
+    .padStart(2, "0");
+
+  return `${minutes}:${seconds}`;
 }
 
 export default App;
