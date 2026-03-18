@@ -13,7 +13,7 @@ import {
   hasVideo
 } from "../../lib/site";
 
-export function CollectionDetailPage({ onPlayTrack }) {
+export default function CollectionDetailPage({ onPlayTrack }) {
   const { slug } = useParams();
   const [collection, setCollection] = useState(null);
   const [releases, setReleases] = useState([]);

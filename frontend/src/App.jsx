@@ -4,10 +4,16 @@ import MiniPlayer from "./components/MiniPlayer";
 import PublicLayout from "./layouts/PublicLayout";
 import AdminLayout, { ProtectedRoute } from "./layouts/AdminLayout";
 import { themeKey } from "./lib/site";
-import { AdminAboutPage, AdminCollectionsPage, AdminLogin, AdminPostsPage } from "./pages/admin/AdminPages";
-import { CollectionDetailPage } from "./pages/public/CollectionPages";
-import { PublicHome, CollectionsIndexPage, ExplorePage } from "./pages/public/HomePages";
-import { AboutPage, PublicReleasePage } from "./pages/public/InfoPages";
+import AdminAboutPage from "./pages/admin/AdminAboutPage";
+import AdminCollectionsPage from "./pages/admin/AdminCollectionsPage";
+import AdminLogin from "./pages/admin/AdminLogin";
+import AdminPostsPage from "./pages/admin/AdminPostsPage";
+import AboutPage from "./pages/public/AboutPage";
+import CollectionDetailPage from "./pages/public/CollectionDetailPage";
+import CollectionsIndexPage from "./pages/public/CollectionsIndexPage";
+import ExplorePage from "./pages/public/ExplorePage";
+import PublicHome from "./pages/public/PublicHome";
+import PublicReleasePage from "./pages/public/PublicReleasePage";
 
 function App() {
   const [theme, setTheme] = useState(() => {
@@ -17,9 +23,13 @@ function App() {
       return savedTheme;
     }
 
-    return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+    return window.matchMedia("(prefers-color-scheme: light)").matches
+      ? "light"
+      : "dark";
   });
-  const [hasAdminSession, setHasAdminSession] = useState(() => Boolean(localStorage.getItem("suno-blog-admin-token")));
+  const [hasAdminSession, setHasAdminSession] = useState(() =>
+    Boolean(localStorage.getItem("suno-blog-admin-token")),
+  );
   const [currentTrack, setCurrentTrack] = useState(null);
   const [isMiniPlayerPlaying, setIsMiniPlayerPlaying] = useState(false);
   const [playerProgress, setPlayerProgress] = useState(0);
@@ -123,26 +133,63 @@ function App() {
     <BrowserRouter>
       <audio ref={audioRef} preload="metadata" />
       <Routes>
-        <Route element={<PublicLayout hasAdminSession={hasAdminSession} theme={theme} setTheme={setTheme} />}>
-          <Route index element={<PublicHome hasAdminSession={hasAdminSession} onPlayTrack={playTrack} />} />
+        <Route
+          element={
+            <PublicLayout
+              hasAdminSession={hasAdminSession}
+              theme={theme}
+              setTheme={setTheme}
+            />
+          }
+        >
+          <Route
+            index
+            element={
+              <PublicHome
+                hasAdminSession={hasAdminSession}
+                onPlayTrack={playTrack}
+              />
+            }
+          />
           <Route path="/collections" element={<CollectionsIndexPage />} />
-          <Route path="/collections/:slug" element={<CollectionDetailPage onPlayTrack={playTrack} />} />
-          <Route path="/explore" element={<ExplorePage onPlayTrack={playTrack} />} />
+          <Route
+            path="/collections/:slug"
+            element={<CollectionDetailPage onPlayTrack={playTrack} />}
+          />
+          <Route
+            path="/explore"
+            element={<ExplorePage onPlayTrack={playTrack} />}
+          />
           <Route path="/about" element={<AboutPage />} />
           <Route
             path="/release/:slug"
-            element={<PublicReleasePage hasAdminSession={hasAdminSession} onPlayTrack={playTrack} />}
+            element={
+              <PublicReleasePage
+                hasAdminSession={hasAdminSession}
+                onPlayTrack={playTrack}
+              />
+            }
           />
         </Route>
         <Route
           path="/admin/login"
-          element={<AdminLogin setHasAdminSession={setHasAdminSession} theme={theme} setTheme={setTheme} />}
+          element={
+            <AdminLogin
+              setHasAdminSession={setHasAdminSession}
+              theme={theme}
+              setTheme={setTheme}
+            />
+          }
         />
         <Route
           path="/admin"
           element={
             <ProtectedRoute>
-              <AdminLayout setHasAdminSession={setHasAdminSession} theme={theme} setTheme={setTheme} />
+              <AdminLayout
+                setHasAdminSession={setHasAdminSession}
+                theme={theme}
+                setTheme={setTheme}
+              />
             </ProtectedRoute>
           }
         >
