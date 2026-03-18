@@ -1206,6 +1206,16 @@ select:focus {
   pointer-events: none;
 }
 
+.world-header-layout {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 660px) minmax(160px, 1fr);
+  align-items: end;
+  gap: 2rem;
+}
+
 .world-header-inner {
   position: relative;
   max-width: 660px;
@@ -1232,13 +1242,76 @@ select:focus {
 }
 
 .world-header-copy {
-  max-width: 44ch;
-  line-height: 1.7;
+  max-width: 38ch;
+  line-height: 1.8;
   font-size: 1.06rem;
 }
 
 .world-header-meta {
   margin-top: 1.15rem;
+}
+
+.world-header-aside {
+  position: relative;
+  min-height: 220px;
+}
+
+.fracture-aside {
+  align-self: stretch;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.fracture-line {
+  position: relative;
+  width: min(280px, 100%);
+  height: 100%;
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, transparent 0%, rgba(255, 255, 255, 0.04) 28%, transparent 100%),
+    linear-gradient(90deg, transparent 0%, color-mix(in srgb, var(--primary) 18%, transparent) 48%, color-mix(in srgb, var(--secondary) 28%, transparent) 52%, transparent 100%);
+  opacity: 0.8;
+  filter: blur(18px);
+  transform: rotate(10deg) scale(0.98);
+}
+
+.fracture-line::before,
+.fracture-line::after {
+  content: "";
+  position: absolute;
+  inset: 8% 48%;
+  border-radius: 999px;
+  background: linear-gradient(180deg, transparent 0%, color-mix(in srgb, var(--primary-strong) 56%, transparent) 50%, transparent 100%);
+}
+
+.fracture-line::after {
+  inset: 18% 44%;
+  opacity: 0.55;
+  filter: blur(6px);
+}
+
+.collection-world-page {
+  gap: 1.2rem;
+}
+
+.world-status-bar {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  padding: 1rem 1.2rem;
+}
+
+.world-status-item {
+  display: grid;
+  gap: 0.28rem;
+}
+
+.world-status-label {
+  color: var(--muted-text);
+  font-size: 0.75rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
 }
 
 .collection-fragment-shell {
@@ -1290,6 +1363,14 @@ select:focus {
   gap: 1rem;
 }
 
+.timeline-section-head {
+  margin-top: 0.6rem;
+}
+
+.timeline-section-head h2 {
+  font-size: 1.55rem;
+}
+
 .timeline-card {
   min-height: 100%;
   position: relative;
@@ -1332,6 +1413,176 @@ select:focus {
   margin: 0.2rem 0 0.45rem;
   font-size: 1.55rem;
   letter-spacing: -0.03em;
+  white-space: pre-line;
+}
+
+@keyframes drift {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(1.5%, -1%, 0) scale(1.03);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+:root[data-collection-theme="fractureverse"] {
+  background:
+    radial-gradient(circle at 20% 18%, color-mix(in srgb, var(--primary) 20%, transparent), transparent 24%),
+    radial-gradient(circle at 78% 12%, color-mix(in srgb, var(--secondary) 22%, transparent), transparent 28%),
+    radial-gradient(circle at 50% 90%, color-mix(in srgb, black 48%, transparent), transparent 44%),
+    linear-gradient(180deg, #09070a, var(--background) 24%, color-mix(in srgb, var(--surface) 80%, var(--background)) 58%, #0a0709);
+}
+
+:root[data-theme="light"][data-collection-theme="fractureverse"] {
+  background:
+    radial-gradient(circle at 20% 18%, color-mix(in srgb, var(--primary) 16%, transparent), transparent 26%),
+    radial-gradient(circle at 78% 12%, color-mix(in srgb, var(--secondary) 14%, transparent), transparent 30%),
+    radial-gradient(circle at 50% 90%, color-mix(in srgb, #8d4b63 12%, transparent), transparent 44%),
+    linear-gradient(180deg, #f8e3e8, var(--background) 24%, color-mix(in srgb, var(--surface) 84%, var(--background)) 58%, #f1d5dd);
+}
+
+:root[data-collection-theme="fractureverse"] .homepage-hero,
+:root[data-collection-theme="fractureverse"] .public-site-header,
+:root[data-collection-theme="fractureverse"] .mini-player-card {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--surface) 88%, var(--primary) 12%), color-mix(in srgb, var(--surface-alt) 84%, var(--secondary) 16%)),
+    var(--surface);
+}
+
+:root[data-collection-theme="fractureverse"] .public-site-header {
+  border-color: color-mix(in srgb, var(--primary) 28%, var(--border) 72%);
+  box-shadow:
+    0 18px 40px color-mix(in srgb, black 30%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--text) 5%, transparent);
+}
+
+:root[data-collection-theme="fractureverse"] .site-mark,
+:root[data-collection-theme="fractureverse"] .site-mark .eyebrow {
+  color: color-mix(in srgb, var(--muted-text) 86%, var(--text) 14%);
+}
+
+:root[data-collection-theme="fractureverse"] .site-nav-link {
+  color: color-mix(in srgb, var(--text) 90%, var(--muted-text) 10%);
+}
+
+:root[data-collection-theme="fractureverse"] .site-nav-link.active,
+:root[data-collection-theme="fractureverse"] .site-nav-link[aria-current="page"] {
+  color: var(--text);
+  text-shadow: 0 0 16px color-mix(in srgb, var(--primary) 24%, transparent);
+}
+
+:root[data-collection-theme="fractureverse"] .site-nav-link::after {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--primary) 66%, transparent), color-mix(in srgb, var(--primary-strong) 88%, transparent));
+  box-shadow: 0 0 16px color-mix(in srgb, var(--primary) 34%, transparent);
+}
+
+:root[data-collection-theme="fractureverse"] .homepage-panel,
+:root[data-collection-theme="fractureverse"] .collection-picker,
+:root[data-collection-theme="fractureverse"] .upload-panel {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 80%, var(--primary) 20%), color-mix(in srgb, var(--surface-alt) 88%, var(--surface) 12%)),
+    var(--surface);
+}
+
+:root[data-collection-theme="fractureverse"] .collection-fragment-media,
+:root[data-collection-theme="fractureverse"] .release-card-media {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 26%, transparent);
+}
+
+:root[data-collection-theme="fractureverse"] .play-pill,
+:root[data-collection-theme="fractureverse"] .collection-chip,
+:root[data-collection-theme="fractureverse"] .meta-badge {
+  background: color-mix(in srgb, var(--surface-alt) 68%, rgba(255, 111, 165, 0.16));
+}
+
+:root[data-collection-theme="fractureverse"] .collection-fragment-card,
+:root[data-collection-theme="fractureverse"] .timeline-card {
+  box-shadow:
+    0 18px 44px color-mix(in srgb, var(--primary) 14%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--text) 4%, transparent);
+}
+
+:root[data-collection-theme="fractureverse"] .world-header::before {
+  animation: drift 20s ease-in-out infinite;
+  filter: blur(10px);
+}
+
+:root[data-collection-theme="fractureverse"] .world-header::after {
+  background:
+    linear-gradient(112deg, transparent 0%, transparent 62%, color-mix(in srgb, var(--primary) 10%, transparent) 70%, transparent 78%),
+    radial-gradient(circle at 78% 44%, color-mix(in srgb, var(--primary-strong) 10%, transparent), transparent 28%),
+    radial-gradient(circle at center, transparent 56%, rgba(0, 0, 0, 0.2));
+}
+
+:root[data-collection-theme="fractureverse"] .world-header-copy {
+  color: color-mix(in srgb, var(--text) 84%, var(--muted-text) 16%);
+}
+
+:root[data-collection-theme="fractureverse"] .world-status-bar {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-alt) 72%, var(--primary) 18%), color-mix(in srgb, var(--surface) 82%, black 18%));
+  border-color: color-mix(in srgb, var(--primary) 22%, var(--border) 78%);
+}
+
+:root[data-collection-theme="fractureverse"] .world-status-item strong {
+  font-size: 1.05rem;
+  letter-spacing: -0.02em;
+}
+
+:root[data-collection-theme="fractureverse"] .timeline-section-head {
+  margin-top: 1.3rem;
+  margin-bottom: 1.3rem;
+  padding-top: 0.35rem;
+}
+
+:root[data-collection-theme="fractureverse"] .fractureverse-timeline-head {
+  position: relative;
+}
+
+:root[data-collection-theme="fractureverse"] .fractureverse-timeline-head::before {
+  content: "";
+  position: absolute;
+  top: -0.25rem;
+  left: 0;
+  width: 180px;
+  height: 1px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--primary) 88%, transparent), transparent);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--primary) 20%, transparent);
+}
+
+:root[data-collection-theme="fractureverse"] .fractureverse-timeline-head h2 {
+  font-size: clamp(1.7rem, 2.6vw, 2.15rem);
+}
+
+:root[data-collection-theme="fractureverse"] .fracture-empty-state {
+  background: linear-gradient(to bottom, rgba(40, 15, 25, 0.8), rgba(20, 10, 15, 0.9));
+  border-color: color-mix(in srgb, var(--primary) 18%, var(--border) 82%);
+  border-radius: 18px;
+  box-shadow:
+    0 14px 34px color-mix(in srgb, black 24%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--text) 5%, transparent);
+}
+
+:root[data-collection-theme="fractureverse"] .fracture-empty-state h3 {
+  font-size: 1.75rem;
+  letter-spacing: -0.03em;
+}
+
+:root[data-collection-theme="fractureverse"] .fracture-empty-state p:last-child {
+  max-width: 32ch;
+  color: color-mix(in srgb, var(--text) 74%, var(--muted-text) 26%);
+}
+
+:root[data-collection-theme="fractureverse"] .timeline-card:hover,
+:root[data-collection-theme="fractureverse"] .timeline-card:focus-within {
+  transform: translateY(-4px);
+  filter: saturate(1.05);
+  box-shadow:
+    0 24px 50px color-mix(in srgb, var(--primary) 18%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--primary) 28%, transparent);
 }
 
 :root[data-collection-theme="stage"] .world-header::before {
@@ -1595,6 +1846,11 @@ select:focus {
     display: grid;
   }
 
+  .world-header-layout,
+  .world-status-bar {
+    grid-template-columns: 1fr;
+  }
+
   .public-site-actions,
   .site-nav,
   .admin-subnav {
@@ -1612,6 +1868,16 @@ select:focus {
 
   .world-header {
     padding: 2.2rem 1rem 1.35rem;
+  }
+
+  .world-header-aside {
+    min-height: 120px;
+  }
+
+  .fracture-line {
+    width: 100%;
+    max-width: 220px;
+    margin-left: auto;
   }
 
   .featured-release-media {

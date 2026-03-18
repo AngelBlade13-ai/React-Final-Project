@@ -635,6 +635,7 @@ function CollectionDetailPage({ onPlayTrack }) {
   const otherReleases = releases.filter((post) => post.slug !== featuredRelease?.slug);
   const themeConfig = getThemeConfig(collection?.theme);
   const timelineReleases = featuredRelease ? [featuredRelease, ...otherReleases] : releases;
+  const isFractureverse = collection?.theme === "fractureverse";
 
   useEffect(() => {
     const root = document.documentElement;
@@ -658,24 +659,51 @@ function CollectionDetailPage({ onPlayTrack }) {
         {loading ? <h1>Loading collection...</h1> : null}
         {error ? <p className="error-text">{error}</p> : null}
         {collection ? (
-          <div className="world-header-inner">
-            <p className="eyebrow">{themeConfig.worldEyebrow}</p>
-            <h1>{collection.title}</h1>
-            <p className="hero-copy world-header-copy">{collection.description}</p>
-            <div className="collection-meta-row world-header-meta">
-              <span className="meta-badge">{collection.releaseCount} releases</span>
-              {collection.featuredRelease ? (
-                <Link className="collection-chip" to={`/release/${collection.featuredRelease.slug}`}>
-                  Featured: {collection.featuredRelease.title}
-                </Link>
-              ) : null}
+          <div className="world-header-layout">
+            <div className="world-header-inner">
+              <p className="eyebrow">{themeConfig.worldEyebrow}</p>
+              <h1>{collection.title}</h1>
+              <p className="hero-copy world-header-copy">{collection.description}</p>
+              <div className="collection-meta-row world-header-meta">
+                <span className="meta-badge">
+                  {isFractureverse && timelineReleases.length === 0
+                    ? "No fragments detected"
+                    : `${collection.releaseCount} releases`}
+                </span>
+                {collection.featuredRelease ? (
+                  <Link className="collection-chip" to={`/release/${collection.featuredRelease.slug}`}>
+                    Featured: {collection.featuredRelease.title}
+                  </Link>
+                ) : null}
+              </div>
             </div>
+            {isFractureverse ? (
+              <div aria-hidden="true" className="world-header-aside fracture-aside">
+                <div className="fracture-line" />
+              </div>
+            ) : null}
           </div>
         ) : null}
       </header>
 
       {collection ? (
-        <main className="content-grid">
+        <main className={`content-grid collection-world-page${isFractureverse ? " fractureverse-page" : ""}`}>
+          {isFractureverse ? (
+            <section className="intro-card homepage-panel world-status-bar">
+              <div className="world-status-item">
+                <span className="world-status-label">Current State</span>
+                <strong>Unstable</strong>
+              </div>
+              <div className="world-status-item">
+                <span className="world-status-label">Observed Fragments</span>
+                <strong>{timelineReleases.length}</strong>
+              </div>
+              <div className="world-status-item">
+                <span className="world-status-label">Primary Subject</span>
+                <strong>{featuredRelease ? featuredRelease.title : "Unknown"}</strong>
+              </div>
+            </section>
+          ) : null}
           {featuredRelease ? (
             <section className="collection-fragment-shell">
               <article className="intro-card homepage-panel collection-fragment-card">
@@ -718,12 +746,12 @@ function CollectionDetailPage({ onPlayTrack }) {
           ) : null}
 
           <section>
-            <div className="section-head">
+            <div className={`section-head timeline-section-head${isFractureverse ? " fractureverse-timeline-head" : ""}`}>
               <h2>{themeConfig.listLabel}</h2>
-              <span>{timelineReleases.length} entries</span>
+              <span>{isFractureverse ? `${timelineReleases.length} observed` : `${timelineReleases.length} entries`}</span>
             </div>
             {timelineReleases.length === 0 ? (
-              <section className="intro-card homepage-panel empty-state-card">
+              <section className={`intro-card homepage-panel empty-state-card${isFractureverse ? " fracture-empty-state" : ""}`}>
                 <p className="eyebrow">{themeConfig.noItemsEyebrow}</p>
                 <h3>{themeConfig.noItemsTitle}</h3>
                 <p>{themeConfig.noItemsText}</p>
