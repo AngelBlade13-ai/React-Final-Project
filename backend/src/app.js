@@ -215,8 +215,8 @@ app.post("/api/admin/posts", requireAdmin, async (req, res, next) => {
       { id: crypto.randomUUID() }
     );
 
-    if (!newPost.title || !newPost.videoUrl || !newPost.excerpt || !newPost.content) {
-      return res.status(400).json({ message: "Title, video URL, excerpt, and content are required." });
+    if (!newPost.title || !newPost.excerpt || !newPost.content) {
+      return res.status(400).json({ message: "Title, excerpt, and content are required." });
     }
 
     store.posts.unshift(newPost);

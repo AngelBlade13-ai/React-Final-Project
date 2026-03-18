@@ -136,6 +136,34 @@ function getPrimaryThemeForPost(post) {
   return themedCollection?.theme || "default";
 }
 
+function hasVideo(videoUrl) {
+  return Boolean(String(videoUrl || "").trim());
+}
+
+function ReleaseMedia({
+  videoUrl,
+  className = "",
+  title = "Video Coming Soon",
+  text = "This release is already live. Add the video whenever it is ready.",
+  compact = false,
+  controls = false,
+  muted = false
+}) {
+  if (hasVideo(videoUrl)) {
+    return <video className={className} controls={controls} muted={muted} playsInline preload="metadata" src={videoUrl} />;
+  }
+
+  return (
+    <div className={`media-placeholder ${compact ? "media-placeholder-compact" : ""} ${className}`.trim()}>
+      <div className="media-placeholder-copy">
+        <p className="eyebrow">Video Pending</p>
+        <h3>{title}</h3>
+        <p>{text}</p>
+      </div>
+    </div>
+  );
+}
+
 function App() {
   const [theme, setTheme] = useState(() => {
     const savedTheme = localStorage.getItem(themeKey);
@@ -460,9 +488,16 @@ function PublicHome({ hasAdminSession, onPlayTrack }) {
             <Link className="featured-release-link" to={`/release/${featuredPost.slug}`}>
               <article className="intro-card homepage-panel featured-release-card">
                 <div className="featured-release-media">
-                  <video className="featured-release-video" muted playsInline preload="metadata" src={featuredPost.videoUrl} />
+                  <ReleaseMedia
+                    className="featured-release-video"
+                    compact
+                    muted
+                    text="The release note is live now. The video can be added later without taking the post down."
+                    title={featuredPost.title}
+                    videoUrl={featuredPost.videoUrl}
+                  />
                   <div className="release-card-overlay" />
-                  <div className="play-pill featured-play-pill">Featured</div>
+                  <div className="play-pill featured-play-pill">{hasVideo(featuredPost.videoUrl) ? "Featured" : "Video Pending"}</div>
                 </div>
                 <div className="featured-release-copy">
                   <p className="eyebrow">New Drop</p>
@@ -482,13 +517,14 @@ function PublicHome({ hasAdminSession, onPlayTrack }) {
                   <div className="featured-release-actions">
                     <button
                       className="secondary-button mini-player-trigger"
+                      disabled={!hasVideo(featuredPost.videoUrl)}
                       onClick={(event) => {
                         event.preventDefault();
                         onPlayTrack(featuredPost);
                       }}
                       type="button"
                     >
-                      Play in Mini Player
+                      {hasVideo(featuredPost.videoUrl) ? "Play in Mini Player" : "Video Pending"}
                     </button>
                     <span className="hero-link">Enter Release</span>
                   </div>
@@ -708,9 +744,18 @@ function CollectionDetailPage({ onPlayTrack }) {
             <section className="collection-fragment-shell">
               <article className="intro-card homepage-panel collection-fragment-card">
                 <div className="collection-fragment-media">
-                  <video className="featured-release-video" muted playsInline preload="metadata" src={featuredRelease.videoUrl} />
+                  <ReleaseMedia
+                    className="featured-release-video"
+                    compact
+                    muted
+                    text="This fragment is live as a written record first. Its video can arrive later."
+                    title={featuredRelease.title}
+                    videoUrl={featuredRelease.videoUrl}
+                  />
                   <div className="release-card-overlay" />
-                  <div className="play-pill featured-play-pill">{themeConfig.featuredLabel}</div>
+                  <div className="play-pill featured-play-pill">
+                    {hasVideo(featuredRelease.videoUrl) ? themeConfig.featuredLabel : "Video Pending"}
+                  </div>
                 </div>
                 <div className="collection-fragment-copy">
                   <p className="eyebrow">{themeConfig.featuredLabel}</p>
@@ -731,10 +776,11 @@ function CollectionDetailPage({ onPlayTrack }) {
                   <div className="featured-release-actions">
                     <button
                       className="secondary-button mini-player-trigger"
+                      disabled={!hasVideo(featuredRelease.videoUrl)}
                       onClick={() => onPlayTrack(featuredRelease)}
                       type="button"
                     >
-                      Play in Mini Player
+                      {hasVideo(featuredRelease.videoUrl) ? "Play in Mini Player" : "Video Pending"}
                     </button>
                     <Link className="hero-link" to={`/release/${featuredRelease.slug}`}>
                       {themeConfig.featuredAction}
@@ -1018,7 +1064,13 @@ function PublicReleasePage({ hasAdminSession, onPlayTrack }) {
         {post ? (
           <div className="release-hero-layout">
             <div className="release-hero-media">
-              <video className="release-video" controls preload="metadata" src={post.videoUrl} />
+              <ReleaseMedia
+                className="release-video"
+                controls
+                text="This release has been published before the final video upload. The written entry is live now, and the visual can be added later."
+                title={post.title}
+                videoUrl={post.videoUrl}
+              />
             </div>
             <div className="release-hero-copy">
               <p className="eyebrow">Release Entry</p>
@@ -1036,8 +1088,13 @@ function PublicReleasePage({ hasAdminSession, onPlayTrack }) {
                 ))}
               </div>
               <div className="release-hero-actions">
-                <button className="secondary-button mini-player-trigger" onClick={() => onPlayTrack(post)} type="button">
-                  Play in Mini Player
+                <button
+                  className="secondary-button mini-player-trigger"
+                  disabled={!hasVideo(post.videoUrl)}
+                  onClick={() => onPlayTrack(post)}
+                  type="button"
+                >
+                  {hasVideo(post.videoUrl) ? "Play in Mini Player" : "Video Pending"}
                 </button>
               </div>
             </div>
@@ -1374,12 +1431,6 @@ function AdminLayout({ setHasAdminSession, theme, setTheme }) {
     setError("");
     setSaveMessage("");
 
-    if (!form.videoUrl) {
-      setSaving(false);
-      setError("Upload a video before saving this release.");
-      return;
-    }
-
     try {
       const response = await fetch(editingId ? `${apiBaseUrl}/admin/posts/${editingId}` : `${apiBaseUrl}/admin/posts`, {
         method: editingId ? "PUT" : "POST",
@@ -1623,16 +1674,22 @@ function AdminPostsPage() {
                 {uploading ? "Uploading..." : "Upload Video"}
               </button>
               <span className="upload-status">
-                {selectedVideoFile ? selectedVideoFile.name : form.videoUrl ? "Video uploaded and ready." : "No video selected yet."}
+                {selectedVideoFile
+                  ? selectedVideoFile.name
+                  : form.videoUrl
+                    ? "Video uploaded and ready."
+                    : "No video selected yet. You can still publish without one."}
               </span>
             </div>
             {form.videoUrl ? (
               <div className="video-preview-card">
                 <p className="meta">Preview</p>
-                <video className="post-media" controls preload="metadata" src={form.videoUrl} />
+                <ReleaseMedia className="post-media" controls title={form.title || "Current Release"} videoUrl={form.videoUrl} />
                 <p className="upload-status">Hosted URL ready for this release.</p>
               </div>
-            ) : null}
+            ) : (
+              <p className="upload-status">Publishing without a video will show a built-in “video pending” state until you add one.</p>
+            )}
             {uploadError ? <p className="error-text">{uploadError}</p> : null}
           </div>
           <label className="full-span">
@@ -1668,7 +1725,7 @@ function AdminPostsPage() {
               onChange={(event) => updateField("published", event.target.checked)}
               type="checkbox"
             />
-            <span>Published</span>
+            <span>{form.videoUrl ? "Published" : "Published, even without a video yet"}</span>
           </label>
           <div className="full-span admin-form-actions">
             <button type="submit">{saving ? "Saving..." : editingId ? "Update Post" : "Create Post"}</button>
@@ -1690,7 +1747,14 @@ function AdminPostsPage() {
         <div className="post-grid">
           {posts.map((post) => (
             <article className="post-card" key={post.id}>
-              <video className="post-media" controls preload="metadata" src={post.videoUrl} />
+              <ReleaseMedia
+                className="post-media"
+                compact
+                controls
+                text="This release is published first and waiting on its video upload."
+                title={post.title}
+                videoUrl={post.videoUrl}
+              />
               <div className="post-body">
                 <p className="meta">
                   {formatPostDate(post.createdAt)} | {post.published ? "Published" : "Draft"}
@@ -1919,10 +1983,17 @@ function ReleaseCard({ post, onPlayTrack, layout = "card" }) {
     <Link className="release-card-link" to={`/release/${post.slug}`}>
       <article className={`post-card homepage-post-card release-feed-card ${layout === "horizontal" ? "result-card" : ""}`}>
         <div className="release-card-media">
-          <video className="post-media" muted playsInline preload="metadata" src={post.videoUrl} />
+          <ReleaseMedia
+            className="post-media"
+            compact
+            muted
+            text="This release is live now. The video can be attached later."
+            title={post.title}
+            videoUrl={post.videoUrl}
+          />
           <div className="release-card-overlay" />
-          <div className="play-pill">Play</div>
-          <div className="release-card-arrow">{"Play ->"}</div>
+          <div className="play-pill">{hasVideo(post.videoUrl) ? "Play" : "Video Pending"}</div>
+          <div className="release-card-arrow">{hasVideo(post.videoUrl) ? "Play ->" : "Open ->"}</div>
         </div>
         <div className="post-body">
           <p className="meta">{formatPostDate(post.createdAt)}</p>
@@ -1938,13 +2009,14 @@ function ReleaseCard({ post, onPlayTrack, layout = "card" }) {
           <div className="card-action-row">
             <button
               className="secondary-button mini-player-trigger"
+              disabled={!hasVideo(post.videoUrl)}
               onClick={(event) => {
                 event.preventDefault();
                 onPlayTrack(post);
               }}
               type="button"
             >
-              Play in Mini Player
+              {hasVideo(post.videoUrl) ? "Play in Mini Player" : "Video Pending"}
             </button>
             {layout === "horizontal" ? <span className="result-card-cta">Open release</span> : null}
           </div>
@@ -1959,7 +2031,14 @@ function TimelineCard({ index, onPlayTrack, post, themeConfig }) {
     <Link className="release-card-link" to={`/release/${post.slug}`}>
       <article className="post-card homepage-post-card release-feed-card timeline-card">
         <div className="release-card-media timeline-card-media">
-          <video className="post-media" muted playsInline preload="metadata" src={post.videoUrl} />
+          <ReleaseMedia
+            className="post-media"
+            compact
+            muted
+            text="This fragment has been published as writing first. The video can arrive later."
+            title={post.title}
+            videoUrl={post.videoUrl}
+          />
           <div className="release-card-overlay" />
         </div>
         <div className="post-body timeline-card-body">
@@ -1971,13 +2050,14 @@ function TimelineCard({ index, onPlayTrack, post, themeConfig }) {
           <div className="card-action-row">
             <button
               className="secondary-button mini-player-trigger"
+              disabled={!hasVideo(post.videoUrl)}
               onClick={(event) => {
                 event.preventDefault();
                 onPlayTrack(post);
               }}
               type="button"
             >
-              Play in Mini Player
+              {hasVideo(post.videoUrl) ? "Play in Mini Player" : "Video Pending"}
             </button>
             <span className="result-card-cta">{themeConfig.itemAction}</span>
           </div>
