@@ -21,7 +21,10 @@ export default function AdminLayout({ setHasAdminSession, theme, setTheme }) {
   const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
   const [collections, setCollections] = useState([]);
-  const [form, setForm] = useState(emptyPost);
+  const [form, setForm] = useState({
+    ...emptyPost,
+    archiveMeta: { ...emptyPost.archiveMeta }
+  });
   const [collectionForm, setCollectionForm] = useState(emptyCollection);
   const [aboutForm, setAboutForm] = useState(emptyAbout);
   const [editingId, setEditingId] = useState("");
@@ -87,6 +90,16 @@ export default function AdminLayout({ setHasAdminSession, theme, setTheme }) {
     setForm((current) => ({ ...current, [key]: value }));
   }
 
+  function updateArchiveMetaField(key, value) {
+    setForm((current) => ({
+      ...current,
+      archiveMeta: {
+        ...(current.archiveMeta || emptyPost.archiveMeta),
+        [key]: value
+      }
+    }));
+  }
+
   function updateCollectionForm(key, value) {
     setCollectionForm((current) => ({ ...current, [key]: value }));
   }
@@ -104,6 +117,20 @@ export default function AdminLayout({ setHasAdminSession, theme, setTheme }) {
     }));
   }
 
+  function toggleArchiveMetaLink(slug) {
+    setForm((current) => {
+      const linkedSlugs = current.archiveMeta?.linkedSlugs || [];
+
+      return {
+        ...current,
+        archiveMeta: {
+          ...(current.archiveMeta || emptyPost.archiveMeta),
+          linkedSlugs: linkedSlugs.includes(slug) ? linkedSlugs.filter((entry) => entry !== slug) : [...linkedSlugs, slug]
+        }
+      };
+    });
+  }
+
   function startEdit(post) {
     setEditingId(post.id);
     setSelectedVideoFile(null);
@@ -114,6 +141,10 @@ export default function AdminLayout({ setHasAdminSession, theme, setTheme }) {
       excerpt: post.excerpt,
       content: post.content,
       lyrics: post.lyrics,
+      archiveMeta: {
+        ...emptyPost.archiveMeta,
+        ...(post.archiveMeta || {})
+      },
       createdAt: post.createdAt,
       published: post.published,
       collectionSlugs: post.collectionSlugs || []
@@ -132,7 +163,10 @@ export default function AdminLayout({ setHasAdminSession, theme, setTheme }) {
   }
 
   function resetPostForm() {
-    setForm(emptyPost);
+    setForm({
+      ...emptyPost,
+      archiveMeta: { ...emptyPost.archiveMeta }
+    });
     setEditingId("");
     setSelectedVideoFile(null);
     setUploadError("");
@@ -355,9 +389,11 @@ export default function AdminLayout({ setHasAdminSession, theme, setTheme }) {
           uploadError,
           selectedVideoFile,
           updateField,
+          updateArchiveMetaField,
           updateCollectionForm,
           updateAboutForm,
           togglePostCollection,
+          toggleArchiveMetaLink,
           setSelectedVideoFile,
           handleVideoUpload,
           handleSubmit,

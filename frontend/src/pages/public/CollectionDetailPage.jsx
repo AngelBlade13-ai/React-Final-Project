@@ -5,12 +5,12 @@ import { FractureFragmentCard, TimelineCard } from "../../components/cards";
 import {
   apiBaseUrl,
   FRACTUREVERSE_FEATURED_SLUG,
-  FRACTUREVERSE_METADATA,
   FRACTUREVERSE_ORDER,
   FRACTUREVERSE_WORLD,
   getFractureverseMeta,
   getThemeConfig,
-  hasVideo
+  hasVideo,
+  sortFractureversePosts
 } from "../../lib/site";
 
 const FRACTURE_LINE_LAYOUT = {
@@ -83,15 +83,18 @@ export default function CollectionDetailPage({ onPlayTrack }) {
   const timelineReleases = featuredRelease ? [featuredRelease, ...otherReleases] : releases;
   const isFractureverse = collection?.theme === "fractureverse";
   const fractureverseReleases = isFractureverse
-    ? FRACTUREVERSE_ORDER.map((entrySlug) => releases.find((post) => post.slug === entrySlug)).filter(Boolean)
+    ? sortFractureversePosts(
+        FRACTUREVERSE_ORDER.map((entrySlug) => releases.find((post) => post.slug === entrySlug))
+          .filter(Boolean)
+          .concat(releases.filter((post) => !FRACTUREVERSE_ORDER.includes(post.slug)))
+      )
     : [];
   const fractureverseFeatured =
     fractureverseReleases.find((post) => post.slug === FRACTUREVERSE_FEATURED_SLUG) || featuredRelease;
   const fractureverseGrid = fractureverseReleases.filter((post) => post.slug !== fractureverseFeatured?.slug);
   const activeFragmentMeta =
-    FRACTUREVERSE_METADATA[activeFragmentSlug] ||
-    FRACTUREVERSE_METADATA[fractureverseFeatured?.slug] ||
-    FRACTUREVERSE_METADATA[FRACTUREVERSE_FEATURED_SLUG];
+    getFractureverseMeta(fractureverseReleases.find((post) => post.slug === activeFragmentSlug), fractureverseReleases) ||
+    getFractureverseMeta(fractureverseFeatured, fractureverseReleases);
   const fractureDominantState = "Collapsed";
   const fractureIntegrity = Math.max(24, 64 - fractureverseReleases.length * 4);
   const fractureConnections = buildFractureConnections(activeFragmentMeta);
@@ -174,7 +177,7 @@ export default function CollectionDetailPage({ onPlayTrack }) {
                   </div>
                   <div className="fracture-analysis-item">
                     <span className="world-status-label">Primary Anchor</span>
-                    <strong>{getFractureverseMeta(fractureverseFeatured)?.fragmentId || "F-03"}</strong>
+                    <strong>{getFractureverseMeta(fractureverseFeatured, fractureverseReleases)?.fragmentId || "F-03"}</strong>
                   </div>
                   <div className="fracture-analysis-item">
                     <span className="world-status-label">Emotional Load</span>
@@ -190,7 +193,7 @@ export default function CollectionDetailPage({ onPlayTrack }) {
                 </div>
                 <div className="fracture-sequence-strip" onMouseLeave={() => setActiveFragmentSlug("")}>
                   {fractureverseReleases.map((post) => {
-                    const meta = getFractureverseMeta(post);
+                    const meta = getFractureverseMeta(post, fractureverseReleases);
                     const isActive = activeFragmentSlug === post.slug;
                     const hasActive = Boolean(activeFragmentSlug);
 
@@ -227,7 +230,7 @@ export default function CollectionDetailPage({ onPlayTrack }) {
             <section className="collection-fragment-shell">
               <div className="section-head fractureverse-featured-head">
                 <h2>Primary Fragment</h2>
-                <span>{getFractureverseMeta(fractureverseFeatured)?.fragmentId || "F-03"} / flagship record</span>
+                <span>{getFractureverseMeta(fractureverseFeatured, fractureverseReleases)?.fragmentId || "F-03"} / flagship record</span>
               </div>
               <article className="intro-card homepage-panel collection-fragment-card fracture-primary-card">
                 <div className="collection-fragment-media fracture-primary-media">
@@ -252,15 +255,17 @@ export default function CollectionDetailPage({ onPlayTrack }) {
                 <div className="collection-fragment-copy fracture-primary-copy">
                   <p className="eyebrow">Primary Fragment</p>
                   <p className="fracture-fragment-meta">
-                    {getFractureverseMeta(fractureverseFeatured)?.fragmentId} / {getFractureverseMeta(fractureverseFeatured)?.state} /{" "}
-                    {getFractureverseMeta(fractureverseFeatured)?.perspective} / {getFractureverseMeta(fractureverseFeatured)?.signalType}
+                    {getFractureverseMeta(fractureverseFeatured, fractureverseReleases)?.fragmentId} /{" "}
+                    {getFractureverseMeta(fractureverseFeatured, fractureverseReleases)?.state} /{" "}
+                    {getFractureverseMeta(fractureverseFeatured, fractureverseReleases)?.perspective} /{" "}
+                    {getFractureverseMeta(fractureverseFeatured, fractureverseReleases)?.signalType}
                   </p>
-                  <h2>{getFractureverseMeta(fractureverseFeatured)?.title || fractureverseFeatured.title}</h2>
+                  <h2>{getFractureverseMeta(fractureverseFeatured, fractureverseReleases)?.title || fractureverseFeatured.title}</h2>
                   <p className="collection-fragment-excerpt">
-                    {getFractureverseMeta(fractureverseFeatured)?.description || fractureverseFeatured.excerpt}
+                    {getFractureverseMeta(fractureverseFeatured, fractureverseReleases)?.description || fractureverseFeatured.excerpt}
                   </p>
                   <p className="collection-fragment-context">
-                    {getFractureverseMeta(fractureverseFeatured)?.systemNote ||
+                    {getFractureverseMeta(fractureverseFeatured, fractureverseReleases)?.systemNote ||
                       "Collapse event stabilized through force of will. Structural integrity compromised."}
                   </p>
                   <p className="fracture-system-voice">Observation log updated. Primary anchor remains unstable but reachable.</p>
@@ -391,7 +396,7 @@ export default function CollectionDetailPage({ onPlayTrack }) {
                   </div>
                   <div className="timeline-grid fracture-fragment-grid">
                   {fractureverseGrid.map((post) => {
-                    const meta = getFractureverseMeta(post);
+                    const meta = getFractureverseMeta(post, fractureverseReleases);
                     const isActive = activeFragmentSlug === post.slug;
                     const isLinked = Boolean(
                       activeFragmentMeta &&

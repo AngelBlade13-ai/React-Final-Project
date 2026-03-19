@@ -12,7 +12,20 @@
       "published": true,
       "collectionSlugs": [
         "the-fractureverse"
-      ]
+      ],
+      "archiveMeta": {
+        "fragmentId": "F-05",
+        "state": "Unstable",
+        "perspective": "Both",
+        "signalType": "Convergence",
+        "description": "A convergence event where opposing truths collide, and the timeline can no longer resolve itself.",
+        "systemNote": "Convergence detected. Conflicting directives unresolved.",
+        "linkedSlugs": [
+          "still-breathing-in-a-dying-world-reimagined",
+          "shattered-trust-reimagined",
+          "you-were-better-before-you-saved-the-world-reimagined"
+        ]
+      }
     },
     {
       "id": "787340b9-e06e-4d3a-809c-0596cc752e07",
@@ -26,7 +39,19 @@
       "published": true,
       "collectionSlugs": [
         "the-fractureverse"
-      ]
+      ],
+      "archiveMeta": {
+        "fragmentId": "F-01",
+        "state": "Stable",
+        "perspective": "Grissom",
+        "signalType": "Origin",
+        "description": "A preserved fragment from before the fracture - where love existed without cost.",
+        "systemNote": "Reference timeline detected. Emotional imprint preserved.",
+        "linkedSlugs": [
+          "still-breathing-in-a-dying-world-reimagined",
+          "you-were-better-before-you-saved-the-world-reimagined"
+        ]
+      }
     },
     {
       "id": "daf9a63c-4eea-484e-9b5e-cd9fff84bba4",
@@ -40,7 +65,19 @@
       "published": true,
       "collectionSlugs": [
         "the-fractureverse"
-      ]
+      ],
+      "archiveMeta": {
+        "fragmentId": "F-04",
+        "state": "Divergent",
+        "perspective": "Grissom",
+        "signalType": "Conflict",
+        "description": "A hostile fragment where loss becomes obsession, and one version of him refuses to accept the world she chose.",
+        "systemNote": "Hostile recursion detected. Subject actively destabilizing timelines.",
+        "linkedSlugs": [
+          "still-breathing-in-a-dying-world-reimagined",
+          "shattered-trust-reimagined"
+        ]
+      }
     },
     {
       "id": "40d04213-387a-4888-8372-c134e7ebc299",
@@ -54,7 +91,19 @@
       "published": true,
       "collectionSlugs": [
         "the-fractureverse"
-      ]
+      ],
+      "archiveMeta": {
+        "fragmentId": "F-02",
+        "state": "Divergent",
+        "perspective": "Angel",
+        "signalType": "Conflict",
+        "description": "The moment she chose everything, knowing it would cost her the one thing she wanted to keep.",
+        "systemNote": "Critical divergence detected. Global stability prioritized over personal attachment.",
+        "linkedSlugs": [
+          "the-one-you-used-to-be-reimagined",
+          "shattered-trust-reimagined"
+        ]
+      }
     },
     {
       "id": "c1fe77bd-ab2e-4c12-b441-3ecf0e25bb7b",
@@ -68,7 +117,19 @@
       "published": true,
       "collectionSlugs": [
         "the-fractureverse"
-      ]
+      ],
+      "archiveMeta": {
+        "fragmentId": "F-03",
+        "state": "Collapsed",
+        "perspective": "Angel",
+        "signalType": "Primary",
+        "description": "A post-collapse fragment where trust failed, and the cost of saving everything became permanent.",
+        "systemNote": "Collapse event stabilized through force of will. Structural integrity compromised.",
+        "linkedSlugs": [
+          "the-one-you-used-to-be-reimagined",
+          "still-breathing-in-a-dying-world-reimagined"
+        ]
+      }
     },
     {
       "id": "f74aab82-bf1b-441d-9389-a8830d3168e8",

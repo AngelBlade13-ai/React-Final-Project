@@ -29,6 +29,35 @@ function normalizeCollectionInput(input, existingCollection = {}) {
   };
 }
 
+function normalizeArchiveMetaInput(input = {}, existingArchiveMeta = null) {
+  const archiveMeta = {
+    ...(existingArchiveMeta || {}),
+    fragmentId: String(input.fragmentId || existingArchiveMeta?.fragmentId || "").trim(),
+    state: String(input.state || existingArchiveMeta?.state || "").trim(),
+    perspective: String(input.perspective || existingArchiveMeta?.perspective || "").trim(),
+    signalType: String(input.signalType || existingArchiveMeta?.signalType || "").trim(),
+    description: String(input.description || existingArchiveMeta?.description || "").trim(),
+    systemNote: String(input.systemNote || existingArchiveMeta?.systemNote || "").trim(),
+    linkedSlugs: Array.isArray(input.linkedSlugs)
+      ? [...new Set(input.linkedSlugs.map((slug) => String(slug).trim()).filter(Boolean))]
+      : existingArchiveMeta?.linkedSlugs || []
+  };
+
+  if (
+    !archiveMeta.fragmentId &&
+    !archiveMeta.state &&
+    !archiveMeta.perspective &&
+    !archiveMeta.signalType &&
+    !archiveMeta.description &&
+    !archiveMeta.systemNote &&
+    archiveMeta.linkedSlugs.length === 0
+  ) {
+    return null;
+  }
+
+  return archiveMeta;
+}
+
 function normalizePostInput(input, collections, existingPost = {}) {
   const collectionSlugSet = new Set(collections.map((collection) => collection.slug));
   const requestedCollections = Array.isArray(input.collectionSlugs)
@@ -48,6 +77,7 @@ function normalizePostInput(input, collections, existingPost = {}) {
         : typeof existingPost.lyrics === "string"
           ? existingPost.lyrics
           : "",
+    archiveMeta: normalizeArchiveMetaInput(input.archiveMeta, existingPost.archiveMeta),
     createdAt: existingPost.createdAt || input.createdAt || new Date().toISOString(),
     published: typeof input.published === "boolean" ? input.published : Boolean(existingPost.published),
     collectionSlugs: [...new Set(requestedCollections.map((slug) => String(slug).trim()).filter((slug) => collectionSlugSet.has(slug)))]

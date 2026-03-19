@@ -107,6 +107,38 @@ function normalizeCollection(collection) {
   };
 }
 
+function normalizeArchiveMeta(archiveMeta) {
+  if (!archiveMeta || typeof archiveMeta !== "object") {
+    return null;
+  }
+
+  const normalized = {
+    fragmentId: String(archiveMeta.fragmentId || "").trim(),
+    state: String(archiveMeta.state || "").trim(),
+    perspective: String(archiveMeta.perspective || "").trim(),
+    signalType: String(archiveMeta.signalType || "").trim(),
+    description: String(archiveMeta.description || "").trim(),
+    systemNote: String(archiveMeta.systemNote || "").trim(),
+    linkedSlugs: Array.isArray(archiveMeta.linkedSlugs)
+      ? [...new Set(archiveMeta.linkedSlugs.map((slug) => String(slug).trim()).filter(Boolean))]
+      : []
+  };
+
+  if (
+    !normalized.fragmentId &&
+    !normalized.state &&
+    !normalized.perspective &&
+    !normalized.signalType &&
+    !normalized.description &&
+    !normalized.systemNote &&
+    normalized.linkedSlugs.length === 0
+  ) {
+    return null;
+  }
+
+  return normalized;
+}
+
 function normalizePost(post) {
   if (!post) {
     return null;
@@ -115,6 +147,7 @@ function normalizePost(post) {
   return {
     ...post,
     lyrics: post.lyrics || "",
+    archiveMeta: normalizeArchiveMeta(post.archiveMeta),
     collectionSlugs: Array.isArray(post.collectionSlugs)
       ? [...new Set(post.collectionSlugs.map((slug) => String(slug).trim()).filter(Boolean))]
       : []

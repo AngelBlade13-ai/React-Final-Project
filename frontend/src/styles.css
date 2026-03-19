@@ -1077,6 +1077,16 @@ select:focus {
   grid-column: 1 / -1;
 }
 
+.archive-meta-panel {
+  display: grid;
+  gap: 0.95rem;
+}
+
+.archive-link-picker {
+  display: grid;
+  gap: 0.75rem;
+}
+
 .admin-actions {
   display: flex;
   gap: 0.75rem;
@@ -1085,6 +1095,12 @@ select:focus {
 
 .release-hero {
   padding-bottom: 1.4rem;
+}
+
+.fracture-release-hero {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--surface) 84%, var(--primary) 16%), color-mix(in srgb, var(--surface-alt) 80%, var(--secondary) 20%)),
+    var(--surface);
 }
 
 .release-hero-layout {
@@ -1125,6 +1141,12 @@ select:focus {
   gap: 1rem;
 }
 
+.release-support-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
 .release-video {
   width: min(100%, 460px);
   aspect-ratio: 4 / 5;
@@ -1137,6 +1159,67 @@ select:focus {
 
 .release-copy-panel {
   padding-top: 1.3rem;
+}
+
+.release-panel-title {
+  margin: 0.15rem 0 0.45rem;
+  font-size: clamp(1.45rem, 2.2vw, 2rem);
+  letter-spacing: -0.03em;
+}
+
+.release-panel-intro {
+  margin: 0 0 1rem;
+  color: var(--muted-text);
+  line-height: 1.65;
+  max-width: 58ch;
+}
+
+.release-world-status {
+  margin: 0.35rem 0 0.25rem;
+}
+
+.fracture-release-panel {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 78%, var(--primary) 22%), color-mix(in srgb, var(--surface-alt) 86%, var(--surface) 14%)),
+    var(--surface);
+}
+
+.linked-echo-grid,
+.release-nav-stack {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.linked-echo-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.linked-echo-card {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1rem 1.05rem;
+  border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--border) 72%, var(--primary) 28%);
+  background: color-mix(in srgb, var(--surface-alt) 76%, var(--surface) 24%);
+  color: inherit;
+  text-decoration: none;
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.linked-echo-card strong,
+.linked-echo-card p {
+  margin: 0;
+}
+
+.linked-echo-card p {
+  color: var(--muted-text);
+}
+
+.linked-echo-card:hover,
+.linked-echo-card:focus-visible {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--border) 56%, var(--primary) 44%);
+  box-shadow: 0 16px 34px color-mix(in srgb, var(--primary) 12%, transparent);
 }
 
 .explore-toolbar {
@@ -1944,6 +2027,22 @@ select:focus {
     linear-gradient(180deg, color-mix(in srgb, var(--surface) 74%, black 26%), color-mix(in srgb, var(--surface-alt) 84%, var(--surface) 16%));
 }
 
+:root[data-collection-theme="fractureverse"] .fracture-release-panel,
+:root[data-collection-theme="fractureverse"] .release-copy-panel {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 76%, black 24%), color-mix(in srgb, var(--surface-alt) 84%, var(--surface) 16%));
+}
+
+:root[data-collection-theme="fractureverse"] .linked-echo-card {
+  background: color-mix(in srgb, var(--surface-alt) 72%, rgba(255, 111, 165, 0.12));
+  border-color: color-mix(in srgb, var(--primary) 22%, var(--border) 78%);
+}
+
+:root[data-collection-theme="fractureverse"] .fracture-release-hero .world-status-bar {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-alt) 70%, var(--primary) 18%), color-mix(in srgb, var(--surface) 82%, black 18%));
+}
+
 :root[data-collection-theme="fractureverse"] .fracture-fragment-card .media-placeholder {
   background:
     radial-gradient(circle at top, color-mix(in srgb, var(--primary) 14%, transparent), transparent 42%),
@@ -2286,7 +2385,8 @@ select:focus {
   .explore-hero-grid,
   .collection-fragment-card,
   .timeline-grid,
-  .auth-page-grid {
+  .auth-page-grid,
+  .release-support-grid {
     grid-template-columns: 1fr;
     display: grid;
   }

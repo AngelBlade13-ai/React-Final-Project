@@ -18,11 +18,17 @@ export default function AdminPostsPage() {
     selectedVideoFile,
     setSelectedVideoFile,
     startEdit,
+    toggleArchiveMetaLink,
     togglePostCollection,
+    updateArchiveMetaField,
     updateField,
     uploadError,
     uploading
   } = useAdminContext();
+  const fractureverseCollection = collections.find((collection) => collection.theme === "fractureverse");
+  const fractureverseCandidates = posts.filter((post) => post.id !== editingId && post.collectionSlugs?.includes(fractureverseCollection?.slug));
+  const isFractureverseEntry =
+    Boolean(fractureverseCollection) && form.collectionSlugs.includes(fractureverseCollection.slug);
 
   return (
     <main className="admin-grid">
@@ -86,6 +92,81 @@ export default function AdminPostsPage() {
             Lyrics
             <textarea onChange={(event) => updateField("lyrics", event.target.value)} rows="8" value={form.lyrics} />
           </label>
+          <fieldset className="full-span collection-picker archive-meta-panel">
+            <legend>World Metadata</legend>
+            <p className="upload-status">
+              Optional archive fields for world-based collections. They matter most for Fractureverse, but they stay lean and can be left blank.
+            </p>
+            <div className="admin-form">
+              <label>
+                Fragment ID
+                <input
+                  onChange={(event) => updateArchiveMetaField("fragmentId", event.target.value)}
+                  placeholder="F-03"
+                  value={form.archiveMeta.fragmentId}
+                />
+              </label>
+              <label>
+                State
+                <input
+                  onChange={(event) => updateArchiveMetaField("state", event.target.value)}
+                  placeholder="Collapsed"
+                  value={form.archiveMeta.state}
+                />
+              </label>
+              <label>
+                Perspective
+                <input
+                  onChange={(event) => updateArchiveMetaField("perspective", event.target.value)}
+                  placeholder="Angel"
+                  value={form.archiveMeta.perspective}
+                />
+              </label>
+              <label>
+                Signal Type
+                <input
+                  onChange={(event) => updateArchiveMetaField("signalType", event.target.value)}
+                  placeholder="Primary"
+                  value={form.archiveMeta.signalType}
+                />
+              </label>
+              <label className="full-span">
+                World Description
+                <textarea
+                  onChange={(event) => updateArchiveMetaField("description", event.target.value)}
+                  placeholder="A post-collapse fragment where trust failed..."
+                  rows="3"
+                  value={form.archiveMeta.description}
+                />
+              </label>
+              <label className="full-span">
+                System Note
+                <textarea
+                  onChange={(event) => updateArchiveMetaField("systemNote", event.target.value)}
+                  placeholder="Collapse event stabilized through force of will..."
+                  rows="3"
+                  value={form.archiveMeta.systemNote}
+                />
+              </label>
+            </div>
+            {isFractureverseEntry && fractureverseCandidates.length ? (
+              <div className="archive-link-picker">
+                <p className="meta">Linked Fragments</p>
+                <div className="checkbox-pill-row">
+                  {fractureverseCandidates.map((post) => (
+                    <label className="checkbox-pill" key={post.id}>
+                      <input
+                        checked={form.archiveMeta.linkedSlugs.includes(post.slug)}
+                        onChange={() => toggleArchiveMetaLink(post.slug)}
+                        type="checkbox"
+                      />
+                      <span>{post.title}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </fieldset>
           <fieldset className="full-span collection-picker">
             <legend>Collections</legend>
             <div className="checkbox-pill-row">
@@ -150,6 +231,11 @@ export default function AdminPostsPage() {
                     </span>
                   ))}
                 </div>
+                {post.archiveMeta?.fragmentId ? (
+                  <p className="fracture-system-note">
+                    {post.archiveMeta.fragmentId} / {post.archiveMeta.state || "Unclassified"} / {post.archiveMeta.signalType || "Record"}
+                  </p>
+                ) : null}
                 <div className="admin-actions">
                   <button className="secondary-button" onClick={() => startEdit(post)} type="button">
                     Edit

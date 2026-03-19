@@ -8,6 +8,15 @@ export const emptyPost = {
   excerpt: "",
   content: "",
   lyrics: "",
+  archiveMeta: {
+    fragmentId: "",
+    state: "",
+    perspective: "",
+    signalType: "",
+    description: "",
+    systemNote: "",
+    linkedSlugs: []
+  },
   createdAt: "",
   published: false,
   collectionSlugs: []
@@ -144,7 +153,7 @@ export const FRACTUREVERSE_METADATA = {
     signalType: "Origin",
     title: "The One You Used to Be",
     description: "A preserved fragment from before the fracture - where love existed without cost.",
-    linkedTo: ["F-02", "F-04"],
+    linkedSlugs: ["still-breathing-in-a-dying-world-reimagined", "you-were-better-before-you-saved-the-world-reimagined"],
     systemNote: "Reference timeline detected. Emotional imprint preserved."
   },
   "still-breathing-in-a-dying-world-reimagined": {
@@ -155,7 +164,7 @@ export const FRACTUREVERSE_METADATA = {
     title: "Still Breathing (In a Dying World)",
     description:
       "The moment she chose everything, knowing it would cost her the one thing she wanted to keep.",
-    linkedTo: ["F-01", "F-03"],
+    linkedSlugs: ["the-one-you-used-to-be-reimagined", "shattered-trust-reimagined"],
     systemNote: "Critical divergence detected. Global stability prioritized over personal attachment."
   },
   "shattered-trust-reimagined": {
@@ -166,7 +175,7 @@ export const FRACTUREVERSE_METADATA = {
     title: "Shattered Trust (Reimagined)",
     description:
       "A post-collapse fragment where trust failed, and the cost of saving everything became permanent.",
-    linkedTo: ["F-01", "F-02"],
+    linkedSlugs: ["the-one-you-used-to-be-reimagined", "still-breathing-in-a-dying-world-reimagined"],
     systemNote: "Collapse event stabilized through force of will. Structural integrity compromised."
   },
   "you-were-better-before-you-saved-the-world-reimagined": {
@@ -177,7 +186,7 @@ export const FRACTUREVERSE_METADATA = {
     title: "You Were Better Before You Saved the World",
     description:
       "A hostile fragment where loss becomes obsession, and one version of him refuses to accept the world she chose.",
-    linkedTo: ["F-02", "F-03"],
+    linkedSlugs: ["still-breathing-in-a-dying-world-reimagined", "shattered-trust-reimagined"],
     systemNote: "Hostile recursion detected. Subject actively destabilizing timelines."
   },
   "we-were-never-meant-to-survive-reimagined-duet": {
@@ -188,7 +197,11 @@ export const FRACTUREVERSE_METADATA = {
     title: "We Were Never Meant to Survive",
     description:
       "A convergence event where opposing truths collide, and the timeline can no longer resolve itself.",
-    linkedTo: ["F-02", "F-03", "F-04"],
+    linkedSlugs: [
+      "still-breathing-in-a-dying-world-reimagined",
+      "shattered-trust-reimagined",
+      "you-were-better-before-you-saved-the-world-reimagined"
+    ],
     systemNote: "Convergence detected. Conflicting directives unresolved."
   }
 };
@@ -202,8 +215,46 @@ export function getPrimaryThemeForPost(post) {
   return themedCollection?.theme || "default";
 }
 
-export function getFractureverseMeta(post) {
-  return FRACTUREVERSE_METADATA[post?.slug] || null;
+export function sortFractureversePosts(posts = []) {
+  return [...posts].sort((left, right) => {
+    const leftMeta = getFractureverseMeta(left, posts);
+    const rightMeta = getFractureverseMeta(right, posts);
+    const leftIndex = leftMeta?.fragmentId ? Number(leftMeta.fragmentId.replace("F-", "")) : FRACTUREVERSE_ORDER.indexOf(left.slug) + 1 || 99;
+    const rightIndex = rightMeta?.fragmentId ? Number(rightMeta.fragmentId.replace("F-", "")) : FRACTUREVERSE_ORDER.indexOf(right.slug) + 1 || 99;
+
+    return leftIndex - rightIndex;
+  });
+}
+
+export function getFractureverseMeta(post, allPosts = []) {
+  const fallbackMeta = FRACTUREVERSE_METADATA[post?.slug] || null;
+  const archiveMeta = post?.archiveMeta || fallbackMeta;
+
+  if (!archiveMeta) {
+    return null;
+  }
+
+  const linkedSlugs = Array.isArray(archiveMeta.linkedSlugs)
+    ? archiveMeta.linkedSlugs
+    : Array.isArray(fallbackMeta?.linkedSlugs)
+      ? fallbackMeta.linkedSlugs
+      : [];
+  const linkedPosts = allPosts.filter((entry) => linkedSlugs.includes(entry.slug));
+
+  return {
+    fragmentId: archiveMeta.fragmentId || fallbackMeta?.fragmentId || "",
+    state: archiveMeta.state || fallbackMeta?.state || "",
+    perspective: archiveMeta.perspective || fallbackMeta?.perspective || "",
+    signalType: archiveMeta.signalType || fallbackMeta?.signalType || "",
+    title: fallbackMeta?.title || post?.title || "",
+    description: archiveMeta.description || fallbackMeta?.description || post?.excerpt || "",
+    systemNote: archiveMeta.systemNote || fallbackMeta?.systemNote || "",
+    linkedSlugs,
+    linkedPosts,
+    linkedTo: linkedPosts
+      .map((entry) => getFractureverseMeta(entry, allPosts)?.fragmentId)
+      .filter(Boolean)
+  };
 }
 
 export function hasVideo(videoUrl) {
