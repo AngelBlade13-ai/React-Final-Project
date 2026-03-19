@@ -37,25 +37,28 @@ export default function PublicReleasePage({ hasAdminSession, onPlayTrack }) {
   const labels = getThemeConfig(primaryTheme);
   const primaryCollection = post?.collections?.find((collection) => collection.theme) || post?.collections?.[0] || null;
   const isFractureverse = primaryTheme === "fractureverse";
+  const isEldoria = primaryTheme === "eldoria";
+  const isThemedSequence = isFractureverse || isEldoria;
   const fractureMeta = getFractureverseMeta(post, sequencePosts.length ? sequencePosts : post ? [post] : []);
-  const orderedFragments = sortFractureversePosts(sequencePosts)
+  const orderedSequence = (isFractureverse ? sortFractureversePosts(sequencePosts) : sequencePosts)
     .map((entry) => ({
       post: entry,
       meta: getFractureverseMeta(entry, sequencePosts)
     }))
-    .filter((entry) => entry.meta);
-  const currentFragmentIndex = orderedFragments.findIndex((entry) => entry.post.slug === post?.slug);
-  const previousFragment = currentFragmentIndex > 0 ? orderedFragments[currentFragmentIndex - 1] : null;
+    .filter((entry) => entry.post);
+  const currentFragmentIndex = orderedSequence.findIndex((entry) => entry.post.slug === post?.slug);
+  const previousFragment = currentFragmentIndex > 0 ? orderedSequence[currentFragmentIndex - 1] : null;
   const nextFragment =
-    currentFragmentIndex >= 0 && currentFragmentIndex < orderedFragments.length - 1 ? orderedFragments[currentFragmentIndex + 1] : null;
+    currentFragmentIndex >= 0 && currentFragmentIndex < orderedSequence.length - 1 ? orderedSequence[currentFragmentIndex + 1] : null;
   const linkedFragments = fractureMeta?.linkedPosts || [];
+  const companionBallads = orderedSequence.filter((entry) => entry.post.slug !== post?.slug);
   const playbackContext = primaryCollection
     ? {
         collectionId: primaryCollection.id || primaryCollection.slug,
         collectionName: primaryCollection.title,
         collectionSlug: primaryCollection.slug,
-        queue: isFractureverse && orderedFragments.length
-          ? orderedFragments.map((entry) => entry.post)
+        queue: isThemedSequence && orderedSequence.length
+          ? orderedSequence.map((entry) => entry.post)
           : sequencePosts.length
             ? sequencePosts
             : [post].filter(Boolean)
@@ -64,7 +67,7 @@ export default function PublicReleasePage({ hasAdminSession, onPlayTrack }) {
 
   useEffect(() => {
     async function loadSequence() {
-      if (!post || !isFractureverse || !primaryCollection?.slug) {
+      if (!post || !isThemedSequence || !primaryCollection?.slug) {
         setSequencePosts([]);
         return;
       }
@@ -84,7 +87,7 @@ export default function PublicReleasePage({ hasAdminSession, onPlayTrack }) {
     }
 
     loadSequence();
-  }, [isFractureverse, post, primaryCollection?.slug]);
+  }, [isThemedSequence, post, primaryCollection?.slug]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -104,7 +107,7 @@ export default function PublicReleasePage({ hasAdminSession, onPlayTrack }) {
 
   return (
     <>
-      <header className={`hero homepage-hero release-hero${isFractureverse ? " fracture-release-hero" : ""}`}>
+      <header className={`hero homepage-hero release-hero${isFractureverse ? " fracture-release-hero" : ""}${isEldoria ? " eldoria-release-hero" : ""}`}>
         <div className="hero-header-row">
           <div className="public-page-links">
             <Link className="back-link" to="/">
@@ -128,12 +131,26 @@ export default function PublicReleasePage({ hasAdminSession, onPlayTrack }) {
               <ReleaseMedia
                 className="release-video"
                 controls
-                eyebrow={isFractureverse ? (hasVideo(post.videoUrl) ? "Playback Available" : "Fragment Unrecorded") : "Video Pending"}
+                eyebrow={
+                  isFractureverse
+                    ? hasVideo(post.videoUrl)
+                      ? "Playback Available"
+                      : "Fragment Unrecorded"
+                    : isEldoria
+                      ? hasVideo(post.videoUrl)
+                        ? "Ballad Ready"
+                        : "Ballad Awaiting Visuals"
+                      : "Video Pending"
+                }
                 text={
                   isFractureverse
                     ? hasVideo(post.videoUrl)
                       ? fractureMeta?.systemNote || "Observation log updated. Fragment playback available."
                       : "Signal trace detected. Playback unavailable. Emotional imprint preserved."
+                    : isEldoria
+                      ? hasVideo(post.videoUrl)
+                        ? "This entry is part of the living chronicle. Playback is available whenever you want to step back into the tale."
+                        : "This ballad already belongs to the chronicle in written form. Its visual telling can be added later without losing the page."
                     : "This release has been published before the final video upload. The written entry is live now, and the visual can be added later."
                 }
                 title={post.title}
@@ -141,11 +158,13 @@ export default function PublicReleasePage({ hasAdminSession, onPlayTrack }) {
               />
             </div>
             <div className="release-hero-copy">
-              <p className="eyebrow">{isFractureverse ? "Timeline Record" : labels.releaseNote}</p>
+              <p className="eyebrow">{isFractureverse ? "Timeline Record" : isEldoria ? "Chronicle Entry" : labels.releaseNote}</p>
               <h1>{post.title}</h1>
               <p className="release-hero-intro">
                 {isFractureverse
                   ? "An in-world fragment view: playback, record, linked echoes, and the position this entry holds inside the larger fracture."
+                  : isEldoria
+                    ? "A story-forward view for the ballad, its place inside the chronicle, and the verses that keep the world feeling lived in."
                   : "A focused listening view for the video, the note behind it, and the words that shaped the release."}
               </p>
               <p className="hero-copy">{post.excerpt}</p>
@@ -167,6 +186,25 @@ export default function PublicReleasePage({ hasAdminSession, onPlayTrack }) {
                   <div className="world-status-item">
                     <span className="world-status-label">Signal</span>
                     <strong>{fractureMeta.signalType}</strong>
+                  </div>
+                </div>
+              ) : isEldoria ? (
+                <div className="world-status-bar release-world-status eldoria-release-status">
+                  <div className="world-status-item">
+                    <span className="world-status-label">World</span>
+                    <strong>{primaryCollection?.title || "Eldoria"}</strong>
+                  </div>
+                  <div className="world-status-item">
+                    <span className="world-status-label">Chapter</span>
+                    <strong>{currentFragmentIndex >= 0 ? `${currentFragmentIndex + 1} / ${orderedSequence.length || 1}` : "Opening"}</strong>
+                  </div>
+                  <div className="world-status-item">
+                    <span className="world-status-label">Kind</span>
+                    <strong>Ballad</strong>
+                  </div>
+                  <div className="world-status-item">
+                    <span className="world-status-label">Season</span>
+                    <strong>{orderedSequence.length > 1 ? "Chronicle in motion" : "First telling"}</strong>
                   </div>
                 </div>
               ) : null}
@@ -196,11 +234,12 @@ export default function PublicReleasePage({ hasAdminSession, onPlayTrack }) {
                 </button>
                 {primaryCollection ? (
                   <Link className="hero-link secondary-link" to={`/collections/${primaryCollection.slug}`}>
-                    {isFractureverse ? "Return to Sequence" : "Back to Collection"}
+                    {isFractureverse ? "Return to Sequence" : isEldoria ? "Return to Chronicle" : "Back to Collection"}
                   </Link>
                 ) : null}
               </div>
               {isFractureverse ? <p className="fracture-system-voice">Observation log updated. Fragment link stability fluctuating.</p> : null}
+              {isEldoria ? <p className="eldoria-system-voice">This page is kept as part of the wider chronicle, not as a standalone upload.</p> : null}
             </div>
           </div>
         ) : null}
@@ -217,6 +256,13 @@ export default function PublicReleasePage({ hasAdminSession, onPlayTrack }) {
                 </h2>
                 <p className="release-panel-intro">{fractureMeta.description}</p>
               </>
+            ) : isEldoria ? (
+              <>
+                <h2 className="release-panel-title">Ballad Notes</h2>
+                <p className="release-panel-intro">
+                  This entry sits inside the larger Eldoria chronicle, where songs are treated like chapters carried forward in the same world.
+                </p>
+              </>
             ) : null}
             <div className="release-prose">
               {post.content.split("\n").filter(Boolean).map((paragraph, index) => (
@@ -225,14 +271,14 @@ export default function PublicReleasePage({ hasAdminSession, onPlayTrack }) {
             </div>
           </section>
 
-          {isFractureverse && orderedFragments.length ? (
+          {isFractureverse && orderedSequence.length ? (
             <section className="intro-card homepage-panel fracture-release-panel">
               <div className="section-head">
                 <h2>Observed Sequence</h2>
                 <span>Primary world path</span>
               </div>
               <div className="fracture-sequence-strip">
-                {orderedFragments.map((entry) => (
+                {orderedSequence.map((entry) => (
                   <Link
                     className={`fracture-sequence-node${entry.post.slug === post.slug ? " active" : ""}`}
                     key={entry.post.id}
@@ -244,6 +290,32 @@ export default function PublicReleasePage({ hasAdminSession, onPlayTrack }) {
                   </Link>
                 ))}
               </div>
+            </section>
+          ) : null}
+
+          {isEldoria ? (
+            <section className="intro-card homepage-panel eldoria-release-panel">
+              <div className="section-head eldoria-chronicle-head">
+                <h2>Song Cycle</h2>
+                <span>{orderedSequence.length ? `${orderedSequence.length} ballads in this chronicle` : "Chronicle context"}</span>
+              </div>
+              {orderedSequence.length ? (
+                <div className="eldoria-song-cycle">
+                  {orderedSequence.map((entry, index) => (
+                    <Link
+                      className={`linked-echo-card eldoria-cycle-card${entry.post.slug === post.slug ? " current" : ""}`}
+                      key={entry.post.id}
+                      to={`/release/${entry.post.slug}`}
+                    >
+                      <span className="fracture-sequence-id">Chapter {String(index + 1).padStart(2, "0")}</span>
+                      <strong>{entry.post.title}</strong>
+                      <p>{entry.post.excerpt}</p>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <p className="lyrics-placeholder">This ballad is currently the only recorded chapter in the chronicle.</p>
+              )}
             </section>
           ) : null}
 
@@ -298,6 +370,60 @@ export default function PublicReleasePage({ hasAdminSession, onPlayTrack }) {
             </section>
           ) : null}
 
+          {isEldoria ? (
+            <section className="release-support-grid">
+              <section className="intro-card homepage-panel eldoria-release-panel">
+                <div className="section-head">
+                  <h2>Companion Ballads</h2>
+                  <span>{companionBallads.length} nearby entries</span>
+                </div>
+                {companionBallads.length ? (
+                  <div className="linked-echo-grid">
+                    {companionBallads.map((entry, index) => (
+                      <Link className="linked-echo-card eldoria-linked-card" key={entry.post.id} to={`/release/${entry.post.slug}`}>
+                        <span className="fracture-sequence-id">Chapter {String(index + 1).padStart(2, "0")}</span>
+                        <strong>{entry.post.title}</strong>
+                        <p>{entry.post.excerpt}</p>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="lyrics-placeholder">No companion ballads have been gathered into this part of the chronicle yet.</p>
+                )}
+              </section>
+
+              <section className="intro-card homepage-panel eldoria-release-panel">
+                <div className="section-head">
+                  <h2>Chronicle Path</h2>
+                  <span>Move through the telling</span>
+                </div>
+                <div className="release-nav-stack">
+                  {previousFragment ? (
+                    <Link className="linked-echo-card release-nav-card eldoria-linked-card" to={`/release/${previousFragment.post.slug}`}>
+                      <span className="fracture-sequence-state">Previous Ballad</span>
+                      <strong>{previousFragment.post.title}</strong>
+                      <p>Return to the earlier chapter in this world.</p>
+                    </Link>
+                  ) : null}
+                  {nextFragment ? (
+                    <Link className="linked-echo-card release-nav-card eldoria-linked-card" to={`/release/${nextFragment.post.slug}`}>
+                      <span className="fracture-sequence-state">Next Ballad</span>
+                      <strong>{nextFragment.post.title}</strong>
+                      <p>Continue forward through the chronicle.</p>
+                    </Link>
+                  ) : null}
+                  {!previousFragment && !nextFragment ? (
+                    <div className="linked-echo-card release-nav-card eldoria-linked-card static-card">
+                      <span className="fracture-sequence-state">Single Ballad Chronicle</span>
+                      <strong>This entry currently stands alone.</strong>
+                      <p>As more ballads are added, the path through Eldoria will begin to branch outward from here.</p>
+                    </div>
+                  ) : null}
+                </div>
+              </section>
+            </section>
+          ) : null}
+
           {post.lyrics ? (
             <section className="intro-card homepage-panel lyrics-panel">
               <div className="lyrics-header">
@@ -313,7 +439,11 @@ export default function PublicReleasePage({ hasAdminSession, onPlayTrack }) {
                 <pre className="lyrics-block">{post.lyrics}</pre>
               ) : (
                 <p className="lyrics-placeholder">
-                  {isFractureverse ? "Open the recovered dialogue when you want to read along." : "Open the lyrics when you want to read along."}
+                  {isFractureverse
+                    ? "Open the recovered dialogue when you want to read along."
+                    : isEldoria
+                      ? "Open the verses when you want to read the ballad alongside the playback."
+                      : "Open the lyrics when you want to read along."}
                 </p>
               )}
             </section>
@@ -325,6 +455,14 @@ export default function PublicReleasePage({ hasAdminSession, onPlayTrack }) {
               <h2 className="release-panel-title">{fractureMeta.systemNote}</h2>
               <p className="release-panel-intro">
                 Primary subject integrity remains unstable. Continue through linked echoes or return to the observed sequence.
+              </p>
+            </section>
+          ) : isEldoria ? (
+            <section className="intro-card homepage-panel eldoria-release-panel eldoria-residual-panel">
+              <p className="eyebrow">Closing Note</p>
+              <h2 className="release-panel-title">Every ballad leaves a mark on the chronicle that carries it.</h2>
+              <p className="release-panel-intro">
+                Some entries feel like beginnings, some like old promises returning. Either way, they belong to the same world once they are written here.
               </p>
             </section>
           ) : null}

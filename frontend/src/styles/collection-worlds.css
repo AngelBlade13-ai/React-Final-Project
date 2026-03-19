@@ -1,0 +1,1348 @@
+.world-header {
+  position: relative;
+  margin-bottom: 0.35rem;
+  min-height: 320px;
+  padding: 2.8rem 1.6rem 1.8rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
+  display: flex;
+  align-items: flex-end;
+}
+
+.world-header::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 30px;
+  background:
+    radial-gradient(circle at 18% 24%, color-mix(in srgb, var(--primary) 20%, transparent), transparent 26%),
+    radial-gradient(circle at 72% 18%, color-mix(in srgb, var(--secondary) 14%, transparent), transparent 30%),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 10%, transparent), transparent 72%);
+  pointer-events: none;
+  filter: blur(8px);
+}
+
+.world-header::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 30px;
+  background:
+    linear-gradient(112deg, transparent 0%, transparent 62%, color-mix(in srgb, var(--primary) 8%, transparent) 70%, transparent 78%),
+    radial-gradient(circle at center, transparent 58%, rgba(0, 0, 0, 0.14));
+  pointer-events: none;
+}
+
+.world-header-layout {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 660px) minmax(160px, 1fr);
+  align-items: end;
+  gap: 2rem;
+}
+
+.world-header-inner {
+  position: relative;
+  max-width: 660px;
+  padding: 1.4rem 0 1.6rem;
+}
+
+.world-header-inner::before {
+  content: "";
+  position: absolute;
+  top: 0.2rem;
+  bottom: 0;
+  left: -1.15rem;
+  width: 1px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--primary) 56%, transparent), transparent 82%);
+  opacity: 0.9;
+}
+
+.world-header h1 {
+  margin: 0.35rem 0 0.9rem;
+  max-width: 12ch;
+  font-size: clamp(2.8rem, 5vw, 4.8rem);
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+}
+
+.world-header-copy {
+  max-width: 38ch;
+  line-height: 1.8;
+  font-size: 1.06rem;
+}
+
+.world-header-meta {
+  margin-top: 1.15rem;
+}
+
+.world-header-aside {
+  position: relative;
+  min-height: 220px;
+}
+
+.fracture-aside {
+  align-self: stretch;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.fracture-line {
+  position: relative;
+  width: min(280px, 100%);
+  height: 100%;
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, transparent 0%, rgba(255, 255, 255, 0.04) 28%, transparent 100%),
+    linear-gradient(90deg, transparent 0%, color-mix(in srgb, var(--primary) 18%, transparent) 48%, color-mix(in srgb, var(--secondary) 28%, transparent) 52%, transparent 100%);
+  opacity: 0.8;
+  filter: blur(18px);
+  transform: rotate(10deg) scale(0.98);
+}
+
+.fracture-line::before,
+.fracture-line::after {
+  content: "";
+  position: absolute;
+  inset: 8% 48%;
+  border-radius: 999px;
+  background: linear-gradient(180deg, transparent 0%, color-mix(in srgb, var(--primary-strong) 56%, transparent) 50%, transparent 100%);
+}
+
+.fracture-line::after {
+  inset: 18% 44%;
+  opacity: 0.55;
+  filter: blur(6px);
+}
+
+.eldoria-aside {
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.eldoria-sigil {
+  position: relative;
+  width: min(300px, 100%);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at center, color-mix(in srgb, var(--primary-strong) 12%, transparent) 0%, transparent 44%),
+    radial-gradient(circle at center, color-mix(in srgb, var(--secondary) 8%, transparent) 0%, transparent 64%);
+  filter: blur(0.2px);
+}
+
+.eldoria-sigil-ring,
+.eldoria-sigil-star {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  border-radius: 50%;
+}
+
+.eldoria-sigil-ring-outer {
+  width: 74%;
+  height: 74%;
+  border: 1px solid color-mix(in srgb, var(--primary-strong) 28%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--surface-alt) 36%, transparent);
+}
+
+.eldoria-sigil-ring-inner {
+  width: 48%;
+  height: 48%;
+  border: 1px solid color-mix(in srgb, var(--secondary) 32%, transparent);
+}
+
+.eldoria-sigil-star {
+  width: 24%;
+  height: 24%;
+  background:
+    radial-gradient(circle at center, color-mix(in srgb, var(--primary-strong) 66%, transparent) 0%, color-mix(in srgb, var(--primary-strong) 10%, transparent) 56%, transparent 72%);
+  filter: blur(0.3px);
+}
+
+.collection-world-page {
+  gap: 1.2rem;
+}
+
+.world-status-bar {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  padding: 1rem 1.2rem;
+}
+
+.world-status-item {
+  display: grid;
+  gap: 0.28rem;
+}
+
+.world-status-label {
+  color: var(--muted-text);
+  font-size: 0.75rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.world-header-status-bar {
+  margin-top: 1.2rem;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.eldoria-world-status {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.9rem;
+  margin-top: 1.35rem;
+}
+
+.fracture-sequence-panel {
+  display: grid;
+  gap: 1rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.fractureverse-sequence-head {
+  margin-bottom: 0;
+}
+
+.fracture-sequence-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    180deg,
+    transparent 0,
+    transparent 13px,
+    color-mix(in srgb, var(--text) 4%, transparent) 14px,
+    transparent 15px
+  );
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.fracture-sequence-strip {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.fracture-sequence-node {
+  --fracture-interaction-duration: 205ms;
+  --fracture-interaction-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  position: relative;
+  min-height: 150px;
+  display: grid;
+  align-content: start;
+  gap: 0.35rem;
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, var(--border) 76%, var(--primary) 24%);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-alt) 68%, var(--surface) 32%), color-mix(in srgb, var(--surface) 88%, black 12%));
+  color: var(--text);
+  text-decoration: none;
+  transition:
+    transform var(--fracture-interaction-duration) var(--fracture-interaction-ease),
+    border-color var(--fracture-interaction-duration) var(--fracture-interaction-ease),
+    box-shadow var(--fracture-interaction-duration) var(--fracture-interaction-ease),
+    background var(--fracture-interaction-duration) var(--fracture-interaction-ease),
+    opacity 220ms ease-out,
+    filter 220ms ease-out;
+  animation: fragmentReveal 520ms ease both;
+}
+
+.fracture-sequence-node:nth-child(2) {
+  animation-delay: 60ms;
+}
+
+.fracture-sequence-node:nth-child(3) {
+  animation-delay: 120ms;
+}
+
+.fracture-sequence-node:nth-child(4) {
+  animation-delay: 180ms;
+}
+
+.fracture-sequence-node:nth-child(5) {
+  animation-delay: 240ms;
+}
+
+.fracture-sequence-node::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: calc(100% - 0.1rem);
+  width: 1rem;
+  height: 1px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--primary) 72%, transparent), transparent);
+  pointer-events: none;
+}
+
+.fracture-sequence-node:last-child::after {
+  display: none;
+}
+
+.fracture-sequence-node:hover,
+.fracture-sequence-node:focus-visible,
+.fracture-sequence-node.active {
+  transform: translateY(-2px) scale(1.018);
+  border-color: color-mix(in srgb, var(--primary) 42%, var(--border) 58%);
+  box-shadow:
+    0 18px 36px color-mix(in srgb, var(--primary) 12%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--primary) 18%, transparent);
+}
+
+.fracture-sequence-node.connected {
+  border-color: color-mix(in srgb, var(--primary) 30%, var(--border) 70%);
+  box-shadow:
+    0 14px 28px color-mix(in srgb, var(--primary) 10%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--primary) 12%, transparent);
+}
+
+.fracture-sequence-node.dimmed {
+  opacity: 0.58;
+  filter: saturate(0.88);
+}
+
+.fracture-sequence-node.primary-influenced {
+  box-shadow:
+    0 18px 34px color-mix(in srgb, var(--primary) 10%, transparent),
+    0 0 18px color-mix(in srgb, var(--primary) 10%, transparent);
+}
+
+.fracture-sequence-id,
+.fracture-sequence-state {
+  font-size: 0.78rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.fracture-sequence-state {
+  color: var(--muted-text);
+}
+
+.fracture-sequence-node strong {
+  font-size: 1.02rem;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+
+.fracture-sequence-note {
+  margin: 0;
+  color: var(--muted-text);
+}
+
+.fracture-analysis-panel {
+  display: grid;
+  gap: 0.95rem;
+}
+
+.fracture-analysis-head {
+  margin-bottom: 0;
+}
+
+.fracture-analysis-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.fracture-analysis-item {
+  display: grid;
+  gap: 0.3rem;
+  padding: 0.95rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--primary) 16%, var(--border) 84%);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--surface) 82%, black 18%);
+}
+
+.fracture-analysis-item strong {
+  font-size: 1.08rem;
+  letter-spacing: -0.02em;
+}
+
+.collection-fragment-shell {
+  display: grid;
+}
+
+.collection-fragment-card {
+  display: grid;
+  grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+  gap: 0;
+  overflow: hidden;
+  padding: 0;
+}
+
+.collection-fragment-media {
+  position: relative;
+  background: color-mix(in srgb, var(--surface-alt) 80%, black 20%);
+}
+
+.collection-fragment-media .featured-release-video {
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  object-fit: cover;
+}
+
+.collection-fragment-copy {
+  display: grid;
+  align-content: center;
+  gap: 0.8rem;
+  padding: 1.9rem;
+}
+
+.collection-fragment-copy h2 {
+  margin: 0;
+  font-size: clamp(2rem, 3vw, 2.9rem);
+  letter-spacing: -0.03em;
+}
+
+.eldoria-featured-head,
+.eldoria-chronicle-head {
+  margin-bottom: 0.85rem;
+}
+
+.eldoria-featured-card {
+  border-radius: 28px;
+}
+
+.eldoria-featured-card .collection-fragment-copy {
+  padding: 2rem 2rem 2.15rem;
+}
+
+.eldoria-featured-card .collection-fragment-copy h2 {
+  max-width: 14ch;
+}
+
+.fracture-primary-card {
+  border-color: color-mix(in srgb, var(--primary) 22%, var(--border) 78%);
+  transform: scale(1.02);
+  animation: primaryPulse 6s ease-in-out infinite;
+  transition:
+    transform 205ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 205ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 205ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 220ms ease-out,
+    opacity 220ms ease-out;
+}
+
+.fracture-primary-card.active {
+  transform: scale(1.035);
+  box-shadow:
+    0 26px 58px color-mix(in srgb, var(--primary) 22%, transparent),
+    0 0 34px color-mix(in srgb, var(--primary) 16%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--text) 6%, transparent);
+}
+
+.fracture-primary-card.dimmed {
+  opacity: 0.8;
+  filter: saturate(0.94);
+}
+
+.fracture-primary-media {
+  background:
+    radial-gradient(circle at 28% 24%, color-mix(in srgb, var(--primary) 16%, transparent), transparent 40%),
+    color-mix(in srgb, var(--surface-alt) 78%, black 22%);
+}
+
+.fracture-primary-copy {
+  gap: 0.95rem;
+}
+
+.fracture-system-voice {
+  margin: 0;
+  color: var(--muted-text);
+  font-size: 0.9rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.fracture-fragment-meta {
+  margin: 0;
+  color: var(--muted-text);
+  font-size: 0.8rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.collection-fragment-excerpt,
+.collection-fragment-context {
+  max-width: 52ch;
+  line-height: 1.7;
+}
+
+.timeline-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.timeline-section-head {
+  margin-top: 0.6rem;
+}
+
+.timeline-section-head h2 {
+  font-size: 1.55rem;
+}
+
+.timeline-card {
+  min-height: 100%;
+  position: relative;
+  overflow: hidden;
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, filter 180ms ease;
+}
+
+.timeline-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(118deg, transparent 0%, transparent 44%, color-mix(in srgb, var(--primary) 10%, transparent) 50%, transparent 56%, transparent 100%);
+  opacity: 0;
+  transform: translateX(-10%) scaleX(0.98);
+  transition: opacity 180ms ease, transform 180ms ease;
+  pointer-events: none;
+}
+
+.timeline-card:hover::after,
+.timeline-card:focus-within::after {
+  opacity: 1;
+  transform: translateX(0) scaleX(1.01);
+}
+
+.timeline-card-media {
+  aspect-ratio: 16 / 9;
+}
+
+.timeline-card-body {
+  padding: 1.25rem 1.3rem 1.45rem;
+}
+
+.timeline-card-body h3 {
+  font-size: 1.45rem;
+}
+
+.eldoria-chronicle-grid {
+  gap: 1.2rem;
+}
+
+.eldoria-chronicle-card {
+  transition:
+    transform 240ms ease,
+    box-shadow 240ms ease,
+    border-color 240ms ease,
+    background-color 240ms ease;
+}
+
+.eldoria-chronicle-card::after {
+  background:
+    linear-gradient(118deg, transparent 0%, transparent 48%, color-mix(in srgb, var(--primary-strong) 8%, transparent) 54%, transparent 62%, transparent 100%);
+  transition: opacity 240ms ease, transform 240ms ease;
+}
+
+.eldoria-chronicle-card .timeline-card-body {
+  gap: 0.45rem;
+}
+
+.eldoria-chronicle-card .meta {
+  color: color-mix(in srgb, var(--muted-text) 78%, var(--primary-strong) 22%);
+}
+
+.eldoria-chronicle-card .timeline-card-body p:not(.meta) {
+  max-width: 42ch;
+}
+
+.fracture-fragment-grid-shell {
+  position: relative;
+}
+
+.fracture-link-layer {
+  position: absolute;
+  inset: -3.5rem 0 0;
+  pointer-events: none;
+  color: var(--primary-strong);
+  opacity: 0.9;
+  transition: opacity 220ms ease-out, filter 205ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.fracture-link-layer.primary-influenced {
+  opacity: 1;
+  filter: drop-shadow(0 0 24px color-mix(in srgb, var(--primary) 16%, transparent));
+}
+
+.fracture-link-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  filter: drop-shadow(0 0 18px color-mix(in srgb, var(--primary) 18%, transparent));
+}
+
+.fracture-link-path {
+  stroke: url(#fracture-link-gradient);
+  stroke-width: 0.42;
+  stroke-linecap: round;
+  stroke-dasharray: 3.2 4.4;
+  opacity: 0.32;
+  transition: opacity 205ms cubic-bezier(0.22, 1, 0.36, 1), stroke-width 205ms cubic-bezier(0.22, 1, 0.36, 1), filter 205ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.fracture-link-path.active {
+  opacity: 0.82;
+  stroke-width: 0.72;
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--primary) 32%, transparent));
+  animation: signalFlow 300ms cubic-bezier(0.22, 1, 0.36, 1) 1 both;
+}
+
+.fracture-link-path.connected {
+  opacity: 0.68;
+}
+
+.fracture-link-path.dimmed {
+  opacity: 0.12;
+}
+
+.fracture-link-node,
+.fracture-link-anchor {
+  fill: color-mix(in srgb, var(--surface-alt) 35%, var(--primary-strong) 65%);
+  opacity: 0.56;
+  transition: opacity 205ms cubic-bezier(0.22, 1, 0.36, 1), transform 205ms cubic-bezier(0.22, 1, 0.36, 1), filter 205ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.fracture-link-node.connected,
+.fracture-link-anchor,
+.fracture-link-anchor.active {
+  opacity: 0.95;
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--primary) 34%, transparent));
+}
+
+.fracture-link-node.dimmed {
+  opacity: 0.18;
+}
+
+.fracture-link-anchor {
+  fill: color-mix(in srgb, var(--surface) 18%, var(--primary-strong) 82%);
+}
+
+.fracture-fragment-grid {
+  gap: 1.1rem;
+  position: relative;
+  z-index: 1;
+  padding-top: 0.4rem;
+}
+
+.fracture-fragment-card {
+  min-height: 100%;
+  overflow: hidden;
+  opacity: 0.92;
+  transition:
+    transform 205ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 205ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 205ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 220ms ease-out,
+    opacity 220ms ease-out;
+}
+
+.fracture-fragment-card.active,
+.fracture-fragment-card.highlighted {
+  border-color: color-mix(in srgb, var(--primary) 30%, var(--border) 70%);
+  box-shadow:
+    0 20px 40px color-mix(in srgb, var(--primary) 12%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--primary) 14%, transparent);
+}
+
+.fracture-fragment-card.active {
+  transform: translateY(-3px);
+  filter: saturate(1.04);
+  opacity: 1;
+}
+
+.fracture-fragment-card.highlighted {
+  opacity: 0.98;
+}
+
+.fracture-fragment-card.dimmed {
+  opacity: 0.54;
+  filter: saturate(0.88);
+}
+
+.fracture-fragment-card.primary-influenced:not(.active):not(.dimmed) {
+  box-shadow:
+    0 18px 34px color-mix(in srgb, var(--primary) 10%, transparent),
+    0 0 18px color-mix(in srgb, var(--primary) 8%, transparent);
+}
+
+.fracture-fragment-grid .release-card-link:nth-child(2) {
+  transform: translateY(0.75rem);
+}
+
+.fracture-fragment-grid .release-card-link:nth-child(3) {
+  transform: translateX(0.8rem);
+}
+
+.fracture-fragment-grid .release-card-link:nth-child(4) {
+  transform: translateY(0.35rem) translateX(-0.55rem);
+}
+
+.fracture-fragment-media {
+  aspect-ratio: 16 / 9;
+}
+
+.fracture-fragment-body {
+  display: grid;
+  gap: 0.7rem;
+  padding: 1.3rem 1.35rem 1.45rem;
+}
+
+.fracture-fragment-body h3 {
+  margin: 0;
+  font-size: 1.55rem;
+  line-height: 1.03;
+  letter-spacing: -0.03em;
+}
+
+.fracture-relation-line,
+.fracture-system-note {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.fracture-relation-line {
+  color: var(--text);
+}
+
+.fracture-system-note {
+  color: var(--muted-text);
+}
+
+.fracture-stable {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 86%, rgba(255, 255, 255, 0.03)), color-mix(in srgb, var(--surface-alt) 90%, var(--surface) 10%));
+}
+
+.fracture-divergent {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 82%, var(--primary) 18%), color-mix(in srgb, var(--surface-alt) 86%, var(--surface) 14%));
+  transform: skewX(-0.5deg);
+}
+
+.fracture-sequence-node.fracture-divergent.active,
+.fracture-fragment-card.fracture-divergent.active {
+  box-shadow:
+    0 20px 42px color-mix(in srgb, var(--primary) 16%, transparent),
+    0 0 22px color-mix(in srgb, var(--secondary) 10%, transparent);
+}
+
+.fracture-sequence-node.fracture-divergent.active {
+  transform: translateY(-2px) scale(1.018) skewX(-0.6deg);
+}
+
+.fracture-fragment-card.fracture-divergent.active {
+  transform: translateY(-3px) skewX(-0.7deg);
+}
+
+.fracture-collapsed {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-alt) 76%, black 24%), color-mix(in srgb, var(--surface) 82%, black 18%));
+  filter: saturate(0.96) contrast(1.04);
+}
+
+.fracture-sequence-node.fracture-collapsed.active,
+.fracture-fragment-card.fracture-collapsed.active {
+  animation: collapsedFlicker 240ms steps(2, jump-none) 1;
+}
+
+.fracture-unstable {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 74%, var(--primary) 26%), color-mix(in srgb, var(--surface-alt) 76%, var(--secondary) 24%));
+  animation: unstablePulse 4.5s ease-in-out infinite;
+}
+
+.fracture-sequence-node.fracture-unstable.active,
+.fracture-fragment-card.fracture-unstable.active {
+  box-shadow:
+    0 20px 42px color-mix(in srgb, var(--primary) 16%, transparent),
+    0 0 20px color-mix(in srgb, var(--primary-strong) 14%, transparent);
+}
+
+.fracture-echo-card {
+  text-align: center;
+}
+
+.fracture-anchor-engaged {
+  position: relative;
+}
+
+.fracture-anchor-engaged::before {
+  content: "";
+  position: absolute;
+  inset: -0.4rem;
+  border-radius: 34px;
+  background: radial-gradient(circle at 50% 18%, color-mix(in srgb, var(--primary) 9%, transparent), transparent 56%);
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.world-note-card h3,
+.collection-archive-note h3 {
+  margin: 0.2rem 0 0.45rem;
+  font-size: 1.55rem;
+  letter-spacing: -0.03em;
+  white-space: pre-line;
+}
+
+.eldoria-archive-note,
+.eldoria-world-note {
+  text-align: center;
+}
+
+@keyframes drift {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(1.5%, -1%, 0) scale(1.03);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes fragmentReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes primaryPulse {
+  0%,
+  100% {
+    box-shadow:
+      0 20px 46px color-mix(in srgb, var(--primary) 16%, transparent),
+      inset 0 1px 0 color-mix(in srgb, var(--text) 5%, transparent);
+  }
+  50% {
+    box-shadow:
+      0 28px 62px color-mix(in srgb, var(--primary) 24%, transparent),
+      0 0 32px color-mix(in srgb, var(--primary) 14%, transparent),
+      inset 0 1px 0 color-mix(in srgb, var(--text) 6%, transparent);
+  }
+}
+
+@keyframes unstablePulse {
+  0%,
+  100% {
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 18%, transparent);
+  }
+  50% {
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--primary-strong) 42%, transparent),
+      0 0 24px color-mix(in srgb, var(--primary) 16%, transparent);
+  }
+}
+
+@keyframes signalFlow {
+  0% {
+    stroke-dashoffset: 12;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes collapsedFlicker {
+  0%,
+  100% {
+    filter: saturate(1.02) contrast(1.06);
+    transform: translateY(-3px);
+  }
+  35% {
+    filter: saturate(0.92) contrast(1.12) blur(0.15px);
+    transform: translateY(-3px) translateX(1px);
+  }
+  70% {
+    filter: saturate(1.04) contrast(1.02);
+    transform: translateY(-3px) translateX(-1px);
+  }
+}
+
+@keyframes signalShimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 180% 50%;
+  }
+}
+
+:root[data-collection-theme="fractureverse"] {
+  background:
+    radial-gradient(circle at 20% 18%, color-mix(in srgb, var(--primary) 20%, transparent), transparent 24%),
+    radial-gradient(circle at 78% 12%, color-mix(in srgb, var(--secondary) 22%, transparent), transparent 28%),
+    radial-gradient(circle at 50% 90%, color-mix(in srgb, black 48%, transparent), transparent 44%),
+    linear-gradient(180deg, #09070a, var(--background) 24%, color-mix(in srgb, var(--surface) 80%, var(--background)) 58%, #0a0709);
+}
+
+:root[data-theme="light"][data-collection-theme="fractureverse"] {
+  background:
+    radial-gradient(circle at 20% 18%, color-mix(in srgb, var(--primary) 16%, transparent), transparent 26%),
+    radial-gradient(circle at 78% 12%, color-mix(in srgb, var(--secondary) 14%, transparent), transparent 30%),
+    radial-gradient(circle at 50% 90%, color-mix(in srgb, #8d4b63 12%, transparent), transparent 44%),
+    linear-gradient(180deg, #f8e3e8, var(--background) 24%, color-mix(in srgb, var(--surface) 84%, var(--background)) 58%, #f1d5dd);
+}
+
+:root[data-collection-theme="fractureverse"] .homepage-hero,
+:root[data-collection-theme="fractureverse"] .public-site-header,
+:root[data-collection-theme="fractureverse"] .mini-player-card {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--surface) 88%, var(--primary) 12%), color-mix(in srgb, var(--surface-alt) 84%, var(--secondary) 16%)),
+    var(--surface);
+}
+
+:root[data-collection-theme="fractureverse"] .public-site-header {
+  border-color: color-mix(in srgb, var(--primary) 28%, var(--border) 72%);
+  box-shadow:
+    0 18px 40px color-mix(in srgb, black 30%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--text) 5%, transparent);
+}
+
+:root[data-collection-theme="fractureverse"] .site-mark,
+:root[data-collection-theme="fractureverse"] .site-mark .eyebrow {
+  color: color-mix(in srgb, var(--muted-text) 86%, var(--text) 14%);
+}
+
+:root[data-collection-theme="fractureverse"] .site-nav-link {
+  color: color-mix(in srgb, var(--text) 90%, var(--muted-text) 10%);
+}
+
+:root[data-collection-theme="fractureverse"] .site-nav-link.active,
+:root[data-collection-theme="fractureverse"] .site-nav-link[aria-current="page"] {
+  color: var(--text);
+  text-shadow: 0 0 16px color-mix(in srgb, var(--primary) 24%, transparent);
+}
+
+:root[data-collection-theme="fractureverse"] .site-nav-link::after {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--primary) 66%, transparent), color-mix(in srgb, var(--primary-strong) 88%, transparent));
+  box-shadow: 0 0 16px color-mix(in srgb, var(--primary) 34%, transparent);
+}
+
+:root[data-collection-theme="fractureverse"] .homepage-panel,
+:root[data-collection-theme="fractureverse"] .collection-picker,
+:root[data-collection-theme="fractureverse"] .upload-panel {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 80%, var(--primary) 20%), color-mix(in srgb, var(--surface-alt) 88%, var(--surface) 12%)),
+    var(--surface);
+}
+
+:root[data-collection-theme="fractureverse"] .collection-fragment-media,
+:root[data-collection-theme="fractureverse"] .release-card-media {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 26%, transparent);
+}
+
+:root[data-collection-theme="fractureverse"] .play-pill,
+:root[data-collection-theme="fractureverse"] .collection-chip,
+:root[data-collection-theme="fractureverse"] .meta-badge {
+  background: color-mix(in srgb, var(--surface-alt) 68%, rgba(255, 111, 165, 0.16));
+}
+
+:root[data-collection-theme="fractureverse"] .collection-fragment-card,
+:root[data-collection-theme="fractureverse"] .timeline-card {
+  box-shadow:
+    0 18px 44px color-mix(in srgb, var(--primary) 14%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--text) 4%, transparent);
+}
+
+:root[data-collection-theme="fractureverse"] .fracture-analysis-panel,
+:root[data-collection-theme="fractureverse"] .fracture-sequence-panel {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 74%, black 26%), color-mix(in srgb, var(--surface-alt) 84%, var(--surface) 16%));
+}
+
+:root[data-collection-theme="fractureverse"] .fracture-release-panel,
+:root[data-collection-theme="fractureverse"] .release-copy-panel {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 76%, black 24%), color-mix(in srgb, var(--surface-alt) 84%, var(--surface) 16%));
+}
+
+:root[data-collection-theme="fractureverse"] .linked-echo-card {
+  background: color-mix(in srgb, var(--surface-alt) 72%, rgba(255, 111, 165, 0.12));
+  border-color: color-mix(in srgb, var(--primary) 22%, var(--border) 78%);
+}
+
+:root[data-collection-theme="fractureverse"] .fracture-release-hero .world-status-bar {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-alt) 70%, var(--primary) 18%), color-mix(in srgb, var(--surface) 82%, black 18%));
+}
+
+:root[data-collection-theme="fractureverse"] .fracture-fragment-card .media-placeholder {
+  background:
+    radial-gradient(circle at top, color-mix(in srgb, var(--primary) 14%, transparent), transparent 42%),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-alt) 82%, black 18%), color-mix(in srgb, var(--surface) 88%, black 12%));
+}
+
+:root[data-collection-theme="fractureverse"] .world-header::before {
+  animation: drift 20s ease-in-out infinite;
+  filter: blur(10px);
+}
+
+:root[data-collection-theme="fractureverse"] .world-header::after {
+  background:
+    linear-gradient(112deg, transparent 0%, transparent 62%, color-mix(in srgb, var(--primary) 10%, transparent) 70%, transparent 78%),
+    radial-gradient(circle at 78% 44%, color-mix(in srgb, var(--primary-strong) 10%, transparent), transparent 28%),
+    radial-gradient(circle at center, transparent 56%, rgba(0, 0, 0, 0.2));
+}
+
+:root[data-collection-theme="fractureverse"] .world-header-copy {
+  color: color-mix(in srgb, var(--text) 84%, var(--muted-text) 16%);
+}
+
+:root[data-collection-theme="fractureverse"] .world-status-bar {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-alt) 72%, var(--primary) 18%), color-mix(in srgb, var(--surface) 82%, black 18%));
+  border-color: color-mix(in srgb, var(--primary) 22%, var(--border) 78%);
+}
+
+:root[data-collection-theme="fractureverse"] .world-status-item strong {
+  font-size: 1.05rem;
+  letter-spacing: -0.02em;
+}
+
+:root[data-collection-theme="fractureverse"] .timeline-section-head {
+  margin-top: 1.3rem;
+  margin-bottom: 1.3rem;
+  padding-top: 0.35rem;
+}
+
+:root[data-collection-theme="fractureverse"] .fractureverse-timeline-head {
+  position: relative;
+}
+
+:root[data-collection-theme="fractureverse"] .fractureverse-timeline-head::before {
+  content: "";
+  position: absolute;
+  top: -0.25rem;
+  left: 0;
+  width: 180px;
+  height: 1px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--primary) 88%, transparent), transparent);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--primary) 20%, transparent);
+}
+
+:root[data-collection-theme="fractureverse"] .fractureverse-timeline-head h2 {
+  font-size: clamp(1.7rem, 2.6vw, 2.15rem);
+}
+
+:root[data-collection-theme="fractureverse"] .fracture-empty-state {
+  background: linear-gradient(to bottom, rgba(40, 15, 25, 0.8), rgba(20, 10, 15, 0.9));
+  border-color: color-mix(in srgb, var(--primary) 18%, var(--border) 82%);
+  border-radius: 18px;
+  box-shadow:
+    0 14px 34px color-mix(in srgb, black 24%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--text) 5%, transparent);
+}
+
+:root[data-collection-theme="fractureverse"] .fracture-empty-state h3 {
+  font-size: 1.75rem;
+  letter-spacing: -0.03em;
+}
+
+:root[data-collection-theme="fractureverse"] .fracture-empty-state p:last-child {
+  max-width: 32ch;
+  color: color-mix(in srgb, var(--text) 74%, var(--muted-text) 26%);
+}
+
+:root[data-collection-theme="fractureverse"] .timeline-card:hover,
+:root[data-collection-theme="fractureverse"] .timeline-card:focus-within {
+  transform: translateY(-4px);
+  filter: saturate(1.05);
+  box-shadow:
+    0 24px 50px color-mix(in srgb, var(--primary) 18%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--primary) 28%, transparent);
+}
+
+:root[data-collection-theme="fractureverse"] .fracture-anchor-engaged::before {
+  background:
+    radial-gradient(circle at 50% 18%, color-mix(in srgb, var(--primary) 12%, transparent), transparent 58%),
+    radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--secondary) 8%, transparent), transparent 62%);
+}
+
+:root[data-collection-theme="eldoria"] {
+  background:
+    radial-gradient(circle at 18% 16%, color-mix(in srgb, var(--primary) 14%, transparent), transparent 28%),
+    radial-gradient(circle at 82% 18%, color-mix(in srgb, var(--secondary) 16%, transparent), transparent 26%),
+    linear-gradient(180deg, color-mix(in srgb, var(--background) 94%, #0e120f 6%), color-mix(in srgb, var(--surface) 84%, var(--background)) 58%, color-mix(in srgb, var(--background) 90%, #121910 10%));
+}
+
+:root[data-collection-theme="eldoria"] .homepage-hero,
+:root[data-collection-theme="eldoria"] .public-site-header,
+:root[data-collection-theme="eldoria"] .mini-player-card {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 94%, #f7f1e2 6%), color-mix(in srgb, var(--surface-alt) 94%, var(--secondary) 6%)),
+    var(--surface);
+}
+
+:root[data-collection-theme="eldoria"] .public-site-header {
+  border-color: color-mix(in srgb, var(--border) 82%, var(--primary) 18%);
+  box-shadow:
+    0 18px 38px color-mix(in srgb, black 12%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 6%, transparent);
+}
+
+:root[data-collection-theme="eldoria"] .site-mark,
+:root[data-collection-theme="eldoria"] .site-mark .eyebrow {
+  color: color-mix(in srgb, var(--text) 82%, var(--muted-text) 18%);
+}
+
+:root[data-collection-theme="eldoria"] .site-nav-link.active,
+:root[data-collection-theme="eldoria"] .site-nav-link[aria-current="page"] {
+  color: var(--primary-strong);
+}
+
+:root[data-collection-theme="eldoria"] .site-nav-link::after {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--primary) 68%, transparent), color-mix(in srgb, var(--primary-strong) 82%, transparent));
+  box-shadow: none;
+}
+
+:root[data-collection-theme="eldoria"] .homepage-panel,
+:root[data-collection-theme="eldoria"] .collection-picker,
+:root[data-collection-theme="eldoria"] .upload-panel,
+:root[data-collection-theme="eldoria"] .collection-fragment-card,
+:root[data-collection-theme="eldoria"] .timeline-card,
+:root[data-collection-theme="eldoria"] .release-copy-panel {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 96%, #f5efde 4%), color-mix(in srgb, var(--surface-alt) 96%, var(--secondary) 4%));
+  box-shadow:
+    0 16px 32px color-mix(in srgb, black 10%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 8%, transparent);
+}
+
+:root[data-collection-theme="eldoria"] .collection-world-page {
+  gap: 1.3rem;
+}
+
+:root[data-collection-theme="eldoria"] .collection-card,
+:root[data-collection-theme="eldoria"] .timeline-card,
+:root[data-collection-theme="eldoria"] .collection-fragment-card {
+  border-color: color-mix(in srgb, var(--border) 88%, var(--primary) 12%);
+  border-radius: 24px;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-collection-card,
+:root[data-collection-theme="eldoria"] .eldoria-chronicle-card,
+:root[data-collection-theme="eldoria"] .eldoria-featured-card {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, #f5efdc 88%, var(--surface) 12%), color-mix(in srgb, var(--surface-alt) 92%, #e0d5ba 8%));
+}
+
+:root[data-collection-theme="eldoria"] .timeline-card:hover,
+:root[data-collection-theme="eldoria"] .timeline-card:focus-within,
+:root[data-collection-theme="eldoria"] .collection-card:hover,
+:root[data-collection-theme="eldoria"] .collection-card:focus-within {
+  transform: translateY(-3px);
+  box-shadow:
+    0 18px 34px color-mix(in srgb, black 12%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--primary) 12%, transparent);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-featured-card:hover,
+:root[data-collection-theme="eldoria"] .eldoria-featured-card:focus-within {
+  transform: translateY(-2px);
+  box-shadow:
+    0 18px 36px color-mix(in srgb, black 12%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--primary-strong) 14%, transparent);
+}
+
+:root[data-collection-theme="eldoria"] .collection-fragment-media,
+:root[data-collection-theme="eldoria"] .release-card-media {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--border) 82%, transparent);
+}
+
+:root[data-collection-theme="eldoria"] .collection-fragment-media {
+  background:
+    radial-gradient(circle at 50% 18%, color-mix(in srgb, var(--secondary) 9%, transparent), transparent 34%),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-alt) 90%, #d6c8ab 10%), color-mix(in srgb, var(--surface) 96%, #f8f1e2 4%));
+}
+
+:root[data-collection-theme="eldoria"] .world-header {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 88%, rgba(241, 233, 212, 0.42)), color-mix(in srgb, var(--surface-alt) 94%, rgba(126, 158, 171, 0.08))),
+    var(--surface);
+}
+
+:root[data-collection-theme="eldoria"] .world-header::before {
+  background:
+    radial-gradient(circle at 24% 28%, color-mix(in srgb, var(--primary) 14%, transparent), transparent 34%),
+    radial-gradient(circle at 78% 20%, color-mix(in srgb, var(--secondary) 14%, transparent), transparent 28%),
+    linear-gradient(180deg, color-mix(in srgb, #e9dfc5 12%, transparent), transparent 82%);
+  opacity: 0.92;
+}
+
+:root[data-collection-theme="eldoria"] .world-header::after {
+  background:
+    linear-gradient(90deg, transparent 0%, transparent 56%, color-mix(in srgb, var(--primary-strong) 8%, transparent) 78%, transparent 100%),
+    radial-gradient(circle at 80% 48%, color-mix(in srgb, var(--secondary) 10%, transparent), transparent 24%);
+  opacity: 0.8;
+}
+
+:root[data-collection-theme="eldoria"] .world-header-inner::before {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--primary-strong) 42%, transparent), transparent 82%);
+}
+
+:root[data-collection-theme="eldoria"] .world-header h1,
+:root[data-collection-theme="eldoria"] .section-head h2,
+:root[data-collection-theme="eldoria"] .collection-fragment-copy h2,
+:root[data-collection-theme="eldoria"] .release-panel-title {
+  letter-spacing: -0.03em;
+}
+
+:root[data-collection-theme="eldoria"] .world-header h1 {
+  max-width: 10ch;
+}
+
+:root[data-collection-theme="eldoria"] .world-header-copy,
+:root[data-collection-theme="eldoria"] .collection-card p,
+:root[data-collection-theme="eldoria"] .timeline-card p,
+:root[data-collection-theme="eldoria"] .release-prose p {
+  color: color-mix(in srgb, var(--text) 74%, var(--muted-text) 26%);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-release-hero .release-video {
+  box-shadow:
+    0 18px 42px color-mix(in srgb, black 12%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--border) 70%, transparent);
+}
+
+:root[data-collection-theme="eldoria"] .world-status-bar {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-alt) 76%, #d8cda9 24%), color-mix(in srgb, var(--surface) 92%, #f7f0df 8%));
+  border-color: color-mix(in srgb, var(--border) 86%, var(--primary-strong) 14%);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-world-status .world-status-item,
+:root[data-collection-theme="eldoria"] .eldoria-release-status .world-status-item {
+  padding: 0.9rem 1rem;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--surface) 86%, rgba(255, 255, 255, 0.08));
+  border: 1px solid color-mix(in srgb, var(--border) 90%, transparent);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-world-status strong,
+:root[data-collection-theme="eldoria"] .eldoria-release-status strong {
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-release-status {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+:root[data-collection-theme="eldoria"] .play-pill,
+:root[data-collection-theme="eldoria"] .collection-chip,
+:root[data-collection-theme="eldoria"] .meta-badge {
+  background: color-mix(in srgb, var(--surface-alt) 82%, rgba(198, 171, 109, 0.16));
+  border-color: color-mix(in srgb, var(--border) 84%, var(--primary-strong) 16%);
+  color: color-mix(in srgb, var(--text) 88%, var(--muted-text) 12%);
+}
+
+:root[data-collection-theme="eldoria"] .hero-link,
+:root[data-collection-theme="eldoria"] .secondary-button,
+:root[data-collection-theme="eldoria"] .mini-player-nav,
+:root[data-collection-theme="eldoria"] .mini-player-close {
+  box-shadow: none;
+}
+
+:root[data-collection-theme="eldoria"] .hero-link,
+:root[data-collection-theme="eldoria"] .secondary-button {
+  background: color-mix(in srgb, var(--surface-alt) 84%, rgba(198, 171, 109, 0.18));
+  border-color: color-mix(in srgb, var(--border) 82%, var(--primary-strong) 18%);
+}
+
+:root[data-collection-theme="eldoria"] .hero-link:hover,
+:root[data-collection-theme="eldoria"] .secondary-button:hover,
+:root[data-collection-theme="eldoria"] .hero-link:focus-visible,
+:root[data-collection-theme="eldoria"] .secondary-button:focus-visible {
+  transform: translateY(-1px);
+  background: color-mix(in srgb, var(--surface-alt) 78%, rgba(198, 171, 109, 0.24));
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-chronicle-head {
+  position: relative;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  padding-top: 0.4rem;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-chronicle-head::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 190px;
+  height: 1px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--primary-strong) 54%, transparent), transparent);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-chronicle-card {
+  border-style: solid;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-chronicle-card .release-card-media::after,
+:root[data-collection-theme="eldoria"] .eldoria-featured-card .collection-fragment-media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 0 3px, transparent 3px 100%),
+    linear-gradient(180deg, transparent 0%, color-mix(in srgb, var(--primary-strong) 5%, transparent) 100%);
+  pointer-events: none;
+  opacity: 0.45;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-release-panel,
+:root[data-collection-theme="eldoria"] .eldoria-cycle-card,
+:root[data-collection-theme="eldoria"] .eldoria-linked-card {
+  border-color: color-mix(in srgb, var(--border) 84%, var(--primary-strong) 16%);
+  box-shadow:
+    0 14px 24px color-mix(in srgb, black 10%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 6%, transparent);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-cycle-card:hover,
+:root[data-collection-theme="eldoria"] .eldoria-cycle-card:focus-visible,
+:root[data-collection-theme="eldoria"] .eldoria-linked-card:hover,
+:root[data-collection-theme="eldoria"] .eldoria-linked-card:focus-visible {
+  border-color: color-mix(in srgb, var(--border) 58%, var(--primary-strong) 42%);
+  box-shadow:
+    0 18px 28px color-mix(in srgb, black 12%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--primary-strong) 12%, transparent);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-world-note h3,
+:root[data-collection-theme="eldoria"] .eldoria-archive-note h3 {
+  max-width: 24ch;
+  margin-inline: auto;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-residual-panel {
+  text-align: center;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-residual-panel .release-panel-intro {
+  margin-inline: auto;
+}
