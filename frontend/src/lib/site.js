@@ -240,6 +240,13 @@ export function getFractureverseMeta(post, allPosts = []) {
       ? fallbackMeta.linkedSlugs
       : [];
   const linkedPosts = allPosts.filter((entry) => linkedSlugs.includes(entry.slug));
+  const linkedTo = linkedPosts
+    .map((entry) => {
+      const linkedFallback = FRACTUREVERSE_METADATA[entry.slug] || null;
+      const linkedArchiveMeta = entry.archiveMeta || linkedFallback;
+      return linkedArchiveMeta?.fragmentId || "";
+    })
+    .filter(Boolean);
 
   return {
     fragmentId: archiveMeta.fragmentId || fallbackMeta?.fragmentId || "",
@@ -251,9 +258,7 @@ export function getFractureverseMeta(post, allPosts = []) {
     systemNote: archiveMeta.systemNote || fallbackMeta?.systemNote || "",
     linkedSlugs,
     linkedPosts,
-    linkedTo: linkedPosts
-      .map((entry) => getFractureverseMeta(entry, allPosts)?.fragmentId)
-      .filter(Boolean)
+    linkedTo
   };
 }
 

@@ -2,18 +2,28 @@ import { Link } from "react-router-dom";
 import ReleaseMedia from "../ReleaseMedia";
 import { hasVideo } from "../../lib/site";
 
-export default function FractureFragmentCard({ active, highlighted, meta, onFocusFragment, onPlayTrack, post }) {
+export default function FractureFragmentCard({
+  active,
+  dimmed,
+  highlighted,
+  meta,
+  onFocusFragment,
+  onPlayTrack,
+  post,
+  primaryInfluenced
+}) {
   return (
     <Link
       className="release-card-link"
       onFocus={() => onFocusFragment(post.slug)}
       onMouseEnter={() => onFocusFragment(post.slug)}
+      onMouseLeave={() => onFocusFragment("")}
       to={`/release/${post.slug}`}
     >
       <article
         className={`post-card homepage-post-card release-feed-card fracture-fragment-card fracture-${meta.state.toLowerCase()}${
           active ? " active" : ""
-        }${highlighted ? " highlighted" : ""}`}
+        }${highlighted ? " highlighted" : ""}${dimmed ? " dimmed" : ""}${primaryInfluenced ? " primary-influenced" : ""}`}
       >
         <div className="release-card-media fracture-fragment-media">
           <ReleaseMedia

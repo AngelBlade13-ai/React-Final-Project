@@ -1496,6 +1496,8 @@ select:focus {
 }
 
 .fracture-sequence-node {
+  --fracture-interaction-duration: 205ms;
+  --fracture-interaction-ease: cubic-bezier(0.22, 1, 0.36, 1);
   position: relative;
   min-height: 150px;
   display: grid;
@@ -1508,7 +1510,13 @@ select:focus {
     linear-gradient(180deg, color-mix(in srgb, var(--surface-alt) 68%, var(--surface) 32%), color-mix(in srgb, var(--surface) 88%, black 12%));
   color: var(--text);
   text-decoration: none;
-  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+  transition:
+    transform var(--fracture-interaction-duration) var(--fracture-interaction-ease),
+    border-color var(--fracture-interaction-duration) var(--fracture-interaction-ease),
+    box-shadow var(--fracture-interaction-duration) var(--fracture-interaction-ease),
+    background var(--fracture-interaction-duration) var(--fracture-interaction-ease),
+    opacity 220ms ease-out,
+    filter 220ms ease-out;
   animation: fragmentReveal 520ms ease both;
 }
 
@@ -1546,16 +1554,29 @@ select:focus {
 .fracture-sequence-node:hover,
 .fracture-sequence-node:focus-visible,
 .fracture-sequence-node.active {
-  transform: translateY(-2px);
+  transform: translateY(-2px) scale(1.018);
   border-color: color-mix(in srgb, var(--primary) 42%, var(--border) 58%);
   box-shadow:
     0 18px 36px color-mix(in srgb, var(--primary) 12%, transparent),
     0 0 0 1px color-mix(in srgb, var(--primary) 18%, transparent);
 }
 
+.fracture-sequence-node.connected {
+  border-color: color-mix(in srgb, var(--primary) 30%, var(--border) 70%);
+  box-shadow:
+    0 14px 28px color-mix(in srgb, var(--primary) 10%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--primary) 12%, transparent);
+}
+
 .fracture-sequence-node.dimmed {
-  opacity: 0.72;
-  filter: blur(0.4px);
+  opacity: 0.58;
+  filter: saturate(0.88);
+}
+
+.fracture-sequence-node.primary-influenced {
+  box-shadow:
+    0 18px 34px color-mix(in srgb, var(--primary) 10%, transparent),
+    0 0 18px color-mix(in srgb, var(--primary) 10%, transparent);
 }
 
 .fracture-sequence-id,
@@ -1650,6 +1671,25 @@ select:focus {
   border-color: color-mix(in srgb, var(--primary) 22%, var(--border) 78%);
   transform: scale(1.02);
   animation: primaryPulse 6s ease-in-out infinite;
+  transition:
+    transform 205ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 205ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 205ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 220ms ease-out,
+    opacity 220ms ease-out;
+}
+
+.fracture-primary-card.active {
+  transform: scale(1.035);
+  box-shadow:
+    0 26px 58px color-mix(in srgb, var(--primary) 22%, transparent),
+    0 0 34px color-mix(in srgb, var(--primary) 16%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--text) 6%, transparent);
+}
+
+.fracture-primary-card.dimmed {
+  opacity: 0.8;
+  filter: saturate(0.94);
 }
 
 .fracture-primary-media {
@@ -1745,6 +1785,12 @@ select:focus {
   pointer-events: none;
   color: var(--primary-strong);
   opacity: 0.9;
+  transition: opacity 220ms ease-out, filter 205ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.fracture-link-layer.primary-influenced {
+  opacity: 1;
+  filter: drop-shadow(0 0 24px color-mix(in srgb, var(--primary) 16%, transparent));
 }
 
 .fracture-link-svg {
@@ -1758,26 +1804,42 @@ select:focus {
   stroke: url(#fracture-link-gradient);
   stroke-width: 0.42;
   stroke-linecap: round;
+  stroke-dasharray: 3.2 4.4;
   opacity: 0.32;
-  transition: opacity 180ms ease, stroke-width 180ms ease, filter 180ms ease;
+  transition: opacity 205ms cubic-bezier(0.22, 1, 0.36, 1), stroke-width 205ms cubic-bezier(0.22, 1, 0.36, 1), filter 205ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .fracture-link-path.active {
   opacity: 0.82;
   stroke-width: 0.72;
   filter: drop-shadow(0 0 8px color-mix(in srgb, var(--primary) 32%, transparent));
+  animation: signalFlow 300ms cubic-bezier(0.22, 1, 0.36, 1) 1 both;
+}
+
+.fracture-link-path.connected {
+  opacity: 0.68;
+}
+
+.fracture-link-path.dimmed {
+  opacity: 0.12;
 }
 
 .fracture-link-node,
 .fracture-link-anchor {
   fill: color-mix(in srgb, var(--surface-alt) 35%, var(--primary-strong) 65%);
   opacity: 0.56;
+  transition: opacity 205ms cubic-bezier(0.22, 1, 0.36, 1), transform 205ms cubic-bezier(0.22, 1, 0.36, 1), filter 205ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.fracture-link-node.active,
-.fracture-link-anchor {
+.fracture-link-node.connected,
+.fracture-link-anchor,
+.fracture-link-anchor.active {
   opacity: 0.95;
   filter: drop-shadow(0 0 8px color-mix(in srgb, var(--primary) 34%, transparent));
+}
+
+.fracture-link-node.dimmed {
+  opacity: 0.18;
 }
 
 .fracture-link-anchor {
@@ -1795,7 +1857,12 @@ select:focus {
   min-height: 100%;
   overflow: hidden;
   opacity: 0.92;
-  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, filter 180ms ease, opacity 180ms ease;
+  transition:
+    transform 205ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 205ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 205ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 220ms ease-out,
+    opacity 220ms ease-out;
 }
 
 .fracture-fragment-card.active,
@@ -1814,6 +1881,17 @@ select:focus {
 
 .fracture-fragment-card.highlighted {
   opacity: 0.98;
+}
+
+.fracture-fragment-card.dimmed {
+  opacity: 0.54;
+  filter: saturate(0.88);
+}
+
+.fracture-fragment-card.primary-influenced:not(.active):not(.dimmed) {
+  box-shadow:
+    0 18px 34px color-mix(in srgb, var(--primary) 10%, transparent),
+    0 0 18px color-mix(in srgb, var(--primary) 8%, transparent);
 }
 
 .fracture-fragment-grid .release-card-link:nth-child(2) {
@@ -1870,10 +1948,30 @@ select:focus {
   transform: skewX(-0.5deg);
 }
 
+.fracture-sequence-node.fracture-divergent.active,
+.fracture-fragment-card.fracture-divergent.active {
+  box-shadow:
+    0 20px 42px color-mix(in srgb, var(--primary) 16%, transparent),
+    0 0 22px color-mix(in srgb, var(--secondary) 10%, transparent);
+}
+
+.fracture-sequence-node.fracture-divergent.active {
+  transform: translateY(-2px) scale(1.018) skewX(-0.6deg);
+}
+
+.fracture-fragment-card.fracture-divergent.active {
+  transform: translateY(-3px) skewX(-0.7deg);
+}
+
 .fracture-collapsed {
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--surface-alt) 76%, black 24%), color-mix(in srgb, var(--surface) 82%, black 18%));
   filter: saturate(0.96) contrast(1.04);
+}
+
+.fracture-sequence-node.fracture-collapsed.active,
+.fracture-fragment-card.fracture-collapsed.active {
+  animation: collapsedFlicker 240ms steps(2, jump-none) 1;
 }
 
 .fracture-unstable {
@@ -1882,8 +1980,29 @@ select:focus {
   animation: unstablePulse 4.5s ease-in-out infinite;
 }
 
+.fracture-sequence-node.fracture-unstable.active,
+.fracture-fragment-card.fracture-unstable.active {
+  box-shadow:
+    0 20px 42px color-mix(in srgb, var(--primary) 16%, transparent),
+    0 0 20px color-mix(in srgb, var(--primary-strong) 14%, transparent);
+}
+
 .fracture-echo-card {
   text-align: center;
+}
+
+.fracture-anchor-engaged {
+  position: relative;
+}
+
+.fracture-anchor-engaged::before {
+  content: "";
+  position: absolute;
+  inset: -0.4rem;
+  border-radius: 34px;
+  background: radial-gradient(circle at 50% 18%, color-mix(in srgb, var(--primary) 9%, transparent), transparent 56%);
+  opacity: 0.9;
+  pointer-events: none;
 }
 
 .world-note-card h3,
@@ -1941,6 +2060,31 @@ select:focus {
     box-shadow:
       inset 0 0 0 1px color-mix(in srgb, var(--primary-strong) 42%, transparent),
       0 0 24px color-mix(in srgb, var(--primary) 16%, transparent);
+  }
+}
+
+@keyframes signalFlow {
+  0% {
+    stroke-dashoffset: 12;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes collapsedFlicker {
+  0%,
+  100% {
+    filter: saturate(1.02) contrast(1.06);
+    transform: translateY(-3px);
+  }
+  35% {
+    filter: saturate(0.92) contrast(1.12) blur(0.15px);
+    transform: translateY(-3px) translateX(1px);
+  }
+  70% {
+    filter: saturate(1.04) contrast(1.02);
+    transform: translateY(-3px) translateX(-1px);
   }
 }
 
@@ -2127,6 +2271,32 @@ select:focus {
   box-shadow:
     0 24px 50px color-mix(in srgb, var(--primary) 18%, transparent),
     0 0 0 1px color-mix(in srgb, var(--primary) 28%, transparent);
+}
+
+:root[data-collection-theme="fractureverse"] .fracture-anchor-engaged::before {
+  background:
+    radial-gradient(circle at 50% 18%, color-mix(in srgb, var(--primary) 12%, transparent), transparent 58%),
+    radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--secondary) 8%, transparent), transparent 62%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fracture-primary-card,
+  .fracture-unstable,
+  .fracture-sequence-node,
+  .fracture-link-path.active,
+  .fracture-sequence-node.fracture-collapsed.active,
+  .fracture-fragment-card.fracture-collapsed.active {
+    animation: none !important;
+  }
+
+  .fracture-sequence-node,
+  .fracture-fragment-card,
+  .fracture-link-path,
+  .fracture-link-node,
+  .fracture-link-layer,
+  .fracture-primary-card {
+    transition-duration: 0.01ms !important;
+  }
 }
 
 :root[data-collection-theme="stage"] .world-header::before {
