@@ -1,5 +1,5 @@
 import { formatClock } from "../lib/formatters";
-import { getFractureverseMeta, getPrimaryThemeForPost } from "../lib/site";
+import { getFractureverseMeta, getPrimaryThemeForPost, getThemeConfig } from "../lib/site";
 
 export default function MiniPlayer({
   collectionName,
@@ -24,7 +24,9 @@ export default function MiniPlayer({
   }
 
   const primaryTheme = getPrimaryThemeForPost(currentTrack);
+  const themeConfig = getThemeConfig(primaryTheme);
   const fractureMeta = primaryTheme === "fractureverse" ? getFractureverseMeta(currentTrack, [currentTrack]) : null;
+  const isEldoria = primaryTheme === "eldoria";
   const primaryCollection = collectionName || currentTrack.collections?.[0]?.title || "";
   const positionLabel =
     queueLength > 1
@@ -36,17 +38,18 @@ export default function MiniPlayer({
   const progressRatio = duration > 0 ? Math.min(progress / duration, 1) : 0;
   const progressPercent = `${progressRatio * 100}%`;
   const hasProgress = progressRatio > 0;
+  const chipLabel = fractureMeta ? fractureMeta.signalType : isEldoria && positionLabel ? positionLabel : "";
 
   return (
     <div className="mini-player-shell">
-      <div className="mini-player-card">
+      <div className={`mini-player-card${isEldoria ? " mini-player-card-eldoria" : ""}`}>
         <div className="mini-player-identity">
           <div className="mini-player-copy">
-            <p className="mini-player-label">Now Playing</p>
+            <p className="mini-player-label">{themeConfig.playerLabel || "Now Playing"}</p>
             <h2>{currentTrack.title}</h2>
             {secondaryMeta ? <p className="mini-player-meta">{secondaryMeta}</p> : null}
           </div>
-          {fractureMeta ? <span className="mini-player-chip">{fractureMeta.signalType}</span> : null}
+          {chipLabel ? <span className={`mini-player-chip${isEldoria ? " mini-player-chip-eldoria" : ""}`}>{chipLabel}</span> : null}
         </div>
         <div className="mini-player-center">
           <div className="mini-player-transport">
@@ -61,7 +64,7 @@ export default function MiniPlayer({
             </button>
             <div className="mini-player-progress-block">
               <div
-                className={`mini-player-progress-shell${fractureMeta ? " fracture-progress-shell" : ""}`}
+                className={`mini-player-progress-shell${fractureMeta ? " fracture-progress-shell" : ""}${isEldoria ? " eldoria-progress-shell" : ""}`}
                 style={{ "--mini-progress": progressPercent }}
               >
                 <div aria-hidden="true" className="mini-player-progress-track" />
@@ -91,7 +94,7 @@ export default function MiniPlayer({
         <div className="mini-player-actions">
           {nextTrack ? (
             <div className="mini-player-up-next">
-              <p className="mini-player-label">Up Next</p>
+              <p className="mini-player-label">{themeConfig.playerUpNextLabel || "Up Next"}</p>
               <p className="mini-player-next-title">{nextTrack.title}</p>
             </div>
           ) : null}

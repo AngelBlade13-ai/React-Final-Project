@@ -56,6 +56,7 @@ export default function AdminCollectionsPage() {
             Theme
             <select onChange={(event) => updateCollectionForm("theme", event.target.value)} value={collectionForm.theme}>
               <option value="">Default</option>
+              <option value="eldoria">Eldoria</option>
               <option value="soft-archive">Soft Archive</option>
               <option value="fractureverse">Fractureverse</option>
               <option value="stage">Stage / Spotlight</option>

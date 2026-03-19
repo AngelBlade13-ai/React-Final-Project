@@ -411,7 +411,11 @@ export default function CollectionDetailPage({ onPlayTrack }) {
                       onClick={() => onPlayTrack(featuredRelease, playbackContext)}
                       type="button"
                     >
-                      {hasVideo(featuredRelease.videoUrl) ? "Play in Mini Player" : "Video Pending"}
+                      {hasVideo(featuredRelease.videoUrl)
+                        ? collection.theme === "eldoria"
+                          ? "Play the Ballad"
+                          : "Play in Mini Player"
+                        : "Video Pending"}
                     </button>
                     <Link className="hero-link" to={`/release/${featuredRelease.slug}`}>
                       {themeConfig.featuredAction}

@@ -142,6 +142,7 @@
       "createdAt": "2026-03-17T23:01:44.532Z",
       "published": true,
       "collectionSlugs": [
+        "eldoria",
         "main-verse",
         "anime-openings",
         "healing-arc"
@@ -157,6 +158,14 @@
       "description": "A fractured reality where every choice creates a new world, and every version of love carries a different cost.\n\nHere, memory, sacrifice, collapse, obsession, and convergence exist side by side - none of them fully gone, none of them fully resolved.",
       "featuredReleaseSlug": "shattered-trust-reimagined",
       "theme": "fractureverse"
+    },
+    {
+      "id": "f67f5f95-ff5d-4a3b-8b6e-c02cba7d6b7d",
+      "slug": "eldoria",
+      "title": "Eldoria",
+      "description": "A warm, story-soaked world of ballads, old promises, and songs that feel carried forward like chapters from a remembered legend.",
+      "featuredReleaseSlug": "hopes-song",
+      "theme": "eldoria"
     },
     {
       "id": "bfdf5f59-2245-45ff-bd7f-197d4a01d24c",

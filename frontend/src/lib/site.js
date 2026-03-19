@@ -64,7 +64,30 @@ export const COLLECTION_THEMES = {
     worldNoteTitle: "A note about this world",
     worldNoteText: "Each collection is a different shelf in the archive, with its own tone and memory.",
     itemName: "Release",
-    itemAction: "Open Release"
+    itemAction: "Open Release",
+    playerLabel: "Now Playing",
+    playerUpNextLabel: "Up Next"
+  },
+  eldoria: {
+    worldEyebrow: "Eldoria",
+    featuredLabel: "Featured Ballad",
+    featuredAction: "Open Ballad",
+    listLabel: "Chronicle",
+    releaseNote: "Chronicle Entry",
+    lyrics: "Verses",
+    noItemsEyebrow: "Empty Chronicle",
+    noItemsTitle: "No ballads have been gathered into this chronicle yet.",
+    noItemsText: "When the first song is placed here, Eldoria will begin to read like a living tale instead of a waiting shelf.",
+    singleItemEyebrow: "First Ballad",
+    singleItemTitle: "This chronicle is currently carried by a single song.",
+    singleItemText:
+      "As more entries arrive, they will settle around it like pages in the same long-form tale rather than isolated releases.",
+    worldNoteTitle: "A note from Eldoria",
+    worldNoteText: "Some songs feel less like records and more like stories remembered beside a fire long after nightfall.",
+    itemName: "Ballad",
+    itemAction: "Open Ballad",
+    playerLabel: "Now Playing - A Ballad",
+    playerUpNextLabel: "Next Ballad"
   },
   "soft-archive": {
     worldEyebrow: "Soft Archive",
@@ -76,7 +99,9 @@ export const COLLECTION_THEMES = {
     worldNoteTitle: "A note about this world",
     worldNoteText: "Quiet songs do not need to be small. They just need enough room to stay gentle.",
     itemName: "Entry",
-    itemAction: "Open Entry"
+    itemAction: "Open Entry",
+    playerLabel: "Now Playing",
+    playerUpNextLabel: "Up Next"
   },
   fractureverse: {
     worldEyebrow: "Fractureverse",
@@ -95,7 +120,9 @@ export const COLLECTION_THEMES = {
     worldNoteTitle: "Echo",
     worldNoteText: "Some timelines collapse.\nSome repeat.\nSome are never meant to be found.",
     itemName: "Fragment",
-    itemAction: "Open Fragment"
+    itemAction: "Open Fragment",
+    playerLabel: "Now Playing",
+    playerUpNextLabel: "Up Next"
   },
   stage: {
     worldEyebrow: "Stage",
@@ -107,7 +134,9 @@ export const COLLECTION_THEMES = {
     worldNoteTitle: "A note about this world",
     worldNoteText: "Some songs are meant to arrive like entrances, spotlights, and final bows.",
     itemName: "Act",
-    itemAction: "Open Act"
+    itemAction: "Open Act",
+    playerLabel: "Now Playing",
+    playerUpNextLabel: "Up Next"
   },
   signal: {
     worldEyebrow: "Signal",
@@ -119,7 +148,9 @@ export const COLLECTION_THEMES = {
     worldNoteTitle: "A note about this world",
     worldNoteText: "What survives here sounds like a message from somewhere distant, imperfect, and still reaching back.",
     itemName: "Signal",
-    itemAction: "Open Signal"
+    itemAction: "Open Signal",
+    playerLabel: "Now Playing",
+    playerUpNextLabel: "Up Next"
   }
 };
 

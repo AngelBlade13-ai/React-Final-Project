@@ -11,6 +11,13 @@
   --secondary: #cba6f7;
   --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.28);
   --shadow-md: 0 10px 28px rgba(0, 0, 0, 0.18);
+  --player-progress-start: rgba(255, 126, 182, 0.92);
+  --player-progress-mid: rgba(255, 90, 150, 0.98);
+  --player-progress-end: rgba(255, 61, 127, 0.98);
+  --player-progress-glow: rgba(255, 80, 140, 0.28);
+  --player-progress-glow-strong: rgba(255, 80, 140, 0.44);
+  --player-thumb: #ff5c98;
+  --player-track: color-mix(in srgb, var(--surface-alt) 88%, rgba(255, 255, 255, 0.03));
 }
 
 :root[data-theme="light"] {
@@ -67,6 +74,48 @@
   --secondary: #8a4fff;
   --shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.42);
   --shadow-md: 0 14px 34px rgba(0, 0, 0, 0.26);
+}
+
+:root[data-theme="light"][data-collection-theme="eldoria"] {
+  --background: #ece4cf;
+  --surface: #f6efdf;
+  --surface-alt: #ebe2cd;
+  --text: #2f3124;
+  --muted-text: #636550;
+  --border: #cdbf9c;
+  --primary: #6b7b4a;
+  --primary-strong: #a6884f;
+  --secondary: #88a6b3;
+  --shadow-lg: 0 20px 48px rgba(74, 71, 48, 0.12);
+  --shadow-md: 0 10px 26px rgba(74, 71, 48, 0.1);
+  --player-progress-start: rgba(166, 136, 79, 0.92);
+  --player-progress-mid: rgba(191, 158, 93, 0.94);
+  --player-progress-end: rgba(126, 148, 121, 0.92);
+  --player-progress-glow: rgba(166, 136, 79, 0.14);
+  --player-progress-glow-strong: rgba(166, 136, 79, 0.22);
+  --player-thumb: #b5965f;
+  --player-track: color-mix(in srgb, #d8ccb0 78%, rgba(255, 255, 255, 0.3));
+}
+
+:root[data-theme="dark"][data-collection-theme="eldoria"] {
+  --background: #16201a;
+  --surface: #1d2821;
+  --surface-alt: #273228;
+  --text: #f1ead7;
+  --muted-text: #c4bca5;
+  --border: #56604f;
+  --primary: #8ea167;
+  --primary-strong: #c6ab6d;
+  --secondary: #7e9eab;
+  --shadow-lg: 0 22px 56px rgba(0, 0, 0, 0.28);
+  --shadow-md: 0 12px 28px rgba(0, 0, 0, 0.18);
+  --player-progress-start: rgba(191, 163, 102, 0.9);
+  --player-progress-mid: rgba(210, 183, 120, 0.94);
+  --player-progress-end: rgba(118, 144, 122, 0.88);
+  --player-progress-glow: rgba(198, 171, 109, 0.16);
+  --player-progress-glow-strong: rgba(198, 171, 109, 0.24);
+  --player-thumb: #d1b57c;
+  --player-track: color-mix(in srgb, #314032 82%, rgba(255, 255, 255, 0.04));
 }
 
 :root[data-theme="light"][data-collection-theme="soft-archive"] {
@@ -2288,6 +2337,142 @@ select:focus {
     radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--secondary) 8%, transparent), transparent 62%);
 }
 
+:root[data-collection-theme="eldoria"] {
+  background:
+    radial-gradient(circle at 18% 16%, color-mix(in srgb, var(--primary) 14%, transparent), transparent 28%),
+    radial-gradient(circle at 82% 18%, color-mix(in srgb, var(--secondary) 16%, transparent), transparent 26%),
+    linear-gradient(180deg, color-mix(in srgb, var(--background) 94%, #0e120f 6%), color-mix(in srgb, var(--surface) 84%, var(--background)) 58%, color-mix(in srgb, var(--background) 90%, #121910 10%));
+}
+
+:root[data-collection-theme="eldoria"] .homepage-hero,
+:root[data-collection-theme="eldoria"] .public-site-header,
+:root[data-collection-theme="eldoria"] .mini-player-card {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 94%, #f7f1e2 6%), color-mix(in srgb, var(--surface-alt) 94%, var(--secondary) 6%)),
+    var(--surface);
+}
+
+:root[data-collection-theme="eldoria"] .public-site-header {
+  border-color: color-mix(in srgb, var(--border) 82%, var(--primary) 18%);
+  box-shadow:
+    0 18px 38px color-mix(in srgb, black 12%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 6%, transparent);
+}
+
+:root[data-collection-theme="eldoria"] .site-mark,
+:root[data-collection-theme="eldoria"] .site-mark .eyebrow {
+  color: color-mix(in srgb, var(--text) 82%, var(--muted-text) 18%);
+}
+
+:root[data-collection-theme="eldoria"] .site-nav-link.active,
+:root[data-collection-theme="eldoria"] .site-nav-link[aria-current="page"] {
+  color: var(--primary-strong);
+}
+
+:root[data-collection-theme="eldoria"] .site-nav-link::after {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--primary) 68%, transparent), color-mix(in srgb, var(--primary-strong) 82%, transparent));
+  box-shadow: none;
+}
+
+:root[data-collection-theme="eldoria"] .homepage-panel,
+:root[data-collection-theme="eldoria"] .collection-picker,
+:root[data-collection-theme="eldoria"] .upload-panel,
+:root[data-collection-theme="eldoria"] .collection-fragment-card,
+:root[data-collection-theme="eldoria"] .timeline-card,
+:root[data-collection-theme="eldoria"] .release-copy-panel {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 96%, #f5efde 4%), color-mix(in srgb, var(--surface-alt) 96%, var(--secondary) 4%));
+  box-shadow:
+    0 16px 32px color-mix(in srgb, black 10%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 8%, transparent);
+}
+
+:root[data-collection-theme="eldoria"] .collection-card,
+:root[data-collection-theme="eldoria"] .timeline-card,
+:root[data-collection-theme="eldoria"] .collection-fragment-card {
+  border-color: color-mix(in srgb, var(--border) 88%, var(--primary) 12%);
+  border-radius: 24px;
+}
+
+:root[data-collection-theme="eldoria"] .timeline-card:hover,
+:root[data-collection-theme="eldoria"] .timeline-card:focus-within,
+:root[data-collection-theme="eldoria"] .collection-card:hover,
+:root[data-collection-theme="eldoria"] .collection-card:focus-within {
+  transform: translateY(-3px);
+  box-shadow:
+    0 18px 34px color-mix(in srgb, black 12%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--primary) 12%, transparent);
+}
+
+:root[data-collection-theme="eldoria"] .collection-fragment-media,
+:root[data-collection-theme="eldoria"] .release-card-media {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--border) 82%, transparent);
+}
+
+:root[data-collection-theme="eldoria"] .world-header {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 88%, rgba(241, 233, 212, 0.42)), color-mix(in srgb, var(--surface-alt) 94%, rgba(126, 158, 171, 0.08))),
+    var(--surface);
+}
+
+:root[data-collection-theme="eldoria"] .world-header::before {
+  background:
+    radial-gradient(circle at 24% 28%, color-mix(in srgb, var(--primary) 14%, transparent), transparent 34%),
+    radial-gradient(circle at 78% 20%, color-mix(in srgb, var(--secondary) 14%, transparent), transparent 28%),
+    linear-gradient(180deg, color-mix(in srgb, #e9dfc5 12%, transparent), transparent 82%);
+  opacity: 0.92;
+}
+
+:root[data-collection-theme="eldoria"] .world-header::after {
+  background:
+    linear-gradient(90deg, transparent 0%, transparent 56%, color-mix(in srgb, var(--primary-strong) 8%, transparent) 78%, transparent 100%),
+    radial-gradient(circle at 80% 48%, color-mix(in srgb, var(--secondary) 10%, transparent), transparent 24%);
+  opacity: 0.8;
+}
+
+:root[data-collection-theme="eldoria"] .world-header h1,
+:root[data-collection-theme="eldoria"] .section-head h2,
+:root[data-collection-theme="eldoria"] .collection-fragment-copy h2,
+:root[data-collection-theme="eldoria"] .release-panel-title {
+  letter-spacing: -0.03em;
+}
+
+:root[data-collection-theme="eldoria"] .world-header-copy,
+:root[data-collection-theme="eldoria"] .collection-card p,
+:root[data-collection-theme="eldoria"] .timeline-card p,
+:root[data-collection-theme="eldoria"] .release-prose p {
+  color: color-mix(in srgb, var(--text) 74%, var(--muted-text) 26%);
+}
+
+:root[data-collection-theme="eldoria"] .play-pill,
+:root[data-collection-theme="eldoria"] .collection-chip,
+:root[data-collection-theme="eldoria"] .meta-badge {
+  background: color-mix(in srgb, var(--surface-alt) 82%, rgba(198, 171, 109, 0.16));
+  border-color: color-mix(in srgb, var(--border) 84%, var(--primary-strong) 16%);
+  color: color-mix(in srgb, var(--text) 88%, var(--muted-text) 12%);
+}
+
+:root[data-collection-theme="eldoria"] .hero-link,
+:root[data-collection-theme="eldoria"] .secondary-button,
+:root[data-collection-theme="eldoria"] .mini-player-nav,
+:root[data-collection-theme="eldoria"] .mini-player-close {
+  box-shadow: none;
+}
+
+:root[data-collection-theme="eldoria"] .hero-link,
+:root[data-collection-theme="eldoria"] .secondary-button {
+  background: color-mix(in srgb, var(--surface-alt) 84%, rgba(198, 171, 109, 0.18));
+  border-color: color-mix(in srgb, var(--border) 82%, var(--primary-strong) 18%);
+}
+
+:root[data-collection-theme="eldoria"] .hero-link:hover,
+:root[data-collection-theme="eldoria"] .secondary-button:hover,
+:root[data-collection-theme="eldoria"] .hero-link:focus-visible,
+:root[data-collection-theme="eldoria"] .secondary-button:focus-visible {
+  transform: translateY(-1px);
+  background: color-mix(in srgb, var(--surface-alt) 78%, rgba(198, 171, 109, 0.24));
+}
+
 @media (prefers-reduced-motion: reduce) {
   .fracture-progress-shell .mini-player-progress-fill,
   .fracture-primary-card,
@@ -2641,7 +2826,7 @@ select:focus {
 }
 
 .mini-player-progress-track {
-  background: color-mix(in srgb, var(--surface-alt) 88%, rgba(255, 255, 255, 0.03));
+  background: var(--player-track);
   box-shadow: none;
   opacity: 0.78;
 }
@@ -2651,11 +2836,11 @@ select:focus {
   width: 0;
   min-width: 0;
   background:
-    linear-gradient(90deg, rgba(255, 126, 182, 0.92) 0%, rgba(255, 90, 150, 0.98) 45%, rgba(255, 61, 127, 0.98) 100%);
+    linear-gradient(90deg, var(--player-progress-start) 0%, var(--player-progress-mid) 45%, var(--player-progress-end) 100%);
   box-shadow:
-    0 0 8px rgba(255, 80, 140, 0.28),
-    0 0 14px rgba(255, 80, 140, 0.12);
-  transition: width 160ms linear, box-shadow 200ms ease-out, filter 200ms ease-out;
+    0 0 8px var(--player-progress-glow),
+    0 0 14px color-mix(in srgb, var(--player-progress-glow) 42%, transparent);
+  transition: width 160ms linear, box-shadow 200ms ease-out, filter 200ms ease-out, opacity 220ms ease-out;
 }
 
 .mini-player-progress-fill.has-progress {
@@ -2683,10 +2868,10 @@ select:focus {
   width: 9px;
   height: 9px;
   border-radius: 50%;
-  background: #ff5c98;
+  background: var(--player-thumb);
   box-shadow:
-    0 0 8px rgba(255, 80, 140, 0.42),
-    0 0 14px rgba(255, 80, 140, 0.14);
+    0 0 8px color-mix(in srgb, var(--player-thumb) 42%, transparent),
+    0 0 14px color-mix(in srgb, var(--player-thumb) 16%, transparent);
   transform: translate(-50%, -50%) scale(0.72);
   opacity: 0;
   transition: transform 180ms ease-out, opacity 180ms ease-out, box-shadow 180ms ease-out;
@@ -2705,8 +2890,8 @@ select:focus {
 .mini-player-progress-shell:hover .mini-player-progress-fill,
 .mini-player-progress-shell:focus-within .mini-player-progress-fill {
   box-shadow:
-    0 0 10px rgba(255, 80, 140, 0.44),
-    0 0 18px rgba(255, 80, 140, 0.18);
+    0 0 10px var(--player-progress-glow-strong),
+    0 0 18px color-mix(in srgb, var(--player-progress-glow-strong) 42%, transparent);
   filter: saturate(1.06);
 }
 
@@ -2846,6 +3031,29 @@ select:focus {
   justify-items: end;
   gap: 0.08rem;
   max-width: 180px;
+}
+
+.mini-player-card-eldoria {
+  border-color: color-mix(in srgb, var(--border) 88%, var(--primary-strong) 12%);
+  box-shadow:
+    0 14px 26px color-mix(in srgb, black 12%, transparent),
+    0 2px 10px color-mix(in srgb, var(--primary-strong) 8%, transparent);
+}
+
+.mini-player-chip-eldoria {
+  background: color-mix(in srgb, var(--surface-alt) 84%, rgba(198, 171, 109, 0.14));
+  border-color: color-mix(in srgb, var(--border) 82%, var(--primary-strong) 18%);
+  color: color-mix(in srgb, var(--text) 90%, var(--primary-strong) 10%);
+  box-shadow: none;
+}
+
+.eldoria-progress-shell .mini-player-progress-fill {
+  filter: saturate(0.92);
+}
+
+.eldoria-progress-shell:hover .mini-player-progress-fill,
+.eldoria-progress-shell:focus-within .mini-player-progress-fill {
+  filter: saturate(1);
 }
 
 .mini-player-next-title {

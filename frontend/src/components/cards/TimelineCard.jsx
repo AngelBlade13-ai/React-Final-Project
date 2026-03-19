@@ -33,7 +33,11 @@ export default function TimelineCard({ index, onPlayTrack, playbackContext, post
               }}
               type="button"
             >
-              {hasVideo(post.videoUrl) ? "Play in Mini Player" : "Video Pending"}
+              {hasVideo(post.videoUrl)
+                ? themeConfig.itemName === "Ballad"
+                  ? "Play the Ballad"
+                  : "Play in Mini Player"
+                : "Video Pending"}
             </button>
             <span className="result-card-cta">{themeConfig.itemAction}</span>
           </div>

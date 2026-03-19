@@ -1,9 +1,11 @@
 import { Link } from "react-router-dom";
 import ReleaseMedia from "../ReleaseMedia";
 import { formatPostDate } from "../../lib/formatters";
-import { hasVideo } from "../../lib/site";
+import { getPrimaryThemeForPost, hasVideo } from "../../lib/site";
 
 export default function ReleaseCard({ post, onPlayTrack, layout = "card" }) {
+  const primaryTheme = getPrimaryThemeForPost(post);
+
   return (
     <Link className="release-card-link" to={`/release/${post.slug}`}>
       <article className={`post-card homepage-post-card release-feed-card ${layout === "horizontal" ? "result-card" : ""}`}>
@@ -41,7 +43,7 @@ export default function ReleaseCard({ post, onPlayTrack, layout = "card" }) {
               }}
               type="button"
             >
-              {hasVideo(post.videoUrl) ? "Play in Mini Player" : "Video Pending"}
+              {hasVideo(post.videoUrl) ? (primaryTheme === "eldoria" ? "Play the Ballad" : "Play in Mini Player") : "Video Pending"}
             </button>
             {layout === "horizontal" ? <span className="result-card-cta">Open release</span> : null}
           </div>

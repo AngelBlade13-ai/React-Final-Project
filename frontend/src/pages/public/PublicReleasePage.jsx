@@ -141,7 +141,7 @@ export default function PublicReleasePage({ hasAdminSession, onPlayTrack }) {
               />
             </div>
             <div className="release-hero-copy">
-              <p className="eyebrow">{isFractureverse ? "Timeline Record" : "Release Entry"}</p>
+              <p className="eyebrow">{isFractureverse ? "Timeline Record" : labels.releaseNote}</p>
               <h1>{post.title}</h1>
               <p className="release-hero-intro">
                 {isFractureverse
@@ -184,7 +184,15 @@ export default function PublicReleasePage({ hasAdminSession, onPlayTrack }) {
                   onClick={() => onPlayTrack(post, playbackContext)}
                   type="button"
                 >
-                  {hasVideo(post.videoUrl) ? (isFractureverse ? "Begin Playback" : "Play in Mini Player") : isFractureverse ? "Signal Unavailable" : "Video Pending"}
+                  {hasVideo(post.videoUrl)
+                    ? isFractureverse
+                      ? "Begin Playback"
+                      : primaryTheme === "eldoria"
+                        ? "Play the Ballad"
+                        : "Play in Mini Player"
+                    : isFractureverse
+                      ? "Signal Unavailable"
+                      : "Video Pending"}
                 </button>
                 {primaryCollection ? (
                   <Link className="hero-link secondary-link" to={`/collections/${primaryCollection.slug}`}>
