@@ -105,13 +105,14 @@ function buildFractureInteraction(activeSlug, featuredSlug, releases) {
   };
 }
 
-export default function CollectionDetailPage({ onPlayTrack }) {
+export default function CollectionDetailPage({ currentTrack, isPlayerActive, onPlayTrack }) {
   const { slug } = useParams();
   const [collection, setCollection] = useState(null);
   const [releases, setReleases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeFragmentSlug, setActiveFragmentSlug] = useState("");
+  const [eldoriaMousePosition, setEldoriaMousePosition] = useState({ x: 50, y: 34 });
 
   useEffect(() => {
     async function loadCollection() {
@@ -175,6 +176,11 @@ export default function CollectionDetailPage({ onPlayTrack }) {
   });
   const derivedContent = getCollectionDerivedContent(collection, timelineReleases);
   const eldoriaFeaturedMeta = getEldoriaMeta(featuredRelease);
+  const eldoriaAudioActive = Boolean(
+    isEldoria &&
+      isPlayerActive &&
+      currentTrack?.collections?.some((entry) => entry.slug === collection?.slug)
+  );
 
   useEffect(() => {
     const root = document.documentElement;
@@ -192,9 +198,37 @@ export default function CollectionDetailPage({ onPlayTrack }) {
     };
   }, [collection?.theme]);
 
+  function handleEldoriaPointerMove(event) {
+    if (!isEldoria) {
+      return;
+    }
+
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const x = ((event.clientX - bounds.left) / bounds.width) * 100;
+    const y = ((event.clientY - bounds.top) / bounds.height) * 100;
+
+    setEldoriaMousePosition({
+      x: Number.isFinite(x) ? x : 50,
+      y: Number.isFinite(y) ? y : 34
+    });
+  }
+
   return (
     <>
-      <header className={`section-hero world-header ${collection?.theme ? `world-header-${collection.theme}` : ""}`}>
+      <header
+        className={`section-hero world-header ${collection?.theme ? `world-header-${collection.theme}` : ""}${
+          isEldoria ? " eldoria-world-header" : ""
+        }${isEldoria && eldoriaAudioActive ? " eldoria-world-awake" : ""}`}
+        onMouseMove={handleEldoriaPointerMove}
+        style={
+          isEldoria
+            ? {
+                "--eldoria-mouse-x": `${eldoriaMousePosition.x}%`,
+                "--eldoria-mouse-y": `${eldoriaMousePosition.y}%`
+              }
+            : undefined
+        }
+      >
         {loading ? <h1>Loading collection...</h1> : null}
         {error ? <p className="error-text">{error}</p> : null}
         {collection ? (
@@ -202,6 +236,7 @@ export default function CollectionDetailPage({ onPlayTrack }) {
             <div className="world-header-inner">
               <p className="eyebrow">{isFractureverse ? FRACTUREVERSE_WORLD.headerEyebrow : themeConfig.worldEyebrow}</p>
               <h1>{collection.title}</h1>
+              {isEldoria ? <p className="eldoria-whisper-line">The world remembers its queen.</p> : null}
               <p className="hero-copy world-header-copy">
                 {isFractureverse ? FRACTUREVERSE_WORLD.description : collection.description}
               </p>
@@ -240,9 +275,12 @@ export default function CollectionDetailPage({ onPlayTrack }) {
               </div>
             ) : isEldoria ? (
               <div aria-hidden="true" className="world-header-aside eldoria-aside">
+                <div className="eldoria-ambient-dust" />
                 <div className="eldoria-sigil">
+                  <span className="eldoria-sigil-core" />
                   <span className="eldoria-sigil-ring eldoria-sigil-ring-outer" />
                   <span className="eldoria-sigil-ring eldoria-sigil-ring-inner" />
+                  <span className="eldoria-sigil-ring eldoria-sigil-ring-script" />
                   <span className="eldoria-sigil-star" />
                 </div>
               </div>
@@ -255,7 +293,16 @@ export default function CollectionDetailPage({ onPlayTrack }) {
         <main
           className={`content-grid collection-world-page${isFractureverse ? " fractureverse-page" : ""}${isEldoria ? " eldoria-page" : ""}${
             fractureInteraction.primaryEngaged ? " fracture-anchor-engaged" : ""
-          }`}
+          }${isEldoria && eldoriaAudioActive ? " eldoria-world-awake" : ""}`}
+          onMouseMove={handleEldoriaPointerMove}
+          style={
+            isEldoria
+              ? {
+                  "--eldoria-mouse-x": `${eldoriaMousePosition.x}%`,
+                  "--eldoria-mouse-y": `${eldoriaMousePosition.y}%`
+                }
+              : undefined
+          }
         >
           {isFractureverse ? (
             <>

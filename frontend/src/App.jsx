@@ -328,7 +328,13 @@ function App() {
           <Route path="/collections" element={<CollectionsIndexPage />} />
           <Route
             path="/collections/:slug"
-            element={<CollectionDetailPage onPlayTrack={playTrack} />}
+            element={
+              <CollectionDetailPage
+                currentTrack={currentTrack}
+                isPlayerActive={isMiniPlayerPlaying}
+                onPlayTrack={playTrack}
+              />
+            }
           />
           <Route
             path="/explore"
