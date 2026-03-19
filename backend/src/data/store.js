@@ -121,7 +121,23 @@ function normalizeArchiveMeta(archiveMeta) {
     systemNote: String(archiveMeta.systemNote || "").trim(),
     linkedSlugs: Array.isArray(archiveMeta.linkedSlugs)
       ? [...new Set(archiveMeta.linkedSlugs.map((slug) => String(slug).trim()).filter(Boolean))]
-      : []
+      : [],
+    chapterNumber: String(archiveMeta.chapterNumber || "").trim(),
+    entryType: String(archiveMeta.entryType || "").trim(),
+    subtitle: String(archiveMeta.subtitle || "").trim(),
+    openingPassage: String(archiveMeta.openingPassage || "").trim(),
+    coreSituation: String(archiveMeta.coreSituation || "").trim(),
+    coreTension: String(archiveMeta.coreTension || "").trim(),
+    chronicleObservation: String(archiveMeta.chronicleObservation || "").trim(),
+    chronicleContradiction: String(archiveMeta.chronicleContradiction || "").trim(),
+    chronicleConclusion: String(archiveMeta.chronicleConclusion || "").trim(),
+    emotionalState: String(archiveMeta.emotionalState || "").trim(),
+    coreConflict: String(archiveMeta.coreConflict || "").trim(),
+    risk: String(archiveMeta.risk || "").trim(),
+    anchorQuote: String(archiveMeta.anchorQuote || "").trim(),
+    resolution: String(archiveMeta.resolution || "").trim(),
+    entryStatus: String(archiveMeta.entryStatus || "").trim(),
+    playerFlavorLine: String(archiveMeta.playerFlavorLine || "").trim()
   };
 
   if (
@@ -131,7 +147,23 @@ function normalizeArchiveMeta(archiveMeta) {
     !normalized.signalType &&
     !normalized.description &&
     !normalized.systemNote &&
-    normalized.linkedSlugs.length === 0
+    normalized.linkedSlugs.length === 0 &&
+    !normalized.chapterNumber &&
+    !normalized.entryType &&
+    !normalized.subtitle &&
+    !normalized.openingPassage &&
+    !normalized.coreSituation &&
+    !normalized.coreTension &&
+    !normalized.chronicleObservation &&
+    !normalized.chronicleContradiction &&
+    !normalized.chronicleConclusion &&
+    !normalized.emotionalState &&
+    !normalized.coreConflict &&
+    !normalized.risk &&
+    !normalized.anchorQuote &&
+    !normalized.resolution &&
+    !normalized.entryStatus &&
+    !normalized.playerFlavorLine
   ) {
     return null;
   }

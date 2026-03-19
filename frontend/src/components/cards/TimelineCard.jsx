@@ -1,9 +1,12 @@
 import { Link } from "react-router-dom";
 import ReleaseMedia from "../ReleaseMedia";
-import { hasVideo } from "../../lib/site";
+import { getEldoriaMeta, hasVideo } from "../../lib/site";
 
 export default function TimelineCard({ index, onPlayTrack, playbackContext, post, themeConfig }) {
   const isEldoria = themeConfig.itemName === "Ballad";
+  const eldoriaMeta = isEldoria ? getEldoriaMeta(post) : null;
+  const displayTitle = isEldoria && eldoriaMeta?.subtitle ? `${post.title} (${eldoriaMeta.subtitle})` : post.title;
+  const previewCopy = isEldoria ? eldoriaMeta?.openingPassage || post.excerpt : post.excerpt;
 
   return (
     <Link className="release-card-link" to={`/release/${post.slug}`}>
@@ -25,10 +28,12 @@ export default function TimelineCard({ index, onPlayTrack, playbackContext, post
         </div>
         <div className="post-body timeline-card-body">
           <p className="meta">
-            {themeConfig.itemName} #{String(index + 1).padStart(2, "0")}
+            {isEldoria
+              ? eldoriaMeta?.identityLine || eldoriaMeta?.chapterLabel || `Chapter ${String(index + 1).padStart(2, "0")}`
+              : `${themeConfig.itemName} #${String(index + 1).padStart(2, "0")}`}
           </p>
-          <h3>{post.title}</h3>
-          <p>{post.excerpt}</p>
+          <h3>{displayTitle}</h3>
+          <p>{previewCopy}</p>
           <div className="card-action-row">
             <button
               className="secondary-button mini-player-trigger"
@@ -41,7 +46,7 @@ export default function TimelineCard({ index, onPlayTrack, playbackContext, post
             >
               {hasVideo(post.videoUrl)
                 ? themeConfig.itemName === "Ballad"
-                  ? "Play the Ballad"
+                  ? "Listen to Ballad"
                   : "Play in Mini Player"
                 : "Video Pending"}
             </button>

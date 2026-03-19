@@ -1,5 +1,5 @@
 import { formatClock } from "../lib/formatters";
-import { getFractureverseMeta, getPrimaryThemeForPost, getThemeConfig } from "../lib/site";
+import { getEldoriaMeta, getFractureverseMeta, getPrimaryThemeForPost, getThemeConfig } from "../lib/site";
 
 export default function MiniPlayer({
   collectionName,
@@ -26,19 +26,24 @@ export default function MiniPlayer({
   const primaryTheme = getPrimaryThemeForPost(currentTrack);
   const themeConfig = getThemeConfig(primaryTheme);
   const fractureMeta = primaryTheme === "fractureverse" ? getFractureverseMeta(currentTrack, [currentTrack]) : null;
+  const eldoriaMeta = primaryTheme === "eldoria" ? getEldoriaMeta(currentTrack) : null;
   const isEldoria = primaryTheme === "eldoria";
   const primaryCollection = collectionName || currentTrack.collections?.[0]?.title || "";
   const positionLabel =
     queueLength > 1
       ? fractureMeta?.fragmentId
         ? `${fractureMeta.fragmentId} of ${queueLength}`
+        : eldoriaMeta?.chapterLabel
+          ? `${eldoriaMeta.chapterLabel} of ${queueLength}`
         : `${currentIndex + 1} / ${queueLength}`
       : "";
-  const secondaryMeta = [primaryCollection, positionLabel || fractureMeta?.state].filter(Boolean).join(" • ") || currentTrack.excerpt || "";
+  const secondaryMeta = [eldoriaMeta?.chapterLabel || primaryCollection, positionLabel || fractureMeta?.state].filter(Boolean).join(" / ") || currentTrack.excerpt || "";
   const progressRatio = duration > 0 ? Math.min(progress / duration, 1) : 0;
   const progressPercent = `${progressRatio * 100}%`;
   const hasProgress = progressRatio > 0;
-  const chipLabel = fractureMeta ? fractureMeta.signalType : isEldoria && positionLabel ? positionLabel : "";
+  const chipLabel = fractureMeta ? fractureMeta.signalType : eldoriaMeta?.entryType || (isEldoria && positionLabel ? positionLabel : "");
+  const displayTitle = isEldoria && eldoriaMeta?.subtitle ? eldoriaMeta.subtitle : currentTrack.title;
+  const flavorLine = isEldoria ? eldoriaMeta?.playerFlavorLine : "";
 
   return (
     <div className="mini-player-shell">
@@ -46,8 +51,9 @@ export default function MiniPlayer({
         <div className="mini-player-identity">
           <div className="mini-player-copy">
             <p className="mini-player-label">{themeConfig.playerLabel || "Now Playing"}</p>
-            <h2>{currentTrack.title}</h2>
+            <h2>{displayTitle}</h2>
             {secondaryMeta ? <p className="mini-player-meta">{secondaryMeta}</p> : null}
+            {flavorLine ? <p className="mini-player-flavor">{flavorLine}</p> : null}
           </div>
           {chipLabel ? <span className={`mini-player-chip${isEldoria ? " mini-player-chip-eldoria" : ""}`}>{chipLabel}</span> : null}
         </div>

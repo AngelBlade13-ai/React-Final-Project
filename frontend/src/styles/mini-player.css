@@ -68,6 +68,15 @@
   text-overflow: ellipsis;
 }
 
+.mini-player-flavor {
+  margin: 0.16rem 0 0;
+  color: color-mix(in srgb, var(--muted-text) 82%, var(--primary-strong) 18%);
+  font-size: 0.78rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .mini-player-chip {
   display: inline-flex;
   align-items: center;

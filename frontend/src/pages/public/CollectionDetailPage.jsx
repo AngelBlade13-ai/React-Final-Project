@@ -8,9 +8,11 @@ import {
   FRACTUREVERSE_ORDER,
   FRACTUREVERSE_WORLD,
   getCollectionDerivedContent,
+  getEldoriaMeta,
   getFractureverseMeta,
   getThemeConfig,
   hasVideo,
+  sortEldoriaPosts,
   sortFractureversePosts
 } from "../../lib/site";
 
@@ -134,11 +136,13 @@ export default function CollectionDetailPage({ onPlayTrack }) {
   }, [slug]);
 
   const featuredRelease = collection?.featuredRelease || null;
-  const otherReleases = featuredRelease ? releases.filter((post) => post.slug !== featuredRelease.slug) : releases;
   const themeConfig = getThemeConfig(collection?.theme);
-  const timelineReleases = featuredRelease ? [featuredRelease, ...otherReleases] : releases;
   const isFractureverse = collection?.theme === "fractureverse";
   const isEldoria = collection?.theme === "eldoria";
+  const eldoriaReleases = isEldoria ? sortEldoriaPosts(releases) : [];
+  const baseReleases = isEldoria ? eldoriaReleases : releases;
+  const otherReleases = featuredRelease ? baseReleases.filter((post) => post.slug !== featuredRelease.slug) : baseReleases;
+  const timelineReleases = featuredRelease ? [featuredRelease, ...otherReleases] : baseReleases;
   const fractureverseReleases = isFractureverse
     ? sortFractureversePosts(
         FRACTUREVERSE_ORDER.map((entrySlug) => releases.find((post) => post.slug === entrySlug))
@@ -154,7 +158,7 @@ export default function CollectionDetailPage({ onPlayTrack }) {
         collectionId: collection.id,
         collectionName: collection.title,
         collectionSlug: collection.slug,
-        queue: isFractureverse ? fractureverseReleases : timelineReleases
+        queue: isFractureverse ? fractureverseReleases : isEldoria ? eldoriaReleases : timelineReleases
       }
     : null;
   const featuredFragmentMeta = getFractureverseMeta(fractureverseFeatured, fractureverseReleases);
@@ -170,6 +174,7 @@ export default function CollectionDetailPage({ onPlayTrack }) {
     interaction: fractureInteraction
   });
   const derivedContent = getCollectionDerivedContent(collection, timelineReleases);
+  const eldoriaFeaturedMeta = getEldoriaMeta(featuredRelease);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -413,11 +418,18 @@ export default function CollectionDetailPage({ onPlayTrack }) {
                   />
                   <div className="release-card-overlay" />
                   <div className="play-pill featured-play-pill">
-                    {hasVideo(featuredRelease.videoUrl) ? themeConfig.featuredLabel : "Video Pending"}
+                    {hasVideo(featuredRelease.videoUrl)
+                      ? eldoriaFeaturedMeta?.chapterNumber === "1"
+                        ? "First Chronicle Entry"
+                        : themeConfig.featuredLabel
+                      : "Video Pending"}
                   </div>
                 </div>
                 <div className="collection-fragment-copy">
                   <p className="eyebrow">{themeConfig.featuredLabel}</p>
+                  {isEldoria && eldoriaFeaturedMeta?.identityLine ? (
+                    <p className="fracture-fragment-meta eldoria-entry-meta">{eldoriaFeaturedMeta.identityLine}</p>
+                  ) : null}
                   <h2>{featuredRelease.title}</h2>
                   <p className="collection-fragment-excerpt">{featuredRelease.excerpt}</p>
                   <p className="collection-fragment-context">
@@ -443,7 +455,7 @@ export default function CollectionDetailPage({ onPlayTrack }) {
                     >
                       {hasVideo(featuredRelease.videoUrl)
                         ? collection.theme === "eldoria"
-                          ? "Play the Ballad"
+                          ? "Listen to Ballad"
                           : "Play in Mini Player"
                         : "Video Pending"}
                     </button>

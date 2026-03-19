@@ -15,7 +15,23 @@ export const emptyPost = {
     signalType: "",
     description: "",
     systemNote: "",
-    linkedSlugs: []
+    linkedSlugs: [],
+    chapterNumber: "",
+    entryType: "",
+    subtitle: "",
+    openingPassage: "",
+    coreSituation: "",
+    coreTension: "",
+    chronicleObservation: "",
+    chronicleContradiction: "",
+    chronicleConclusion: "",
+    emotionalState: "",
+    coreConflict: "",
+    risk: "",
+    anchorQuote: "",
+    resolution: "",
+    entryStatus: "",
+    playerFlavorLine: ""
   },
   createdAt: "",
   published: false,
@@ -71,8 +87,8 @@ export const COLLECTION_THEMES = {
   },
   eldoria: {
     worldEyebrow: "Eldoria",
-    featuredLabel: "Featured Ballad",
-    featuredAction: "Open Ballad",
+    featuredLabel: "First Chronicle Entry",
+    featuredAction: "Enter Chronicle",
     listLabel: "Chronicle",
     releaseNote: "Chronicle Entry",
     lyrics: "Verses",
@@ -87,7 +103,7 @@ export const COLLECTION_THEMES = {
     worldNoteText: "Some songs feel less like records and more like stories remembered beside a fire long after nightfall.",
     itemName: "Ballad",
     itemPlural: "Ballads",
-    itemAction: "Open Ballad",
+    itemAction: "Enter Chronicle",
     playerLabel: "Now Playing - A Ballad",
     playerUpNextLabel: "Next Ballad"
   },
@@ -303,6 +319,41 @@ export function hasVideo(videoUrl) {
   return Boolean(String(videoUrl || "").trim());
 }
 
+function toRoman(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number) || number <= 0) {
+    return "";
+  }
+
+  const numerals = [
+    [1000, "M"],
+    [900, "CM"],
+    [500, "D"],
+    [400, "CD"],
+    [100, "C"],
+    [90, "XC"],
+    [50, "L"],
+    [40, "XL"],
+    [10, "X"],
+    [9, "IX"],
+    [5, "V"],
+    [4, "IV"],
+    [1, "I"]
+  ];
+
+  let remainder = number;
+  let result = "";
+
+  numerals.forEach(([amount, symbol]) => {
+    while (remainder >= amount) {
+      result += symbol;
+      remainder -= amount;
+    }
+  });
+
+  return result;
+}
+
 function formatCountLabel(count, singular, plural) {
   return `${count} ${count === 1 ? singular : plural}`;
 }
@@ -372,4 +423,90 @@ export function getCollectionDerivedContent(collection, releases = []) {
 
 function fractureverseVisibleCount(releases = []) {
   return Math.max(releases.length - 1, 0);
+}
+
+export function sortEldoriaPosts(posts = []) {
+  return [...posts].sort((left, right) => {
+    const leftMeta = getEldoriaMeta(left);
+    const rightMeta = getEldoriaMeta(right);
+    const leftIndex = Number(leftMeta?.chapterNumber || 999);
+    const rightIndex = Number(rightMeta?.chapterNumber || 999);
+
+    if (leftIndex !== rightIndex) {
+      return leftIndex - rightIndex;
+    }
+
+    return String(left?.createdAt || "").localeCompare(String(right?.createdAt || ""));
+  });
+}
+
+export function getEldoriaMeta(post) {
+  const archiveMeta = post?.archiveMeta;
+
+  if (!archiveMeta) {
+    return null;
+  }
+
+  const chapterNumber = String(archiveMeta.chapterNumber || "").trim();
+  const entryType = String(archiveMeta.entryType || "").trim();
+  const subtitle = String(archiveMeta.subtitle || "").trim();
+  const openingPassage = String(archiveMeta.openingPassage || "").trim();
+  const coreSituation = String(archiveMeta.coreSituation || "").trim();
+  const coreTension = String(archiveMeta.coreTension || "").trim();
+  const chronicleObservation = String(archiveMeta.chronicleObservation || "").trim();
+  const chronicleContradiction = String(archiveMeta.chronicleContradiction || "").trim();
+  const chronicleConclusion = String(archiveMeta.chronicleConclusion || "").trim();
+  const emotionalState = String(archiveMeta.emotionalState || "").trim();
+  const coreConflict = String(archiveMeta.coreConflict || "").trim();
+  const risk = String(archiveMeta.risk || "").trim();
+  const anchorQuote = String(archiveMeta.anchorQuote || "").trim();
+  const resolution = String(archiveMeta.resolution || "").trim();
+  const entryStatus = String(archiveMeta.entryStatus || "").trim();
+  const playerFlavorLine = String(archiveMeta.playerFlavorLine || "").trim();
+  const hasEldoriaData = [
+    chapterNumber,
+    entryType,
+    subtitle,
+    openingPassage,
+    coreSituation,
+    coreTension,
+    chronicleObservation,
+    chronicleContradiction,
+    chronicleConclusion,
+    emotionalState,
+    coreConflict,
+    risk,
+    anchorQuote,
+    resolution,
+    entryStatus,
+    playerFlavorLine
+  ].some(Boolean);
+
+  if (!hasEldoriaData) {
+    return null;
+  }
+
+  const chapterNumeral = toRoman(chapterNumber);
+
+  return {
+    chapterNumber,
+    chapterNumeral,
+    chapterLabel: chapterNumeral ? `Chapter ${chapterNumeral}` : "",
+    identityLine: [chapterNumeral ? `CHAPTER ${chapterNumeral}` : "", entryType.toUpperCase(), "ELDORIA"].filter(Boolean).join(" / "),
+    entryType,
+    subtitle,
+    openingPassage,
+    coreSituation,
+    coreTension,
+    chronicleObservation,
+    chronicleContradiction,
+    chronicleConclusion,
+    emotionalState,
+    coreConflict,
+    risk,
+    anchorQuote,
+    resolution,
+    entryStatus,
+    playerFlavorLine
+  };
 }

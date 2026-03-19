@@ -40,7 +40,23 @@ function normalizeArchiveMetaInput(input = {}, existingArchiveMeta = null) {
     systemNote: String(input.systemNote || existingArchiveMeta?.systemNote || "").trim(),
     linkedSlugs: Array.isArray(input.linkedSlugs)
       ? [...new Set(input.linkedSlugs.map((slug) => String(slug).trim()).filter(Boolean))]
-      : existingArchiveMeta?.linkedSlugs || []
+      : existingArchiveMeta?.linkedSlugs || [],
+    chapterNumber: String(input.chapterNumber || existingArchiveMeta?.chapterNumber || "").trim(),
+    entryType: String(input.entryType || existingArchiveMeta?.entryType || "").trim(),
+    subtitle: String(input.subtitle || existingArchiveMeta?.subtitle || "").trim(),
+    openingPassage: String(input.openingPassage || existingArchiveMeta?.openingPassage || "").trim(),
+    coreSituation: String(input.coreSituation || existingArchiveMeta?.coreSituation || "").trim(),
+    coreTension: String(input.coreTension || existingArchiveMeta?.coreTension || "").trim(),
+    chronicleObservation: String(input.chronicleObservation || existingArchiveMeta?.chronicleObservation || "").trim(),
+    chronicleContradiction: String(input.chronicleContradiction || existingArchiveMeta?.chronicleContradiction || "").trim(),
+    chronicleConclusion: String(input.chronicleConclusion || existingArchiveMeta?.chronicleConclusion || "").trim(),
+    emotionalState: String(input.emotionalState || existingArchiveMeta?.emotionalState || "").trim(),
+    coreConflict: String(input.coreConflict || existingArchiveMeta?.coreConflict || "").trim(),
+    risk: String(input.risk || existingArchiveMeta?.risk || "").trim(),
+    anchorQuote: String(input.anchorQuote || existingArchiveMeta?.anchorQuote || "").trim(),
+    resolution: String(input.resolution || existingArchiveMeta?.resolution || "").trim(),
+    entryStatus: String(input.entryStatus || existingArchiveMeta?.entryStatus || "").trim(),
+    playerFlavorLine: String(input.playerFlavorLine || existingArchiveMeta?.playerFlavorLine || "").trim()
   };
 
   if (
@@ -50,7 +66,23 @@ function normalizeArchiveMetaInput(input = {}, existingArchiveMeta = null) {
     !archiveMeta.signalType &&
     !archiveMeta.description &&
     !archiveMeta.systemNote &&
-    archiveMeta.linkedSlugs.length === 0
+    archiveMeta.linkedSlugs.length === 0 &&
+    !archiveMeta.chapterNumber &&
+    !archiveMeta.entryType &&
+    !archiveMeta.subtitle &&
+    !archiveMeta.openingPassage &&
+    !archiveMeta.coreSituation &&
+    !archiveMeta.coreTension &&
+    !archiveMeta.chronicleObservation &&
+    !archiveMeta.chronicleContradiction &&
+    !archiveMeta.chronicleConclusion &&
+    !archiveMeta.emotionalState &&
+    !archiveMeta.coreConflict &&
+    !archiveMeta.risk &&
+    !archiveMeta.anchorQuote &&
+    !archiveMeta.resolution &&
+    !archiveMeta.entryStatus &&
+    !archiveMeta.playerFlavorLine
   ) {
     return null;
   }

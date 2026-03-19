@@ -27,9 +27,11 @@ export default function AdminPostsPage() {
     uploading
   } = useAdminContext();
   const fractureverseCollection = collections.find((collection) => collection.theme === "fractureverse");
+  const eldoriaCollection = collections.find((collection) => collection.theme === "eldoria");
   const fractureverseCandidates = posts.filter((post) => post.id !== editingId && post.collectionSlugs?.includes(fractureverseCollection?.slug));
   const isFractureverseEntry =
     Boolean(fractureverseCollection) && form.collectionSlugs.includes(fractureverseCollection.slug);
+  const isEldoriaEntry = Boolean(eldoriaCollection) && form.collectionSlugs.includes(eldoriaCollection.slug);
 
   return (
     <main className="admin-grid">
@@ -101,7 +103,7 @@ export default function AdminPostsPage() {
           <fieldset className="full-span collection-picker archive-meta-panel">
             <legend>World Metadata</legend>
             <p className="upload-status">
-              Optional archive fields for world-based collections. They matter most for Fractureverse, but they stay lean and can be left blank.
+              Optional archive fields for world-based collections. Fractureverse and Eldoria each read different parts of this metadata.
             </p>
             <div className="admin-form">
               <label>
@@ -155,6 +157,147 @@ export default function AdminPostsPage() {
                 />
               </label>
             </div>
+            {isEldoriaEntry ? (
+              <div className="admin-form">
+                <label>
+                  Chapter Number
+                  <input
+                    onChange={(event) => updateArchiveMetaField("chapterNumber", event.target.value)}
+                    placeholder="1"
+                    value={form.archiveMeta.chapterNumber}
+                  />
+                </label>
+                <label>
+                  Entry Type
+                  <input
+                    onChange={(event) => updateArchiveMetaField("entryType", event.target.value)}
+                    placeholder="Origin"
+                    value={form.archiveMeta.entryType}
+                  />
+                </label>
+                <label className="full-span">
+                  Subtitle
+                  <input
+                    onChange={(event) => updateArchiveMetaField("subtitle", event.target.value)}
+                    placeholder="The First Awakening"
+                    value={form.archiveMeta.subtitle}
+                  />
+                </label>
+                <label className="full-span">
+                  Opening Passage
+                  <textarea
+                    onChange={(event) => updateArchiveMetaField("openingPassage", event.target.value)}
+                    placeholder="Eldoria does not question her presence. It remembers her."
+                    rows="3"
+                    value={form.archiveMeta.openingPassage}
+                  />
+                </label>
+                <label className="full-span">
+                  Core Situation
+                  <textarea
+                    onChange={(event) => updateArchiveMetaField("coreSituation", event.target.value)}
+                    placeholder="A writer awakens inside the world she once created..."
+                    rows="3"
+                    value={form.archiveMeta.coreSituation}
+                  />
+                </label>
+                <label className="full-span">
+                  Core Tension
+                  <textarea
+                    onChange={(event) => updateArchiveMetaField("coreTension", event.target.value)}
+                    placeholder="Eldoria does not question her presence, but she remembers writing it."
+                    rows="3"
+                    value={form.archiveMeta.coreTension}
+                  />
+                </label>
+                <label className="full-span">
+                  Chronicle Observation
+                  <textarea
+                    onChange={(event) => updateArchiveMetaField("chronicleObservation", event.target.value)}
+                    placeholder="The subject displays no lived memory..."
+                    rows="3"
+                    value={form.archiveMeta.chronicleObservation}
+                  />
+                </label>
+                <label className="full-span">
+                  Chronicle Contradiction
+                  <textarea
+                    onChange={(event) => updateArchiveMetaField("chronicleContradiction", event.target.value)}
+                    placeholder="Identity does not align with recorded history."
+                    rows="3"
+                    value={form.archiveMeta.chronicleContradiction}
+                  />
+                </label>
+                <label className="full-span">
+                  Chronicle Conclusion
+                  <textarea
+                    onChange={(event) => updateArchiveMetaField("chronicleConclusion", event.target.value)}
+                    placeholder="The world is stable. The subject is not."
+                    rows="2"
+                    value={form.archiveMeta.chronicleConclusion}
+                  />
+                </label>
+                <label>
+                  Emotional State
+                  <input
+                    onChange={(event) => updateArchiveMetaField("emotionalState", event.target.value)}
+                    placeholder="Disorientation -> Impostor Syndrome -> Acceptance Under Pressure"
+                    value={form.archiveMeta.emotionalState}
+                  />
+                </label>
+                <label>
+                  Core Conflict
+                  <input
+                    onChange={(event) => updateArchiveMetaField("coreConflict", event.target.value)}
+                    placeholder="Truth vs Responsibility"
+                    value={form.archiveMeta.coreConflict}
+                  />
+                </label>
+                <label className="full-span">
+                  Risk
+                  <textarea
+                    onChange={(event) => updateArchiveMetaField("risk", event.target.value)}
+                    placeholder="If truth is revealed, belief structures collapse."
+                    rows="2"
+                    value={form.archiveMeta.risk}
+                  />
+                </label>
+                <label className="full-span">
+                  Anchor Quote
+                  <textarea
+                    onChange={(event) => updateArchiveMetaField("anchorQuote", event.target.value)}
+                    placeholder="I'm caught between two worlds tonight..."
+                    rows="2"
+                    value={form.archiveMeta.anchorQuote}
+                  />
+                </label>
+                <label className="full-span">
+                  Resolution
+                  <textarea
+                    onChange={(event) => updateArchiveMetaField("resolution", event.target.value)}
+                    placeholder="She does not accept the role. She does not reject it. She continues."
+                    rows="3"
+                    value={form.archiveMeta.resolution}
+                  />
+                </label>
+                <label>
+                  Entry Status
+                  <input
+                    onChange={(event) => updateArchiveMetaField("entryStatus", event.target.value)}
+                    placeholder="Unresolved"
+                    value={form.archiveMeta.entryStatus}
+                  />
+                </label>
+                <label>
+                  Player Flavor Line
+                  <input
+                    onChange={(event) => updateArchiveMetaField("playerFlavorLine", event.target.value)}
+                    placeholder="The crown was never meant for her..."
+                    value={form.archiveMeta.playerFlavorLine}
+                  />
+                </label>
+              </div>
+            ) : null}
             {isFractureverseEntry && fractureverseCandidates.length ? (
               <div className="archive-link-picker">
                 <p className="meta">Linked Fragments</p>
@@ -240,6 +383,10 @@ export default function AdminPostsPage() {
                 {post.archiveMeta?.fragmentId ? (
                   <p className="fracture-system-note">
                     {post.archiveMeta.fragmentId} / {post.archiveMeta.state || "Unclassified"} / {post.archiveMeta.signalType || "Record"}
+                  </p>
+                ) : post.archiveMeta?.chapterNumber ? (
+                  <p className="fracture-system-note">
+                    Chapter {post.archiveMeta.chapterNumber} / {post.archiveMeta.entryType || "Chronicle Entry"} / {post.archiveMeta.entryStatus || "Active"}
                   </p>
                 ) : null}
                 <div className="admin-actions">
