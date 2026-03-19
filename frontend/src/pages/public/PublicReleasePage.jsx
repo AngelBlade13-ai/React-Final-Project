@@ -4,13 +4,15 @@ import ReleaseMedia from "../../components/ReleaseMedia";
 import { formatPostDate } from "../../lib/formatters";
 import { apiBaseUrl, getCollectionDerivedContent, getEldoriaMeta, getFractureverseMeta, getPrimaryThemeForPost, getThemeConfig, hasVideo, sortEldoriaPosts, sortFractureversePosts } from "../../lib/site";
 
-export default function PublicReleasePage({ hasAdminSession, onPlayTrack }) {
+export default function PublicReleasePage({ currentTrack, hasAdminSession, isPlayerActive, onPlayTrack }) {
   const { slug } = useParams();
   const [post, setPost] = useState(null);
   const [sequencePosts, setSequencePosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showLyrics, setShowLyrics] = useState(false);
+  const [eldoriaMousePosition, setEldoriaMousePosition] = useState({ x: 52, y: 30 });
+  const [eldoriaScrollDepth, setEldoriaScrollDepth] = useState(0);
 
   useEffect(() => {
     async function loadPost() {
@@ -65,6 +67,11 @@ export default function PublicReleasePage({ hasAdminSession, onPlayTrack }) {
   const linkedFragments = fractureMeta?.linkedPosts || [];
   const companionBallads = orderedSequence.filter((entry) => entry.post.slug !== post?.slug);
   const derivedContent = getCollectionDerivedContent(primaryCollection, orderedSequence.map((entry) => entry.post));
+  const eldoriaAudioActive = Boolean(
+    isEldoria &&
+      isPlayerActive &&
+      currentTrack?.collections?.some((entry) => entry.slug === primaryCollection?.slug)
+  );
   const playbackContext = primaryCollection
     ? {
         collectionId: primaryCollection.id || primaryCollection.slug,
@@ -118,9 +125,55 @@ export default function PublicReleasePage({ hasAdminSession, onPlayTrack }) {
     };
   }, [primaryTheme]);
 
+  useEffect(() => {
+    if (!isEldoria) {
+      setEldoriaScrollDepth(0);
+      return undefined;
+    }
+
+    function updateScrollDepth() {
+      setEldoriaScrollDepth(window.scrollY || 0);
+    }
+
+    updateScrollDepth();
+    window.addEventListener("scroll", updateScrollDepth, { passive: true });
+
+    return () => {
+      window.removeEventListener("scroll", updateScrollDepth);
+    };
+  }, [isEldoria]);
+
+  function handleEldoriaPointerMove(event) {
+    if (!isEldoria) {
+      return;
+    }
+
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const x = ((event.clientX - bounds.left) / bounds.width) * 100;
+    const y = ((event.clientY - bounds.top) / bounds.height) * 100;
+
+    setEldoriaMousePosition({
+      x: Number.isFinite(x) ? x : 52,
+      y: Number.isFinite(y) ? y : 30
+    });
+  }
+
   return (
     <>
-      <header className={`hero homepage-hero release-hero${isFractureverse ? " fracture-release-hero" : ""}${isEldoria ? " eldoria-release-hero" : ""}`}>
+      <header
+        className={`hero homepage-hero release-hero${isFractureverse ? " fracture-release-hero" : ""}${isEldoria ? " eldoria-release-hero" : ""}${
+          isEldoria && eldoriaAudioActive ? " eldoria-release-awake" : ""
+        }`}
+        onMouseMove={handleEldoriaPointerMove}
+        style={
+          isEldoria
+            ? {
+                "--eldoria-mouse-x": `${eldoriaMousePosition.x}%`,
+                "--eldoria-mouse-y": `${eldoriaMousePosition.y}%`
+              }
+            : undefined
+        }
+      >
         <div className="hero-header-row">
           <div className="public-page-links">
             <Link className="back-link" to="/">
@@ -140,7 +193,7 @@ export default function PublicReleasePage({ hasAdminSession, onPlayTrack }) {
         {error ? <p className="error-text">{error}</p> : null}
         {post ? (
           <div className="release-hero-layout">
-            <div className="release-hero-media">
+            <div className={`release-hero-media${isEldoria ? " eldoria-release-media" : ""}`}>
               <ReleaseMedia
                 className="release-video"
                 controls
@@ -169,11 +222,19 @@ export default function PublicReleasePage({ hasAdminSession, onPlayTrack }) {
                 title={post.title}
                 videoUrl={post.videoUrl}
               />
+              {isEldoria ? (
+                <div aria-hidden="true" className="eldoria-release-media-ornament">
+                  <span className="eldoria-release-media-ring eldoria-release-media-ring-outer" />
+                  <span className="eldoria-release-media-ring eldoria-release-media-ring-inner" />
+                  <span className="eldoria-release-media-core" />
+                </div>
+              ) : null}
             </div>
-            <div className="release-hero-copy">
+            <div className={`release-hero-copy${isEldoria ? " eldoria-release-copy" : ""}`}>
               <p className="eyebrow">{isFractureverse ? "Timeline Record" : isEldoria ? "Chronicle Entry" : labels.releaseNote}</p>
               {isEldoria && eldoriaMeta?.identityLine ? <p className="fracture-fragment-meta eldoria-entry-meta">{eldoriaMeta.identityLine}</p> : null}
               <h1>{post.title}</h1>
+              {isEldoria ? <p className="eldoria-whisper-line eldoria-release-whisper">The chronicle never mistook her for a stranger.</p> : null}
               {isEldoria && eldoriaMeta?.subtitle ? <p className="release-panel-intro eldoria-subtitle">{eldoriaMeta.subtitle}</p> : null}
               <p className="release-hero-intro">
                 {isFractureverse
@@ -261,9 +322,21 @@ export default function PublicReleasePage({ hasAdminSession, onPlayTrack }) {
       </header>
 
       {post ? (
-        <main className="content-grid release-detail-grid">
-          <section className="intro-card homepage-panel release-copy-panel">
-            <p className="eyebrow">{labels.releaseNote}</p>
+        <main
+          className={`content-grid release-detail-grid${isEldoria ? " eldoria-release-detail-grid" : ""}${isEldoria && eldoriaAudioActive ? " eldoria-release-awake" : ""}`}
+          onMouseMove={handleEldoriaPointerMove}
+          style={
+            isEldoria
+              ? {
+                  "--eldoria-mouse-x": `${eldoriaMousePosition.x}%`,
+                  "--eldoria-mouse-y": `${eldoriaMousePosition.y}%`,
+                  "--eldoria-scroll-depth": `${eldoriaScrollDepth}px`
+                }
+              : undefined
+          }
+        >
+          <section className={`intro-card homepage-panel release-copy-panel${isEldoria ? " eldoria-royal-record" : ""}`}>
+            <p className="eyebrow">{isEldoria ? "Royal Record" : labels.releaseNote}</p>
             {isFractureverse && fractureMeta ? (
               <>
                 <h2 className="release-panel-title">
@@ -369,9 +442,9 @@ export default function PublicReleasePage({ hasAdminSession, onPlayTrack }) {
           ) : null}
 
           {isEldoria ? (
-            <section className="intro-card homepage-panel eldoria-release-panel">
-              <div className="section-head eldoria-chronicle-head">
-                <h2>Song Cycle</h2>
+              <section className="intro-card homepage-panel eldoria-release-panel">
+                <div className="section-head eldoria-chronicle-head">
+                  <h2>Song Cycle</h2>
                 <span>{orderedSequence.length ? derivedContent.releaseSequenceLabel : "Chronicle context"}</span>
               </div>
               {orderedSequence.length ? (
@@ -458,7 +531,7 @@ export default function PublicReleasePage({ hasAdminSession, onPlayTrack }) {
                       <Link className="linked-echo-card eldoria-linked-card" key={entry.post.id} to={`/release/${entry.post.slug}`}>
                         <span className="fracture-sequence-id">{getEldoriaMeta(entry.post)?.chapterLabel || `Chapter ${String(index + 1).padStart(2, "0")}`}</span>
                         <strong>{entry.post.title}</strong>
-                        <p>{entry.post.excerpt}</p>
+                        <p>{getEldoriaMeta(entry.post)?.coreSituation || entry.post.excerpt}</p>
                       </Link>
                     ))}
                   </div>
@@ -534,7 +607,7 @@ export default function PublicReleasePage({ hasAdminSession, onPlayTrack }) {
             </section>
           ) : isEldoria ? (
             <section className="intro-card homepage-panel eldoria-release-panel eldoria-residual-panel">
-              <p className="eyebrow">Closing Note</p>
+              <p className="eyebrow">Closing Benediction</p>
               <h2 className="release-panel-title">{eldoriaMeta?.chronicleConclusion || "Every ballad leaves a mark on the chronicle that carries it."}</h2>
               <p className="release-panel-intro">{eldoriaMeta?.resolution || "Some entries feel like beginnings, some like old promises returning. Either way, they belong to the same world once they are written here."}</p>
             </section>

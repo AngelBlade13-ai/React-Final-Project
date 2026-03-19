@@ -345,7 +345,9 @@ function App() {
             path="/release/:slug"
             element={
               <PublicReleasePage
+                currentTrack={currentTrack}
                 hasAdminSession={hasAdminSession}
+                isPlayerActive={isMiniPlayerPlaying}
                 onPlayTrack={playTrack}
               />
             }
