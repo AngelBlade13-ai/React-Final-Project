@@ -147,6 +147,14 @@ export default function CollectionDetailPage({ onPlayTrack }) {
   const fractureverseFeatured =
     fractureverseReleases.find((post) => post.slug === FRACTUREVERSE_FEATURED_SLUG) || featuredRelease;
   const fractureverseGrid = fractureverseReleases.filter((post) => post.slug !== fractureverseFeatured?.slug);
+  const playbackContext = collection
+    ? {
+        collectionId: collection.id,
+        collectionName: collection.title,
+        collectionSlug: collection.slug,
+        queue: isFractureverse ? fractureverseReleases : timelineReleases
+      }
+    : null;
   const featuredFragmentMeta = getFractureverseMeta(fractureverseFeatured, fractureverseReleases);
   const displayFragmentMeta =
     getFractureverseMeta(fractureverseReleases.find((post) => post.slug === activeFragmentSlug), fractureverseReleases) ||
@@ -346,7 +354,7 @@ export default function CollectionDetailPage({ onPlayTrack }) {
                     <button
                       className="secondary-button mini-player-trigger"
                       disabled={!hasVideo(fractureverseFeatured.videoUrl)}
-                      onClick={() => onPlayTrack(fractureverseFeatured)}
+                      onClick={() => onPlayTrack(fractureverseFeatured, playbackContext)}
                       type="button"
                     >
                       {hasVideo(fractureverseFeatured.videoUrl) ? "Begin Playback" : "Signal Unavailable"}
@@ -400,7 +408,7 @@ export default function CollectionDetailPage({ onPlayTrack }) {
                     <button
                       className="secondary-button mini-player-trigger"
                       disabled={!hasVideo(featuredRelease.videoUrl)}
-                      onClick={() => onPlayTrack(featuredRelease)}
+                      onClick={() => onPlayTrack(featuredRelease, playbackContext)}
                       type="button"
                     >
                       {hasVideo(featuredRelease.videoUrl) ? "Play in Mini Player" : "Video Pending"}
@@ -513,6 +521,7 @@ export default function CollectionDetailPage({ onPlayTrack }) {
                         meta={meta}
                         onFocusFragment={setActiveFragmentSlug}
                         onPlayTrack={onPlayTrack}
+                        playbackContext={playbackContext}
                         primaryInfluenced={fractureInteraction.primaryEngaged}
                         post={post}
                       />
@@ -540,6 +549,7 @@ export default function CollectionDetailPage({ onPlayTrack }) {
                     index={index}
                     key={post.id}
                     onPlayTrack={onPlayTrack}
+                    playbackContext={playbackContext}
                     post={post}
                     themeConfig={themeConfig}
                   />

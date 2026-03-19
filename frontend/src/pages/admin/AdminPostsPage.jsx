@@ -5,6 +5,7 @@ import { useAdminContext } from "../../layouts/AdminLayout";
 export default function AdminPostsPage() {
   const {
     collections,
+    clearVideoSelection,
     editingId,
     form,
     handleDelete,
@@ -61,6 +62,11 @@ export default function AdminPostsPage() {
               <button onClick={handleVideoUpload} type="button">
                 {uploading ? "Uploading..." : "Upload Video"}
               </button>
+              {form.videoUrl ? (
+                <button className="secondary-button" onClick={clearVideoSelection} type="button">
+                  Remove Video
+                </button>
+              ) : null}
               <span className="upload-status">
                 {selectedVideoFile
                   ? selectedVideoFile.name

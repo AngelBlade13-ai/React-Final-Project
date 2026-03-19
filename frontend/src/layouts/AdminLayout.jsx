@@ -214,6 +214,13 @@ export default function AdminLayout({ setHasAdminSession, theme, setTheme }) {
     }
   }
 
+  function clearVideoSelection() {
+    setSelectedVideoFile(null);
+    setUploadError("");
+    setSaveMessage("");
+    updateField("videoUrl", "");
+  }
+
   async function handleSubmit(event) {
     event.preventDefault();
     setSaving(true);
@@ -396,6 +403,7 @@ export default function AdminLayout({ setHasAdminSession, theme, setTheme }) {
           toggleArchiveMetaLink,
           setSelectedVideoFile,
           handleVideoUpload,
+          clearVideoSelection,
           handleSubmit,
           handleCollectionSubmit,
           handleAboutSubmit,

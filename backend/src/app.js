@@ -63,12 +63,13 @@ function normalizePostInput(input, collections, existingPost = {}) {
   const requestedCollections = Array.isArray(input.collectionSlugs)
     ? input.collectionSlugs
     : existingPost.collectionSlugs || [];
+  const hasVideoUrlInput = typeof input.videoUrl === "string";
 
   return {
     ...existingPost,
     title: String(input.title || existingPost.title || "").trim(),
     slug: slugify(input.title || existingPost.title || ""),
-    videoUrl: String(input.videoUrl || existingPost.videoUrl || "").trim(),
+    videoUrl: hasVideoUrlInput ? input.videoUrl.trim() : String(existingPost.videoUrl || "").trim(),
     excerpt: String(input.excerpt || existingPost.excerpt || "").trim(),
     content: String(input.content || existingPost.content || "").trim(),
     lyrics:

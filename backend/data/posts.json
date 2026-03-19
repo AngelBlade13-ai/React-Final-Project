@@ -31,7 +31,7 @@
       "id": "787340b9-e06e-4d3a-809c-0596cc752e07",
       "title": "The One You Used to Be - Reimagined",
       "slug": "the-one-you-used-to-be-reimagined",
-      "videoUrl": "",
+      "videoUrl": "https://res.cloudinary.com/dnvbtwora/video/upload/v1773886367/suno-releases/pdfwms8ctolhdb94npej.mp4",
       "excerpt": "A quiet, obsessive look back at the one version of love that felt real—and the refusal to let it stay in the past.",
       "content": "This song lives in that space before everything breaks.\n\nIt’s not about what actually happened—it’s about what felt right, and how hard it is to let that version of someone go once you’ve seen it. There’s this idea running through it that somewhere, in at least one timeline, things worked. And if that’s true, then maybe it’s not impossible to get it back.\n\nIt’s the softest song emotionally, but also one of the most dangerous.\nBecause once you believe there was a perfect version of someone… it becomes really hard to accept anything else.",
       "lyrics": "[Intro - Ambient textures, distant guitar, heartbeat rhythm]\n\n[Verse 1 - Intimate, aching]\nI saw you in a broken sky,\nStill saying that you had to try—\nYou looked at me like I was gone,\nLike I was something you moved on from.\n\nLike I was just a chapter,\nIn a story you outgrew—\nBut I'm still reading that same page,\nThe one where I still had you.\n\n[Verse 2 - Building pain]\nEvery version of your face,\nFeels like it's in the wrong place—\nNone of them look back at me,\nLike you did when you were free.\n\nFree from the weight of worlds,\nFree from the cosmic debt—\nJust a girl who loved a boy,\nBefore she learned regret.\n\n[Pre-Chorus - Desperate longing]\nThere was a time you stayed,\nThere was a time you meant it—\nThere was a version of your heart,\nThat beat in time with mine.\n\nAnd I need that back.\nI need her back.\n\n[Chorus - Emotional build, obsessive devotion]\nI don't want who you are now,\nI want the one you used to be—\nBefore the world got in your way,\nBefore you walked away from me.\n\nI don't need a thousand lives,\nI just need the right one—\nWhere you still look at me,\nLike I'm the only one.\n\nLike I matter more than stars.\nLike I'm worth more than their lives.\n\n[Verse 3 - Raw vulnerability]\nI hear your voice in shattered days,\nTelling me it's not the same—\nBut I've been through a hundred worlds,\nAnd you were perfect in just one.\n\nPerfect in the way you laughed,\nPerfect in the way you stayed—\nPerfect in how you chose my hand,\nBefore duty led you astray.\n\n[Pre-Chorus 2 - More intense]\nI won't forget that place,\nI won't forget your eyes—\nThe way they looked at me that night,\nBefore you said goodbye.\n\nBefore you broke us both.\nBefore you became this.\n\n[Chorus 2 - Peak emotion]\nI don't want who you are now,\nI want the one you used to be—\nThe one who never turned around,\nThe one who stayed with me.\n\nI don't care what breaks or burns,\nTo bring that moment back—\nI'll tear apart forever,\nJust to get you back.\n\nJust to see you smile at me,\nLike you did before the world took you away.\n\n[Bridge - Quiet desperation building to conviction]\nThey say I've lost my mind,\nBut I've just seen too much—\nYou only loved me once,\nBut that one time was enough.\n\nEnough to make me cross realities,\nEnough to make me destroy—\nEnough to make me hunt through infinite futures,\nFor the girl who was my world.\n\nAnd I'll find her.\nI'll find you.\nThe real you.\n\n[Final Chorus - Desperate, powerful]\nI DON'T WANT WHO YOU ARE NOW,\nI WANT THE ONE YOU USED TO BE—\nTHE GIRL WHO CHOSE MY NAME,\nOVER ALL OF REALITY!\n\nI DON'T NEED EVERY FUTURE,\nI JUST NEED THAT ONE—\nWHERE YOU WERE STILL IN LOVE WITH ME,\nWHEN EVERYTHING BEGUN!\n\nBEFORE THE FRACTURE.\nBEFORE THE CHOICE.\nBEFORE YOU LEARNED TO SAVE EVERYONE BUT US.\n\n[Outro - Fading to whisper, haunted]\nI remember you...\nThe way you were...\nThe way we were...\n\nAnd I'll burn every false version,\nUntil I find the truth...\n\nUntil I find the Angel,\nWho still loves me too.\n\nI remember you.\n\n[Final note sustained then silence]",
@@ -145,7 +145,8 @@
         "main-verse",
         "anime-openings",
         "healing-arc"
-      ]
+      ],
+      "archiveMeta": null
     }
   ],
   "collections": [
@@ -184,18 +185,18 @@
   ],
   "siteContent": {
     "about": {
-      "heroEyebrow": "About",
-      "heroTitle": "A small artist archive for releases that want more room than a single post can hold.",
-      "heroText": "The site is part release feed, part notebook, part identity statement: a place where the songs, their notes, and the worlds around them can stay connected.",
+      "heroEyebrow": "About Me",
+      "heroTitle": "I make music to understand things I don’t know how to say out loud.",
+      "heroText": "Most of what I create starts as a feeling I can’t quite explain. \nSongs are how I process it, and this site is where those pieces stay connected — \nnot just the music, but everything around it.",
       "artistEyebrow": "The Artist",
-      "artistTitle": "Emotion first, then atmosphere, then the details that make a release feel lived in.",
-      "artistText": "This archive frames the artist as someone building songs through feeling, imagery, and narrative context. The music leans toward cinematic emotion, reflective notes, and releases that carry a clear inner voice.",
-      "siteEyebrow": "The Site",
-      "siteTitle": "Built for listening, reading, and finding connections between songs.",
-      "siteText": "Release pages keep the music close. Collections create repeatable paths through the catalog. Explore turns the written notes into something searchable. Together they make the archive feel intentional instead of accidental.",
-      "quoteEyebrow": "Why It Exists",
-      "quoteTitle": "Some songs need a room around them.",
-      "quoteText": "This site gives each release its own atmosphere, then links those atmospheres together into a larger story."
+      "artistTitle": "I follow emotion first, and figure out meaning after.",
+      "artistText": "I tend to build songs from atmosphere, imagery, and whatever feeling won’t leave me alone. \nA lot of what I make leans into cinematic emotion and narrative structure — not always with a clear story, \nbut with something that feels like it could be one.\n\nI’m less interested in perfect answers and more interested in capturing something honest, \neven if it’s unfinished or complicated.",
+      "siteEyebrow": "This Site",
+      "siteTitle": "This is where everything comes together.",
+      "siteText": "I didn’t want my music to exist as isolated posts or uploads. \nEach release here has space to breathe — with notes, context, and connections to other pieces.\n\nCollections let me group songs into larger ideas, and pages like the Fractureverse turn them into something closer to a world. \nIt’s less about organizing content, and more about keeping meaning intact.",
+      "quoteEyebrow": "Why I Keep Making This",
+      "quoteTitle": "Some feelings don’t go away until you turn them into something.",
+      "quoteText": "Some feelings don’t go away until you turn them into something."
     }
   }
 }

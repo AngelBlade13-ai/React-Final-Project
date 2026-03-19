@@ -9,6 +9,7 @@ export default function FractureFragmentCard({
   meta,
   onFocusFragment,
   onPlayTrack,
+  playbackContext,
   post,
   primaryInfluenced
 }) {
@@ -55,7 +56,7 @@ export default function FractureFragmentCard({
               disabled={!hasVideo(post.videoUrl)}
               onClick={(event) => {
                 event.preventDefault();
-                onPlayTrack(post);
+                onPlayTrack(post, playbackContext);
               }}
               type="button"
             >

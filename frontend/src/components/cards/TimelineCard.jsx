@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import ReleaseMedia from "../ReleaseMedia";
 import { hasVideo } from "../../lib/site";
 
-export default function TimelineCard({ index, onPlayTrack, post, themeConfig }) {
+export default function TimelineCard({ index, onPlayTrack, playbackContext, post, themeConfig }) {
   return (
     <Link className="release-card-link" to={`/release/${post.slug}`}>
       <article className="post-card homepage-post-card release-feed-card timeline-card">
@@ -29,7 +29,7 @@ export default function TimelineCard({ index, onPlayTrack, post, themeConfig }) 
               disabled={!hasVideo(post.videoUrl)}
               onClick={(event) => {
                 event.preventDefault();
-                onPlayTrack(post);
+                onPlayTrack(post, playbackContext);
               }}
               type="button"
             >

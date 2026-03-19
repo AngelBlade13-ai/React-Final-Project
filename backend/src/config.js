@@ -10,5 +10,6 @@ module.exports = {
   cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME || "",
   cloudinaryApiKey: process.env.CLOUDINARY_API_KEY || "",
   cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET || "",
-  cloudinaryFolder: process.env.CLOUDINARY_FOLDER || "suno-releases"
+  cloudinaryFolder: process.env.CLOUDINARY_FOLDER || "suno-releases",
+  cloudinaryChunkSize: Number(process.env.CLOUDINARY_CHUNK_SIZE) || 20 * 1024 * 1024
 };

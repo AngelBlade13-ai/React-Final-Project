@@ -10,10 +10,11 @@ async function uploadVideoToCloudinary(fileBuffer, options = {}) {
   }
 
   return new Promise((resolve, reject) => {
-    const uploadStream = cloudinary.uploader.upload_stream(
+    const uploadStream = cloudinary.uploader.upload_chunked_stream(
       {
         resource_type: "video",
-        folder: options.folder || config.cloudinaryFolder
+        folder: options.folder || config.cloudinaryFolder,
+        chunk_size: options.chunkSize || config.cloudinaryChunkSize
       },
       (error, result) => {
         if (error) {

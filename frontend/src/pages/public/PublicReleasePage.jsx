@@ -49,6 +49,18 @@ export default function PublicReleasePage({ hasAdminSession, onPlayTrack }) {
   const nextFragment =
     currentFragmentIndex >= 0 && currentFragmentIndex < orderedFragments.length - 1 ? orderedFragments[currentFragmentIndex + 1] : null;
   const linkedFragments = fractureMeta?.linkedPosts || [];
+  const playbackContext = primaryCollection
+    ? {
+        collectionId: primaryCollection.id || primaryCollection.slug,
+        collectionName: primaryCollection.title,
+        collectionSlug: primaryCollection.slug,
+        queue: isFractureverse && orderedFragments.length
+          ? orderedFragments.map((entry) => entry.post)
+          : sequencePosts.length
+            ? sequencePosts
+            : [post].filter(Boolean)
+      }
+    : null;
 
   useEffect(() => {
     async function loadSequence() {
@@ -169,7 +181,7 @@ export default function PublicReleasePage({ hasAdminSession, onPlayTrack }) {
                 <button
                   className="secondary-button mini-player-trigger"
                   disabled={!hasVideo(post.videoUrl)}
-                  onClick={() => onPlayTrack(post)}
+                  onClick={() => onPlayTrack(post, playbackContext)}
                   type="button"
                 >
                   {hasVideo(post.videoUrl) ? (isFractureverse ? "Begin Playback" : "Play in Mini Player") : isFractureverse ? "Signal Unavailable" : "Video Pending"}
