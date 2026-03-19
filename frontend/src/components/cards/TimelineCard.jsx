@@ -28,7 +28,10 @@ function getEldoriaEntryState(post, eldoriaMeta) {
 export default function TimelineCard({ index, onEnterChronicle, onPlayTrack, playbackContext, post, themeConfig }) {
   const isEldoria = themeConfig.itemName === "Ballad";
   const eldoriaMeta = isEldoria ? getEldoriaMeta(post) : null;
-  const displayTitle = isEldoria && eldoriaMeta?.subtitle ? `${post.title} (${eldoriaMeta.subtitle})` : post.title;
+  const displayTitle =
+    isEldoria && eldoriaMeta?.subtitle && !post.title.toLowerCase().includes(eldoriaMeta.subtitle.toLowerCase())
+      ? `${post.title} (${eldoriaMeta.subtitle})`
+      : post.title;
   const previewCopy = isEldoria ? eldoriaMeta?.openingPassage || post.excerpt : post.excerpt;
   const entryState = isEldoria ? getEldoriaEntryState(post, eldoriaMeta) : null;
   const linkProps =

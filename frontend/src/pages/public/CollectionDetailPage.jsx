@@ -230,7 +230,7 @@ export default function CollectionDetailPage({ currentTrack, isPlayerActive, onP
 
     const timeoutId = window.setTimeout(() => {
       navigate(`/release/${eldoriaTransitionSlug}`);
-    }, 2000);
+    }, 1500);
 
     return () => {
       window.clearTimeout(timeoutId);

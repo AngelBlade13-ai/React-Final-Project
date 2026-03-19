@@ -112,7 +112,7 @@ function normalizeArchiveMeta(archiveMeta) {
     return null;
   }
 
-  const normalized = {
+  const fractureMeta = {
     fragmentId: String(archiveMeta.fragmentId || "").trim(),
     state: String(archiveMeta.state || "").trim(),
     perspective: String(archiveMeta.perspective || "").trim(),
@@ -122,6 +122,9 @@ function normalizeArchiveMeta(archiveMeta) {
     linkedSlugs: Array.isArray(archiveMeta.linkedSlugs)
       ? [...new Set(archiveMeta.linkedSlugs.map((slug) => String(slug).trim()).filter(Boolean))]
       : [],
+  };
+
+  const eldoriaMeta = {
     chapterNumber: String(archiveMeta.chapterNumber || "").trim(),
     entryType: String(archiveMeta.entryType || "").trim(),
     subtitle: String(archiveMeta.subtitle || "").trim(),
@@ -140,35 +143,41 @@ function normalizeArchiveMeta(archiveMeta) {
     playerFlavorLine: String(archiveMeta.playerFlavorLine || "").trim()
   };
 
-  if (
-    !normalized.fragmentId &&
-    !normalized.state &&
-    !normalized.perspective &&
-    !normalized.signalType &&
-    !normalized.description &&
-    !normalized.systemNote &&
-    normalized.linkedSlugs.length === 0 &&
-    !normalized.chapterNumber &&
-    !normalized.entryType &&
-    !normalized.subtitle &&
-    !normalized.openingPassage &&
-    !normalized.coreSituation &&
-    !normalized.coreTension &&
-    !normalized.chronicleObservation &&
-    !normalized.chronicleContradiction &&
-    !normalized.chronicleConclusion &&
-    !normalized.emotionalState &&
-    !normalized.coreConflict &&
-    !normalized.risk &&
-    !normalized.anchorQuote &&
-    !normalized.resolution &&
-    !normalized.entryStatus &&
-    !normalized.playerFlavorLine
-  ) {
+  const hasFractureMeta =
+    !!fractureMeta.fragmentId ||
+    !!fractureMeta.state ||
+    !!fractureMeta.perspective ||
+    !!fractureMeta.signalType ||
+    !!fractureMeta.description ||
+    !!fractureMeta.systemNote ||
+    fractureMeta.linkedSlugs.length > 0;
+
+  const hasEldoriaMeta =
+    !!eldoriaMeta.chapterNumber ||
+    !!eldoriaMeta.entryType ||
+    !!eldoriaMeta.subtitle ||
+    !!eldoriaMeta.openingPassage ||
+    !!eldoriaMeta.coreSituation ||
+    !!eldoriaMeta.coreTension ||
+    !!eldoriaMeta.chronicleObservation ||
+    !!eldoriaMeta.chronicleContradiction ||
+    !!eldoriaMeta.chronicleConclusion ||
+    !!eldoriaMeta.emotionalState ||
+    !!eldoriaMeta.coreConflict ||
+    !!eldoriaMeta.risk ||
+    !!eldoriaMeta.anchorQuote ||
+    !!eldoriaMeta.resolution ||
+    !!eldoriaMeta.entryStatus ||
+    !!eldoriaMeta.playerFlavorLine;
+
+  if (!hasFractureMeta && !hasEldoriaMeta) {
     return null;
   }
 
-  return normalized;
+  return {
+    ...(hasFractureMeta ? fractureMeta : {}),
+    ...(hasEldoriaMeta ? eldoriaMeta : {})
+  };
 }
 
 function normalizePost(post) {

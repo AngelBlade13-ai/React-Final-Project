@@ -1375,7 +1375,8 @@
 :root[data-collection-theme="eldoria"] .eldoria-royal-record {
   position: relative;
   background:
-    linear-gradient(180deg, color-mix(in srgb, #f7f1df 84%, var(--surface) 16%), color-mix(in srgb, #eadbbc 16%, var(--surface-alt) 84%));
+    radial-gradient(circle at 18% 14%, rgba(245, 230, 184, 0.14), transparent 24%),
+    linear-gradient(180deg, color-mix(in srgb, #e6ddc6 76%, var(--surface) 24%), color-mix(in srgb, #c9bea0 24%, var(--surface-alt) 76%));
   border-color: color-mix(in srgb, #e0c88a 38%, var(--border) 62%);
   box-shadow:
     0 22px 38px rgba(16, 17, 13, 0.12),
@@ -1395,11 +1396,70 @@
 
 :root[data-collection-theme="eldoria"] .eldoria-royal-record .release-panel-title {
   max-width: 16ch;
+  margin-bottom: 0.6rem;
+  font-size: clamp(1.9rem, 3vw, 2.55rem);
+  line-height: 0.98;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-royal-record .eyebrow,
+:root[data-collection-theme="eldoria"] .eldoria-royal-record .release-panel-title,
+:root[data-collection-theme="eldoria"] .eldoria-royal-record .release-panel-intro,
+:root[data-collection-theme="eldoria"] .eldoria-royal-record .release-prose p,
+:root[data-collection-theme="eldoria"] .eldoria-royal-record .eldoria-anchor-quote,
+:root[data-collection-theme="eldoria"] .eldoria-royal-record .eldoria-entry-block p,
+:root[data-collection-theme="eldoria"] .eldoria-royal-record .eldoria-conclusion-line {
+  color: color-mix(in srgb, #1b231d 82%, var(--text) 18%);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-royal-record .eldoria-opening-passage {
+  color: color-mix(in srgb, #263128 78%, var(--text) 22%);
+  text-shadow: none;
+  max-width: 30ch;
+  font-size: 1.08rem;
+  line-height: 1.72;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-royal-record .eldoria-entry-block,
+:root[data-collection-theme="eldoria"] .eldoria-royal-record .eldoria-classification-block {
+  padding: 1rem 1.05rem 1.05rem;
+  background:
+    linear-gradient(180deg, rgba(255, 251, 241, 0.22), rgba(255, 248, 234, 0.08));
+  border: 1px solid color-mix(in srgb, #e0c88a 14%, rgba(27, 35, 29, 0.08));
+  border-left: 2px solid color-mix(in srgb, #e0c88a 38%, transparent);
+  border-radius: 14px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 :root[data-collection-theme="eldoria"] .eldoria-royal-record .release-prose {
   display: grid;
-  gap: 1rem;
+  gap: 0.9rem;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-royal-record .release-panel-intro,
+:root[data-collection-theme="eldoria"] .eldoria-royal-record .release-prose > p {
+  max-width: 42ch;
+  line-height: 1.68;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-royal-record .release-prose > p {
+  margin: 0;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-royal-record .eyebrow {
+  color: color-mix(in srgb, #2f392f 72%, var(--primary-strong) 28%);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-royal-record .eldoria-entry-block .eyebrow,
+:root[data-collection-theme="eldoria"] .eldoria-royal-record .eldoria-classification-block .eyebrow {
+  margin-bottom: 0.55rem;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-royal-record .eldoria-anchor-quote {
+  max-width: 38ch;
+  padding: 0.95rem 1rem;
+  background: linear-gradient(180deg, rgba(255, 249, 236, 0.16), rgba(255, 248, 234, 0.05));
+  border-left-color: color-mix(in srgb, #d5ba72 60%, transparent);
+  border-radius: 0 14px 14px 0;
 }
 
 :root[data-collection-theme="eldoria"] .eldoria-release-panel,
@@ -2386,7 +2446,7 @@
     radial-gradient(circle at center, rgba(245, 230, 184, 0.08), transparent 26%),
     linear-gradient(180deg, rgba(14, 19, 15, 0.3), rgba(10, 13, 11, 0.7));
   backdrop-filter: blur(6px);
-  animation: eldoriaEnterFade 2000ms ease-out both;
+  animation: eldoriaEnterFade 1500ms ease-out both;
 }
 
 :root[data-collection-theme="eldoria"] .eldoria-transition-screen p {
@@ -2395,7 +2455,7 @@
   font-size: clamp(1.05rem, 2vw, 1.3rem);
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  animation: eldoriaTransitionText 2000ms ease-out both;
+  animation: eldoriaTransitionText 1500ms ease-out both;
 }
 
 @media (prefers-reduced-motion: reduce) {
