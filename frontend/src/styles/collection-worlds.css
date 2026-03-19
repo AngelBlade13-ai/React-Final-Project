@@ -1638,6 +1638,215 @@
   opacity: 0.46;
 }
 
+:root[data-collection-theme="eldoria"] .eldoria-featured-card .collection-fragment-copy h2,
+:root[data-collection-theme="eldoria"] .eldoria-chronicle-card .timeline-card-body h3 {
+  transition: letter-spacing 220ms ease-out, color 220ms ease-out, text-shadow 220ms ease-out, transform 220ms ease-out;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-featured-card:hover .collection-fragment-copy h2,
+:root[data-collection-theme="eldoria"] .eldoria-featured-card:focus-within .collection-fragment-copy h2,
+:root[data-collection-theme="eldoria"] .eldoria-chronicle-card:hover .timeline-card-body h3,
+:root[data-collection-theme="eldoria"] .eldoria-chronicle-card:focus-within .timeline-card-body h3 {
+  letter-spacing: -0.01em;
+  color: color-mix(in srgb, var(--text) 88%, #f5e6b8 12%);
+  text-shadow: 0 0 18px rgba(224, 200, 138, 0.1);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-featured-card .collection-fragment-excerpt {
+  font-size: 1.06rem;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-chronicle-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.45rem 1.25rem;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-chronicle-grid .release-card-link {
+  position: relative;
+  display: block;
+  transition: transform 300ms ease-out;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-chronicle-grid .release-card-link:nth-child(odd) {
+  transform: translateY(calc(var(--eldoria-scroll-depth, 0px) * 0.012));
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-chronicle-grid .release-card-link:nth-child(even) {
+  transform: translateY(calc(var(--eldoria-scroll-depth, 0px) * -0.009));
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-chronicle-grid-sparse {
+  align-items: stretch;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-chronicle-card {
+  min-height: 100%;
+  border-radius: 20px;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, #f8f2e1 86%, var(--surface) 14%), color-mix(in srgb, #eaddbf 18%, var(--surface-alt) 82%));
+  box-shadow:
+    0 18px 30px rgba(16, 17, 13, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transition:
+    transform 280ms ease-out,
+    box-shadow 280ms ease-out,
+    border-color 280ms ease-out,
+    background 280ms ease-out,
+    filter 280ms ease-out;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-chronicle-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 22%),
+    radial-gradient(circle at top left, rgba(245, 230, 184, 0.12), transparent 26%),
+    linear-gradient(180deg, transparent 0%, rgba(62, 48, 27, 0.08) 100%);
+  pointer-events: none;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-chronicle-card::after {
+  background:
+    linear-gradient(112deg, transparent 0%, transparent 40%, rgba(245, 230, 184, 0.16) 52%, transparent 62%, transparent 100%);
+  opacity: 0;
+  transform: translateX(-14%);
+  transition: opacity 280ms ease-out, transform 280ms ease-out;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-chronicle-card:hover,
+:root[data-collection-theme="eldoria"] .eldoria-chronicle-card:focus-within {
+  transform: translateY(-4px);
+  border-color: color-mix(in srgb, #e0c88a 48%, var(--border) 52%);
+  box-shadow:
+    0 26px 38px rgba(16, 17, 13, 0.14),
+    0 0 0 1px rgba(224, 200, 138, 0.12);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-chronicle-card:hover::after,
+:root[data-collection-theme="eldoria"] .eldoria-chronicle-card:focus-within::after {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-chronicle-card .timeline-card-media {
+  aspect-ratio: 16 / 10;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-chronicle-card .timeline-card-body {
+  display: grid;
+  align-content: start;
+  gap: 0.55rem;
+  min-height: 270px;
+  padding: 1.4rem 1.45rem 1.5rem;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-entry-state {
+  margin: 0;
+  color: color-mix(in srgb, var(--primary-strong) 54%, var(--muted-text) 46%);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-entry-active {
+  border-color: color-mix(in srgb, #e0c88a 28%, var(--border) 72%);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-entry-active:hover,
+:root[data-collection-theme="eldoria"] .eldoria-entry-active:focus-within {
+  box-shadow:
+    0 28px 42px rgba(16, 17, 13, 0.14),
+    0 0 22px rgba(224, 200, 138, 0.12);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-entry-unwritten {
+  filter: saturate(0.9);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-entry-unwritten .timeline-card-media::before,
+:root[data-collection-theme="eldoria"] .eldoria-placeholder-media::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(247, 242, 226, 0.16), rgba(62, 48, 27, 0.08)),
+    radial-gradient(circle at 50% 30%, rgba(245, 230, 184, 0.14), transparent 32%);
+  backdrop-filter: blur(3px);
+  pointer-events: none;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-entry-hidden {
+  filter: saturate(0.82) brightness(0.92);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-entry-hidden .timeline-card-media::before,
+:root[data-collection-theme="eldoria"] .eldoria-entry-hidden .timeline-card-media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-entry-hidden .timeline-card-media::before {
+  background: linear-gradient(180deg, rgba(19, 23, 19, 0.08), rgba(19, 23, 19, 0.28));
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-entry-hidden .timeline-card-media::after {
+  content: "Sealed";
+  display: grid;
+  place-items: center;
+  color: rgba(245, 230, 184, 0.82);
+  font-size: 0.9rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-placeholder-card {
+  pointer-events: none;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-placeholder-media {
+  background:
+    radial-gradient(circle at 50% 30%, rgba(245, 230, 184, 0.12), transparent 30%),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-alt) 84%, #d8cab0 16%), color-mix(in srgb, var(--surface) 94%, #f7f0df 6%));
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-transition-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at center, rgba(245, 230, 184, 0.08), transparent 26%),
+    linear-gradient(180deg, rgba(14, 19, 15, 0.3), rgba(10, 13, 11, 0.7));
+  backdrop-filter: blur(6px);
+  animation: eldoriaEnterFade 240ms ease-out both;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-transition-screen p {
+  margin: 0;
+  color: #f5e6b8;
+  font-size: clamp(1.05rem, 2vw, 1.3rem);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root[data-collection-theme="eldoria"] .eldoria-chronicle-card,
+  :root[data-collection-theme="eldoria"] .eldoria-chronicle-grid .release-card-link {
+    transition: none;
+    transform: none;
+  }
+
+  :root[data-collection-theme="eldoria"] .eldoria-transition-screen {
+    animation: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   :root[data-collection-theme="eldoria"] .eldoria-world-header::before,
   :root[data-collection-theme="eldoria"] .eldoria-ambient-dust,
@@ -1707,5 +1916,14 @@
   90% {
     transform: translateX(118%);
     opacity: 0;
+  }
+}
+
+@keyframes eldoriaEnterFade {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
   }
 }

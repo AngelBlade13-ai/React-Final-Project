@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import ReleaseMedia from "../../components/ReleaseMedia";
 import { FractureFragmentCard, TimelineCard } from "../../components/cards";
 import {
@@ -107,12 +107,15 @@ function buildFractureInteraction(activeSlug, featuredSlug, releases) {
 
 export default function CollectionDetailPage({ currentTrack, isPlayerActive, onPlayTrack }) {
   const { slug } = useParams();
+  const navigate = useNavigate();
   const [collection, setCollection] = useState(null);
   const [releases, setReleases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeFragmentSlug, setActiveFragmentSlug] = useState("");
   const [eldoriaMousePosition, setEldoriaMousePosition] = useState({ x: 50, y: 34 });
+  const [eldoriaScrollDepth, setEldoriaScrollDepth] = useState(0);
+  const [eldoriaTransitionSlug, setEldoriaTransitionSlug] = useState("");
 
   useEffect(() => {
     async function loadCollection() {
@@ -198,6 +201,38 @@ export default function CollectionDetailPage({ currentTrack, isPlayerActive, onP
     };
   }, [collection?.theme]);
 
+  useEffect(() => {
+    if (!isEldoria) {
+      setEldoriaScrollDepth(0);
+      return undefined;
+    }
+
+    function updateScrollDepth() {
+      setEldoriaScrollDepth(window.scrollY || 0);
+    }
+
+    updateScrollDepth();
+    window.addEventListener("scroll", updateScrollDepth, { passive: true });
+
+    return () => {
+      window.removeEventListener("scroll", updateScrollDepth);
+    };
+  }, [isEldoria]);
+
+  useEffect(() => {
+    if (!eldoriaTransitionSlug) {
+      return undefined;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      navigate(`/release/${eldoriaTransitionSlug}`);
+    }, 220);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [eldoriaTransitionSlug, navigate]);
+
   function handleEldoriaPointerMove(event) {
     if (!isEldoria) {
       return;
@@ -212,6 +247,26 @@ export default function CollectionDetailPage({ currentTrack, isPlayerActive, onP
       y: Number.isFinite(y) ? y : 34
     });
   }
+
+  function enterEldoriaChronicle(nextSlug) {
+    if (!isEldoria || !nextSlug) {
+      return;
+    }
+
+    setEldoriaTransitionSlug(nextSlug);
+  }
+
+  const eldoriaPlaceholderEntries = isEldoria
+    ? Array.from({ length: Math.max(0, 3 - timelineReleases.length) }, (_, index) => ({
+        id: `eldoria-placeholder-${index + 1}`,
+        state: index === 0 ? "unwritten" : "hidden",
+        title: index === 0 ? "Yet To Be Recorded" : "Sealed Entry",
+        copy:
+          index === 0
+            ? "The next voice has not reached the chronicle yet, but the page has already been left waiting for it."
+            : "Some parts of Eldoria remain sealed until the world is ready to remember them aloud."
+      }))
+    : [];
 
   return (
     <>
@@ -288,6 +343,11 @@ export default function CollectionDetailPage({ currentTrack, isPlayerActive, onP
           </div>
         ) : null}
       </header>
+      {isEldoria && eldoriaTransitionSlug ? (
+        <div aria-hidden="true" className="eldoria-transition-screen">
+          <p>The world remembers you.</p>
+        </div>
+      ) : null}
 
       {collection ? (
         <main
@@ -299,7 +359,8 @@ export default function CollectionDetailPage({ currentTrack, isPlayerActive, onP
             isEldoria
               ? {
                   "--eldoria-mouse-x": `${eldoriaMousePosition.x}%`,
-                  "--eldoria-mouse-y": `${eldoriaMousePosition.y}%`
+                  "--eldoria-mouse-y": `${eldoriaMousePosition.y}%`,
+                  "--eldoria-scroll-depth": `${eldoriaScrollDepth}px`
                 }
               : undefined
           }
@@ -506,7 +567,18 @@ export default function CollectionDetailPage({ currentTrack, isPlayerActive, onP
                           : "Play in Mini Player"
                         : "Video Pending"}
                     </button>
-                    <Link className="hero-link" to={`/release/${featuredRelease.slug}`}>
+                    <Link
+                      className="hero-link"
+                      onClick={(event) => {
+                        if (!isEldoria) {
+                          return;
+                        }
+
+                        event.preventDefault();
+                        enterEldoriaChronicle(featuredRelease.slug);
+                      }}
+                      to={`/release/${featuredRelease.slug}`}
+                    >
                       {themeConfig.featuredAction}
                     </Link>
                   </div>
@@ -636,17 +708,53 @@ export default function CollectionDetailPage({ currentTrack, isPlayerActive, onP
                 <p>{themeConfig.noItemsText}</p>
               </section>
             ) : timelineReleases.length === 1 ? (
-              <section className={`intro-card homepage-panel collection-archive-note${isEldoria ? " eldoria-archive-note" : ""}`}>
-                <p className="eyebrow">{themeConfig.singleItemEyebrow}</p>
-                <h3>{themeConfig.singleItemTitle}</h3>
-                <p>{themeConfig.singleItemText}</p>
-              </section>
+              isEldoria ? (
+                <div className="timeline-grid eldoria-chronicle-grid eldoria-chronicle-grid-sparse">
+                  {timelineReleases.map((post, index) => (
+                    <TimelineCard
+                      index={index}
+                      key={post.id}
+                      onEnterChronicle={enterEldoriaChronicle}
+                      onPlayTrack={onPlayTrack}
+                      playbackContext={playbackContext}
+                      post={post}
+                      themeConfig={themeConfig}
+                    />
+                  ))}
+                  {eldoriaPlaceholderEntries.map((entry) => (
+                    <article
+                      className={`post-card homepage-post-card release-feed-card timeline-card eldoria-chronicle-card eldoria-entry-${entry.state} eldoria-placeholder-card`}
+                      key={entry.id}
+                    >
+                      <div className="release-card-media timeline-card-media eldoria-placeholder-media">
+                        <div className="release-card-overlay" />
+                      </div>
+                      <div className="post-body timeline-card-body">
+                        <p className="meta">Chronicle Reserve / Eldoria</p>
+                        <p className="eldoria-entry-state">{entry.state === "unwritten" ? "Yet To Be Recorded" : "Sealed"}</p>
+                        <h3>{entry.title}</h3>
+                        <p>{entry.copy}</p>
+                        <div className="card-action-row">
+                          <span className="result-card-cta">Awaiting Chronicle</span>
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <section className={`intro-card homepage-panel collection-archive-note${isEldoria ? " eldoria-archive-note" : ""}`}>
+                  <p className="eyebrow">{themeConfig.singleItemEyebrow}</p>
+                  <h3>{themeConfig.singleItemTitle}</h3>
+                  <p>{themeConfig.singleItemText}</p>
+                </section>
+              )
             ) : (
               <div className={`timeline-grid${isEldoria ? " eldoria-chronicle-grid" : ""}`}>
                 {timelineReleases.map((post, index) => (
                   <TimelineCard
                     index={index}
                     key={post.id}
+                    onEnterChronicle={enterEldoriaChronicle}
                     onPlayTrack={onPlayTrack}
                     playbackContext={playbackContext}
                     post={post}

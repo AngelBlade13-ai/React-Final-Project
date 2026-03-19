@@ -96,7 +96,7 @@ export const COLLECTION_THEMES = {
     noItemsTitle: "No ballads have been gathered into this chronicle yet.",
     noItemsText: "When the first song is placed here, Eldoria will begin to read like a living tale instead of a waiting shelf.",
     singleItemEyebrow: "First Ballad",
-    singleItemTitle: "This chronicle is currently carried by a single song.",
+    singleItemTitle: "This chronicle is carried by a single voice - for now.",
     singleItemText:
       "As more entries arrive, they will settle around it like pages in the same long-form tale rather than isolated releases.",
     worldNoteTitle: "A note from Eldoria",
@@ -382,16 +382,16 @@ export function getCollectionDerivedContent(collection, releases = []) {
       ],
       featuredContext:
         count <= 1
-          ? "This ballad is currently carrying the chronicle on its own. As more entries arrive, it will shift from lone centerpiece to opening chapter."
+          ? "This royal record carries the chronicle on its own for now. As more entries arrive, it will shift from lone voice to remembered beginning."
           : "This ballad acts as the first doorway into the wider chronicle, giving the world a clear emotional entry point before the other songs continue the tale.",
-      collectionCountLabel: formatCountLabel(count, "chapter gathered", "chapters gathered"),
+      collectionCountLabel: formatCountLabel(count, "entry recorded", "entries recorded"),
       releaseSequenceLabel: formatCountLabel(count, "ballad in this chronicle", "ballads in this chronicle"),
       companionLabel: formatCountLabel(Math.max(count - 1, 0), "nearby entry", "nearby entries"),
       worldNote:
         count === 0
           ? "A world can still feel present before its first ballad arrives."
           : count === 1
-            ? "Even a single ballad can suggest a wider legend waiting to be written."
+            ? "Even one voice can awaken a forgotten world."
             : "Some songs feel less like records and more like stories remembered beside a fire long after nightfall."
     };
   }

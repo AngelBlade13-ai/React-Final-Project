@@ -2,15 +2,52 @@ import { Link } from "react-router-dom";
 import ReleaseMedia from "../ReleaseMedia";
 import { getEldoriaMeta, hasVideo } from "../../lib/site";
 
-export default function TimelineCard({ index, onPlayTrack, playbackContext, post, themeConfig }) {
+function getEldoriaEntryState(post, eldoriaMeta) {
+  const status = String(eldoriaMeta?.entryStatus || "").toLowerCase();
+
+  if (status.includes("sealed") || status.includes("hidden")) {
+    return {
+      key: "hidden",
+      label: "Sealed"
+    };
+  }
+
+  if (!hasVideo(post.videoUrl)) {
+    return {
+      key: "unwritten",
+      label: "Yet To Be Recorded"
+    };
+  }
+
+  return {
+    key: "active",
+    label: "Active Entry"
+  };
+}
+
+export default function TimelineCard({ index, onEnterChronicle, onPlayTrack, playbackContext, post, themeConfig }) {
   const isEldoria = themeConfig.itemName === "Ballad";
   const eldoriaMeta = isEldoria ? getEldoriaMeta(post) : null;
   const displayTitle = isEldoria && eldoriaMeta?.subtitle ? `${post.title} (${eldoriaMeta.subtitle})` : post.title;
   const previewCopy = isEldoria ? eldoriaMeta?.openingPassage || post.excerpt : post.excerpt;
+  const entryState = isEldoria ? getEldoriaEntryState(post, eldoriaMeta) : null;
+  const linkProps =
+    isEldoria && onEnterChronicle
+      ? {
+          onClick: (event) => {
+            event.preventDefault();
+            onEnterChronicle(post.slug);
+          }
+        }
+      : {};
 
   return (
-    <Link className="release-card-link" to={`/release/${post.slug}`}>
-      <article className={`post-card homepage-post-card release-feed-card timeline-card${isEldoria ? " eldoria-chronicle-card" : ""}`}>
+    <Link className="release-card-link" to={`/release/${post.slug}`} {...linkProps}>
+      <article
+        className={`post-card homepage-post-card release-feed-card timeline-card${isEldoria ? " eldoria-chronicle-card" : ""}${
+          entryState ? ` eldoria-entry-${entryState.key}` : ""
+        }`}
+      >
         <div className="release-card-media timeline-card-media">
           <ReleaseMedia
             className="post-media"
@@ -32,6 +69,7 @@ export default function TimelineCard({ index, onPlayTrack, playbackContext, post
               ? eldoriaMeta?.identityLine || eldoriaMeta?.chapterLabel || `Chapter ${String(index + 1).padStart(2, "0")}`
               : `${themeConfig.itemName} #${String(index + 1).padStart(2, "0")}`}
           </p>
+          {entryState ? <p className="eldoria-entry-state">{entryState.label}</p> : null}
           <h3>{displayTitle}</h3>
           <p>{previewCopy}</p>
           <div className="card-action-row">
