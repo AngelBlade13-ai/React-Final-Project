@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import ReleaseMedia from "../../components/ReleaseMedia";
 import { formatPostDate } from "../../lib/formatters";
-import { apiBaseUrl, getFractureverseMeta, getPrimaryThemeForPost, getThemeConfig, hasVideo, sortFractureversePosts } from "../../lib/site";
+import { apiBaseUrl, getCollectionDerivedContent, getFractureverseMeta, getPrimaryThemeForPost, getThemeConfig, hasVideo, sortFractureversePosts } from "../../lib/site";
 
 export default function PublicReleasePage({ hasAdminSession, onPlayTrack }) {
   const { slug } = useParams();
@@ -52,6 +52,7 @@ export default function PublicReleasePage({ hasAdminSession, onPlayTrack }) {
     currentFragmentIndex >= 0 && currentFragmentIndex < orderedSequence.length - 1 ? orderedSequence[currentFragmentIndex + 1] : null;
   const linkedFragments = fractureMeta?.linkedPosts || [];
   const companionBallads = orderedSequence.filter((entry) => entry.post.slug !== post?.slug);
+  const derivedContent = getCollectionDerivedContent(primaryCollection, orderedSequence.map((entry) => entry.post));
   const playbackContext = primaryCollection
     ? {
         collectionId: primaryCollection.id || primaryCollection.slug,
@@ -297,7 +298,7 @@ export default function PublicReleasePage({ hasAdminSession, onPlayTrack }) {
             <section className="intro-card homepage-panel eldoria-release-panel">
               <div className="section-head eldoria-chronicle-head">
                 <h2>Song Cycle</h2>
-                <span>{orderedSequence.length ? `${orderedSequence.length} ballads in this chronicle` : "Chronicle context"}</span>
+                <span>{orderedSequence.length ? derivedContent.releaseSequenceLabel : "Chronicle context"}</span>
               </div>
               {orderedSequence.length ? (
                 <div className="eldoria-song-cycle">
@@ -375,7 +376,7 @@ export default function PublicReleasePage({ hasAdminSession, onPlayTrack }) {
               <section className="intro-card homepage-panel eldoria-release-panel">
                 <div className="section-head">
                   <h2>Companion Ballads</h2>
-                  <span>{companionBallads.length} nearby entries</span>
+                  <span>{derivedContent.companionLabel}</span>
                 </div>
                 {companionBallads.length ? (
                   <div className="linked-echo-grid">

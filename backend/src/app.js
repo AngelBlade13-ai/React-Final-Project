@@ -94,14 +94,30 @@ function attachCollectionDetails(post, collections) {
 
 function buildCollectionSummary(collection, posts) {
   const releases = posts.filter((post) => post.collectionSlugs.includes(collection.slug));
-  const featuredRelease =
-    releases.find((post) => post.slug === collection.featuredReleaseSlug) || releases[0] || null;
+  const featuredRelease = collection.featuredReleaseSlug
+    ? releases.find((post) => post.slug === collection.featuredReleaseSlug) || null
+    : null;
 
   return {
     ...collection,
     featuredRelease,
     releaseCount: releases.length
   };
+}
+
+function reconcileCollections(collections, posts) {
+  return collections.map((collection) => {
+    const hasFeaturedRelease =
+      collection.featuredReleaseSlug &&
+      posts.some((post) => post.collectionSlugs.includes(collection.slug) && post.slug === collection.featuredReleaseSlug);
+
+    return hasFeaturedRelease
+      ? collection
+      : {
+          ...collection,
+          featuredReleaseSlug: ""
+        };
+  });
 }
 
 function normalizeAboutContent(input = {}, existingAbout = {}) {
@@ -251,6 +267,7 @@ app.post("/api/admin/posts", requireAdmin, async (req, res, next) => {
     }
 
     store.posts.unshift(newPost);
+    store.collections = reconcileCollections(store.collections, store.posts);
     await writeStore(store);
     res.status(201).json({ post: attachCollectionDetails(newPost, store.collections) });
   } catch (error) {
@@ -270,6 +287,7 @@ app.put("/api/admin/posts/:id", requireAdmin, async (req, res, next) => {
     const updatedPost = normalizePostInput(req.body, store.collections, store.posts[index]);
 
     store.posts[index] = updatedPost;
+    store.collections = reconcileCollections(store.collections, store.posts);
     await writeStore(store);
     res.json({ post: attachCollectionDetails(updatedPost, store.collections) });
   } catch (error) {
@@ -287,6 +305,7 @@ app.delete("/api/admin/posts/:id", requireAdmin, async (req, res, next) => {
     }
 
     store.posts = remaining;
+    store.collections = reconcileCollections(store.collections, store.posts);
     await writeStore(store);
     res.json({ message: "Post deleted." });
   } catch (error) {
@@ -385,6 +404,7 @@ app.put("/api/admin/collections/:id", requireAdmin, async (req, res, next) => {
         slug === previousCollection.slug ? updatedCollection.slug : slug
       )
     }));
+    store.collections = reconcileCollections(store.collections, store.posts);
 
     await writeStore(store);
     res.json({ collection: updatedCollection });
@@ -407,6 +427,7 @@ app.delete("/api/admin/collections/:id", requireAdmin, async (req, res, next) =>
       ...post,
       collectionSlugs: post.collectionSlugs.filter((slug) => slug !== collection.slug)
     }));
+    store.collections = reconcileCollections(store.collections, store.posts);
 
     await writeStore(store);
     res.json({ message: "Collection deleted." });

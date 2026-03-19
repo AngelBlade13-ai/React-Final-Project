@@ -7,6 +7,7 @@ import {
   FRACTUREVERSE_FEATURED_SLUG,
   FRACTUREVERSE_ORDER,
   FRACTUREVERSE_WORLD,
+  getCollectionDerivedContent,
   getFractureverseMeta,
   getThemeConfig,
   hasVideo,
@@ -132,8 +133,8 @@ export default function CollectionDetailPage({ onPlayTrack }) {
     loadCollection();
   }, [slug]);
 
-  const featuredRelease = collection?.featuredRelease || releases[0] || null;
-  const otherReleases = releases.filter((post) => post.slug !== featuredRelease?.slug);
+  const featuredRelease = collection?.featuredRelease || null;
+  const otherReleases = featuredRelease ? releases.filter((post) => post.slug !== featuredRelease.slug) : releases;
   const themeConfig = getThemeConfig(collection?.theme);
   const timelineReleases = featuredRelease ? [featuredRelease, ...otherReleases] : releases;
   const isFractureverse = collection?.theme === "fractureverse";
@@ -168,14 +169,7 @@ export default function CollectionDetailPage({ onPlayTrack }) {
     gridMetas: fractureverseGrid.map((post) => getFractureverseMeta(post, fractureverseReleases)).filter(Boolean),
     interaction: fractureInteraction
   });
-  const eldoriaStats = collection
-    ? [
-        { label: "Realm", value: "Eldoria" },
-        { label: "Chronicle Entries", value: String(timelineReleases.length) },
-        { label: "Featured Ballad", value: featuredRelease?.title || "Awaiting a first telling" },
-        { label: "Current Season", value: timelineReleases.length > 1 ? "Stories gathering" : "Opening chapter" }
-      ]
-    : [];
+  const derivedContent = getCollectionDerivedContent(collection, timelineReleases);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -217,7 +211,7 @@ export default function CollectionDetailPage({ onPlayTrack }) {
                 </div>
               ) : isEldoria ? (
                 <div className="world-status-bar world-header-status-bar eldoria-world-status">
-                  {eldoriaStats.map((item) => (
+                  {derivedContent.stats?.map((item) => (
                     <div className="world-status-item" key={item.label}>
                       <span className="world-status-label">{item.label}</span>
                       <strong>{item.value}</strong>
@@ -428,10 +422,10 @@ export default function CollectionDetailPage({ onPlayTrack }) {
                   <p className="collection-fragment-excerpt">{featuredRelease.excerpt}</p>
                   <p className="collection-fragment-context">
                     {isEldoria
-                      ? "Each featured ballad should feel like the page that opens the wider tale. It invites the listener inward before the rest of the chronicle unfolds below."
+                      ? derivedContent.featuredContext
                       : collection.theme === "fractureverse"
                       ? "An anchor point inside the fracture: a record that holds one possible version of the world in place."
-                      : "The featured release acts as the clearest entry point into this collection before the rest of the archive opens beneath it."}
+                      : derivedContent.featuredContext}
                   </p>
                   <div className="tag-row">
                     {(featuredRelease.collections || []).map((entry) => (
@@ -467,10 +461,10 @@ export default function CollectionDetailPage({ onPlayTrack }) {
               <h2>{themeConfig.listLabel}</h2>
               <span>
                 {isFractureverse
-                  ? `${fractureverseGrid.length} linked fragments`
+                  ? derivedContent.collectionCountLabel
                   : isEldoria
-                    ? `${timelineReleases.length} chapters gathered`
-                    : `${timelineReleases.length} entries`}
+                    ? derivedContent.collectionCountLabel
+                    : derivedContent.collectionCountLabel}
               </span>
             </div>
             {isFractureverse ? (
@@ -612,7 +606,7 @@ export default function CollectionDetailPage({ onPlayTrack }) {
           ) : (
             <section className={`intro-card homepage-panel world-note-card${isEldoria ? " eldoria-world-note" : ""}`}>
               <p className="eyebrow">{themeConfig.worldNoteTitle}</p>
-              <h3>{themeConfig.worldNoteText}</h3>
+              <h3>{derivedContent.worldNote || themeConfig.worldNoteText}</h3>
             </section>
           )}
         </main>

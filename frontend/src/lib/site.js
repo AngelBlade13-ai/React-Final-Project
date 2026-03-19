@@ -64,6 +64,7 @@ export const COLLECTION_THEMES = {
     worldNoteTitle: "A note about this world",
     worldNoteText: "Each collection is a different shelf in the archive, with its own tone and memory.",
     itemName: "Release",
+    itemPlural: "Releases",
     itemAction: "Open Release",
     playerLabel: "Now Playing",
     playerUpNextLabel: "Up Next"
@@ -85,6 +86,7 @@ export const COLLECTION_THEMES = {
     worldNoteTitle: "A note from Eldoria",
     worldNoteText: "Some songs feel less like records and more like stories remembered beside a fire long after nightfall.",
     itemName: "Ballad",
+    itemPlural: "Ballads",
     itemAction: "Open Ballad",
     playerLabel: "Now Playing - A Ballad",
     playerUpNextLabel: "Next Ballad"
@@ -99,6 +101,7 @@ export const COLLECTION_THEMES = {
     worldNoteTitle: "A note about this world",
     worldNoteText: "Quiet songs do not need to be small. They just need enough room to stay gentle.",
     itemName: "Entry",
+    itemPlural: "Entries",
     itemAction: "Open Entry",
     playerLabel: "Now Playing",
     playerUpNextLabel: "Up Next"
@@ -120,6 +123,7 @@ export const COLLECTION_THEMES = {
     worldNoteTitle: "Echo",
     worldNoteText: "Some timelines collapse.\nSome repeat.\nSome are never meant to be found.",
     itemName: "Fragment",
+    itemPlural: "Fragments",
     itemAction: "Open Fragment",
     playerLabel: "Now Playing",
     playerUpNextLabel: "Up Next"
@@ -134,6 +138,7 @@ export const COLLECTION_THEMES = {
     worldNoteTitle: "A note about this world",
     worldNoteText: "Some songs are meant to arrive like entrances, spotlights, and final bows.",
     itemName: "Act",
+    itemPlural: "Acts",
     itemAction: "Open Act",
     playerLabel: "Now Playing",
     playerUpNextLabel: "Up Next"
@@ -148,6 +153,7 @@ export const COLLECTION_THEMES = {
     worldNoteTitle: "A note about this world",
     worldNoteText: "What survives here sounds like a message from somewhere distant, imperfect, and still reaching back.",
     itemName: "Signal",
+    itemPlural: "Signals",
     itemAction: "Open Signal",
     playerLabel: "Now Playing",
     playerUpNextLabel: "Up Next"
@@ -295,4 +301,75 @@ export function getFractureverseMeta(post, allPosts = []) {
 
 export function hasVideo(videoUrl) {
   return Boolean(String(videoUrl || "").trim());
+}
+
+function formatCountLabel(count, singular, plural) {
+  return `${count} ${count === 1 ? singular : plural}`;
+}
+
+export function getCollectionDerivedContent(collection, releases = []) {
+  const theme = collection?.theme || "default";
+  const themeConfig = getThemeConfig(theme);
+  const count = releases.length;
+  const featuredRelease = collection?.featuredRelease || null;
+  const itemName = themeConfig.itemName || "Release";
+  const itemPlural = themeConfig.itemPlural || `${itemName}s`;
+
+  if (theme === "eldoria") {
+    return {
+      stats: [
+        { label: "Realm", value: collection?.title || "Eldoria" },
+        { label: "Chronicle Entries", value: formatCountLabel(count, "ballad", "ballads") },
+        {
+          label: "Featured Ballad",
+          value: featuredRelease?.title || (count === 0 ? "Awaiting a first telling" : count === 1 ? "A single tale remains" : "No leading ballad chosen")
+        },
+        {
+          label: "Current Season",
+          value: count === 0 ? "Quiet before the telling" : count === 1 ? "Opening chapter" : count < 4 ? "Stories gathering" : "World in full song"
+        }
+      ],
+      featuredContext:
+        count <= 1
+          ? "This ballad is currently carrying the chronicle on its own. As more entries arrive, it will shift from lone centerpiece to opening chapter."
+          : "This ballad acts as the first doorway into the wider chronicle, giving the world a clear emotional entry point before the other songs continue the tale.",
+      collectionCountLabel: formatCountLabel(count, "chapter gathered", "chapters gathered"),
+      releaseSequenceLabel: formatCountLabel(count, "ballad in this chronicle", "ballads in this chronicle"),
+      companionLabel: formatCountLabel(Math.max(count - 1, 0), "nearby entry", "nearby entries"),
+      worldNote:
+        count === 0
+          ? "A world can still feel present before its first ballad arrives."
+          : count === 1
+            ? "Even a single ballad can suggest a wider legend waiting to be written."
+            : "Some songs feel less like records and more like stories remembered beside a fire long after nightfall."
+    };
+  }
+
+  if (theme === "fractureverse") {
+    return {
+      collectionCountLabel: formatCountLabel(fractureverseVisibleCount(releases), "linked fragment", "linked fragments"),
+      releaseSequenceLabel: formatCountLabel(releases.length, "fragment in this sequence", "fragments in this sequence"),
+      companionLabel: formatCountLabel(Math.max(releases.length - 1, 0), "connected fragment", "connected fragments")
+    };
+  }
+
+  return {
+    featuredContext:
+      count <= 1
+        ? `This ${itemName.toLowerCase()} is currently carrying the collection on its own.`
+        : `The featured ${itemName.toLowerCase()} acts as the clearest entry point into this collection before the rest of the archive opens beneath it.`,
+    collectionCountLabel: formatCountLabel(count, `${itemName.toLowerCase()} entry`, `${itemName.toLowerCase()} entries`),
+    releaseSequenceLabel: formatCountLabel(count, itemName.toLowerCase(), itemPlural.toLowerCase()),
+    companionLabel: formatCountLabel(Math.max(count - 1, 0), `${itemName.toLowerCase()} nearby`, `${itemPlural.toLowerCase()} nearby`),
+    worldNote:
+      count === 0
+        ? `This ${itemName.toLowerCase()} world is still waiting for its first entry.`
+        : count === 1
+          ? `A single ${itemName.toLowerCase()} can still define the tone of a whole collection.`
+          : themeConfig.worldNoteText
+  };
+}
+
+function fractureverseVisibleCount(releases = []) {
+  return Math.max(releases.length - 1, 0);
 }
