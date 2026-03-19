@@ -137,6 +137,7 @@ export default function CollectionDetailPage({ onPlayTrack }) {
   const themeConfig = getThemeConfig(collection?.theme);
   const timelineReleases = featuredRelease ? [featuredRelease, ...otherReleases] : releases;
   const isFractureverse = collection?.theme === "fractureverse";
+  const isEldoria = collection?.theme === "eldoria";
   const fractureverseReleases = isFractureverse
     ? sortFractureversePosts(
         FRACTUREVERSE_ORDER.map((entrySlug) => releases.find((post) => post.slug === entrySlug))
@@ -167,6 +168,14 @@ export default function CollectionDetailPage({ onPlayTrack }) {
     gridMetas: fractureverseGrid.map((post) => getFractureverseMeta(post, fractureverseReleases)).filter(Boolean),
     interaction: fractureInteraction
   });
+  const eldoriaStats = collection
+    ? [
+        { label: "Realm", value: "Eldoria" },
+        { label: "Chronicle Entries", value: String(timelineReleases.length) },
+        { label: "Featured Ballad", value: featuredRelease?.title || "Awaiting a first telling" },
+        { label: "Current Season", value: timelineReleases.length > 1 ? "Stories gathering" : "Opening chapter" }
+      ]
+    : [];
 
   useEffect(() => {
     const root = document.documentElement;
@@ -206,6 +215,15 @@ export default function CollectionDetailPage({ onPlayTrack }) {
                     </div>
                   ))}
                 </div>
+              ) : isEldoria ? (
+                <div className="world-status-bar world-header-status-bar eldoria-world-status">
+                  {eldoriaStats.map((item) => (
+                    <div className="world-status-item" key={item.label}>
+                      <span className="world-status-label">{item.label}</span>
+                      <strong>{item.value}</strong>
+                    </div>
+                  ))}
+                </div>
               ) : (
                 <div className="collection-meta-row world-header-meta">
                   <span className="meta-badge">{collection.releaseCount} releases</span>
@@ -221,6 +239,14 @@ export default function CollectionDetailPage({ onPlayTrack }) {
               <div aria-hidden="true" className="world-header-aside fracture-aside">
                 <div className="fracture-line" />
               </div>
+            ) : isEldoria ? (
+              <div aria-hidden="true" className="world-header-aside eldoria-aside">
+                <div className="eldoria-sigil">
+                  <span className="eldoria-sigil-ring eldoria-sigil-ring-outer" />
+                  <span className="eldoria-sigil-ring eldoria-sigil-ring-inner" />
+                  <span className="eldoria-sigil-star" />
+                </div>
+              </div>
             ) : null}
           </div>
         ) : null}
@@ -228,7 +254,7 @@ export default function CollectionDetailPage({ onPlayTrack }) {
 
       {collection ? (
         <main
-          className={`content-grid collection-world-page${isFractureverse ? " fractureverse-page" : ""}${
+          className={`content-grid collection-world-page${isFractureverse ? " fractureverse-page" : ""}${isEldoria ? " eldoria-page" : ""}${
             fractureInteraction.primaryEngaged ? " fracture-anchor-engaged" : ""
           }`}
         >
@@ -373,13 +399,21 @@ export default function CollectionDetailPage({ onPlayTrack }) {
 
           {!isFractureverse && featuredRelease ? (
             <section className="collection-fragment-shell">
-              <article className="intro-card homepage-panel collection-fragment-card">
+              <div className={`section-head${isEldoria ? " eldoria-featured-head" : ""}`}>
+                <h2>{themeConfig.featuredLabel}</h2>
+                <span>{isEldoria ? "A leading ballad from this chronicle" : "Featured collection entry"}</span>
+              </div>
+              <article className={`intro-card homepage-panel collection-fragment-card${isEldoria ? " eldoria-featured-card" : ""}`}>
                 <div className="collection-fragment-media">
                   <ReleaseMedia
                     className="featured-release-video"
                     compact
                     muted
-                    text="This fragment is live as a written record first. Its video can arrive later."
+                    text={
+                      isEldoria
+                        ? "This ballad is already part of the chronicle in written form. Its visual can arrive when the telling is ready."
+                        : "This fragment is live as a written record first. Its video can arrive later."
+                    }
                     title={featuredRelease.title}
                     videoUrl={featuredRelease.videoUrl}
                   />
@@ -393,7 +427,9 @@ export default function CollectionDetailPage({ onPlayTrack }) {
                   <h2>{featuredRelease.title}</h2>
                   <p className="collection-fragment-excerpt">{featuredRelease.excerpt}</p>
                   <p className="collection-fragment-context">
-                    {collection.theme === "fractureverse"
+                    {isEldoria
+                      ? "Each featured ballad should feel like the page that opens the wider tale. It invites the listener inward before the rest of the chronicle unfolds below."
+                      : collection.theme === "fractureverse"
                       ? "An anchor point inside the fracture: a record that holds one possible version of the world in place."
                       : "The featured release acts as the clearest entry point into this collection before the rest of the archive opens beneath it."}
                   </p>
@@ -427,9 +463,15 @@ export default function CollectionDetailPage({ onPlayTrack }) {
           ) : null}
 
           <section>
-            <div className={`section-head timeline-section-head${isFractureverse ? " fractureverse-timeline-head" : ""}`}>
+            <div className={`section-head timeline-section-head${isFractureverse ? " fractureverse-timeline-head" : ""}${isEldoria ? " eldoria-chronicle-head" : ""}`}>
               <h2>{themeConfig.listLabel}</h2>
-              <span>{isFractureverse ? `${fractureverseGrid.length} linked fragments` : `${timelineReleases.length} entries`}</span>
+              <span>
+                {isFractureverse
+                  ? `${fractureverseGrid.length} linked fragments`
+                  : isEldoria
+                    ? `${timelineReleases.length} chapters gathered`
+                    : `${timelineReleases.length} entries`}
+              </span>
             </div>
             {isFractureverse ? (
               fractureverseReleases.length === 0 ? (
@@ -541,13 +583,13 @@ export default function CollectionDetailPage({ onPlayTrack }) {
                 <p>{themeConfig.noItemsText}</p>
               </section>
             ) : timelineReleases.length === 1 ? (
-              <section className="intro-card homepage-panel collection-archive-note">
+              <section className={`intro-card homepage-panel collection-archive-note${isEldoria ? " eldoria-archive-note" : ""}`}>
                 <p className="eyebrow">{themeConfig.singleItemEyebrow}</p>
                 <h3>{themeConfig.singleItemTitle}</h3>
                 <p>{themeConfig.singleItemText}</p>
               </section>
             ) : (
-              <div className="timeline-grid">
+              <div className={`timeline-grid${isEldoria ? " eldoria-chronicle-grid" : ""}`}>
                 {timelineReleases.map((post, index) => (
                   <TimelineCard
                     index={index}
@@ -568,7 +610,7 @@ export default function CollectionDetailPage({ onPlayTrack }) {
               <h3>{FRACTUREVERSE_WORLD.residualEcho}</h3>
             </section>
           ) : (
-            <section className="intro-card homepage-panel world-note-card">
+            <section className={`intro-card homepage-panel world-note-card${isEldoria ? " eldoria-world-note" : ""}`}>
               <p className="eyebrow">{themeConfig.worldNoteTitle}</p>
               <h3>{themeConfig.worldNoteText}</h3>
             </section>

@@ -1481,6 +1481,53 @@ select:focus {
   filter: blur(6px);
 }
 
+.eldoria-aside {
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.eldoria-sigil {
+  position: relative;
+  width: min(300px, 100%);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at center, color-mix(in srgb, var(--primary-strong) 12%, transparent) 0%, transparent 44%),
+    radial-gradient(circle at center, color-mix(in srgb, var(--secondary) 8%, transparent) 0%, transparent 64%);
+  filter: blur(0.2px);
+}
+
+.eldoria-sigil-ring,
+.eldoria-sigil-star {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  border-radius: 50%;
+}
+
+.eldoria-sigil-ring-outer {
+  width: 74%;
+  height: 74%;
+  border: 1px solid color-mix(in srgb, var(--primary-strong) 28%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--surface-alt) 36%, transparent);
+}
+
+.eldoria-sigil-ring-inner {
+  width: 48%;
+  height: 48%;
+  border: 1px solid color-mix(in srgb, var(--secondary) 32%, transparent);
+}
+
+.eldoria-sigil-star {
+  width: 24%;
+  height: 24%;
+  background:
+    radial-gradient(circle at center, color-mix(in srgb, var(--primary-strong) 66%, transparent) 0%, color-mix(in srgb, var(--primary-strong) 10%, transparent) 56%, transparent 72%);
+  filter: blur(0.3px);
+}
+
 .collection-world-page {
   gap: 1.2rem;
 }
@@ -1510,6 +1557,12 @@ select:focus {
   background: transparent;
   border: 0;
   box-shadow: none;
+}
+
+.eldoria-world-status {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.9rem;
+  margin-top: 1.35rem;
 }
 
 .fracture-sequence-panel {
@@ -1716,6 +1769,23 @@ select:focus {
   letter-spacing: -0.03em;
 }
 
+.eldoria-featured-head,
+.eldoria-chronicle-head {
+  margin-bottom: 0.85rem;
+}
+
+.eldoria-featured-card {
+  border-radius: 28px;
+}
+
+.eldoria-featured-card .collection-fragment-copy {
+  padding: 2rem 2rem 2.15rem;
+}
+
+.eldoria-featured-card .collection-fragment-copy h2 {
+  max-width: 14ch;
+}
+
 .fracture-primary-card {
   border-color: color-mix(in srgb, var(--primary) 22%, var(--border) 78%);
   transform: scale(1.02);
@@ -1822,6 +1892,36 @@ select:focus {
 
 .timeline-card-body h3 {
   font-size: 1.45rem;
+}
+
+.eldoria-chronicle-grid {
+  gap: 1.2rem;
+}
+
+.eldoria-chronicle-card {
+  transition:
+    transform 240ms ease,
+    box-shadow 240ms ease,
+    border-color 240ms ease,
+    background-color 240ms ease;
+}
+
+.eldoria-chronicle-card::after {
+  background:
+    linear-gradient(118deg, transparent 0%, transparent 48%, color-mix(in srgb, var(--primary-strong) 8%, transparent) 54%, transparent 62%, transparent 100%);
+  transition: opacity 240ms ease, transform 240ms ease;
+}
+
+.eldoria-chronicle-card .timeline-card-body {
+  gap: 0.45rem;
+}
+
+.eldoria-chronicle-card .meta {
+  color: color-mix(in srgb, var(--muted-text) 78%, var(--primary-strong) 22%);
+}
+
+.eldoria-chronicle-card .timeline-card-body p:not(.meta) {
+  max-width: 42ch;
 }
 
 .fracture-fragment-grid-shell {
@@ -2060,6 +2160,11 @@ select:focus {
   font-size: 1.55rem;
   letter-spacing: -0.03em;
   white-space: pre-line;
+}
+
+.eldoria-archive-note,
+.eldoria-world-note {
+  text-align: center;
 }
 
 @keyframes drift {
@@ -2387,11 +2492,22 @@ select:focus {
     inset 0 1px 0 color-mix(in srgb, white 8%, transparent);
 }
 
+:root[data-collection-theme="eldoria"] .collection-world-page {
+  gap: 1.3rem;
+}
+
 :root[data-collection-theme="eldoria"] .collection-card,
 :root[data-collection-theme="eldoria"] .timeline-card,
 :root[data-collection-theme="eldoria"] .collection-fragment-card {
   border-color: color-mix(in srgb, var(--border) 88%, var(--primary) 12%);
   border-radius: 24px;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-collection-card,
+:root[data-collection-theme="eldoria"] .eldoria-chronicle-card,
+:root[data-collection-theme="eldoria"] .eldoria-featured-card {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, #f5efdc 88%, var(--surface) 12%), color-mix(in srgb, var(--surface-alt) 92%, #e0d5ba 8%));
 }
 
 :root[data-collection-theme="eldoria"] .timeline-card:hover,
@@ -2404,9 +2520,23 @@ select:focus {
     0 0 0 1px color-mix(in srgb, var(--primary) 12%, transparent);
 }
 
+:root[data-collection-theme="eldoria"] .eldoria-featured-card:hover,
+:root[data-collection-theme="eldoria"] .eldoria-featured-card:focus-within {
+  transform: translateY(-2px);
+  box-shadow:
+    0 18px 36px color-mix(in srgb, black 12%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--primary-strong) 14%, transparent);
+}
+
 :root[data-collection-theme="eldoria"] .collection-fragment-media,
 :root[data-collection-theme="eldoria"] .release-card-media {
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--border) 82%, transparent);
+}
+
+:root[data-collection-theme="eldoria"] .collection-fragment-media {
+  background:
+    radial-gradient(circle at 50% 18%, color-mix(in srgb, var(--secondary) 9%, transparent), transparent 34%),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-alt) 90%, #d6c8ab 10%), color-mix(in srgb, var(--surface) 96%, #f8f1e2 4%));
 }
 
 :root[data-collection-theme="eldoria"] .world-header {
@@ -2430,6 +2560,10 @@ select:focus {
   opacity: 0.8;
 }
 
+:root[data-collection-theme="eldoria"] .world-header-inner::before {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--primary-strong) 42%, transparent), transparent 82%);
+}
+
 :root[data-collection-theme="eldoria"] .world-header h1,
 :root[data-collection-theme="eldoria"] .section-head h2,
 :root[data-collection-theme="eldoria"] .collection-fragment-copy h2,
@@ -2437,11 +2571,33 @@ select:focus {
   letter-spacing: -0.03em;
 }
 
+:root[data-collection-theme="eldoria"] .world-header h1 {
+  max-width: 10ch;
+}
+
 :root[data-collection-theme="eldoria"] .world-header-copy,
 :root[data-collection-theme="eldoria"] .collection-card p,
 :root[data-collection-theme="eldoria"] .timeline-card p,
 :root[data-collection-theme="eldoria"] .release-prose p {
   color: color-mix(in srgb, var(--text) 74%, var(--muted-text) 26%);
+}
+
+:root[data-collection-theme="eldoria"] .world-status-bar {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-alt) 76%, #d8cda9 24%), color-mix(in srgb, var(--surface) 92%, #f7f0df 8%));
+  border-color: color-mix(in srgb, var(--border) 86%, var(--primary-strong) 14%);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-world-status .world-status-item {
+  padding: 0.9rem 1rem;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--surface) 86%, rgba(255, 255, 255, 0.08));
+  border: 1px solid color-mix(in srgb, var(--border) 90%, transparent);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-world-status strong {
+  font-size: 1rem;
+  line-height: 1.35;
 }
 
 :root[data-collection-theme="eldoria"] .play-pill,
@@ -2471,6 +2627,45 @@ select:focus {
 :root[data-collection-theme="eldoria"] .secondary-button:focus-visible {
   transform: translateY(-1px);
   background: color-mix(in srgb, var(--surface-alt) 78%, rgba(198, 171, 109, 0.24));
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-chronicle-head {
+  position: relative;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  padding-top: 0.4rem;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-chronicle-head::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 190px;
+  height: 1px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--primary-strong) 54%, transparent), transparent);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-chronicle-card {
+  border-style: solid;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-chronicle-card .release-card-media::after,
+:root[data-collection-theme="eldoria"] .eldoria-featured-card .collection-fragment-media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 0 3px, transparent 3px 100%),
+    linear-gradient(180deg, transparent 0%, color-mix(in srgb, var(--primary-strong) 5%, transparent) 100%);
+  pointer-events: none;
+  opacity: 0.45;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-world-note h3,
+:root[data-collection-theme="eldoria"] .eldoria-archive-note h3 {
+  max-width: 24ch;
+  margin-inline: auto;
 }
 
 @media (prefers-reduced-motion: reduce) {

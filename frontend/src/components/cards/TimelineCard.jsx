@@ -3,15 +3,21 @@ import ReleaseMedia from "../ReleaseMedia";
 import { hasVideo } from "../../lib/site";
 
 export default function TimelineCard({ index, onPlayTrack, playbackContext, post, themeConfig }) {
+  const isEldoria = themeConfig.itemName === "Ballad";
+
   return (
     <Link className="release-card-link" to={`/release/${post.slug}`}>
-      <article className="post-card homepage-post-card release-feed-card timeline-card">
+      <article className={`post-card homepage-post-card release-feed-card timeline-card${isEldoria ? " eldoria-chronicle-card" : ""}`}>
         <div className="release-card-media timeline-card-media">
           <ReleaseMedia
             className="post-media"
             compact
             muted
-            text="This fragment has been published as writing first. The video can arrive later."
+            text={
+              isEldoria
+                ? "This chapter has entered the chronicle as writing first. Its visual telling can be added later."
+                : "This fragment has been published as writing first. The video can arrive later."
+            }
             title={post.title}
             videoUrl={post.videoUrl}
           />
