@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import ReleaseMedia from "../../components/ReleaseMedia";
-import { FractureFragmentCard, TimelineCard } from "../../components/cards/ArchiveCards";
+import { FractureFragmentCard, TimelineCard } from "../../components/cards";
 import {
   apiBaseUrl,
   FRACTUREVERSE_FEATURED_SLUG,
@@ -12,6 +12,40 @@ import {
   getThemeConfig,
   hasVideo
 } from "../../lib/site";
+
+const FRACTURE_LINE_LAYOUT = {
+  anchor: { x: 50, y: 6 },
+  nodes: {
+    "F-01": { x: 26, y: 36 },
+    "F-02": { x: 74, y: 28 },
+    "F-04": { x: 24, y: 76 },
+    "F-05": { x: 76, y: 72 }
+  }
+};
+
+function buildFractureConnections(activeMeta) {
+  const links = [
+    ["ANCHOR", "F-02"],
+    ["ANCHOR", "F-04"],
+    ["F-01", "F-02"],
+    ["F-01", "F-04"],
+    ["F-02", "F-05"],
+    ["F-04", "F-05"]
+  ];
+  const activeId = activeMeta?.fragmentId;
+  const linkedIds = new Set(activeMeta?.linkedTo || []);
+
+  return links.map(([from, to]) => {
+    const active =
+      !activeId || activeId === from || activeId === to || (from === "ANCHOR" && linkedIds.has(to)) || (to === "ANCHOR" && linkedIds.has(from));
+
+    return {
+      from,
+      to,
+      active
+    };
+  });
+}
 
 export default function CollectionDetailPage({ onPlayTrack }) {
   const { slug } = useParams();
@@ -58,6 +92,9 @@ export default function CollectionDetailPage({ onPlayTrack }) {
     FRACTUREVERSE_METADATA[activeFragmentSlug] ||
     FRACTUREVERSE_METADATA[fractureverseFeatured?.slug] ||
     FRACTUREVERSE_METADATA[FRACTUREVERSE_FEATURED_SLUG];
+  const fractureDominantState = "Collapsed";
+  const fractureIntegrity = Math.max(24, 64 - fractureverseReleases.length * 4);
+  const fractureConnections = buildFractureConnections(activeFragmentMeta);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -120,41 +157,70 @@ export default function CollectionDetailPage({ onPlayTrack }) {
       {collection ? (
         <main className={`content-grid collection-world-page${isFractureverse ? " fractureverse-page" : ""}`}>
           {isFractureverse ? (
-            <section className="intro-card homepage-panel fracture-sequence-panel">
-              <div className="section-head fractureverse-sequence-head">
-                <h2>Observed Sequence</h2>
-                <span>{fractureverseReleases.length} tracked fragments</span>
-              </div>
-              <div className="fracture-sequence-strip" onMouseLeave={() => setActiveFragmentSlug("")}>
-                {fractureverseReleases.map((post) => {
-                  const meta = getFractureverseMeta(post);
-                  const isActive = activeFragmentSlug === post.slug;
+            <>
+              <section className="intro-card homepage-panel fracture-analysis-panel">
+                <div className="section-head fracture-analysis-head">
+                  <h2>Timeline Analysis</h2>
+                  <span>Observation log updated</span>
+                </div>
+                <div className="fracture-analysis-grid">
+                  <div className="fracture-analysis-item">
+                    <span className="world-status-label">Timeline Integrity</span>
+                    <strong>{fractureIntegrity}%</strong>
+                  </div>
+                  <div className="fracture-analysis-item">
+                    <span className="world-status-label">Dominant State</span>
+                    <strong>{fractureDominantState}</strong>
+                  </div>
+                  <div className="fracture-analysis-item">
+                    <span className="world-status-label">Primary Anchor</span>
+                    <strong>{getFractureverseMeta(fractureverseFeatured)?.fragmentId || "F-03"}</strong>
+                  </div>
+                  <div className="fracture-analysis-item">
+                    <span className="world-status-label">Emotional Load</span>
+                    <strong>Critical</strong>
+                  </div>
+                </div>
+              </section>
 
-                  if (!meta) {
-                    return null;
-                  }
+              <section className="intro-card homepage-panel fracture-sequence-panel">
+                <div className="section-head fractureverse-sequence-head">
+                  <h2>Observed Sequence</h2>
+                  <span>Timeline divergence detected</span>
+                </div>
+                <div className="fracture-sequence-strip" onMouseLeave={() => setActiveFragmentSlug("")}>
+                  {fractureverseReleases.map((post) => {
+                    const meta = getFractureverseMeta(post);
+                    const isActive = activeFragmentSlug === post.slug;
+                    const hasActive = Boolean(activeFragmentSlug);
 
-                  return (
-                    <Link
-                      className={`fracture-sequence-node${isActive ? " active" : ""}`}
-                      key={post.slug}
-                      onFocus={() => setActiveFragmentSlug(post.slug)}
-                      onMouseEnter={() => setActiveFragmentSlug(post.slug)}
-                      to={`/release/${post.slug}`}
-                    >
-                      <span className="fracture-sequence-id">{meta.fragmentId}</span>
-                      <span className="fracture-sequence-state">{meta.state}</span>
-                      <strong>{meta.title}</strong>
-                    </Link>
-                  );
-                })}
-              </div>
-              {activeFragmentMeta ? (
-                <p className="fracture-sequence-note">
-                  {activeFragmentMeta.fragmentId} / {activeFragmentMeta.signalType} / Linked echoes: {activeFragmentMeta.linkedTo.join(", ")}
-                </p>
-              ) : null}
-            </section>
+                    if (!meta) {
+                      return null;
+                    }
+
+                    return (
+                      <Link
+                        className={`fracture-sequence-node${isActive ? " active" : ""}${hasActive && !isActive ? " dimmed" : ""}`}
+                        key={post.slug}
+                        onFocus={() => setActiveFragmentSlug(post.slug)}
+                        onMouseEnter={() => setActiveFragmentSlug(post.slug)}
+                        to={`/release/${post.slug}`}
+                      >
+                        <span className="fracture-sequence-id">{meta.fragmentId}</span>
+                        <span className="fracture-sequence-state">{meta.state}</span>
+                        <strong>{meta.title}</strong>
+                      </Link>
+                    );
+                  })}
+                </div>
+                {activeFragmentMeta ? (
+                  <p className="fracture-sequence-note">
+                    {activeFragmentMeta.fragmentId} / {activeFragmentMeta.signalType} / Fragment link unstable / Linked echoes:{" "}
+                    {activeFragmentMeta.linkedTo.join(", ")}
+                  </p>
+                ) : null}
+              </section>
+            </>
           ) : null}
 
           {isFractureverse && fractureverseFeatured ? (
@@ -168,8 +234,13 @@ export default function CollectionDetailPage({ onPlayTrack }) {
                   <ReleaseMedia
                     className="featured-release-video"
                     compact
+                    eyebrow={hasVideo(fractureverseFeatured.videoUrl) ? "Primary Fragment" : "Data Corrupted"}
                     muted
-                    text="This fragment is live as a written record first. Its video can arrive later."
+                    text={
+                      hasVideo(fractureverseFeatured.videoUrl)
+                        ? "Observation log updated. Primary anchor available for playback."
+                        : "Visual record lost. Playback unavailable. Emotional imprint preserved."
+                    }
                     title={fractureverseFeatured.title}
                     videoUrl={fractureverseFeatured.videoUrl}
                   />
@@ -192,6 +263,7 @@ export default function CollectionDetailPage({ onPlayTrack }) {
                     {getFractureverseMeta(fractureverseFeatured)?.systemNote ||
                       "Collapse event stabilized through force of will. Structural integrity compromised."}
                   </p>
+                  <p className="fracture-system-voice">Observation log updated. Primary anchor remains unstable but reachable.</p>
                   <div className="featured-release-actions">
                     <button
                       className="secondary-button mini-player-trigger"
@@ -199,13 +271,13 @@ export default function CollectionDetailPage({ onPlayTrack }) {
                       onClick={() => onPlayTrack(fractureverseFeatured)}
                       type="button"
                     >
-                      {hasVideo(fractureverseFeatured.videoUrl) ? "Play in Mini Player" : "Video Pending"}
+                      {hasVideo(fractureverseFeatured.videoUrl) ? "Begin Playback" : "Signal Unavailable"}
                     </button>
                     <Link className="hero-link" to={`/release/${fractureverseFeatured.slug}`}>
-                      Open Fragment
+                      Enter Fragment
                     </Link>
                     <Link className="hero-link secondary-link" to={`/release/${fractureverseFeatured.slug}`}>
-                      Read Fragment Record
+                      View Record
                     </Link>
                   </div>
                 </div>
@@ -277,7 +349,47 @@ export default function CollectionDetailPage({ onPlayTrack }) {
                   <p>{themeConfig.noItemsText}</p>
                 </section>
               ) : (
-                <div className="timeline-grid fracture-fragment-grid">
+                <div className="timeline-grid fracture-fragment-grid-shell">
+                  <div aria-hidden="true" className="fracture-link-layer">
+                    <svg className="fracture-link-svg" preserveAspectRatio="none" viewBox="0 0 100 100">
+                      <defs>
+                        <linearGradient id="fracture-link-gradient" x1="0%" x2="100%" y1="0%" y2="0%">
+                          <stop offset="0%" stopColor="currentColor" stopOpacity="0.12" />
+                          <stop offset="50%" stopColor="currentColor" stopOpacity="0.42" />
+                          <stop offset="100%" stopColor="currentColor" stopOpacity="0.12" />
+                        </linearGradient>
+                      </defs>
+                      {fractureConnections.map((connection) => {
+                        const from =
+                          connection.from === "ANCHOR"
+                            ? FRACTURE_LINE_LAYOUT.anchor
+                            : FRACTURE_LINE_LAYOUT.nodes[connection.from];
+                        const to =
+                          connection.to === "ANCHOR"
+                            ? FRACTURE_LINE_LAYOUT.anchor
+                            : FRACTURE_LINE_LAYOUT.nodes[connection.to];
+
+                        if (!from || !to) {
+                          return null;
+                        }
+
+                        return (
+                          <g key={`${connection.from}-${connection.to}`}>
+                            <line
+                              className={`fracture-link-path${connection.active ? " active" : ""}`}
+                              x1={from.x}
+                              x2={to.x}
+                              y1={from.y}
+                              y2={to.y}
+                            />
+                            <circle className={`fracture-link-node${connection.active ? " active" : ""}`} cx={to.x} cy={to.y} r="1.4" />
+                          </g>
+                        );
+                      })}
+                      <circle className="fracture-link-anchor" cx={FRACTURE_LINE_LAYOUT.anchor.x} cy={FRACTURE_LINE_LAYOUT.anchor.y} r="2.2" />
+                    </svg>
+                  </div>
+                  <div className="timeline-grid fracture-fragment-grid">
                   {fractureverseGrid.map((post) => {
                     const meta = getFractureverseMeta(post);
                     const isActive = activeFragmentSlug === post.slug;
@@ -304,6 +416,7 @@ export default function CollectionDetailPage({ onPlayTrack }) {
                       />
                     );
                   })}
+                  </div>
                 </div>
               )
             ) : timelineReleases.length === 0 ? (

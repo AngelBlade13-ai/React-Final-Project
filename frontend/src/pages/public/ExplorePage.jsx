@@ -1,5 +1,5 @@
 import { useDeferredValue, useEffect, useState } from "react";
-import { ReleaseCard } from "../../components/cards/ArchiveCards";
+import { ReleaseCard } from "../../components/cards";
 import { apiBaseUrl } from "../../lib/site";
 
 export default function ExplorePage({ onPlayTrack }) {

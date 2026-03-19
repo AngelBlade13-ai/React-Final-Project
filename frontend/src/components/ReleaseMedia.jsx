@@ -3,6 +3,7 @@ import { hasVideo } from "../lib/site";
 export default function ReleaseMedia({
   videoUrl,
   className = "",
+  eyebrow = "Video Pending",
   title = "Video Coming Soon",
   text = "This release is already live. Add the video whenever it is ready.",
   compact = false,
@@ -16,7 +17,7 @@ export default function ReleaseMedia({
   return (
     <div className={`media-placeholder ${compact ? "media-placeholder-compact" : ""} ${className}`.trim()}>
       <div className="media-placeholder-copy">
-        <p className="eyebrow">Video Pending</p>
+        <p className="eyebrow">{eyebrow}</p>
         <h3>{title}</h3>
         <p>{text}</p>
       </div>

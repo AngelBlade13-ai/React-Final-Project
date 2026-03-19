@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import ReleaseMedia from "../../components/ReleaseMedia";
-import { CollectionCard, ReleaseCard } from "../../components/cards/ArchiveCards";
+import { CollectionCard, ReleaseCard } from "../../components/cards";
 import { formatPostDate, normalizeTitle } from "../../lib/formatters";
 import { apiBaseUrl, hasVideo } from "../../lib/site";
 

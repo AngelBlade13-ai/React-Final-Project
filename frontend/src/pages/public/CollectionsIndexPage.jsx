@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { CollectionCard } from "../../components/cards/ArchiveCards";
+import { CollectionCard } from "../../components/cards";
 import { apiBaseUrl } from "../../lib/site";
 
 export default function CollectionsIndexPage() {
