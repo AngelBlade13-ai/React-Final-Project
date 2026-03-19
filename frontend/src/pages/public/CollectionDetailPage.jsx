@@ -1,5 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import EldoriaSigil from "../../components/EldoriaSigil";
+import EldoriaWorldMap from "../../components/EldoriaWorldMap";
 import ReleaseMedia from "../../components/ReleaseMedia";
 import { FractureFragmentCard, TimelineCard } from "../../components/cards";
 import {
@@ -7,6 +9,7 @@ import {
   FRACTUREVERSE_FEATURED_SLUG,
   FRACTUREVERSE_ORDER,
   FRACTUREVERSE_WORLD,
+  getCollectionThemeHint,
   getCollectionDerivedContent,
   getEldoriaMeta,
   getFractureverseMeta,
@@ -184,12 +187,13 @@ export default function CollectionDetailPage({ currentTrack, isPlayerActive, onP
       isPlayerActive &&
       currentTrack?.collections?.some((entry) => entry.slug === collection?.slug)
   );
+  const hintedTheme = collection?.theme || getCollectionThemeHint(slug);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const root = document.documentElement;
 
-    if (collection?.theme) {
-      root.setAttribute("data-collection-theme", collection.theme);
+    if (hintedTheme) {
+      root.setAttribute("data-collection-theme", hintedTheme);
       return () => {
         root.removeAttribute("data-collection-theme");
       };
@@ -199,7 +203,7 @@ export default function CollectionDetailPage({ currentTrack, isPlayerActive, onP
     return () => {
       root.removeAttribute("data-collection-theme");
     };
-  }, [collection?.theme]);
+  }, [hintedTheme]);
 
   useEffect(() => {
     if (!isEldoria) {
@@ -226,7 +230,7 @@ export default function CollectionDetailPage({ currentTrack, isPlayerActive, onP
 
     const timeoutId = window.setTimeout(() => {
       navigate(`/release/${eldoriaTransitionSlug}`);
-    }, 220);
+    }, 2000);
 
     return () => {
       window.clearTimeout(timeoutId);
@@ -266,6 +270,20 @@ export default function CollectionDetailPage({ currentTrack, isPlayerActive, onP
             ? "The next voice has not reached the chronicle yet, but the page has already been left waiting for it."
             : "Some parts of Eldoria remain sealed until the world is ready to remember them aloud."
       }))
+    : [];
+  const eldoriaMapEntries = isEldoria
+    ? eldoriaReleases.map((entry, index) => {
+        const meta = getEldoriaMeta(entry);
+
+        return {
+          id: entry.id,
+          slug: entry.slug,
+          title: meta?.subtitle || entry.title,
+          subtitle: meta?.chapterLabel || `Chapter ${index + 1}`,
+          state: entry.slug === featuredRelease?.slug ? "active" : hasVideo(entry.videoUrl) ? "available" : "unwritten",
+          action: entry.slug === featuredRelease?.slug ? "Enter Chronicle" : "Open Recorded Path"
+        };
+      })
     : [];
 
   return (
@@ -331,13 +349,7 @@ export default function CollectionDetailPage({ currentTrack, isPlayerActive, onP
             ) : isEldoria ? (
               <div aria-hidden="true" className="world-header-aside eldoria-aside">
                 <div className="eldoria-ambient-dust" />
-                <div className="eldoria-sigil">
-                  <span className="eldoria-sigil-core" />
-                  <span className="eldoria-sigil-ring eldoria-sigil-ring-outer" />
-                  <span className="eldoria-sigil-ring eldoria-sigil-ring-inner" />
-                  <span className="eldoria-sigil-ring eldoria-sigil-ring-script" />
-                  <span className="eldoria-sigil-star" />
-                </div>
+                <EldoriaSigil awake={eldoriaAudioActive} />
               </div>
             ) : null}
           </div>
@@ -502,6 +514,10 @@ export default function CollectionDetailPage({ currentTrack, isPlayerActive, onP
                 </div>
               </article>
             </section>
+          ) : null}
+
+          {isEldoria ? (
+            <EldoriaWorldMap currentSlug={featuredRelease?.slug || ""} entries={eldoriaMapEntries} onEnterChronicle={enterEldoriaChronicle} />
           ) : null}
 
           {!isFractureverse && featuredRelease ? (

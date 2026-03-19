@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import EldoriaSigil from "../../components/EldoriaSigil";
 import ReleaseMedia from "../../components/ReleaseMedia";
 import { formatPostDate } from "../../lib/formatters";
-import { apiBaseUrl, getCollectionDerivedContent, getEldoriaMeta, getFractureverseMeta, getPrimaryThemeForPost, getThemeConfig, hasVideo, sortEldoriaPosts, sortFractureversePosts } from "../../lib/site";
+import { apiBaseUrl, getCollectionDerivedContent, getEldoriaMeta, getFractureverseMeta, getPrimaryThemeForPost, getReleaseThemeHint, getThemeConfig, hasVideo, sortEldoriaPosts, sortFractureversePosts } from "../../lib/site";
 
 export default function PublicReleasePage({ currentTrack, hasAdminSession, isPlayerActive, onPlayTrack }) {
   const { slug } = useParams();
@@ -67,6 +68,10 @@ export default function PublicReleasePage({ currentTrack, hasAdminSession, isPla
   const linkedFragments = fractureMeta?.linkedPosts || [];
   const companionBallads = orderedSequence.filter((entry) => entry.post.slug !== post?.slug);
   const derivedContent = getCollectionDerivedContent(primaryCollection, orderedSequence.map((entry) => entry.post));
+  const hintedTheme =
+    (currentTrack?.slug === slug ? getPrimaryThemeForPost(currentTrack) : "") ||
+    getReleaseThemeHint(slug) ||
+    (primaryTheme !== "default" ? primaryTheme : "");
   const eldoriaAudioActive = Boolean(
     isEldoria &&
       isPlayerActive &&
@@ -109,11 +114,11 @@ export default function PublicReleasePage({ currentTrack, hasAdminSession, isPla
     loadSequence();
   }, [isThemedSequence, post, primaryCollection?.slug]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const root = document.documentElement;
 
-    if (primaryTheme && primaryTheme !== "default") {
-      root.setAttribute("data-collection-theme", primaryTheme);
+    if (hintedTheme) {
+      root.setAttribute("data-collection-theme", hintedTheme);
       return () => {
         root.removeAttribute("data-collection-theme");
       };
@@ -123,7 +128,7 @@ export default function PublicReleasePage({ currentTrack, hasAdminSession, isPla
     return () => {
       root.removeAttribute("data-collection-theme");
     };
-  }, [primaryTheme]);
+  }, [hintedTheme]);
 
   useEffect(() => {
     if (!isEldoria) {
@@ -224,9 +229,7 @@ export default function PublicReleasePage({ currentTrack, hasAdminSession, isPla
               />
               {isEldoria ? (
                 <div aria-hidden="true" className="eldoria-release-media-ornament">
-                  <span className="eldoria-release-media-ring eldoria-release-media-ring-outer" />
-                  <span className="eldoria-release-media-ring eldoria-release-media-ring-inner" />
-                  <span className="eldoria-release-media-core" />
+                  <EldoriaSigil awake={eldoriaAudioActive} className="eldoria-release-sigil" compact />
                 </div>
               ) : null}
             </div>

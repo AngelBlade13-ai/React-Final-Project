@@ -185,6 +185,21 @@ export const FRACTUREVERSE_ORDER = [
   "we-were-never-meant-to-survive-reimagined-duet"
 ];
 
+export const ROUTE_THEME_HINTS = {
+  collections: {
+    eldoria: "eldoria",
+    "the-fractureverse": "fractureverse"
+  },
+  releases: {
+    "between-two-worlds-the-first-awakening": "eldoria",
+    "the-one-you-used-to-be-reimagined": "fractureverse",
+    "still-breathing-in-a-dying-world-reimagined": "fractureverse",
+    "shattered-trust-reimagined": "fractureverse",
+    "you-were-better-before-you-saved-the-world-reimagined": "fractureverse",
+    "we-were-never-meant-to-survive-reimagined-duet": "fractureverse"
+  }
+};
+
 export const FRACTUREVERSE_WORLD = {
   headerEyebrow: "World / Fractureverse",
   description:
@@ -266,6 +281,14 @@ export function getThemeConfig(theme) {
 export function getPrimaryThemeForPost(post) {
   const themedCollection = (post?.collections || []).find((collection) => collection.theme);
   return themedCollection?.theme || "default";
+}
+
+export function getCollectionThemeHint(slug) {
+  return ROUTE_THEME_HINTS.collections[slug] || "";
+}
+
+export function getReleaseThemeHint(slug) {
+  return ROUTE_THEME_HINTS.releases[slug] || "";
 }
 
 export function sortFractureversePosts(posts = []) {
