@@ -192,6 +192,9 @@ export const ROUTE_THEME_HINTS = {
   },
   releases: {
     "between-two-worlds-the-first-awakening": "eldoria",
+    "echoes-of-aeloria-the-memory-that-was-never-mine": "eldoria",
+    "queen-of-borrowed-crowns-the-throne-that-was-not-hers": "eldoria",
+    "wings-of-light-the-weapon-she-wrote-into-being": "eldoria",
     "the-one-you-used-to-be-reimagined": "fractureverse",
     "still-breathing-in-a-dying-world-reimagined": "fractureverse",
     "shattered-trust-reimagined": "fractureverse",
@@ -212,6 +215,59 @@ export const FRACTUREVERSE_WORLD = {
   ],
   residualEcho: "Some timelines collapse. Some repeat. Some never stop trying to become real."
 };
+
+export const ELDORIA_MAP_LAYOUT = {
+  "1": {
+    x: 22,
+    y: 60,
+    svgX: 220,
+    svgY: 420,
+    region: "fracture-field",
+    mapTitle: "Threshold Field",
+    mapSubtitle: "Arrival Point",
+    stateLabel: "Spawn / fracture point",
+    type: "origin"
+  },
+  "2": {
+    x: 50,
+    y: 19,
+    svgX: 500,
+    svgY: 130,
+    region: "aeloria-echo-zone",
+    mapTitle: "Aeloria Echo Grove",
+    mapSubtitle: "Memory Bleed",
+    stateLabel: "Echo grove / unstable region",
+    type: "echo"
+  },
+  "3": {
+    x: 78,
+    y: 40,
+    svgX: 780,
+    svgY: 280,
+    region: "eldoria-capital",
+    mapTitle: "Eldoria Capital",
+    mapSubtitle: "Throne / Stability",
+    stateLabel: "Castle hub / sovereign center",
+    type: "ascension"
+  },
+  "4": {
+    x: 58,
+    y: 77,
+    svgX: 580,
+    svgY: 540,
+    region: "eastern-warfront",
+    mapTitle: "Eastern Warfront",
+    mapSubtitle: "Consequence",
+    stateLabel: "Burning battlefield / manifestation zone",
+    type: "manifestation"
+  }
+};
+
+export const ELDORIA_MAP_PATHS = [
+  ["1", "2"],
+  ["2", "3"],
+  ["3", "4"]
+];
 
 export const FRACTUREVERSE_METADATA = {
   "the-one-you-used-to-be-reimagined": {
@@ -532,4 +588,42 @@ export function getEldoriaMeta(post) {
     entryStatus,
     playerFlavorLine
   };
+}
+
+export function getEldoriaMapEntries(posts = [], currentSlug = "") {
+  const sortedPosts = sortEldoriaPosts(posts);
+  const unlockedCount = Math.max(sortedPosts.length, 1);
+
+  return Object.entries(ELDORIA_MAP_LAYOUT).map(([chapterNumber, layout]) => {
+    const post = sortedPosts.find((entry) => String(getEldoriaMeta(entry)?.chapterNumber || "") === chapterNumber) || null;
+    const meta = getEldoriaMeta(post);
+    const chapterIndex = Number(chapterNumber);
+    const isUnlocked = chapterIndex <= unlockedCount;
+    const isActive = currentSlug
+      ? post?.slug === currentSlug
+      : chapterIndex === 1 || post?.slug === sortedPosts[0]?.slug;
+
+    return {
+      id: post?.id || `eldoria-map-${chapterNumber}`,
+      route: post ? `/release/${post.slug}` : "",
+      slug: post?.slug || "",
+      chapterNumber,
+      chapterLabel: meta?.chapterLabel || `Chapter ${toRoman(chapterNumber)}`,
+      title: post?.title || layout.mapTitle,
+      subtitle: meta?.subtitle || layout.mapSubtitle,
+      mapTitle: layout.mapTitle,
+      mapSubtitle: layout.mapSubtitle,
+      emotionalState: meta?.emotionalState || (isUnlocked ? "World state still forming" : "Yet to be revealed"),
+      status: isActive ? "active" : isUnlocked ? "unlocked" : "locked",
+      type: layout.type,
+      region: layout.region,
+      stateLabel: layout.stateLabel,
+      x: layout.x,
+      y: layout.y,
+      svgX: layout.svgX,
+      svgY: layout.svgY,
+      post,
+      meta
+    };
+  });
 }
