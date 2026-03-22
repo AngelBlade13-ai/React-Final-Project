@@ -18,6 +18,20 @@
   --player-progress-glow-strong: rgba(255, 80, 140, 0.44);
   --player-thumb: #ff5c98;
   --player-track: color-mix(in srgb, var(--surface-alt) 88%, rgba(255, 255, 255, 0.03));
+  --player-progress-size: 100% 100%;
+  --player-progress-animation: none;
+  --player-progress-filter: none;
+  --player-progress-filter-hover: saturate(1.06);
+  --player-volume-track: color-mix(in srgb, var(--surface-alt) 84%, rgba(255, 255, 255, 0.04));
+  --player-volume-fill-start: color-mix(in srgb, var(--primary) 88%, white 12%);
+  --player-volume-fill-end: color-mix(in srgb, var(--primary-strong) 86%, white 14%);
+  --player-volume-thumb: color-mix(in srgb, var(--primary-strong) 84%, white 16%);
+  --player-volume-thumb-glow: color-mix(in srgb, var(--primary) 22%, transparent);
+  --player-volume-thumb-border: color-mix(in srgb, var(--surface) 42%, white 58%);
+  --player-volume-thumb-shadow:
+    0 0 0 1px color-mix(in srgb, var(--surface) 32%, transparent),
+    0 4px 10px color-mix(in srgb, black 14%, transparent),
+    0 0 10px var(--player-volume-thumb-glow);
 }
 
 :root[data-theme="light"] {
@@ -32,6 +46,18 @@
   --secondary: #f4c9c2;
   --shadow-lg: 0 18px 48px rgba(126, 76, 82, 0.16);
   --shadow-md: 0 8px 22px rgba(126, 76, 82, 0.12);
+  --player-progress-start: rgba(221, 142, 136, 0.92);
+  --player-progress-mid: rgba(210, 118, 113, 0.96);
+  --player-progress-end: rgba(178, 89, 95, 0.94);
+  --player-progress-glow: rgba(203, 114, 110, 0.18);
+  --player-progress-glow-strong: rgba(203, 114, 110, 0.28);
+  --player-thumb: #c16f6d;
+  --player-track: color-mix(in srgb, #e6c5be 80%, rgba(255, 255, 255, 0.28));
+  --player-volume-track: color-mix(in srgb, #e6c5be 82%, rgba(255, 255, 255, 0.22));
+  --player-volume-fill-start: #d88a86;
+  --player-volume-fill-end: #b9666b;
+  --player-volume-thumb: #c5706e;
+  --player-volume-thumb-glow: rgba(201, 114, 110, 0.2);
 }
 
 :root[data-theme="dark"] {
@@ -46,6 +72,11 @@
   --secondary: #cba6f7;
   --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.28);
   --shadow-md: 0 10px 28px rgba(0, 0, 0, 0.18);
+  --player-volume-track: color-mix(in srgb, var(--surface-alt) 84%, rgba(255, 255, 255, 0.04));
+  --player-volume-fill-start: color-mix(in srgb, var(--primary) 88%, white 12%);
+  --player-volume-fill-end: color-mix(in srgb, var(--primary-strong) 86%, white 14%);
+  --player-volume-thumb: color-mix(in srgb, var(--primary-strong) 84%, white 16%);
+  --player-volume-thumb-glow: color-mix(in srgb, var(--primary) 22%, transparent);
 }
 
 :root[data-theme="light"][data-collection-theme="fractureverse"] {
@@ -60,6 +91,20 @@
   --secondary: #8a4fff;
   --shadow-lg: 0 18px 52px rgba(104, 38, 63, 0.18);
   --shadow-md: 0 10px 26px rgba(104, 38, 63, 0.12);
+  --player-progress-start: rgba(255, 137, 182, 0.92);
+  --player-progress-mid: rgba(231, 78, 137, 0.98);
+  --player-progress-end: rgba(176, 56, 114, 0.98);
+  --player-progress-glow: rgba(217, 77, 134, 0.22);
+  --player-progress-glow-strong: rgba(185, 43, 102, 0.34);
+  --player-thumb: #c63775;
+  --player-track: color-mix(in srgb, #e6bcc8 80%, rgba(255, 255, 255, 0.26));
+  --player-progress-size: 180% 100%;
+  --player-progress-animation: signalShimmer 3.2s linear infinite;
+  --player-volume-track: color-mix(in srgb, #e6bcc8 82%, rgba(255, 255, 255, 0.24));
+  --player-volume-fill-start: #e16297;
+  --player-volume-fill-end: #a843d2;
+  --player-volume-thumb: #c73574;
+  --player-volume-thumb-glow: rgba(185, 43, 102, 0.24);
 }
 
 :root[data-theme="dark"][data-collection-theme="fractureverse"] {
@@ -74,6 +119,20 @@
   --secondary: #8a4fff;
   --shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.42);
   --shadow-md: 0 14px 34px rgba(0, 0, 0, 0.26);
+  --player-progress-start: rgba(255, 122, 178, 0.95);
+  --player-progress-mid: rgba(255, 86, 146, 1);
+  --player-progress-end: rgba(255, 61, 127, 1);
+  --player-progress-glow: rgba(255, 80, 140, 0.32);
+  --player-progress-glow-strong: rgba(255, 63, 135, 0.48);
+  --player-thumb: #ff4b8d;
+  --player-track: color-mix(in srgb, #311a24 84%, rgba(255, 255, 255, 0.04));
+  --player-progress-size: 180% 100%;
+  --player-progress-animation: signalShimmer 3.2s linear infinite;
+  --player-volume-track: color-mix(in srgb, #311a24 84%, rgba(255, 255, 255, 0.04));
+  --player-volume-fill-start: #ff699e;
+  --player-volume-fill-end: #8a4fff;
+  --player-volume-thumb: #ff4b8d;
+  --player-volume-thumb-glow: rgba(255, 63, 135, 0.28);
 }
 
 :root[data-theme="light"][data-collection-theme="eldoria"] {
@@ -95,6 +154,13 @@
   --player-progress-glow-strong: rgba(166, 136, 79, 0.22);
   --player-thumb: #b5965f;
   --player-track: color-mix(in srgb, #d8ccb0 78%, rgba(255, 255, 255, 0.3));
+  --player-progress-filter: saturate(0.92);
+  --player-progress-filter-hover: saturate(1);
+  --player-volume-track: color-mix(in srgb, #d8ccb0 78%, rgba(255, 255, 255, 0.28));
+  --player-volume-fill-start: #b5965f;
+  --player-volume-fill-end: #7e9479;
+  --player-volume-thumb: #b5965f;
+  --player-volume-thumb-glow: rgba(166, 136, 79, 0.18);
 }
 
 :root[data-theme="dark"][data-collection-theme="eldoria"] {
@@ -116,6 +182,13 @@
   --player-progress-glow-strong: rgba(198, 171, 109, 0.24);
   --player-thumb: #d1b57c;
   --player-track: color-mix(in srgb, #314032 82%, rgba(255, 255, 255, 0.04));
+  --player-progress-filter: saturate(0.92);
+  --player-progress-filter-hover: saturate(1);
+  --player-volume-track: color-mix(in srgb, #314032 82%, rgba(255, 255, 255, 0.04));
+  --player-volume-fill-start: #c0a56d;
+  --player-volume-fill-end: #78907a;
+  --player-volume-thumb: #d1b57c;
+  --player-volume-thumb-glow: rgba(198, 171, 109, 0.18);
 }
 
 :root[data-theme="light"][data-collection-theme="soft-archive"] {
@@ -128,6 +201,18 @@
   --primary: #dca0ad;
   --primary-strong: #cb7f93;
   --secondary: #f6ddd7;
+  --player-progress-start: rgba(220, 160, 173, 0.92);
+  --player-progress-mid: rgba(203, 127, 147, 0.96);
+  --player-progress-end: rgba(162, 103, 132, 0.92);
+  --player-progress-glow: rgba(203, 127, 147, 0.16);
+  --player-progress-glow-strong: rgba(203, 127, 147, 0.26);
+  --player-thumb: #c68295;
+  --player-track: color-mix(in srgb, #eedad3 82%, rgba(255, 255, 255, 0.22));
+  --player-volume-track: color-mix(in srgb, #eedad3 82%, rgba(255, 255, 255, 0.22));
+  --player-volume-fill-start: #d99daa;
+  --player-volume-fill-end: #c07d90;
+  --player-volume-thumb: #c68295;
+  --player-volume-thumb-glow: rgba(203, 127, 147, 0.18);
 }
 
 :root[data-theme="dark"][data-collection-theme="soft-archive"] {
@@ -140,6 +225,18 @@
   --primary: #e3a4af;
   --primary-strong: #f2b8c2;
   --secondary: #c8a2b1;
+  --player-progress-start: rgba(227, 164, 175, 0.9);
+  --player-progress-mid: rgba(242, 184, 194, 0.94);
+  --player-progress-end: rgba(196, 146, 167, 0.9);
+  --player-progress-glow: rgba(227, 164, 175, 0.2);
+  --player-progress-glow-strong: rgba(242, 184, 194, 0.28);
+  --player-thumb: #f0b5c0;
+  --player-track: color-mix(in srgb, #34232b 84%, rgba(255, 255, 255, 0.05));
+  --player-volume-track: color-mix(in srgb, #34232b 84%, rgba(255, 255, 255, 0.05));
+  --player-volume-fill-start: #e2a3af;
+  --player-volume-fill-end: #f1b8c1;
+  --player-volume-thumb: #f0b5c0;
+  --player-volume-thumb-glow: rgba(227, 164, 175, 0.2);
 }
 
 :root[data-theme="light"][data-collection-theme="stage"] {
@@ -152,6 +249,18 @@
   --primary: #b84934;
   --primary-strong: #c99236;
   --secondary: #8f261d;
+  --player-progress-start: rgba(201, 146, 54, 0.9);
+  --player-progress-mid: rgba(184, 73, 52, 0.96);
+  --player-progress-end: rgba(143, 38, 29, 0.92);
+  --player-progress-glow: rgba(184, 73, 52, 0.18);
+  --player-progress-glow-strong: rgba(143, 38, 29, 0.28);
+  --player-thumb: #bf6d38;
+  --player-track: color-mix(in srgb, #e7ccb9 82%, rgba(255, 255, 255, 0.22));
+  --player-volume-track: color-mix(in srgb, #e7ccb9 82%, rgba(255, 255, 255, 0.22));
+  --player-volume-fill-start: #cb8f39;
+  --player-volume-fill-end: #af4230;
+  --player-volume-thumb: #bf6d38;
+  --player-volume-thumb-glow: rgba(184, 73, 52, 0.2);
 }
 
 :root[data-theme="dark"][data-collection-theme="stage"] {
@@ -164,6 +273,18 @@
   --primary: #c53d2c;
   --primary-strong: #e0a646;
   --secondary: #8f261d;
+  --player-progress-start: rgba(224, 166, 70, 0.9);
+  --player-progress-mid: rgba(197, 61, 44, 0.96);
+  --player-progress-end: rgba(143, 38, 29, 0.94);
+  --player-progress-glow: rgba(197, 61, 44, 0.22);
+  --player-progress-glow-strong: rgba(224, 166, 70, 0.3);
+  --player-thumb: #d87735;
+  --player-track: color-mix(in srgb, #341d19 84%, rgba(255, 255, 255, 0.05));
+  --player-volume-track: color-mix(in srgb, #341d19 84%, rgba(255, 255, 255, 0.05));
+  --player-volume-fill-start: #e0a646;
+  --player-volume-fill-end: #c53d2c;
+  --player-volume-thumb: #d87735;
+  --player-volume-thumb-glow: rgba(197, 61, 44, 0.22);
 }
 
 :root[data-theme="light"][data-collection-theme="signal"] {
@@ -176,6 +297,18 @@
   --primary: #7764dc;
   --primary-strong: #4e8ed8;
   --secondary: #8b86c9;
+  --player-progress-start: rgba(119, 100, 220, 0.9);
+  --player-progress-mid: rgba(78, 142, 216, 0.96);
+  --player-progress-end: rgba(94, 91, 177, 0.92);
+  --player-progress-glow: rgba(119, 100, 220, 0.18);
+  --player-progress-glow-strong: rgba(78, 142, 216, 0.28);
+  --player-thumb: #5d87db;
+  --player-track: color-mix(in srgb, #d7d2eb 82%, rgba(255, 255, 255, 0.24));
+  --player-volume-track: color-mix(in srgb, #d7d2eb 82%, rgba(255, 255, 255, 0.24));
+  --player-volume-fill-start: #7b67de;
+  --player-volume-fill-end: #4e8ed8;
+  --player-volume-thumb: #5d87db;
+  --player-volume-thumb-glow: rgba(78, 142, 216, 0.18);
 }
 
 :root[data-theme="dark"][data-collection-theme="signal"] {
@@ -188,6 +321,18 @@
   --primary: #8c72ff;
   --primary-strong: #66b5ff;
   --secondary: #4b5ec7;
+  --player-progress-start: rgba(140, 114, 255, 0.92);
+  --player-progress-mid: rgba(102, 181, 255, 0.96);
+  --player-progress-end: rgba(75, 94, 199, 0.94);
+  --player-progress-glow: rgba(140, 114, 255, 0.22);
+  --player-progress-glow-strong: rgba(102, 181, 255, 0.3);
+  --player-thumb: #6eb7ff;
+  --player-track: color-mix(in srgb, #28213e 84%, rgba(255, 255, 255, 0.05));
+  --player-volume-track: color-mix(in srgb, #28213e 84%, rgba(255, 255, 255, 0.05));
+  --player-volume-fill-start: #8c72ff;
+  --player-volume-fill-end: #66b5ff;
+  --player-volume-thumb: #6eb7ff;
+  --player-volume-thumb-glow: rgba(102, 181, 255, 0.2);
 }
 
 

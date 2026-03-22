@@ -77,6 +77,21 @@
   font-size: 1.06rem;
 }
 
+.world-mode-lock-note {
+  display: inline-flex;
+  align-items: center;
+  margin: 0.95rem 0 0;
+  padding: 0.48rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border) 72%, var(--primary) 28%);
+  background: color-mix(in srgb, var(--surface-alt) 78%, var(--surface) 22%);
+  color: color-mix(in srgb, var(--text) 90%, var(--muted-text) 10%);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
 .world-header-meta {
   margin-top: 1.15rem;
 }
@@ -1982,7 +1997,11 @@
   position: relative;
   overflow: hidden;
   background:
-    linear-gradient(180deg, color-mix(in srgb, #f6f0de 84%, var(--surface) 16%), color-mix(in srgb, #e7dabb 16%, var(--surface-alt) 84%));
+    linear-gradient(180deg, color-mix(in srgb, #f2ead2 86%, var(--surface) 14%), color-mix(in srgb, #dccdaa 18%, var(--surface-alt) 82%));
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-head {
+  margin-bottom: 0.95rem;
 }
 
 :root[data-collection-theme="eldoria"] .eldoria-map-panel::before {
@@ -1990,28 +2009,97 @@
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at 18% 24%, rgba(245, 230, 184, 0.08), transparent 22%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 18%),
-    linear-gradient(135deg, transparent 0%, rgba(62, 48, 27, 0.06) 100%);
+    radial-gradient(circle at 18% 24%, rgba(245, 230, 184, 0.07), transparent 22%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 18%),
+    linear-gradient(135deg, transparent 0%, rgba(62, 48, 27, 0.08) 100%);
   pointer-events: none;
 }
 
 :root[data-collection-theme="eldoria"] .eldoria-map-canvas {
   position: relative;
-  min-height: 420px;
+  min-height: 560px;
   margin-top: 0.8rem;
-  border-radius: 28px;
+  border-radius: 34px;
   border: 1px solid color-mix(in srgb, #e0c88a 30%, var(--border) 70%);
   background:
-    radial-gradient(circle at 20% 28%, rgba(245, 230, 184, 0.1), transparent 24%),
-    radial-gradient(circle at 76% 24%, rgba(170, 191, 200, 0.08), transparent 20%),
-    linear-gradient(180deg, color-mix(in srgb, #f5efdd 92%, var(--surface) 8%), color-mix(in srgb, #e9ddb9 12%, var(--surface-alt) 88%));
+    radial-gradient(circle at 18% 18%, rgba(245, 230, 184, 0.12), transparent 26%),
+    radial-gradient(circle at 74% 20%, rgba(164, 183, 192, 0.08), transparent 22%),
+    radial-gradient(circle at 52% 72%, rgba(82, 55, 31, 0.05), transparent 28%),
+    linear-gradient(180deg, color-mix(in srgb, #f6efdc 92%, var(--surface) 8%), color-mix(in srgb, #e2d3ad 16%, var(--surface-alt) 84%));
   overflow: hidden;
+  cursor: default;
+  box-shadow:
+    0 28px 48px rgba(16, 17, 13, 0.11),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-svg-map-canvas {
+  padding: 0.8rem;
+  touch-action: none;
+  overscroll-behavior: contain;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-canvas.zoomed {
   cursor: grab;
 }
 
 :root[data-collection-theme="eldoria"] .eldoria-map-canvas.dragging {
   cursor: grabbing;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-viewport {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-origin: center center;
+  transition: transform 220ms ease-out;
+  will-change: transform;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-svg,
+:root[data-collection-theme="eldoria"] .eldoria-map-svg text,
+:root[data-collection-theme="eldoria"] .eldoria-map-tooltip {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-canvas.dragging .eldoria-map-viewport {
+  transition: none;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-controls {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 3;
+  display: flex;
+  gap: 0.45rem;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-control {
+  border: 1px solid rgba(101, 77, 39, 0.2);
+  background: rgba(247, 240, 221, 0.9);
+  color: rgba(79, 60, 28, 0.96);
+  border-radius: 999px;
+  min-width: 2.2rem;
+  height: 2.2rem;
+  padding: 0 0.8rem;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(26, 25, 20, 0.12);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-control-reset {
+  min-width: 4.3rem;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-canvas.transitioning {
+  overflow: hidden;
 }
 
 :root[data-collection-theme="eldoria"] .eldoria-map-canvas::before,
@@ -2026,12 +2114,19 @@
   background:
     radial-gradient(circle at 24% 30%, transparent 0 18px, rgba(34, 54, 40, 0.05) 19px 20px, transparent 22px),
     radial-gradient(circle at 72% 68%, transparent 0 24px, rgba(34, 54, 40, 0.05) 25px 26px, transparent 30px),
-    radial-gradient(circle at 52% 44%, transparent 0 30px, rgba(34, 54, 40, 0.04) 31px 32px, transparent 38px);
-  opacity: 0.8;
+    radial-gradient(circle at 52% 44%, transparent 0 30px, rgba(34, 54, 40, 0.04) 31px 32px, transparent 38px),
+    linear-gradient(90deg, transparent 0%, rgba(72, 63, 44, 0.04) 50%, transparent 100%);
+  opacity: 0.72;
 }
 
 :root[data-collection-theme="eldoria"] .eldoria-map-canvas::after {
   background: radial-gradient(circle at center, transparent 62%, rgba(13, 16, 12, 0.12) 100%);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-atmosphere {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
 }
 
 :root[data-collection-theme="eldoria"] .eldoria-map-fog,
@@ -2049,6 +2144,28 @@
   animation: eldoriaDustDrift 28s ease-in-out infinite;
 }
 
+:root[data-collection-theme="eldoria"] .eldoria-map-mist {
+  position: absolute;
+  width: 34%;
+  height: 34%;
+  border-radius: 999px;
+  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.08), transparent 72%);
+  filter: blur(26px);
+  opacity: 0.52;
+  animation: eldoriaDustDrift 34s ease-in-out infinite;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-mist-left {
+  left: -6%;
+  top: 34%;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-mist-right {
+  right: -8%;
+  top: 10%;
+  animation-direction: reverse;
+}
+
 :root[data-collection-theme="eldoria"] .eldoria-map-particles {
   background:
     radial-gradient(circle at 16% 24%, rgba(245, 230, 184, 0.16) 0 1.4px, transparent 2px),
@@ -2058,11 +2175,606 @@
   animation: eldoriaDustDrift 36s linear infinite reverse;
 }
 
+:root[data-collection-theme="eldoria"] .eldoria-map-svg {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-ocean {
+  fill: url(#eldoria-ocean-gradient);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-ocean-depth {
+  fill: url(#eldoria-ocean-depth);
+  opacity: 0.96;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-current {
+  fill: none;
+  stroke: rgba(235, 244, 247, 0.24);
+  stroke-width: 3.2;
+  stroke-linecap: round;
+  opacity: 0.62;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-current.subtle {
+  stroke-width: 2.4;
+  opacity: 0.34;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-coastal-glow {
+  fill: none;
+  stroke: rgba(246, 251, 247, 0.34);
+  stroke-width: 16;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: blur(4px);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-peninsula-shadow {
+  fill: rgba(53, 46, 30, 0.12);
+  transform: translate(10px, 14px);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-peninsula {
+  fill: url(#eldoria-land-gradient);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-land-grain {
+  fill: rgba(248, 242, 222, 0.24);
+  mix-blend-mode: soft-light;
+  filter: url(#eldoria-land-grain);
+  opacity: 0.28;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-atmosphere-layer {
+  pointer-events: none;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-capital-bloom {
+  fill: rgba(247, 229, 146, 0.32);
+  filter: blur(36px);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-capital-aura {
+  fill: rgba(222, 216, 124, 0.14);
+  filter: blur(44px);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-echo-mist {
+  fill: rgba(194, 188, 245, 0.16);
+  filter: blur(32px);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-echo-grove-biome {
+  fill: rgba(69, 101, 70, 0.16);
+  filter: blur(30px);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-capital-biome {
+  fill: rgba(218, 205, 100, 0.2);
+  filter: blur(40px);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-warfront-gloom {
+  fill: rgba(94, 48, 28, 0.2);
+  filter: blur(32px);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-artifact-layer {
+  pointer-events: none;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-paper-grain {
+  fill: rgba(255, 252, 244, 0.14);
+  mix-blend-mode: soft-light;
+  filter: url(#eldoria-paper-grain);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-vignette {
+  fill: url(#eldoria-ocean-vignette);
+  opacity: 1;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-coastline {
+  fill: none;
+  stroke: rgba(104, 84, 50, 0.42);
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 10px 18px rgba(46, 55, 61, 0.16));
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-coastline-highlight {
+  fill: none;
+  stroke: rgba(255, 247, 226, 0.18);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-coast-wave {
+  fill: none;
+  stroke: rgba(244, 249, 251, 0.22);
+  stroke-width: 1.45;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 22 16;
+  opacity: 0.62;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-coast-wave.subtle {
+  opacity: 0.36;
+  stroke-width: 1.05;
+  stroke-dasharray: 18 18;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-bay {
+  fill: rgba(138, 169, 180, 0.28);
+  stroke: rgba(255, 255, 255, 0.18);
+  stroke-width: 1.6;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-contour {
+  fill: none;
+  stroke: rgba(82, 70, 46, 0.12);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-dasharray: 3 10;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-contour.subtle {
+  stroke-opacity: 0.55;
+  stroke-width: 1.4;
+  stroke-dasharray: 2 12;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-river,
+:root[data-collection-theme="eldoria"] .eldoria-map-road {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-river {
+  stroke: rgba(133, 160, 178, 0.22);
+  stroke-width: 4;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-river.branch {
+  stroke-width: 2.8;
+  opacity: 0.86;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-road {
+  stroke: rgba(120, 98, 62, 0.18);
+  stroke-width: 2.2;
+  stroke-dasharray: 5 10;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-road.secondary {
+  stroke-opacity: 0.8;
+  stroke-dasharray: 3 8;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-chronicle-arc {
+  fill: none;
+  stroke: rgba(214, 199, 161, 0.22);
+  stroke-width: 2.2;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-chronicle-tick {
+  transition: opacity 220ms ease-out, transform 220ms ease-out;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-chronicle-tick.active {
+  opacity: 1;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-chronicle-dot {
+  fill: rgba(224, 200, 138, 0.56);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-chronicle-label {
+  display: none;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-region-shape {
+  stroke: rgba(214, 199, 161, 0.08);
+  stroke-width: 1.5;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-region-threshold-field {
+  fill: transparent;
+  stroke: none;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-region-echo-grove {
+  fill: rgba(58, 92, 67, 0.18);
+  filter: url(#eldoria-soft-blur);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-region-capital {
+  fill: rgba(217, 204, 112, 0.26);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-region-warfront {
+  fill: rgba(120, 78, 45, 0.22);
+  filter: url(#eldoria-soft-blur);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-landmark {
+  fill: none;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.82;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-landmark-grove {
+  stroke: rgba(193, 187, 241, 0.46);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-landmark-capital {
+  stroke: rgba(224, 200, 138, 0.44);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-landmark-warfront {
+  stroke: rgba(214, 145, 108, 0.42);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-place-labels text {
+  fill: rgba(79, 60, 28, 0.99);
+  stroke: rgba(248, 243, 229, 0.94);
+  stroke-width: 5px;
+  paint-order: stroke fill;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 1px 2px rgba(34, 30, 20, 0.18));
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-story-path {
+  fill: none;
+  stroke: url(#eldoria-story-path);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  opacity: 0.72;
+  transition: opacity 220ms ease-out, stroke-width 220ms ease-out, filter 220ms ease-out;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-story-path.secondary {
+  stroke-dasharray: 7 9;
+  opacity: 0.34;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-power-path {
+  fill: none;
+  stroke: rgba(149, 121, 73, 0.3);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-dasharray: 4 9;
+  opacity: 0.84;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-echo-path {
+  fill: none;
+  stroke: rgba(198, 191, 242, 0.28);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-dasharray: 2 10;
+  opacity: 0.86;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-story-path.active {
+  opacity: 1;
+  stroke-width: 3.2;
+  filter: drop-shadow(0 0 8px rgba(224, 200, 138, 0.24));
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-story-path.dimmed {
+  opacity: 0.18;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node {
+  cursor: pointer;
+  transition: opacity 180ms ease-out, filter 180ms ease-out;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node:focus {
+  outline: none;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node:hover,
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node:focus-visible,
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node.focused {
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node.current {
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node-locked {
+  opacity: 0.45;
+  cursor: default;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node-glow {
+  opacity: 0.66;
+  transition: opacity 180ms ease-out, transform 180ms ease-out;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node-fracture-field .eldoria-map-svg-node-glow {
+  opacity: 0.72;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node-aeloria-echo-zone .eldoria-map-svg-node-glow {
+  opacity: 0.86;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node-eldoria-capital .eldoria-map-svg-node-glow {
+  opacity: 1;
+  filter: drop-shadow(0 0 16px rgba(244, 221, 128, 0.24));
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node-eastern-warfront .eldoria-map-svg-node-glow {
+  opacity: 0.5;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-node-fracture-ring,
+:root[data-collection-theme="eldoria"] .eldoria-map-node-echo-ring,
+:root[data-collection-theme="eldoria"] .eldoria-map-node-capital-sigil,
+:root[data-collection-theme="eldoria"] .eldoria-map-node-capital-rays,
+:root[data-collection-theme="eldoria"] .eldoria-map-node-war-arc {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-node-fracture-ring {
+  stroke: rgba(176, 197, 152, 0.88);
+  stroke-width: 2.4;
+  stroke-dasharray: 7 7;
+  opacity: 1;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-node-echo-ring {
+  stroke: rgba(206, 199, 255, 0.88);
+  stroke-width: 2.1;
+  opacity: 0.92;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-node-echo-ring.subtle {
+  stroke-width: 1.6;
+  opacity: 0.56;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-node-capital-sigil {
+  stroke: rgba(236, 214, 138, 0.72);
+  stroke-width: 2;
+  opacity: 1;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-node-capital-rays {
+  stroke: rgba(244, 226, 162, 0.56);
+  stroke-width: 2.6;
+  opacity: 0.9;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-node-war-arc {
+  stroke: rgba(232, 151, 88, 0.9);
+  stroke-width: 2.4;
+  opacity: 1;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-node-war-arc.broken {
+  stroke-dasharray: 18 9;
+  opacity: 0.92;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node-ring {
+  stroke: rgba(214, 199, 161, 0.86);
+  stroke-width: 2.4;
+  transition: stroke 180ms ease-out, stroke-width 180ms ease-out, opacity 180ms ease-out;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node-core {
+  fill: #f5e6b8;
+  transition: fill 180ms ease-out, opacity 180ms ease-out;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node-fracture-field .eldoria-map-svg-node-core {
+  fill: #eadf9d;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node-aeloria-echo-zone .eldoria-map-svg-node-core {
+  fill: #cbc7ff;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node-eldoria-capital .eldoria-map-svg-node-core {
+  fill: #f7df7a;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node-eastern-warfront .eldoria-map-svg-node-core {
+  fill: #e9a565;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node-locked .eldoria-map-svg-node-core {
+  fill: rgba(72, 63, 44, 0.85);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node-roman {
+  fill: rgba(82, 61, 28, 0.99);
+  stroke: rgba(248, 242, 227, 0.92);
+  stroke-width: 4px;
+  paint-order: stroke fill;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 1px 1px rgba(28, 22, 15, 0.18));
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  text-anchor: middle;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-node-motif {
+  fill: none;
+  stroke: rgba(245, 230, 184, 0.62);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.88;
+  transition: opacity 180ms ease-out, stroke 180ms ease-out;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node-fracture-field .eldoria-map-node-motif {
+  stroke: rgba(176, 197, 152, 0.9);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node-aeloria-echo-zone .eldoria-map-node-motif {
+  stroke: rgba(207, 200, 255, 0.68);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node-eastern-warfront .eldoria-map-node-motif {
+  stroke: rgba(240, 208, 160, 0.72);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node-eldoria-capital .eldoria-map-svg-node-ring,
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node-eldoria-capital.current .eldoria-map-svg-node-ring {
+  stroke-width: 3.8;
+  stroke: rgba(241, 220, 150, 0.96);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node-aeloria-echo-zone .eldoria-map-svg-node-ring {
+  stroke-width: 2.6;
+  stroke: rgba(214, 205, 255, 0.9);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node-eastern-warfront .eldoria-map-svg-node-ring {
+  stroke-width: 2.1;
+  stroke: rgba(232, 170, 108, 0.82);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-canvas::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 28px;
+  pointer-events: none;
+  background: radial-gradient(circle at center, rgba(0, 0, 0, 0) 58%, rgba(21, 24, 18, 0.14) 100%);
+  mix-blend-mode: multiply;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node:hover .eldoria-map-svg-node-glow,
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node:focus-visible .eldoria-map-svg-node-glow,
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node.focused .eldoria-map-svg-node-glow,
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node.current .eldoria-map-svg-node-glow {
+  opacity: 0.9;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node:hover .eldoria-map-svg-node-ring,
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node:focus-visible .eldoria-map-svg-node-ring,
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node.focused .eldoria-map-svg-node-ring,
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node.current .eldoria-map-svg-node-ring {
+  stroke: rgba(245, 230, 184, 0.96);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node-fracture-field:hover .eldoria-map-svg-node-ring,
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node-fracture-field:focus-visible .eldoria-map-svg-node-ring,
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node-fracture-field.focused .eldoria-map-svg-node-ring,
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node-fracture-field.current .eldoria-map-svg-node-ring {
+  stroke: rgba(191, 214, 169, 0.98);
+  filter: drop-shadow(0 0 8px rgba(144, 172, 118, 0.32));
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node-fracture-field:hover .eldoria-map-svg-node-glow,
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node-fracture-field:focus-visible .eldoria-map-svg-node-glow,
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node-fracture-field.focused .eldoria-map-svg-node-glow,
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node-fracture-field.current .eldoria-map-svg-node-glow {
+  opacity: 1;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node-aeloria-echo-zone:hover .eldoria-map-node-echo-ring,
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node-aeloria-echo-zone:focus-visible .eldoria-map-node-echo-ring,
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node-aeloria-echo-zone.focused .eldoria-map-node-echo-ring,
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node-aeloria-echo-zone.current .eldoria-map-node-echo-ring {
+  opacity: 1;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node-eldoria-capital:hover .eldoria-map-node-capital-rays,
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node-eldoria-capital:focus-visible .eldoria-map-node-capital-rays,
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node-eldoria-capital.focused .eldoria-map-node-capital-rays,
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node-eldoria-capital.current .eldoria-map-node-capital-rays {
+  opacity: 1;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node-eastern-warfront:hover .eldoria-map-node-war-arc,
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node-eastern-warfront:focus-visible .eldoria-map-node-war-arc,
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node-eastern-warfront.focused .eldoria-map-node-war-arc,
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node-eastern-warfront.current .eldoria-map-node-war-arc {
+  opacity: 1;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node:hover .eldoria-map-svg-node-roman,
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node:focus-visible .eldoria-map-svg-node-roman,
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node.focused .eldoria-map-svg-node-roman,
+:root[data-collection-theme="eldoria"] .eldoria-map-svg-node.current .eldoria-map-svg-node-roman {
+  fill: rgba(86, 63, 30, 1);
+}
+
 :root[data-collection-theme="eldoria"] .eldoria-map-stage {
   position: relative;
   width: 100%;
-  height: 420px;
-  transition: transform 280ms ease-out;
+  height: 560px;
+  transition: transform 360ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-parallax {
+  position: absolute;
+  inset: 0;
+  transition: transform 420ms ease-out;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-region {
+  position: absolute;
+  border-radius: 999px;
+  pointer-events: none;
+  transition: opacity 280ms ease-out, filter 280ms ease-out, transform 280ms ease-out;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-region-aeloria-echo-zone {
+  left: 33%;
+  top: 4%;
+  width: 34%;
+  height: 28%;
+  background:
+    radial-gradient(circle at 50% 40%, rgba(138, 151, 195, 0.18), transparent 54%),
+    radial-gradient(circle at 52% 52%, rgba(157, 126, 179, 0.12), transparent 60%);
+  filter: blur(8px);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-region-eldoria-capital {
+  right: 7%;
+  top: 28%;
+  width: 26%;
+  height: 24%;
+  background:
+    radial-gradient(circle at 46% 50%, rgba(245, 230, 184, 0.18), transparent 58%),
+    linear-gradient(180deg, rgba(126, 98, 52, 0.16), rgba(62, 48, 27, 0.03));
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-region-eastern-warfront {
+  left: 36%;
+  bottom: 4%;
+  width: 34%;
+  height: 26%;
+  background:
+    radial-gradient(circle at 50% 44%, rgba(165, 84, 57, 0.16), transparent 56%),
+    linear-gradient(180deg, rgba(78, 35, 25, 0.14), rgba(19, 15, 12, 0.04));
+  filter: blur(6px);
 }
 
 :root[data-collection-theme="eldoria"] .eldoria-map-connections {
@@ -2074,112 +2786,195 @@
 }
 
 :root[data-collection-theme="eldoria"] .eldoria-map-line {
-  stroke: rgba(214, 199, 161, 0.42);
-  stroke-width: 0.45;
+  stroke: rgba(214, 199, 161, 0.48);
+  stroke-width: 0.48;
   stroke-linecap: round;
-  opacity: 0.75;
+  opacity: 0.82;
   animation: eldoriaMapPulse 8s ease-in-out infinite;
-}
-
-:root[data-collection-theme="eldoria"] .eldoria-map-line-unwritten,
-:root[data-collection-theme="eldoria"] .eldoria-map-line-sealed {
-  stroke-dasharray: 2 4;
-  opacity: 0.38;
+  transition: opacity 220ms ease-out, filter 220ms ease-out, stroke 220ms ease-out, stroke-width 220ms ease-out;
 }
 
 :root[data-collection-theme="eldoria"] .eldoria-map-line.active {
-  stroke: rgba(245, 230, 184, 0.74);
-  opacity: 1;
+  stroke: rgba(245, 230, 184, 0.88);
+  stroke-width: 0.7;
+  filter: drop-shadow(0 0 8px rgba(224, 200, 138, 0.28));
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-line.dimmed {
+  opacity: 0.26;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-connection-point {
+  fill: rgba(214, 199, 161, 0.52);
+  opacity: 0.72;
 }
 
 :root[data-collection-theme="eldoria"] .eldoria-map-node {
   position: absolute;
-  width: 28px;
-  height: 28px;
-  margin: -14px 0 0 -14px;
+  width: 44px;
+  height: 44px;
+  margin: -22px 0 0 -22px;
   border: 0;
   background: transparent;
   padding: 0;
   border-radius: 50%;
   cursor: pointer;
-  transition: transform 240ms ease-out, filter 240ms ease-out, opacity 240ms ease-out;
+  transition: transform 240ms ease-out, filter 240ms ease-out, opacity 240ms ease-out, box-shadow 240ms ease-out;
 }
 
 :root[data-collection-theme="eldoria"] .eldoria-map-node:hover,
 :root[data-collection-theme="eldoria"] .eldoria-map-node:focus-visible,
 :root[data-collection-theme="eldoria"] .eldoria-map-node.focused {
-  transform: scale(1.12);
+  transform: scale(1.08);
 }
 
-:root[data-collection-theme="eldoria"] .eldoria-map-node.active {
-  transform: scale(1.28);
+:root[data-collection-theme="eldoria"] .eldoria-map-node.active,
+:root[data-collection-theme="eldoria"] .eldoria-map-node.current {
+  transform: scale(1.14);
 }
 
 :root[data-collection-theme="eldoria"] .eldoria-map-node:disabled {
   cursor: default;
 }
 
-:root[data-collection-theme="eldoria"] .eldoria-map-node-core,
-:root[data-collection-theme="eldoria"] .eldoria-map-node-ring,
-:root[data-collection-theme="eldoria"] .eldoria-map-node-seal {
+:root[data-collection-theme="eldoria"] .eldoria-map-node-halo,
+:root[data-collection-theme="eldoria"] .eldoria-map-node-shell,
+:root[data-collection-theme="eldoria"] .eldoria-map-node-core {
   position: absolute;
   inset: 0;
   margin: auto;
   border-radius: 50%;
 }
 
+:root[data-collection-theme="eldoria"] .eldoria-map-node-halo {
+  width: 60px;
+  height: 60px;
+  opacity: 0.34;
+  filter: blur(12px);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-node-shell {
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(214, 199, 161, 0.58);
+  background: rgba(28, 33, 26, 0.12);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
 :root[data-collection-theme="eldoria"] .eldoria-map-node-core {
-  width: 10px;
-  height: 10px;
+  width: 14px;
+  height: 14px;
   background: #f5e6b8;
   box-shadow: 0 0 12px rgba(224, 200, 138, 0.34);
 }
 
-:root[data-collection-theme="eldoria"] .eldoria-map-node-ring {
-  width: 26px;
-  height: 26px;
-  border: 1px solid rgba(214, 199, 161, 0.58);
+:root[data-collection-theme="eldoria"] .eldoria-map-node-label {
+  position: absolute;
+  left: calc(100% + 0.8rem);
+  top: 50%;
+  display: grid;
+  gap: 0.1rem;
+  min-width: 140px;
+  transform: translateY(-50%);
+  text-align: left;
+  pointer-events: none;
 }
 
-:root[data-collection-theme="eldoria"] .eldoria-map-node-active .eldoria-map-node-core {
+:root[data-collection-theme="eldoria"] .eldoria-map-node-label strong,
+:root[data-collection-theme="eldoria"] .eldoria-map-node-label span {
+  display: block;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-node-label strong {
+  color: color-mix(in srgb, var(--text) 82%, #f5e6b8 18%);
+  font-size: 0.74rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-node-label span {
+  color: color-mix(in srgb, var(--text) 68%, var(--muted-text) 32%);
+  font-size: 0.96rem;
+  letter-spacing: -0.01em;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-node-eldoria-capital .eldoria-map-node-label,
+:root[data-collection-theme="eldoria"] .eldoria-map-node-eastern-warfront .eldoria-map-node-label {
+  left: auto;
+  right: calc(100% + 0.8rem);
+  text-align: right;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-node-active .eldoria-map-node-core,
+:root[data-collection-theme="eldoria"] .eldoria-map-node-current .eldoria-map-node-core {
   animation: eldoriaGlowBreath 6s ease-in-out infinite;
 }
 
-:root[data-collection-theme="eldoria"] .eldoria-map-node-unwritten {
-  opacity: 0.6;
-  filter: blur(0.4px) saturate(0.84);
+:root[data-collection-theme="eldoria"] .eldoria-map-node-fracture-field .eldoria-map-node-halo {
+  background: radial-gradient(circle at center, rgba(157, 190, 153, 0.26), transparent 68%);
 }
 
-:root[data-collection-theme="eldoria"] .eldoria-map-node-sealed {
-  opacity: 0.72;
+:root[data-collection-theme="eldoria"] .eldoria-map-node-aeloria-echo-zone .eldoria-map-node-halo {
+  background: radial-gradient(circle at center, rgba(142, 133, 196, 0.28), transparent 70%);
+  animation: eldoriaEchoDrift 6.5s ease-in-out infinite;
 }
 
-:root[data-collection-theme="eldoria"] .eldoria-map-node-sealed .eldoria-map-node-core {
-  background: rgba(46, 40, 29, 0.88);
+:root[data-collection-theme="eldoria"] .eldoria-map-node-eldoria-capital .eldoria-map-node-halo {
+  background: radial-gradient(circle at center, rgba(224, 200, 138, 0.34), transparent 70%);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-node-eastern-warfront .eldoria-map-node-halo {
+  background: radial-gradient(circle at center, rgba(182, 96, 67, 0.3), transparent 70%);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-node-locked {
+  opacity: 0.5;
+  filter: blur(0.3px) saturate(0.82);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-node-locked .eldoria-map-node-core {
+  background: rgba(55, 48, 38, 0.9);
   box-shadow: none;
 }
 
-:root[data-collection-theme="eldoria"] .eldoria-map-node-sealed .eldoria-map-node-ring {
-  border-color: rgba(83, 72, 53, 0.72);
+:root[data-collection-theme="eldoria"] .eldoria-map-node-locked .eldoria-map-node-shell {
+  border-style: dashed;
+  border-color: rgba(106, 93, 70, 0.72);
 }
 
-:root[data-collection-theme="eldoria"] .eldoria-map-node-seal {
-  width: 18px;
-  height: 18px;
-  border: 1px dashed rgba(214, 199, 161, 0.48);
+:root[data-collection-theme="eldoria"] .eldoria-map-node-current .eldoria-map-node-shell,
+:root[data-collection-theme="eldoria"] .eldoria-map-node-active .eldoria-map-node-shell {
+  border-color: rgba(245, 230, 184, 0.8);
+  box-shadow:
+    0 0 0 1px rgba(245, 230, 184, 0.14),
+    0 0 20px rgba(224, 200, 138, 0.12);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-node-eastern-warfront:hover,
+:root[data-collection-theme="eldoria"] .eldoria-map-node-eastern-warfront:focus-visible,
+:root[data-collection-theme="eldoria"] .eldoria-map-node-eastern-warfront.focused {
+  animation: eldoriaWarfrontHover 420ms ease-out 1;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-node-fracture-field:hover .eldoria-map-node-shell,
+:root[data-collection-theme="eldoria"] .eldoria-map-node-fracture-field:focus-visible .eldoria-map-node-shell,
+:root[data-collection-theme="eldoria"] .eldoria-map-node-fracture-field.focused .eldoria-map-node-shell {
+  animation: eldoriaFlickerField 300ms ease-out 1;
 }
 
 :root[data-collection-theme="eldoria"] .eldoria-map-tooltip {
   position: absolute;
-  min-width: 190px;
-  padding: 0.9rem 1rem;
-  border-radius: 18px;
+  min-width: 240px;
+  max-width: 280px;
+  padding: 1rem 1.05rem;
+  border-radius: 22px;
   border: 1px solid color-mix(in srgb, #e0c88a 28%, var(--border) 72%);
   background:
-    linear-gradient(180deg, color-mix(in srgb, #f7f1df 88%, var(--surface) 12%), color-mix(in srgb, #eadbbc 12%, var(--surface-alt) 88%));
-  box-shadow: 0 16px 28px rgba(16, 17, 13, 0.12);
-  transform: translate(18px, -110%);
+    linear-gradient(180deg, color-mix(in srgb, #f7f1df 90%, var(--surface) 10%), color-mix(in srgb, #eadbbc 16%, var(--surface-alt) 84%));
+  box-shadow: 0 18px 30px rgba(16, 17, 13, 0.14);
+  transform: translate(20px, -112%);
   pointer-events: none;
+  z-index: 2;
 }
 
 :root[data-collection-theme="eldoria"] .eldoria-map-tooltip strong,
@@ -2187,9 +2982,49 @@
   margin: 0;
 }
 
-:root[data-collection-theme="eldoria"] .eldoria-map-tooltip p:last-child {
+:root[data-collection-theme="eldoria"] .eldoria-map-tooltip strong {
+  display: block;
+  margin-top: 0.18rem;
+  font-size: 1.16rem;
+  line-height: 1.15;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-tooltip-subtitle {
+  margin-top: 0.22rem;
+  color: color-mix(in srgb, var(--text) 76%, var(--muted-text) 24%);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-tooltip-state,
+:root[data-collection-theme="eldoria"] .eldoria-map-tooltip-emotion,
+:root[data-collection-theme="eldoria"] .eldoria-map-tooltip-action {
+  margin-top: 0.4rem;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-tooltip-state {
+  font-size: 0.82rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--muted-text) 74%, var(--primary-strong) 26%);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-tooltip-emotion {
+  color: color-mix(in srgb, var(--text) 72%, var(--muted-text) 28%);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-map-tooltip-action {
   margin-top: 0.35rem;
   color: color-mix(in srgb, var(--text) 72%, var(--muted-text) 28%);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-chronicle-section {
+  margin-top: 0.2rem;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-chronicle-intro {
+  margin: 0 0 1rem;
+  max-width: 46ch;
+  color: color-mix(in srgb, var(--text) 74%, var(--muted-text) 26%);
+  line-height: 1.72;
 }
 
 :root[data-collection-theme="eldoria"] .eldoria-featured-card {
@@ -2560,6 +3395,44 @@
   }
   50% {
     opacity: 0.84;
+  }
+}
+
+@keyframes eldoriaFlickerField {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  38% {
+    opacity: 0.72;
+  }
+  62% {
+    opacity: 0.92;
+  }
+}
+
+@keyframes eldoriaWarfrontHover {
+  0%,
+  100% {
+    transform: scale(1.08) translate3d(0, 0, 0);
+  }
+  35% {
+    transform: scale(1.08) translate3d(1px, -0.4px, 0);
+  }
+  70% {
+    transform: scale(1.08) translate3d(-1px, 0.6px, 0);
+  }
+}
+
+@keyframes eldoriaEchoDrift {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.3;
+  }
+  50% {
+    transform: scale(1.06);
+    opacity: 0.46;
   }
 }
 

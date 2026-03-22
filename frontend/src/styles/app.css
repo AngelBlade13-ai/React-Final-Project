@@ -280,6 +280,16 @@ button:disabled {
   box-shadow: 0 16px 36px color-mix(in srgb, var(--primary) 10%, transparent);
 }
 
+:root[data-theme="light"] .homepage-panel {
+  border-color: color-mix(in srgb, var(--border) 68%, white 32%);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, white 58%, var(--surface) 42%), color-mix(in srgb, var(--surface) 84%, var(--primary) 16%) 32%, color-mix(in srgb, var(--surface-alt) 86%, var(--surface) 14%)),
+    var(--surface);
+  box-shadow:
+    0 18px 34px rgba(140, 88, 94, 0.12),
+    0 3px 0 rgba(255, 255, 255, 0.38) inset;
+}
+
 .featured-release-section {
   display: grid;
   gap: 1rem;
@@ -402,10 +412,39 @@ button:disabled {
 }
 
 .collection-card {
+  position: relative;
   display: grid;
   gap: 0.8rem;
   min-height: 100%;
   transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+:root[data-theme="light"] .collection-card {
+  border-color: color-mix(in srgb, var(--border) 70%, white 30%);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.6), transparent 28%),
+    linear-gradient(145deg, color-mix(in srgb, white 62%, var(--surface) 38%), color-mix(in srgb, var(--surface) 80%, var(--primary) 20%) 58%, color-mix(in srgb, var(--surface-alt) 84%, var(--secondary) 16%)),
+    var(--surface);
+  box-shadow:
+    0 22px 38px rgba(134, 86, 93, 0.12),
+    0 2px 0 rgba(255, 255, 255, 0.42) inset;
+}
+
+:root[data-theme="light"] .collection-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--secondary) 16%, transparent), transparent 34%),
+    radial-gradient(circle at 16% 12%, color-mix(in srgb, var(--primary) 14%, transparent), transparent 28%);
+  pointer-events: none;
+  opacity: 0.95;
+}
+
+:root[data-theme="light"] .collection-card > * {
+  position: relative;
+  z-index: 1;
 }
 
 .collection-card h3 {
@@ -421,6 +460,15 @@ button:disabled {
     0 20px 44px color-mix(in srgb, var(--primary) 12%, transparent),
     inset 0 1px 0 color-mix(in srgb, var(--text) 5%, transparent);
   border-color: color-mix(in srgb, var(--border) 58%, var(--primary) 42%);
+}
+
+:root[data-theme="light"] .collection-link:hover .collection-card,
+:root[data-theme="light"] .collection-link:focus-visible .collection-card {
+  box-shadow:
+    0 26px 46px rgba(130, 82, 91, 0.16),
+    0 8px 18px color-mix(in srgb, var(--primary) 10%, transparent),
+    0 2px 0 rgba(255, 255, 255, 0.46) inset;
+  border-color: color-mix(in srgb, var(--border) 52%, var(--primary) 48%);
 }
 
 .collection-card-topline {
@@ -453,6 +501,11 @@ button:disabled {
   font-weight: 700;
 }
 
+:root[data-theme="light"] .meta-badge {
+  background: color-mix(in srgb, white 42%, var(--surface-alt) 58%);
+  border-color: color-mix(in srgb, var(--border) 64%, white 20%, var(--primary) 16%);
+}
+
 .subtle-badge {
   color: var(--muted-text);
 }
@@ -462,6 +515,13 @@ button:disabled {
   border-radius: 20px;
   background: color-mix(in srgb, var(--surface-alt) 76%, var(--surface) 24%);
   border: 1px solid color-mix(in srgb, var(--border) 78%, var(--primary) 22%);
+}
+
+:root[data-theme="light"] .featured-collection-panel {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.48), transparent 32%),
+    color-mix(in srgb, var(--surface-alt) 72%, white 28%);
+  border-color: color-mix(in srgb, var(--border) 66%, white 18%, var(--primary) 16%);
 }
 
 .featured-collection-panel strong {
@@ -477,6 +537,10 @@ button:disabled {
 .collection-card-cta {
   color: var(--text);
   font-weight: 700;
+}
+
+:root[data-theme="light"] .collection-card-cta {
+  color: color-mix(in srgb, var(--text) 82%, var(--primary-strong) 18%);
 }
 
 .post-card {

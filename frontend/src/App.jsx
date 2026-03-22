@@ -27,6 +27,7 @@ function App() {
       ? "light"
       : "dark";
   });
+  const [forcedTheme, setForcedTheme] = useState(null);
   const [hasAdminSession, setHasAdminSession] = useState(() =>
     Boolean(localStorage.getItem("suno-blog-admin-token")),
   );
@@ -46,8 +47,13 @@ function App() {
     playerStateRef.current = { queue: playerQueue, index: currentQueueIndex };
   }, [playerQueue, currentQueueIndex]);
 
+  const activeTheme = forcedTheme || theme;
+
   useEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
+    document.documentElement.setAttribute("data-theme", activeTheme);
+  }, [activeTheme]);
+
+  useEffect(() => {
     localStorage.setItem(themeKey, theme);
   }, [theme]);
 
@@ -311,6 +317,7 @@ function App() {
           element={
             <PublicLayout
               hasAdminSession={hasAdminSession}
+              isThemeLocked={Boolean(forcedTheme)}
               theme={theme}
               setTheme={setTheme}
             />
@@ -333,6 +340,7 @@ function App() {
                 currentTrack={currentTrack}
                 isPlayerActive={isMiniPlayerPlaying}
                 onPlayTrack={playTrack}
+                setForcedTheme={setForcedTheme}
               />
             }
           />
@@ -349,6 +357,7 @@ function App() {
                 hasAdminSession={hasAdminSession}
                 isPlayerActive={isMiniPlayerPlaying}
                 onPlayTrack={playTrack}
+                setForcedTheme={setForcedTheme}
               />
             }
           />

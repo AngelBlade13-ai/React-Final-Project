@@ -5,7 +5,7 @@ import ReleaseMedia from "../../components/ReleaseMedia";
 import { formatPostDate } from "../../lib/formatters";
 import { apiBaseUrl, getCollectionDerivedContent, getEldoriaMeta, getFractureverseMeta, getPrimaryThemeForPost, getReleaseThemeHint, getThemeConfig, hasVideo, sortEldoriaPosts, sortFractureversePosts } from "../../lib/site";
 
-export default function PublicReleasePage({ currentTrack, hasAdminSession, isPlayerActive, onPlayTrack }) {
+export default function PublicReleasePage({ currentTrack, hasAdminSession, isPlayerActive, onPlayTrack, setForcedTheme }) {
   const { slug } = useParams();
   const [post, setPost] = useState(null);
   const [sequencePosts, setSequencePosts] = useState([]);
@@ -131,6 +131,24 @@ export default function PublicReleasePage({ currentTrack, hasAdminSession, isPla
   }, [hintedTheme]);
 
   useEffect(() => {
+    if (!setForcedTheme) {
+      return undefined;
+    }
+
+    if (isThemedSequence) {
+      setForcedTheme("dark");
+      return () => {
+        setForcedTheme(null);
+      };
+    }
+
+    setForcedTheme(null);
+    return () => {
+      setForcedTheme(null);
+    };
+  }, [isThemedSequence, setForcedTheme]);
+
+  useEffect(() => {
     if (!isEldoria) {
       setEldoriaScrollDepth(0);
       return undefined;
@@ -239,6 +257,9 @@ export default function PublicReleasePage({ currentTrack, hasAdminSession, isPla
               <h1>{post.title}</h1>
               {isEldoria ? <p className="eldoria-whisper-line eldoria-release-whisper">The chronicle never mistook her for a stranger.</p> : null}
               {isEldoria && eldoriaMeta?.subtitle ? <p className="release-panel-intro eldoria-subtitle">{eldoriaMeta.subtitle}</p> : null}
+              {isThemedSequence ? (
+                <p className="world-mode-lock-note">This world is experienced in Midnight Mode.</p>
+              ) : null}
               <p className="release-hero-intro">
                 {isFractureverse
                   ? "An in-world fragment view: playback, record, linked echoes, and the position this entry holds inside the larger fracture."

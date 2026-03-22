@@ -1,7 +1,7 @@
 import { Link, NavLink, Outlet } from "react-router-dom";
 import ThemeToggle from "../components/ThemeToggle";
 
-export default function PublicLayout({ hasAdminSession, theme, setTheme }) {
+export default function PublicLayout({ hasAdminSession, isThemeLocked = false, theme, setTheme }) {
   return (
     <div className="page-shell">
       <header className="public-site-header">
@@ -24,7 +24,7 @@ export default function PublicLayout({ hasAdminSession, theme, setTheme }) {
               About
             </NavLink>
           </nav>
-          <ThemeToggle setTheme={setTheme} theme={theme} />
+          {!isThemeLocked ? <ThemeToggle setTheme={setTheme} theme={theme} /> : null}
           {hasAdminSession ? (
             <Link className="site-admin-link" to="/admin">
               Manage Posts

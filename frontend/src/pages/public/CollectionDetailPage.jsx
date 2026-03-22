@@ -11,6 +11,7 @@ import {
   FRACTUREVERSE_WORLD,
   getCollectionThemeHint,
   getCollectionDerivedContent,
+  getEldoriaMapEntries,
   getEldoriaMeta,
   getFractureverseMeta,
   getThemeConfig,
@@ -108,7 +109,7 @@ function buildFractureInteraction(activeSlug, featuredSlug, releases) {
   };
 }
 
-export default function CollectionDetailPage({ currentTrack, isPlayerActive, onPlayTrack }) {
+export default function CollectionDetailPage({ currentTrack, isPlayerActive, onPlayTrack, setForcedTheme }) {
   const { slug } = useParams();
   const navigate = useNavigate();
   const [collection, setCollection] = useState(null);
@@ -146,6 +147,7 @@ export default function CollectionDetailPage({ currentTrack, isPlayerActive, onP
   const themeConfig = getThemeConfig(collection?.theme);
   const isFractureverse = collection?.theme === "fractureverse";
   const isEldoria = collection?.theme === "eldoria";
+  const isImmersiveCollection = isFractureverse || isEldoria;
   const eldoriaReleases = isEldoria ? sortEldoriaPosts(releases) : [];
   const baseReleases = isEldoria ? eldoriaReleases : releases;
   const otherReleases = featuredRelease ? baseReleases.filter((post) => post.slug !== featuredRelease.slug) : baseReleases;
@@ -204,6 +206,24 @@ export default function CollectionDetailPage({ currentTrack, isPlayerActive, onP
       root.removeAttribute("data-collection-theme");
     };
   }, [hintedTheme]);
+
+  useEffect(() => {
+    if (!setForcedTheme) {
+      return undefined;
+    }
+
+    if (isImmersiveCollection) {
+      setForcedTheme("dark");
+      return () => {
+        setForcedTheme(null);
+      };
+    }
+
+    setForcedTheme(null);
+    return () => {
+      setForcedTheme(null);
+    };
+  }, [isImmersiveCollection, setForcedTheme]);
 
   useEffect(() => {
     if (!isEldoria) {
@@ -271,20 +291,7 @@ export default function CollectionDetailPage({ currentTrack, isPlayerActive, onP
             : "Some parts of Eldoria remain sealed until the world is ready to remember them aloud."
       }))
     : [];
-  const eldoriaMapEntries = isEldoria
-    ? eldoriaReleases.map((entry, index) => {
-        const meta = getEldoriaMeta(entry);
-
-        return {
-          id: entry.id,
-          slug: entry.slug,
-          title: meta?.subtitle || entry.title,
-          subtitle: meta?.chapterLabel || `Chapter ${index + 1}`,
-          state: entry.slug === featuredRelease?.slug ? "active" : hasVideo(entry.videoUrl) ? "available" : "unwritten",
-          action: entry.slug === featuredRelease?.slug ? "Enter Chronicle" : "Open Recorded Path"
-        };
-      })
-    : [];
+  const eldoriaMapEntries = isEldoria ? getEldoriaMapEntries(eldoriaReleases, featuredRelease?.slug || "") : [];
 
   return (
     <>
@@ -313,6 +320,9 @@ export default function CollectionDetailPage({ currentTrack, isPlayerActive, onP
               <p className="hero-copy world-header-copy">
                 {isFractureverse ? FRACTUREVERSE_WORLD.description : collection.description}
               </p>
+              {isImmersiveCollection ? (
+                <p className="world-mode-lock-note">This world is experienced in Midnight Mode.</p>
+              ) : null}
               {isFractureverse ? (
                 <div className="world-status-bar world-header-status-bar">
                   {FRACTUREVERSE_WORLD.stats.map((item) => (
@@ -603,18 +613,19 @@ export default function CollectionDetailPage({ currentTrack, isPlayerActive, onP
             </section>
           ) : null}
 
-          <section>
-            <div className={`section-head timeline-section-head${isFractureverse ? " fractureverse-timeline-head" : ""}${isEldoria ? " eldoria-chronicle-head" : ""}`}>
-              <h2>{themeConfig.listLabel}</h2>
-              <span>
-                {isFractureverse
-                  ? derivedContent.collectionCountLabel
+            <section className={isEldoria ? "eldoria-chronicle-section" : ""}>
+              <div className={`section-head timeline-section-head${isFractureverse ? " fractureverse-timeline-head" : ""}${isEldoria ? " eldoria-chronicle-head" : ""}`}>
+                <h2>{themeConfig.listLabel}</h2>
+                <span>
+                  {isFractureverse
+                    ? derivedContent.collectionCountLabel
                   : isEldoria
                     ? derivedContent.collectionCountLabel
                     : derivedContent.collectionCountLabel}
               </span>
-            </div>
-            {isFractureverse ? (
+              </div>
+              {isEldoria ? <p className="eldoria-chronicle-intro">The royal archive remains below as a written record, but the map above is now the truest way into the world.</p> : null}
+              {isFractureverse ? (
               fractureverseReleases.length === 0 ? (
                 <section className="intro-card homepage-panel empty-state-card fracture-empty-state">
                   <p className="eyebrow">{themeConfig.noItemsEyebrow}</p>

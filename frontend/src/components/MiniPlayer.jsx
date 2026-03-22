@@ -41,6 +41,7 @@ export default function MiniPlayer({
   const progressRatio = duration > 0 ? Math.min(progress / duration, 1) : 0;
   const progressPercent = `${progressRatio * 100}%`;
   const hasProgress = progressRatio > 0;
+  const volumePercent = `${Math.min(Math.max(volume, 0), 1) * 100}%`;
   const chipLabel = fractureMeta ? fractureMeta.signalType : eldoriaMeta?.entryType || (isEldoria && positionLabel ? positionLabel : "");
   const displayTitle = isEldoria && eldoriaMeta?.subtitle ? eldoriaMeta.subtitle : currentTrack.title;
   const flavorLine = isEldoria ? eldoriaMeta?.playerFlavorLine : "";
@@ -70,7 +71,7 @@ export default function MiniPlayer({
             </button>
             <div className="mini-player-progress-block">
               <div
-                className={`mini-player-progress-shell${fractureMeta ? " fracture-progress-shell" : ""}${isEldoria ? " eldoria-progress-shell" : ""}`}
+                className="mini-player-progress-shell"
                 style={{ "--mini-progress": progressPercent }}
               >
                 <div aria-hidden="true" className="mini-player-progress-track" />
@@ -93,7 +94,16 @@ export default function MiniPlayer({
             </div>
             <label className="mini-player-volume" title="Volume">
               <span className="mini-player-volume-icon">Vol</span>
-              <input className="mini-player-volume-slider" max="1" min="0" onChange={onVolumeChange} step="0.01" type="range" value={volume} />
+              <input
+                className="mini-player-volume-slider"
+                max="1"
+                min="0"
+                onChange={onVolumeChange}
+                step="0.01"
+                style={{ "--mini-volume": volumePercent }}
+                type="range"
+                value={volume}
+              />
             </label>
           </div>
         </div>
