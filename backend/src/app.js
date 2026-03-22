@@ -272,6 +272,10 @@ function findPublishedPost(store, slug) {
   return store.posts.find((entry) => entry.slug === slug && entry.published);
 }
 
+app.get("/", (req, res) => {
+  res.redirect("/api/posts");
+});
+
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });
 });
