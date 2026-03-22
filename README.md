@@ -42,6 +42,13 @@ Set these in your environment or use the defaults from `.env.example`:
 
 On first backend startup, the API will seed MongoDB from the legacy JSON file path in `POSTS_FILE` if the database is empty.
 
+## Security Notes
+
+- Rotate any MongoDB Atlas password that has been pasted into chat, terminals, or screenshots.
+- Use a strong `JWT_SECRET`.
+- Prefer `ADMIN_PASSWORD_HASH` over `ADMIN_PASSWORD` for production deployments.
+- `/api/admin/login` is rate-limited and the API now sends security headers with `helmet`.
+
 Admin routes:
 
 - `POST /api/admin/login`

@@ -2,6 +2,9 @@ const express = require("express");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
+const bcrypt = require("bcryptjs");
 const config = require("./config");
 const { requireAdmin } = require("./middleware/auth");
 const { readStore, writeStore } = require("./data/store");
@@ -9,7 +12,20 @@ const { slugify } = require("./utils/slugify");
 const uploadRoutes = require("./routes/upload.routes");
 
 const app = express();
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Too many login attempts. Try again later." }
+});
 
+app.disable("x-powered-by");
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" }
+  })
+);
 app.use(
   cors({
     origin: config.clientUrl
@@ -173,10 +189,16 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
-app.post("/api/admin/login", (req, res) => {
+app.post("/api/admin/login", loginLimiter, async (req, res) => {
   const { email, password } = req.body;
+  const normalizedEmail = String(email || "").trim();
+  const suppliedPassword = String(password || "");
+  const isEmailMatch = normalizedEmail === config.adminEmail;
+  const isPasswordMatch = config.adminPasswordHash
+    ? await bcrypt.compare(suppliedPassword, config.adminPasswordHash)
+    : suppliedPassword === config.adminPassword;
 
-  if (email !== config.adminEmail || password !== config.adminPassword) {
+  if (!isEmailMatch || !isPasswordMatch) {
     return res.status(401).json({ message: "Invalid admin credentials." });
   }
 

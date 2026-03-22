@@ -5,6 +5,7 @@ const { ensureStore } = require("./data/store");
 const { connectToDatabase } = require("./lib/mongo");
 
 async function startServer() {
+  config.assertSecureConfig();
   await connectToDatabase();
   await ensureStore();
 
