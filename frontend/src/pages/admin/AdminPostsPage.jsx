@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import ReleaseMedia from "../../components/ReleaseMedia";
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { formatPostDate } from "../../lib/formatters";
 import { useAdminContext } from "../../layouts/AdminLayout";
 
@@ -15,6 +16,7 @@ const METADATA_THEME_COPY = {
 };
 
 export default function AdminPostsPage() {
+  useDocumentTitle("Admin Posts");
   const {
     collections,
     clearVideoSelection,

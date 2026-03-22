@@ -1,6 +1,8 @@
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { useAdminContext } from "../../layouts/AdminLayout";
 
 export default function AdminCollectionsPage() {
+  useDocumentTitle("Admin Collections");
   const {
     collectionForm,
     collectionMessage,

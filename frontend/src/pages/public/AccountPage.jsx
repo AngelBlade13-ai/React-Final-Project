@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { apiBaseUrl, userTokenKey } from "../../lib/site";
 
 export default function AccountPage({ currentUser, hasAdminSession, isUserSessionReady, onUserAuthSuccess, onUserLogout }) {
+  useDocumentTitle(currentUser ? "Account" : "Sign In");
   const [mode, setMode] = useState("login");
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");

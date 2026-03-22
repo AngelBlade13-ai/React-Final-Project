@@ -2,10 +2,12 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import ReleaseMedia from "../../components/ReleaseMedia";
 import { CollectionCard, ReleaseCard } from "../../components/cards";
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { formatPostDate, normalizeTitle } from "../../lib/formatters";
 import { apiBaseUrl, hasVideo } from "../../lib/site";
 
 export default function PublicHome({ onPlayTrack }) {
+  useDocumentTitle("");
   const [posts, setPosts] = useState([]);
   const [collections, setCollections] = useState([]);
   const [loading, setLoading] = useState(true);

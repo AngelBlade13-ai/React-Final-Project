@@ -1,6 +1,8 @@
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { useAdminContext } from "../../layouts/AdminLayout";
 
 export default function AdminAboutPage() {
+  useDocumentTitle("Admin About");
   const { aboutForm, aboutMessage, handleAboutSubmit, savingAbout, updateAboutForm } = useAdminContext();
 
   return (

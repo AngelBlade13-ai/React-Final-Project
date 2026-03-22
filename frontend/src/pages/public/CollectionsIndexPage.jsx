@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { CollectionCard } from "../../components/cards";
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { apiBaseUrl } from "../../lib/site";
 
 export default function CollectionsIndexPage() {
+  useDocumentTitle("Collections");
   const [collections, setCollections] = useState([]);
   const [loading, setLoading] = useState(true);
 

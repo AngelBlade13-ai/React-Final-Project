@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import ThemeToggle from "../../components/ThemeToggle";
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { apiBaseUrl, tokenKey } from "../../lib/site";
 
 export default function AdminLogin({ onAdminAuthSuccess, theme, setTheme }) {
+  useDocumentTitle("Admin Login");
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

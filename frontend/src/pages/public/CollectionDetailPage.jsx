@@ -4,6 +4,7 @@ import EldoriaSigil from "../../components/EldoriaSigil";
 import EldoriaWorldMap from "../../components/EldoriaWorldMap";
 import ReleaseMedia from "../../components/ReleaseMedia";
 import { FractureFragmentCard, TimelineCard } from "../../components/cards";
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 import {
   apiBaseUrl,
   FRACTUREVERSE_FEATURED_SLUG,
@@ -120,6 +121,7 @@ export default function CollectionDetailPage({ currentTrack, isPlayerActive, onP
   const [eldoriaMousePosition, setEldoriaMousePosition] = useState({ x: 50, y: 34 });
   const [eldoriaScrollDepth, setEldoriaScrollDepth] = useState(0);
   const [eldoriaTransitionSlug, setEldoriaTransitionSlug] = useState("");
+  useDocumentTitle(collection?.title || "Collection");
 
   useEffect(() => {
     async function loadCollection() {

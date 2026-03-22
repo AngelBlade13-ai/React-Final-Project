@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import CommentsSection from "../../components/CommentsSection";
 import EldoriaSigil from "../../components/EldoriaSigil";
 import ReleaseMedia from "../../components/ReleaseMedia";
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { formatPostDate } from "../../lib/formatters";
 import { apiBaseUrl, getCollectionDerivedContent, getEldoriaMeta, getFractureverseMeta, getPrimaryThemeForPost, getReleaseThemeHint, getThemeConfig, hasVideo, sortEldoriaPosts, sortFractureversePosts } from "../../lib/site";
 
@@ -24,6 +25,7 @@ export default function PublicReleasePage({
   const [showLyrics, setShowLyrics] = useState(false);
   const [eldoriaMousePosition, setEldoriaMousePosition] = useState({ x: 52, y: 30 });
   const [eldoriaScrollDepth, setEldoriaScrollDepth] = useState(0);
+  useDocumentTitle(post?.title || "Release");
 
   useEffect(() => {
     async function loadPost() {

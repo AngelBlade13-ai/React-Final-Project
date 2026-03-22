@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { apiBaseUrl, emptyAbout } from "../../lib/site";
 
 export default function AboutPage() {
+  useDocumentTitle("About");
   const [about, setAbout] = useState(emptyAbout);
   const [loading, setLoading] = useState(true);
 

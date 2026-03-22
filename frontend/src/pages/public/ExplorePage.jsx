@@ -1,8 +1,10 @@
 import { useDeferredValue, useEffect, useState } from "react";
 import { ReleaseCard } from "../../components/cards";
+import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { apiBaseUrl } from "../../lib/site";
 
 export default function ExplorePage({ onPlayTrack }) {
+  useDocumentTitle("Explore");
   const [posts, setPosts] = useState([]);
   const [collections, setCollections] = useState([]);
   const [query, setQuery] = useState("");
