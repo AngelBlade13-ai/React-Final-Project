@@ -3316,6 +3316,267 @@
   animation: eldoriaTransitionText 1500ms ease-out both;
 }
 
+@media (max-width: 900px) {
+  .world-header {
+    min-height: 0;
+    padding: 2.2rem 1.15rem 1.4rem;
+    align-items: stretch;
+  }
+
+  .world-header-layout {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+
+  .world-header-inner {
+    max-width: none;
+    padding: 1rem 0 0.5rem;
+  }
+
+  .world-header-inner::before {
+    display: none;
+  }
+
+  .world-header h1 {
+    max-width: none;
+    font-size: clamp(2.35rem, 8vw, 3.6rem);
+  }
+
+  .world-header-copy {
+    max-width: none;
+    font-size: 1rem;
+    line-height: 1.7;
+  }
+
+  .world-header-aside,
+  .fracture-aside,
+  .eldoria-aside {
+    min-height: 160px;
+  }
+
+  .fracture-line {
+    width: min(220px, 100%);
+    transform: rotate(8deg) scale(0.94);
+  }
+
+  .eldoria-sigil,
+  :root[data-collection-theme="eldoria"] .eldoria-sigil,
+  :root[data-collection-theme="eldoria"] .eldoria-sigil-shell {
+    width: min(240px, 100%);
+  }
+
+  .world-status-bar,
+  .eldoria-world-status,
+  :root[data-collection-theme="eldoria"] .eldoria-release-status,
+  :root[data-collection-theme="fractureverse"] .world-status-bar,
+  .fracture-analysis-grid,
+  .timeline-grid,
+  .eldoria-chronicle-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .fracture-sequence-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .collection-fragment-card,
+  :root[data-collection-theme="eldoria"] .eldoria-release-hero .release-hero-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .collection-fragment-copy {
+    padding: 1.35rem 1.2rem 1.45rem;
+  }
+
+  :root[data-collection-theme="eldoria"] .eldoria-world-header {
+    min-height: 0;
+    padding-top: 2.4rem;
+    padding-bottom: 1.7rem;
+  }
+
+  :root[data-collection-theme="eldoria"] .eldoria-world-header .world-header-inner {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+  }
+
+  :root[data-collection-theme="eldoria"] .eldoria-world-header .world-header-copy,
+  :root[data-collection-theme="eldoria"] .eldoria-release-copy .hero-copy,
+  :root[data-collection-theme="eldoria"] .eldoria-royal-record .release-panel-intro,
+  :root[data-collection-theme="eldoria"] .eldoria-royal-record .release-prose > p {
+    max-width: none;
+  }
+
+  :root[data-collection-theme="eldoria"] .eldoria-release-media-ornament {
+    top: -0.7rem;
+    right: -0.1rem;
+    width: 92px;
+    height: 92px;
+  }
+
+  :root[data-collection-theme="eldoria"] .eldoria-release-sigil {
+    width: 92px;
+    height: 92px;
+  }
+
+  :root[data-collection-theme="eldoria"] .eldoria-map-stage {
+    height: 460px;
+  }
+
+  :root[data-collection-theme="eldoria"] .eldoria-map-node-label {
+    min-width: 108px;
+  }
+
+  :root[data-collection-theme="eldoria"] .eldoria-map-node-label strong {
+    font-size: 0.66rem;
+  }
+
+  :root[data-collection-theme="eldoria"] .eldoria-map-node-label span {
+    font-size: 0.82rem;
+  }
+
+  :root[data-collection-theme="eldoria"] .eldoria-map-tooltip {
+    min-width: 210px;
+    max-width: 240px;
+  }
+}
+
+@media (max-width: 640px) {
+  .world-header {
+    padding: 1.7rem 0.9rem 1.1rem;
+  }
+
+  .world-header::before,
+  .world-header::after {
+    border-radius: 22px;
+  }
+
+  .world-header h1 {
+    font-size: clamp(2rem, 10vw, 2.8rem);
+    line-height: 0.98;
+  }
+
+  .world-mode-lock-note {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+    line-height: 1.35;
+  }
+
+  .world-status-bar,
+  .eldoria-world-status,
+  :root[data-collection-theme="eldoria"] .eldoria-release-status,
+  :root[data-collection-theme="fractureverse"] .world-status-bar,
+  .fracture-analysis-grid,
+  .timeline-grid,
+  .eldoria-chronicle-grid,
+  .fracture-sequence-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .world-status-bar {
+    gap: 0.8rem;
+    padding: 0.85rem 0.9rem;
+  }
+
+  .world-status-item,
+  :root[data-collection-theme="eldoria"] .eldoria-world-status .world-status-item,
+  :root[data-collection-theme="eldoria"] .eldoria-release-status .world-status-item,
+  :root[data-collection-theme="fractureverse"] .world-status-item,
+  .fracture-analysis-item,
+  .fracture-sequence-node {
+    padding: 0.85rem 0.9rem;
+  }
+
+  .fracture-sequence-node {
+    min-height: 0;
+  }
+
+  .fracture-primary-card,
+  .fracture-primary-card.active {
+    transform: none;
+    animation: none;
+  }
+
+  .timeline-card-body,
+  .collection-fragment-copy,
+  :root[data-collection-theme="eldoria"] .eldoria-featured-card .collection-fragment-copy {
+    padding: 1.1rem 1rem 1.2rem;
+  }
+
+  .timeline-card-body h3,
+  .collection-fragment-copy h2,
+  :root[data-collection-theme="eldoria"] .eldoria-royal-record .release-panel-title {
+    max-width: none;
+    font-size: clamp(1.45rem, 7vw, 2rem);
+  }
+
+  :root[data-collection-theme="fractureverse"] .fractureverse-timeline-head::before,
+  :root[data-collection-theme="eldoria"] .eldoria-chronicle-head::before {
+    width: 120px;
+  }
+
+  :root[data-collection-theme="eldoria"] .eldoria-world-header {
+    padding-top: 1.9rem;
+    padding-bottom: 1.2rem;
+  }
+
+  :root[data-collection-theme="eldoria"] .eldoria-aside {
+    min-height: 120px;
+  }
+
+  :root[data-collection-theme="eldoria"] .eldoria-whisper-line {
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+  }
+
+  :root[data-collection-theme="eldoria"] .eldoria-release-media::before,
+  :root[data-collection-theme="eldoria"] .eldoria-featured-card::after,
+  :root[data-collection-theme="eldoria"] .eldoria-map-fog,
+  :root[data-collection-theme="eldoria"] .eldoria-map-particles {
+    display: none;
+  }
+
+  :root[data-collection-theme="eldoria"] .eldoria-map-panel {
+    overflow: hidden;
+  }
+
+  :root[data-collection-theme="eldoria"] .eldoria-map-stage {
+    height: 320px;
+  }
+
+  :root[data-collection-theme="eldoria"] .eldoria-map-node {
+    width: 34px;
+    height: 34px;
+    margin: -17px 0 0 -17px;
+  }
+
+  :root[data-collection-theme="eldoria"] .eldoria-map-node-halo {
+    width: 44px;
+    height: 44px;
+  }
+
+  :root[data-collection-theme="eldoria"] .eldoria-map-node-shell {
+    width: 32px;
+    height: 32px;
+  }
+
+  :root[data-collection-theme="eldoria"] .eldoria-map-node-core {
+    width: 11px;
+    height: 11px;
+  }
+
+  :root[data-collection-theme="eldoria"] .eldoria-map-node-label,
+  :root[data-collection-theme="eldoria"] .eldoria-map-tooltip,
+  :root[data-collection-theme="eldoria"] .eldoria-map-place-labels {
+    display: none;
+  }
+
+  :root[data-collection-theme="eldoria"] .eldoria-chronicle-grid .release-card-link:nth-child(odd),
+  :root[data-collection-theme="eldoria"] .eldoria-chronicle-grid .release-card-link:nth-child(even) {
+    transform: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   :root[data-collection-theme="eldoria"] .eldoria-chronicle-card,
   :root[data-collection-theme="eldoria"] .eldoria-chronicle-grid .release-card-link {
