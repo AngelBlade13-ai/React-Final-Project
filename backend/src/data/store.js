@@ -1,6 +1,6 @@
 const fs = require("fs/promises");
-const path = require("path");
 const crypto = require("crypto");
+const { getDb } = require("../lib/mongo");
 const config = require("../config");
 
 const seedCollections = [
@@ -79,18 +79,6 @@ const seedSiteContent = {
       "This site gives each release its own atmosphere, then links those atmospheres together into a larger story."
   }
 };
-
-async function ensureStore() {
-  await fs.mkdir(path.dirname(config.postsFile), { recursive: true });
-  try {
-    await fs.access(config.postsFile);
-  } catch {
-    await fs.writeFile(
-      config.postsFile,
-      JSON.stringify({ posts: seedPosts, collections: seedCollections, siteContent: seedSiteContent }, null, 2)
-    );
-  }
-}
 
 function normalizeCollection(collection) {
   if (!collection) {
@@ -187,7 +175,15 @@ function normalizePost(post) {
 
   return {
     ...post,
-    lyrics: post.lyrics || "",
+    id: post.id || crypto.randomUUID(),
+    title: String(post.title || "").trim(),
+    slug: String(post.slug || "").trim(),
+    videoUrl: String(post.videoUrl || "").trim(),
+    excerpt: String(post.excerpt || "").trim(),
+    content: String(post.content || "").trim(),
+    lyrics: typeof post.lyrics === "string" ? post.lyrics : "",
+    createdAt: post.createdAt || new Date().toISOString(),
+    published: Boolean(post.published),
     archiveMeta: normalizeArchiveMeta(post.archiveMeta),
     collectionSlugs: Array.isArray(post.collectionSlugs)
       ? [...new Set(post.collectionSlugs.map((slug) => String(slug).trim()).filter(Boolean))]
@@ -195,42 +191,127 @@ function normalizePost(post) {
   };
 }
 
+function normalizeSiteContent(siteContent = {}) {
+  return {
+    about: {
+      ...seedSiteContent.about,
+      ...(siteContent.about || {})
+    }
+  };
+}
+
+function sanitizeDoc(doc) {
+  if (!doc) {
+    return null;
+  }
+
+  const { _id, ...rest } = doc;
+  return rest;
+}
+
+async function readLegacySeed() {
+  try {
+    const file = await fs.readFile(config.postsFile, "utf8");
+    const data = JSON.parse(file);
+
+    return {
+      posts: Array.isArray(data.posts) ? data.posts.map(normalizePost).filter(Boolean) : seedPosts.map(normalizePost),
+      collections: Array.isArray(data.collections)
+        ? data.collections.map(normalizeCollection).filter(Boolean)
+        : seedCollections.map(normalizeCollection),
+      siteContent: normalizeSiteContent(data.siteContent)
+    };
+  } catch {
+    return {
+      posts: seedPosts.map(normalizePost),
+      collections: seedCollections.map(normalizeCollection),
+      siteContent: normalizeSiteContent(seedSiteContent)
+    };
+  }
+}
+
+async function ensureStore() {
+  const db = getDb();
+  const postsCollection = db.collection("posts");
+  const collectionsCollection = db.collection("collections");
+  const siteContentCollection = db.collection("siteContent");
+
+  await Promise.all([
+    postsCollection.createIndex({ id: 1 }, { unique: true }),
+    postsCollection.createIndex({ slug: 1 }, { unique: true }),
+    collectionsCollection.createIndex({ id: 1 }, { unique: true }),
+    collectionsCollection.createIndex({ slug: 1 }, { unique: true }),
+    siteContentCollection.createIndex({ key: 1 }, { unique: true })
+  ]);
+
+  const [postCount, collectionCount, siteContentCount] = await Promise.all([
+    postsCollection.countDocuments(),
+    collectionsCollection.countDocuments(),
+    siteContentCollection.countDocuments()
+  ]);
+
+  if (postCount || collectionCount || siteContentCount) {
+    return;
+  }
+
+  const seed = await readLegacySeed();
+
+  if (seed.posts.length) {
+    await postsCollection.insertMany(seed.posts);
+  }
+
+  if (seed.collections.length) {
+    await collectionsCollection.insertMany(seed.collections);
+  }
+
+  await siteContentCollection.insertOne({
+    key: "siteContent",
+    ...normalizeSiteContent(seed.siteContent)
+  });
+}
+
 async function readStore() {
   await ensureStore();
-  const file = await fs.readFile(config.postsFile, "utf8");
-  const data = JSON.parse(file);
+  const db = getDb();
+
+  const [posts, collections, siteContentDoc] = await Promise.all([
+    db.collection("posts").find({}).sort({ createdAt: -1, _id: -1 }).toArray(),
+    db.collection("collections").find({}).sort({ title: 1, _id: 1 }).toArray(),
+    db.collection("siteContent").findOne({ key: "siteContent" })
+  ]);
 
   return {
-    posts: Array.isArray(data.posts) ? data.posts.map(normalizePost).filter(Boolean) : [],
-    collections: Array.isArray(data.collections)
-      ? data.collections.map(normalizeCollection).filter(Boolean)
-      : [],
-    siteContent: {
-      about: {
-        ...seedSiteContent.about,
-        ...(data.siteContent?.about || {})
-      }
-    }
+    posts: posts.map(sanitizeDoc).map(normalizePost).filter(Boolean),
+    collections: collections.map(sanitizeDoc).map(normalizeCollection).filter(Boolean),
+    siteContent: normalizeSiteContent(sanitizeDoc(siteContentDoc))
   };
 }
 
 async function writeStore(store) {
   await ensureStore();
+  const db = getDb();
+  const posts = Array.isArray(store.posts) ? store.posts.map(normalizePost).filter(Boolean) : [];
+  const collections = Array.isArray(store.collections) ? store.collections.map(normalizeCollection).filter(Boolean) : [];
+  const siteContent = normalizeSiteContent(store.siteContent);
 
-  const nextStore = {
-    posts: Array.isArray(store.posts) ? store.posts.map(normalizePost).filter(Boolean) : [],
-    collections: Array.isArray(store.collections)
-      ? store.collections.map(normalizeCollection).filter(Boolean)
-      : [],
-    siteContent: {
-      about: {
-        ...seedSiteContent.about,
-        ...(store.siteContent?.about || {})
-      }
-    }
-  };
+  await Promise.all([
+    db.collection("posts").deleteMany({}),
+    db.collection("collections").deleteMany({})
+  ]);
 
-  await fs.writeFile(config.postsFile, JSON.stringify(nextStore, null, 2));
+  if (posts.length) {
+    await db.collection("posts").insertMany(posts);
+  }
+
+  if (collections.length) {
+    await db.collection("collections").insertMany(collections);
+  }
+
+  await db.collection("siteContent").updateOne(
+    { key: "siteContent" },
+    { $set: { key: "siteContent", ...siteContent } },
+    { upsert: true }
+  );
 }
 
 async function readPosts() {
@@ -254,6 +335,7 @@ async function writeCollections(collections) {
 }
 
 module.exports = {
+  ensureStore,
   readStore,
   writeStore,
   readPosts,

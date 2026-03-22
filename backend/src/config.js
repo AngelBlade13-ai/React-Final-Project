@@ -6,6 +6,8 @@ module.exports = {
   jwtSecret: process.env.JWT_SECRET || "change-me",
   adminEmail: process.env.ADMIN_EMAIL || "admin@example.com",
   adminPassword: process.env.ADMIN_PASSWORD || "Admin123!",
+  mongoUri: process.env.MONGODB_URI || "mongodb://127.0.0.1:27017",
+  mongoDbName: process.env.MONGODB_DB_NAME || "suno_blog",
   postsFile: process.env.POSTS_FILE || path.join(__dirname, "..", "data", "posts.json"),
   cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME || "",
   cloudinaryApiKey: process.env.CLOUDINARY_API_KEY || "",
