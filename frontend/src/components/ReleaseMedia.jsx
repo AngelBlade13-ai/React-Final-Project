@@ -1,4 +1,4 @@
-import { hasVideo } from "../lib/site";
+import { getVideoPosterUrl, hasVideo } from "../lib/site";
 
 export default function ReleaseMedia({
   videoUrl,
@@ -11,7 +11,17 @@ export default function ReleaseMedia({
   muted = false
 }) {
   if (hasVideo(videoUrl)) {
-    return <video className={className} controls={controls} muted={muted} playsInline preload="metadata" src={videoUrl} />;
+    return (
+      <video
+        className={className}
+        controls={controls}
+        muted={muted}
+        playsInline
+        poster={getVideoPosterUrl(videoUrl) || undefined}
+        preload="metadata"
+        src={videoUrl}
+      />
+    );
   }
 
   return (

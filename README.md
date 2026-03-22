@@ -311,4 +311,14 @@ Update response example:
 
 ## Deployment
 
-Deployment is not included here, but the project is structured for a standard frontend/backend deployment split such as Vercel for the frontend and Render or another Node host for the backend.
+Live frontend:
+
+- https://react-final-project-seven-sigma.vercel.app
+
+Live backend:
+
+- https://react-final-project-cnk7.onrender.com
+
+API base:
+
+- https://react-final-project-cnk7.onrender.com/api

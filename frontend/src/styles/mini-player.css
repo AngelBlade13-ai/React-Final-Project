@@ -401,4 +401,73 @@
   opacity: 0.68;
 }
 
+@media (max-width: 640px) {
+  .mini-player-shell {
+    right: 0.5rem;
+    bottom: 0.5rem;
+    left: 0.5rem;
+  }
+
+  .mini-player-card {
+    width: 100%;
+    gap: 0.75rem;
+    padding: 0.78rem 0.8rem 0.82rem;
+    border-radius: 22px;
+  }
+
+  .mini-player-identity {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.55rem;
+  }
+
+  .mini-player-copy h2 {
+    font-size: 0.96rem;
+  }
+
+  .mini-player-meta,
+  .mini-player-flavor {
+    white-space: normal;
+  }
+
+  .mini-player-chip {
+    max-width: 100%;
+  }
+
+  .mini-player-transport {
+    gap: 0.65rem;
+  }
+
+  .mini-player-button,
+  .mini-player-nav,
+  .mini-player-close {
+    width: 100%;
+    min-width: 0;
+    padding-inline: 0.7rem;
+  }
+
+  .mini-player-progress-block {
+    order: 4;
+  }
+
+  .mini-player-volume {
+    width: 100%;
+    grid-template-columns: 36px minmax(0, 1fr);
+  }
+
+  .mini-player-actions,
+  .mini-player-up-next {
+    justify-items: stretch;
+    max-width: none;
+  }
+
+  .mini-player-up-next {
+    gap: 0.2rem;
+  }
+
+  .mini-player-next-title {
+    white-space: normal;
+  }
+}
+
 

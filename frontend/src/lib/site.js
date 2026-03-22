@@ -399,6 +399,25 @@ export function hasVideo(videoUrl) {
   return Boolean(String(videoUrl || "").trim());
 }
 
+export function getVideoPosterUrl(videoUrl) {
+  const normalizedUrl = String(videoUrl || "").trim();
+
+  if (!normalizedUrl) {
+    return "";
+  }
+
+  if (!normalizedUrl.includes("res.cloudinary.com") || !normalizedUrl.includes("/video/upload/")) {
+    return "";
+  }
+
+  const [baseUrl, query = ""] = normalizedUrl.split("?");
+  const posterBaseUrl = baseUrl
+    .replace("/video/upload/", "/video/upload/so_0,f_jpg,q_auto/")
+    .replace(/\.[^./?#]+$/, ".jpg");
+
+  return query ? `${posterBaseUrl}?${query}` : posterBaseUrl;
+}
+
 function toRoman(value) {
   const number = Number(value);
   if (!Number.isFinite(number) || number <= 0) {
