@@ -108,6 +108,15 @@ On first backend startup, the API seeds MongoDB from the legacy JSON source if t
 4. Create, edit, and delete posts and collections
 5. Update About page content
 
+### Hidden admin access
+
+The public navigation does not show a permanent admin login link.
+
+Admin access can be reached in either of these ways:
+
+1. Visit `/admin/login` directly
+2. Click the site mark in the public header 5 times quickly to reveal `Admin Access`
+
 ## Authentication
 
 The project includes two authentication flows:
