@@ -9,6 +9,7 @@ export default function CommentsSection({ currentUser, onUserLogout, postSlug, u
   const [editingBody, setEditingBody] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -51,6 +52,7 @@ export default function CommentsSection({ currentUser, onUserLogout, postSlug, u
     event.preventDefault();
     setSubmitting(true);
     setError("");
+    setSuccess("");
 
     try {
       const response = await fetch(`${apiBaseUrl}/posts/${postSlug}/comments`, {
@@ -73,6 +75,7 @@ export default function CommentsSection({ currentUser, onUserLogout, postSlug, u
 
       setComments((current) => [...current, data.comment]);
       setDraft("");
+      setSuccess("Comment posted.");
     } catch (apiError) {
       setError(apiError.message);
     } finally {
@@ -83,6 +86,7 @@ export default function CommentsSection({ currentUser, onUserLogout, postSlug, u
   async function handleSaveComment(commentId) {
     setSubmitting(true);
     setError("");
+    setSuccess("");
 
     try {
       const response = await fetch(`${apiBaseUrl}/comments/${commentId}`, {
@@ -106,6 +110,7 @@ export default function CommentsSection({ currentUser, onUserLogout, postSlug, u
       setComments((current) => current.map((comment) => (comment.id === commentId ? data.comment : comment)));
       setEditingId("");
       setEditingBody("");
+      setSuccess("Comment updated.");
     } catch (apiError) {
       setError(apiError.message);
     } finally {
@@ -114,8 +119,15 @@ export default function CommentsSection({ currentUser, onUserLogout, postSlug, u
   }
 
   async function handleDeleteComment(commentId) {
+    const confirmed = window.confirm("Delete this comment?");
+
+    if (!confirmed) {
+      return;
+    }
+
     setSubmitting(true);
     setError("");
+    setSuccess("");
 
     try {
       const response = await fetch(`${apiBaseUrl}/comments/${commentId}`, {
@@ -135,6 +147,7 @@ export default function CommentsSection({ currentUser, onUserLogout, postSlug, u
       }
 
       setComments((current) => current.filter((comment) => comment.id !== commentId));
+      setSuccess("Comment deleted.");
     } catch (apiError) {
       setError(apiError.message);
     } finally {
@@ -176,6 +189,7 @@ export default function CommentsSection({ currentUser, onUserLogout, postSlug, u
       )}
 
       {error ? <p className="error-text">{error}</p> : null}
+      {success ? <p className="success-text">{success}</p> : null}
 
       {loading ? (
         <p className="lyrics-placeholder">Loading comments...</p>

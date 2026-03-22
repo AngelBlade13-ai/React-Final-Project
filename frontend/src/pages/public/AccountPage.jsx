@@ -15,6 +15,26 @@ export default function AccountPage({ currentUser, hasAdminSession, isUserSessio
   const [success, setSuccess] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  function validateAuthForm() {
+    if (mode === "register" && displayName.trim().length < 2) {
+      return "Display name must be at least 2 characters.";
+    }
+
+    if (!email.trim()) {
+      return "Email is required.";
+    }
+
+    if (mode === "register" && password.length < 8) {
+      return "Password must be at least 8 characters.";
+    }
+
+    if (mode === "login" && !password) {
+      return "Password is required.";
+    }
+
+    return "";
+  }
+
   useEffect(() => {
     setProfileName(currentUser?.displayName || "");
     setProfilePassword("");
@@ -25,6 +45,14 @@ export default function AccountPage({ currentUser, hasAdminSession, isUserSessio
     setSubmitting(true);
     setError("");
     setSuccess("");
+
+    const validationError = validateAuthForm();
+
+    if (validationError) {
+      setError(validationError);
+      setSubmitting(false);
+      return;
+    }
 
     try {
       const response = await fetch(`${apiBaseUrl}/auth/${mode === "register" ? "register" : "login"}`, {
@@ -62,6 +90,18 @@ export default function AccountPage({ currentUser, hasAdminSession, isUserSessio
     setSubmitting(true);
     setError("");
     setSuccess("");
+
+    if (profileName.trim().length < 2) {
+      setError("Display name must be at least 2 characters.");
+      setSubmitting(false);
+      return;
+    }
+
+    if (profilePassword && profilePassword.length < 8) {
+      setError("New password must be at least 8 characters.");
+      setSubmitting(false);
+      return;
+    }
 
     try {
       const token = localStorage.getItem(userTokenKey) || "";
@@ -142,17 +182,19 @@ export default function AccountPage({ currentUser, hasAdminSession, isUserSessio
           <form className="account-form-grid" onSubmit={handleProfileSubmit}>
             <label>
               Display Name
-              <input onChange={(event) => setProfileName(event.target.value)} required type="text" value={profileName} />
+              <input minLength="2" onChange={(event) => setProfileName(event.target.value)} required type="text" value={profileName} />
             </label>
             <label>
               New Password
               <input
+                minLength="8"
                 onChange={(event) => setProfilePassword(event.target.value)}
                 placeholder="Leave blank to keep current password"
                 type="password"
                 value={profilePassword}
               />
             </label>
+            <p className="form-helper-text">Leave the password blank to keep the current one. New passwords must be at least 8 characters.</p>
             {error ? <p className="error-text">{error}</p> : null}
             {success ? <p className="success-text">{success}</p> : null}
             <div className="account-action-row">
@@ -174,7 +216,7 @@ export default function AccountPage({ currentUser, hasAdminSession, isUserSessio
             {mode === "register" ? (
               <label>
                 Display Name
-                <input onChange={(event) => setDisplayName(event.target.value)} required type="text" value={displayName} />
+                <input minLength="2" onChange={(event) => setDisplayName(event.target.value)} required type="text" value={displayName} />
               </label>
             ) : null}
             <label>
@@ -183,8 +225,15 @@ export default function AccountPage({ currentUser, hasAdminSession, isUserSessio
             </label>
             <label>
               Password
-              <input onChange={(event) => setPassword(event.target.value)} required type="password" value={password} />
+              <input
+                minLength={mode === "register" ? 8 : undefined}
+                onChange={(event) => setPassword(event.target.value)}
+                required
+                type="password"
+                value={password}
+              />
             </label>
+            {mode === "register" ? <p className="form-helper-text">Use at least 8 characters for account passwords.</p> : null}
             {error ? <p className="error-text">{error}</p> : null}
             {success ? <p className="success-text">{success}</p> : null}
             <div className="account-action-row">

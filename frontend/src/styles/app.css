@@ -1614,6 +1614,12 @@ select:focus {
   color: color-mix(in srgb, #46745d 74%, var(--text) 26%);
 }
 
+.form-helper-text {
+  margin: 0;
+  color: color-mix(in srgb, var(--text) 68%, transparent);
+  font-size: 0.92rem;
+}
+
 .back-link {
   display: inline-block;
   margin-top: 1rem;
