@@ -16,10 +16,19 @@ body {
   color: var(--text);
   background: transparent;
   transition: background-color 320ms ease, color 320ms ease;
+  overflow-x: hidden;
 }
 
 a {
   color: inherit;
+}
+
+img,
+video,
+iframe,
+canvas,
+svg {
+  max-width: 100%;
 }
 
 button,
@@ -1779,7 +1788,9 @@ select:focus {
 
 @media (max-width: 640px) {
   .page-shell {
-    width: min(100% - 1rem, 100%);
+    width: calc(100% - 1rem);
+    padding-top: 1rem;
+    padding-bottom: 8.5rem;
   }
 
   .hero,
@@ -1823,6 +1834,46 @@ select:focus {
   .site-user-controls,
   .comment-card-head {
     justify-content: flex-start;
+  }
+
+  .public-site-header {
+    gap: 0.85rem;
+    padding: 0.9rem 0.9rem 1rem;
+  }
+
+  .public-site-actions {
+    gap: 0.75rem;
+  }
+
+  .site-mark {
+    gap: 0.1rem;
+  }
+
+  .site-mark strong {
+    font-size: 0.98rem;
+    line-height: 1.2;
+  }
+
+  .site-nav {
+    gap: 0.75rem 1rem;
+  }
+
+  .site-nav-link {
+    font-size: 0.95rem;
+  }
+
+  .site-account-link,
+  .site-admin-link,
+  .site-user-logout,
+  .theme-toggle {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+  }
+
+  .site-user-controls {
+    width: 100%;
+    gap: 0.65rem;
   }
 
   .comment-card-head {
@@ -1874,6 +1925,26 @@ select:focus {
     padding: 1.25rem 1.15rem 1.35rem;
   }
 
+  .hero {
+    padding: 1.35rem 1.1rem 1.5rem;
+  }
+
+  .hero h1 {
+    font-size: clamp(2.15rem, 11vw, 3.05rem);
+  }
+
+  .homepage-hero h1,
+  .section-hero h1 {
+    max-width: none;
+  }
+
+  .hero-copy,
+  .release-hero-intro,
+  .world-description,
+  .world-intro-copy {
+    font-size: 0.98rem;
+  }
+
   .latest-release-grid {
     grid-template-columns: 1fr;
   }
@@ -1900,6 +1971,7 @@ select:focus {
   .mini-player-card {
     gap: 0.7rem;
     padding: 0.78rem 0.8rem 0.82rem;
+    border-radius: 22px;
   }
 
   .mini-player-actions {
@@ -1918,6 +1990,19 @@ select:focus {
 
   .mini-player-volume {
     grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .mini-player-button,
+  .mini-player-nav,
+  .mini-player-close {
+    min-width: 0;
+  }
+
+  .release-hero-actions,
+  .hero-note-stats,
+  .about-stat-grid,
+  .release-signal-grid {
+    grid-template-columns: 1fr;
   }
 }
 
