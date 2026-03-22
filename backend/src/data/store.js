@@ -80,6 +80,9 @@ const seedSiteContent = {
   }
 };
 
+const seedUsers = [];
+const seedComments = [];
+
 function normalizeCollection(collection) {
   if (!collection) {
     return null;
@@ -200,6 +203,39 @@ function normalizeSiteContent(siteContent = {}) {
   };
 }
 
+function normalizeUser(user) {
+  if (!user) {
+    return null;
+  }
+
+  return {
+    id: user.id || crypto.randomUUID(),
+    email: String(user.email || "").trim().toLowerCase(),
+    displayName: String(user.displayName || "").trim(),
+    passwordHash: String(user.passwordHash || "").trim(),
+    role: String(user.role || "user").trim() || "user",
+    status: String(user.status || "active").trim() || "active",
+    createdAt: user.createdAt || new Date().toISOString(),
+    updatedAt: user.updatedAt || user.createdAt || new Date().toISOString()
+  };
+}
+
+function normalizeComment(comment) {
+  if (!comment) {
+    return null;
+  }
+
+  return {
+    id: comment.id || crypto.randomUUID(),
+    postSlug: String(comment.postSlug || "").trim(),
+    authorId: String(comment.authorId || "").trim(),
+    body: String(comment.body || "").trim(),
+    status: String(comment.status || "visible").trim() || "visible",
+    createdAt: comment.createdAt || new Date().toISOString(),
+    updatedAt: comment.updatedAt || comment.createdAt || new Date().toISOString()
+  };
+}
+
 function sanitizeDoc(doc) {
   if (!doc) {
     return null;
@@ -219,12 +255,16 @@ async function readLegacySeed() {
       collections: Array.isArray(data.collections)
         ? data.collections.map(normalizeCollection).filter(Boolean)
         : seedCollections.map(normalizeCollection),
+      users: Array.isArray(data.users) ? data.users.map(normalizeUser).filter(Boolean) : seedUsers.map(normalizeUser),
+      comments: Array.isArray(data.comments) ? data.comments.map(normalizeComment).filter(Boolean) : seedComments.map(normalizeComment),
       siteContent: normalizeSiteContent(data.siteContent)
     };
   } catch {
     return {
       posts: seedPosts.map(normalizePost),
       collections: seedCollections.map(normalizeCollection),
+      users: seedUsers.map(normalizeUser),
+      comments: seedComments.map(normalizeComment),
       siteContent: normalizeSiteContent(seedSiteContent)
     };
   }
@@ -241,16 +281,23 @@ async function ensureStore() {
     postsCollection.createIndex({ slug: 1 }, { unique: true }),
     collectionsCollection.createIndex({ id: 1 }, { unique: true }),
     collectionsCollection.createIndex({ slug: 1 }, { unique: true }),
+    db.collection("users").createIndex({ id: 1 }, { unique: true }),
+    db.collection("users").createIndex({ email: 1 }, { unique: true }),
+    db.collection("comments").createIndex({ id: 1 }, { unique: true }),
+    db.collection("comments").createIndex({ postSlug: 1, status: 1, createdAt: -1 }),
+    db.collection("comments").createIndex({ authorId: 1, createdAt: -1 }),
     siteContentCollection.createIndex({ key: 1 }, { unique: true })
   ]);
 
-  const [postCount, collectionCount, siteContentCount] = await Promise.all([
+  const [postCount, collectionCount, userCount, commentCount, siteContentCount] = await Promise.all([
     postsCollection.countDocuments(),
     collectionsCollection.countDocuments(),
+    db.collection("users").countDocuments(),
+    db.collection("comments").countDocuments(),
     siteContentCollection.countDocuments()
   ]);
 
-  if (postCount || collectionCount || siteContentCount) {
+  if (postCount || collectionCount || userCount || commentCount || siteContentCount) {
     return;
   }
 
@@ -264,6 +311,14 @@ async function ensureStore() {
     await collectionsCollection.insertMany(seed.collections);
   }
 
+  if (seed.users.length) {
+    await db.collection("users").insertMany(seed.users);
+  }
+
+  if (seed.comments.length) {
+    await db.collection("comments").insertMany(seed.comments);
+  }
+
   await siteContentCollection.insertOne({
     key: "siteContent",
     ...normalizeSiteContent(seed.siteContent)
@@ -274,15 +329,19 @@ async function readStore() {
   await ensureStore();
   const db = getDb();
 
-  const [posts, collections, siteContentDoc] = await Promise.all([
+  const [posts, collections, users, comments, siteContentDoc] = await Promise.all([
     db.collection("posts").find({}).sort({ createdAt: -1, _id: -1 }).toArray(),
     db.collection("collections").find({}).sort({ title: 1, _id: 1 }).toArray(),
+    db.collection("users").find({}).sort({ createdAt: 1, _id: 1 }).toArray(),
+    db.collection("comments").find({}).sort({ createdAt: -1, _id: -1 }).toArray(),
     db.collection("siteContent").findOne({ key: "siteContent" })
   ]);
 
   return {
     posts: posts.map(sanitizeDoc).map(normalizePost).filter(Boolean),
     collections: collections.map(sanitizeDoc).map(normalizeCollection).filter(Boolean),
+    users: users.map(sanitizeDoc).map(normalizeUser).filter(Boolean),
+    comments: comments.map(sanitizeDoc).map(normalizeComment).filter(Boolean),
     siteContent: normalizeSiteContent(sanitizeDoc(siteContentDoc))
   };
 }
@@ -292,6 +351,8 @@ async function writeStore(store) {
   const db = getDb();
   const posts = Array.isArray(store.posts) ? store.posts.map(normalizePost).filter(Boolean) : [];
   const collections = Array.isArray(store.collections) ? store.collections.map(normalizeCollection).filter(Boolean) : [];
+  const users = Array.isArray(store.users) ? store.users.map(normalizeUser).filter(Boolean) : [];
+  const comments = Array.isArray(store.comments) ? store.comments.map(normalizeComment).filter(Boolean) : [];
   const siteContent = normalizeSiteContent(store.siteContent);
 
   await Promise.all([
@@ -305,6 +366,19 @@ async function writeStore(store) {
 
   if (collections.length) {
     await db.collection("collections").insertMany(collections);
+  }
+
+  await Promise.all([
+    db.collection("users").deleteMany({}),
+    db.collection("comments").deleteMany({})
+  ]);
+
+  if (users.length) {
+    await db.collection("users").insertMany(users);
+  }
+
+  if (comments.length) {
+    await db.collection("comments").insertMany(comments);
   }
 
   await db.collection("siteContent").updateOne(
@@ -334,6 +408,26 @@ async function writeCollections(collections) {
   await writeStore({ ...store, collections });
 }
 
+async function readUsers() {
+  const store = await readStore();
+  return store.users;
+}
+
+async function writeUsers(users) {
+  const store = await readStore();
+  await writeStore({ ...store, users });
+}
+
+async function readComments() {
+  const store = await readStore();
+  return store.comments;
+}
+
+async function writeComments(comments) {
+  const store = await readStore();
+  await writeStore({ ...store, comments });
+}
+
 module.exports = {
   ensureStore,
   readStore,
@@ -341,5 +435,9 @@ module.exports = {
   readPosts,
   writePosts,
   readCollections,
-  writeCollections
+  writeCollections,
+  readUsers,
+  writeUsers,
+  readComments,
+  writeComments
 };

@@ -1,11 +1,21 @@
 import { useEffect, useLayoutEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import CommentsSection from "../../components/CommentsSection";
 import EldoriaSigil from "../../components/EldoriaSigil";
 import ReleaseMedia from "../../components/ReleaseMedia";
 import { formatPostDate } from "../../lib/formatters";
 import { apiBaseUrl, getCollectionDerivedContent, getEldoriaMeta, getFractureverseMeta, getPrimaryThemeForPost, getReleaseThemeHint, getThemeConfig, hasVideo, sortEldoriaPosts, sortFractureversePosts } from "../../lib/site";
 
-export default function PublicReleasePage({ currentTrack, hasAdminSession, isPlayerActive, onPlayTrack, setForcedTheme }) {
+export default function PublicReleasePage({
+  currentUser,
+  currentTrack,
+  hasAdminSession,
+  isPlayerActive,
+  onPlayTrack,
+  onUserLogout,
+  setForcedTheme,
+  userToken
+}) {
   const { slug } = useParams();
   const [post, setPost] = useState(null);
   const [sequencePosts, setSequencePosts] = useState([]);
@@ -636,6 +646,8 @@ export default function PublicReleasePage({ currentTrack, hasAdminSession, isPla
               <p className="release-panel-intro">{eldoriaMeta?.resolution || "Some entries feel like beginnings, some like old promises returning. Either way, they belong to the same world once they are written here."}</p>
             </section>
           ) : null}
+
+          <CommentsSection currentUser={currentUser} onUserLogout={onUserLogout} postSlug={post.slug} userToken={userToken} />
         </main>
       ) : null}
     </>

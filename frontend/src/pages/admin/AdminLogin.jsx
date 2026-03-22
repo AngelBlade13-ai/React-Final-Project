@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import ThemeToggle from "../../components/ThemeToggle";
 import { apiBaseUrl, tokenKey } from "../../lib/site";
 
-export default function AdminLogin({ setHasAdminSession, theme, setTheme }) {
+export default function AdminLogin({ onAdminAuthSuccess, theme, setTheme }) {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -31,7 +31,7 @@ export default function AdminLogin({ setHasAdminSession, theme, setTheme }) {
       }
 
       localStorage.setItem(tokenKey, data.token);
-      setHasAdminSession(true);
+      onAdminAuthSuccess?.();
       navigate("/admin");
     } catch (apiError) {
       setError(apiError.message);

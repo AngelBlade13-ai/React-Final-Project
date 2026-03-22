@@ -1,5 +1,6 @@
 export const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
 export const tokenKey = "suno-blog-admin-token";
+export const userTokenKey = "suno-blog-user-token";
 export const themeKey = "suno-blog-theme";
 
 export const emptyPost = {

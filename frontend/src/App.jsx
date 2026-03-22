@@ -3,12 +3,13 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import MiniPlayer from "./components/MiniPlayer";
 import PublicLayout from "./layouts/PublicLayout";
 import AdminLayout, { ProtectedRoute } from "./layouts/AdminLayout";
-import { apiBaseUrl, hasVideo, themeKey } from "./lib/site";
+import { apiBaseUrl, hasVideo, themeKey, tokenKey, userTokenKey } from "./lib/site";
 import AdminAboutPage from "./pages/admin/AdminAboutPage";
 import AdminCollectionsPage from "./pages/admin/AdminCollectionsPage";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminPostsPage from "./pages/admin/AdminPostsPage";
 import AboutPage from "./pages/public/AboutPage";
+import AccountPage from "./pages/public/AccountPage";
 import CollectionDetailPage from "./pages/public/CollectionDetailPage";
 import CollectionsIndexPage from "./pages/public/CollectionsIndexPage";
 import ExplorePage from "./pages/public/ExplorePage";
@@ -31,6 +32,9 @@ function App() {
   const [hasAdminSession, setHasAdminSession] = useState(() =>
     Boolean(localStorage.getItem("suno-blog-admin-token")),
   );
+  const [userToken, setUserToken] = useState(() => localStorage.getItem(userTokenKey) || "");
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isUserSessionReady, setIsUserSessionReady] = useState(false);
   const [playerQueue, setPlayerQueue] = useState([]);
   const [currentQueueIndex, setCurrentQueueIndex] = useState(-1);
   const [playerCollectionId, setPlayerCollectionId] = useState("");
@@ -56,6 +60,62 @@ function App() {
   useEffect(() => {
     localStorage.setItem(themeKey, theme);
   }, [theme]);
+
+  useEffect(() => {
+    if (userToken) {
+      localStorage.setItem(userTokenKey, userToken);
+      return;
+    }
+
+    localStorage.removeItem(userTokenKey);
+  }, [userToken]);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function loadCurrentUser() {
+      if (!userToken) {
+        if (!isCancelled) {
+          setCurrentUser(null);
+          setIsUserSessionReady(true);
+        }
+        return;
+      }
+
+      try {
+        const response = await fetch(`${apiBaseUrl}/auth/me`, {
+          headers: {
+            Authorization: `Bearer ${userToken}`
+          }
+        });
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || "Session expired.");
+        }
+
+        if (!isCancelled) {
+          setCurrentUser(data.user || null);
+        }
+      } catch {
+        if (!isCancelled) {
+          setUserToken("");
+          setCurrentUser(null);
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsUserSessionReady(true);
+        }
+      }
+    }
+
+    setIsUserSessionReady(false);
+    loadCurrentUser();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [userToken]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -305,6 +365,33 @@ function App() {
     setPlayerVolume(nextVolume);
   }
 
+  function handleUserAuthSuccess(payload) {
+    localStorage.removeItem(tokenKey);
+    setHasAdminSession(false);
+    setUserToken(payload?.token || "");
+    setCurrentUser(payload?.user || null);
+    setIsUserSessionReady(true);
+  }
+
+  function handleUserLogout() {
+    setUserToken("");
+    setCurrentUser(null);
+    setIsUserSessionReady(true);
+  }
+
+  function handleAdminAuthSuccess() {
+    localStorage.removeItem(userTokenKey);
+    setUserToken("");
+    setCurrentUser(null);
+    setIsUserSessionReady(true);
+    setHasAdminSession(true);
+  }
+
+  function handleAdminLogout() {
+    localStorage.removeItem(tokenKey);
+    setHasAdminSession(false);
+  }
+
   const previousQueueIndex = findAdjacentPlayableIndex(playerQueue, currentQueueIndex, -1);
   const nextQueueIndex = findAdjacentPlayableIndex(playerQueue, currentQueueIndex, 1);
   const nextQueueTrack = nextQueueIndex !== -1 ? playerQueue[nextQueueIndex] : null;
@@ -316,8 +403,11 @@ function App() {
         <Route
           element={
             <PublicLayout
+              currentUser={currentUser}
               hasAdminSession={hasAdminSession}
               isThemeLocked={Boolean(forcedTheme)}
+              isUserSessionReady={isUserSessionReady}
+              onUserLogout={handleUserLogout}
               theme={theme}
               setTheme={setTheme}
             />
@@ -348,16 +438,32 @@ function App() {
             path="/explore"
             element={<ExplorePage onPlayTrack={playTrack} />}
           />
+          <Route
+            path="/account"
+            element={
+              <AccountPage
+                currentUser={currentUser}
+                hasAdminSession={hasAdminSession}
+                isUserSessionReady={isUserSessionReady}
+                onUserAuthSuccess={handleUserAuthSuccess}
+                onUserLogout={handleUserLogout}
+              />
+            }
+          />
           <Route path="/about" element={<AboutPage />} />
           <Route
             path="/release/:slug"
             element={
               <PublicReleasePage
+                currentUser={currentUser}
                 currentTrack={currentTrack}
                 hasAdminSession={hasAdminSession}
                 isPlayerActive={isMiniPlayerPlaying}
                 onPlayTrack={playTrack}
+                onUserAuthSuccess={handleUserAuthSuccess}
+                onUserLogout={handleUserLogout}
                 setForcedTheme={setForcedTheme}
+                userToken={userToken}
               />
             }
           />
@@ -366,7 +472,7 @@ function App() {
           path="/admin/login"
           element={
             <AdminLogin
-              setHasAdminSession={setHasAdminSession}
+              onAdminAuthSuccess={handleAdminAuthSuccess}
               theme={theme}
               setTheme={setTheme}
             />
@@ -377,7 +483,7 @@ function App() {
           element={
             <ProtectedRoute>
               <AdminLayout
-                setHasAdminSession={setHasAdminSession}
+                onAdminLogout={handleAdminLogout}
                 theme={theme}
                 setTheme={setTheme}
               />

@@ -1656,6 +1656,121 @@ select:focus {
   letter-spacing: -0.03em;
 }
 
+.site-user-controls,
+.account-action-row,
+.comment-form-actions,
+.comment-card-actions {
+  display: flex;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.site-account-link,
+.site-user-logout {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.72rem 1rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border) 74%, var(--primary) 26%);
+  background: color-mix(in srgb, var(--surface-alt) 78%, var(--surface) 22%);
+  color: var(--text);
+  text-decoration: none;
+  box-shadow: var(--shadow-md);
+  font-weight: 700;
+}
+
+.site-user-logout {
+  margin-top: 0;
+  cursor: pointer;
+}
+
+.account-hero,
+.account-panel {
+  max-width: 760px;
+}
+
+.account-form-grid,
+.comment-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.account-panel {
+  justify-self: start;
+  width: min(100%, 760px);
+}
+
+.comments-panel {
+  gap: 1rem;
+}
+
+.comments-head {
+  margin-bottom: 0;
+}
+
+.comment-composer {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.comment-composer-label {
+  display: inline-block;
+  margin-bottom: 0.45rem;
+  color: var(--text);
+  font-weight: 700;
+}
+
+.comments-auth-prompt {
+  display: grid;
+  gap: 0.7rem;
+  justify-items: start;
+  padding: 1rem 1.1rem;
+  border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--border) 76%, var(--primary) 24%);
+  background: color-mix(in srgb, var(--surface-alt) 76%, var(--surface) 24%);
+}
+
+.comments-auth-prompt p,
+.comment-meta,
+.comment-body {
+  margin: 0;
+}
+
+.comment-card {
+  display: grid;
+  gap: 0.8rem;
+  padding: 1rem 1.1rem;
+  border-radius: 22px;
+  border: 1px solid color-mix(in srgb, var(--border) 78%, var(--primary) 22%);
+  background: color-mix(in srgb, var(--surface-alt) 72%, var(--surface) 28%);
+}
+
+.comment-card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.comment-meta {
+  margin-top: 0.18rem;
+  color: var(--muted-text);
+  font-size: 0.82rem;
+}
+
+.comment-body {
+  line-height: 1.65;
+  color: color-mix(in srgb, var(--text) 92%, var(--muted-text) 8%);
+}
+
+.comment-edit-shell {
+  display: grid;
+  gap: 0.75rem;
+}
+
 @media (max-width: 640px) {
   .page-shell {
     width: min(100% - 1rem, 100%);
@@ -1698,8 +1813,14 @@ select:focus {
 
   .public-site-actions,
   .site-nav,
-  .admin-subnav {
+  .admin-subnav,
+  .site-user-controls,
+  .comment-card-head {
     justify-content: flex-start;
+  }
+
+  .comment-card-head {
+    flex-direction: column;
   }
 
   .featured-release-card {

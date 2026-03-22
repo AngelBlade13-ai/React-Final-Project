@@ -17,7 +17,7 @@ export function useAdminContext() {
   return useOutletContext();
 }
 
-export default function AdminLayout({ setHasAdminSession, theme, setTheme }) {
+export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
   const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
   const [collections, setCollections] = useState([]);
@@ -64,7 +64,7 @@ export default function AdminLayout({ setHasAdminSession, theme, setTheme }) {
 
       if (postsResponse.status === 401 || collectionsResponse.status === 401 || siteContentResponse.status === 401) {
         localStorage.removeItem(tokenKey);
-        setHasAdminSession(false);
+        onAdminLogout?.();
         navigate("/admin/login");
         return;
       }
@@ -339,7 +339,7 @@ export default function AdminLayout({ setHasAdminSession, theme, setTheme }) {
 
   function handleLogout() {
     localStorage.removeItem(tokenKey);
-    setHasAdminSession(false);
+    onAdminLogout?.();
     navigate("/admin/login");
   }
 

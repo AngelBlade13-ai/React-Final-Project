@@ -6,7 +6,7 @@ const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const bcrypt = require("bcryptjs");
 const config = require("./config");
-const { requireAdmin } = require("./middleware/auth");
+const { authenticate, requireAdmin, requireUser } = require("./middleware/auth");
 const { readStore, writeStore } = require("./data/store");
 const { slugify } = require("./utils/slugify");
 const uploadRoutes = require("./routes/upload.routes");
@@ -18,6 +18,20 @@ const loginLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { message: "Too many login attempts. Try again later." }
+});
+const userAuthLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Too many authentication attempts. Try again later." }
+});
+const commentWriteLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Too many comment actions. Try again later." }
 });
 
 app.disable("x-powered-by");
@@ -185,6 +199,79 @@ function normalizeAboutContent(input = {}, existingAbout = {}) {
   };
 }
 
+function sanitizeUser(user) {
+  if (!user) {
+    return null;
+  }
+
+  return {
+    id: user.id,
+    email: user.email,
+    displayName: user.displayName,
+    role: user.role,
+    status: user.status,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt
+  };
+}
+
+function issueAuthToken(user) {
+  return jwt.sign(
+    {
+      sub: user.id,
+      email: user.email,
+      displayName: user.displayName,
+      role: user.role
+    },
+    config.jwtSecret,
+    { expiresIn: "7d" }
+  );
+}
+
+function normalizeUserInput(input, existingUser = {}) {
+  return {
+    ...existingUser,
+    displayName: String(input.displayName || existingUser.displayName || "").trim(),
+    email: String(input.email || existingUser.email || "").trim().toLowerCase()
+  };
+}
+
+function normalizeCommentInput(input, existingComment = {}) {
+  return {
+    ...existingComment,
+    body: String(input.body || existingComment.body || "").trim(),
+    status: String(input.status || existingComment.status || "visible").trim() || "visible",
+    updatedAt: new Date().toISOString()
+  };
+}
+
+function attachCommentDetails(comment, users) {
+  const author = users.find((user) => user.id === comment.authorId);
+
+  return {
+    ...comment,
+    author: author
+      ? {
+          id: author.id,
+          displayName: author.displayName,
+          role: author.role
+        }
+      : {
+          id: comment.authorId,
+          displayName: "Unknown User",
+          role: "user"
+        }
+  };
+}
+
+function canManageComment(actor, comment) {
+  return actor?.role === "admin" || actor?.sub === comment.authorId;
+}
+
+function findPublishedPost(store, slug) {
+  return store.posts.find((entry) => entry.slug === slug && entry.published);
+}
+
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });
 });
@@ -220,6 +307,135 @@ app.post("/api/admin/login", loginLimiter, async (req, res) => {
   });
 });
 
+app.post("/api/auth/register", userAuthLimiter, async (req, res, next) => {
+  try {
+    const store = await readStore();
+    const userInput = normalizeUserInput(req.body);
+    const password = String(req.body.password || "");
+
+    if (!userInput.displayName || !userInput.email || password.length < 8) {
+      return res.status(400).json({ message: "Display name, email, and a password of at least 8 characters are required." });
+    }
+
+    if (store.users.some((entry) => entry.email === userInput.email)) {
+      return res.status(400).json({ message: "An account with that email already exists." });
+    }
+
+    const timestamp = new Date().toISOString();
+    const user = {
+      id: crypto.randomUUID(),
+      displayName: userInput.displayName,
+      email: userInput.email,
+      passwordHash: await bcrypt.hash(password, 12),
+      role: "user",
+      status: "active",
+      createdAt: timestamp,
+      updatedAt: timestamp
+    };
+
+    store.users.unshift(user);
+    await writeStore(store);
+
+    return res.status(201).json({
+      token: issueAuthToken(user),
+      user: sanitizeUser(user)
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/auth/login", userAuthLimiter, async (req, res, next) => {
+  try {
+    const store = await readStore();
+    const email = String(req.body.email || "").trim().toLowerCase();
+    const password = String(req.body.password || "");
+    const user = store.users.find((entry) => entry.email === email);
+
+    if (!user || user.status !== "active") {
+      return res.status(401).json({ message: "Invalid email or password." });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.passwordHash);
+
+    if (!isMatch) {
+      return res.status(401).json({ message: "Invalid email or password." });
+    }
+
+    return res.json({
+      token: issueAuthToken(user),
+      user: sanitizeUser(user)
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/auth/me", authenticate, async (req, res, next) => {
+  try {
+    if (req.auth.role === "admin") {
+      return res.json({
+        user: {
+          id: "admin",
+          email: req.auth.email,
+          displayName: req.auth.displayName || "Admin",
+          role: "admin",
+          status: "active"
+        }
+      });
+    }
+
+    const store = await readStore();
+    const user = store.users.find((entry) => entry.id === req.auth.sub);
+
+    if (!user || user.status !== "active") {
+      return res.status(401).json({ message: "User session is no longer valid." });
+    }
+
+    return res.json({ user: sanitizeUser(user) });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.put("/api/auth/me", requireUser, async (req, res, next) => {
+  try {
+    if (req.user.role === "admin") {
+      return res.status(403).json({ message: "Admin accounts are managed separately." });
+    }
+
+    const store = await readStore();
+    const index = store.users.findIndex((entry) => entry.id === req.user.sub);
+
+    if (index === -1) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    const nextDisplayName = String(req.body.displayName || "").trim();
+    const nextPassword = String(req.body.password || "");
+
+    if (!nextDisplayName) {
+      return res.status(400).json({ message: "Display name is required." });
+    }
+
+    store.users[index] = {
+      ...store.users[index],
+      displayName: nextDisplayName,
+      passwordHash: nextPassword ? await bcrypt.hash(nextPassword, 12) : store.users[index].passwordHash,
+      updatedAt: new Date().toISOString()
+    };
+
+    await writeStore(store);
+
+    return res.json({
+      token: issueAuthToken(store.users[index]),
+      user: sanitizeUser(store.users[index])
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.get("/api/posts", async (req, res, next) => {
   try {
     const store = await readStore();
@@ -243,6 +459,123 @@ app.get("/api/posts/:slug", async (req, res, next) => {
     }
 
     return res.json({ post: attachCollectionDetails(post, store.collections) });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/posts/:slug/comments", async (req, res, next) => {
+  try {
+    const store = await readStore();
+    const post = findPublishedPost(store, req.params.slug);
+
+    if (!post) {
+      return res.status(404).json({ message: "Release not found." });
+    }
+
+    const comments = store.comments
+      .filter((comment) => comment.postSlug === req.params.slug && comment.status === "visible")
+      .sort((left, right) => String(left.createdAt).localeCompare(String(right.createdAt)))
+      .map((comment) => attachCommentDetails(comment, store.users));
+
+    return res.json({ comments });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/posts/:slug/comments", commentWriteLimiter, requireUser, async (req, res, next) => {
+  try {
+    if (req.user.role === "admin") {
+      return res.status(403).json({ message: "Use a user account to comment publicly." });
+    }
+
+    const store = await readStore();
+    const post = findPublishedPost(store, req.params.slug);
+
+    if (!post) {
+      return res.status(404).json({ message: "Release not found." });
+    }
+
+    const body = String(req.body.body || "").trim();
+
+    if (!body || body.length < 2) {
+      return res.status(400).json({ message: "Comment text must be at least 2 characters." });
+    }
+
+    const user = store.users.find((entry) => entry.id === req.user.sub && entry.status === "active");
+
+    if (!user) {
+      return res.status(401).json({ message: "User session is no longer valid." });
+    }
+
+    const timestamp = new Date().toISOString();
+    const comment = {
+      id: crypto.randomUUID(),
+      postSlug: req.params.slug,
+      authorId: user.id,
+      body,
+      status: "visible",
+      createdAt: timestamp,
+      updatedAt: timestamp
+    };
+
+    store.comments.push(comment);
+    await writeStore(store);
+
+    return res.status(201).json({ comment: attachCommentDetails(comment, store.users) });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.put("/api/comments/:id", commentWriteLimiter, requireUser, async (req, res, next) => {
+  try {
+    const store = await readStore();
+    const index = store.comments.findIndex((entry) => entry.id === req.params.id);
+
+    if (index === -1) {
+      return res.status(404).json({ message: "Comment not found." });
+    }
+
+    const existingComment = store.comments[index];
+
+    if (!canManageComment(req.user, existingComment)) {
+      return res.status(403).json({ message: "You do not have permission to edit this comment." });
+    }
+
+    const nextComment = normalizeCommentInput(req.body, existingComment);
+
+    if (!nextComment.body || nextComment.body.length < 2) {
+      return res.status(400).json({ message: "Comment text must be at least 2 characters." });
+    }
+
+    store.comments[index] = nextComment;
+    await writeStore(store);
+
+    return res.json({ comment: attachCommentDetails(nextComment, store.users) });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.delete("/api/comments/:id", commentWriteLimiter, requireUser, async (req, res, next) => {
+  try {
+    const store = await readStore();
+    const comment = store.comments.find((entry) => entry.id === req.params.id);
+
+    if (!comment) {
+      return res.status(404).json({ message: "Comment not found." });
+    }
+
+    if (!canManageComment(req.user, comment)) {
+      return res.status(403).json({ message: "You do not have permission to delete this comment." });
+    }
+
+    store.comments = store.comments.filter((entry) => entry.id !== req.params.id);
+    await writeStore(store);
+
+    return res.json({ message: "Comment deleted." });
   } catch (error) {
     next(error);
   }
@@ -338,9 +671,14 @@ app.put("/api/admin/posts/:id", requireAdmin, async (req, res, next) => {
       return res.status(404).json({ message: "Post not found." });
     }
 
-    const updatedPost = normalizePostInput(req.body, store.collections, store.posts[index]);
+    const previousPost = store.posts[index];
+    const updatedPost = normalizePostInput(req.body, store.collections, previousPost);
 
     store.posts[index] = updatedPost;
+    store.comments = store.comments.map((comment) => ({
+      ...comment,
+      postSlug: comment.postSlug === previousPost.slug ? updatedPost.slug : comment.postSlug
+    }));
     store.collections = reconcileCollections(store.collections, store.posts);
     await writeStore(store);
     res.json({ post: attachCollectionDetails(updatedPost, store.collections) });
@@ -352,6 +690,7 @@ app.put("/api/admin/posts/:id", requireAdmin, async (req, res, next) => {
 app.delete("/api/admin/posts/:id", requireAdmin, async (req, res, next) => {
   try {
     const store = await readStore();
+    const post = store.posts.find((entry) => entry.id === req.params.id);
     const remaining = store.posts.filter((post) => post.id !== req.params.id);
 
     if (remaining.length === store.posts.length) {
@@ -359,6 +698,7 @@ app.delete("/api/admin/posts/:id", requireAdmin, async (req, res, next) => {
     }
 
     store.posts = remaining;
+    store.comments = store.comments.filter((comment) => comment.postSlug !== post.slug);
     store.collections = reconcileCollections(store.collections, store.posts);
     await writeStore(store);
     res.json({ message: "Post deleted." });
@@ -401,6 +741,48 @@ app.put("/api/admin/site-content/about", requireAdmin, async (req, res, next) =>
 
     await writeStore(store);
     res.json({ about });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/admin/comments", requireAdmin, async (req, res, next) => {
+  try {
+    const store = await readStore();
+    const requestedStatus = String(req.query.status || "").trim();
+    const comments = store.comments
+      .filter((comment) => (!requestedStatus ? true : comment.status === requestedStatus))
+      .map((comment) => attachCommentDetails(comment, store.users));
+
+    res.json({ comments });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.put("/api/admin/comments/:id", requireAdmin, async (req, res, next) => {
+  try {
+    const store = await readStore();
+    const index = store.comments.findIndex((entry) => entry.id === req.params.id);
+
+    if (index === -1) {
+      return res.status(404).json({ message: "Comment not found." });
+    }
+
+    const status = String(req.body.status || "").trim();
+
+    if (!["visible", "hidden"].includes(status)) {
+      return res.status(400).json({ message: "Comment status must be either visible or hidden." });
+    }
+
+    store.comments[index] = {
+      ...store.comments[index],
+      status,
+      updatedAt: new Date().toISOString()
+    };
+
+    await writeStore(store);
+    res.json({ comment: attachCommentDetails(store.comments[index], store.users) });
   } catch (error) {
     next(error);
   }
