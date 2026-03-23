@@ -1,6 +1,6 @@
-# Suno Blog Scaffold
+# Suno Diary
 
-Suno Blog Scaffold is a full-stack music archive built with React, Vite, Express, and MongoDB. It combines public release browsing, immersive collection worlds, protected admin management, and public user accounts with comments.
+Suno Diary is a full-stack music archive built with React, Vite, Express, and MongoDB. It combines public release browsing, immersive collection worlds, protected admin management, and public user accounts with comments.
 
 ## Project Structure
 
