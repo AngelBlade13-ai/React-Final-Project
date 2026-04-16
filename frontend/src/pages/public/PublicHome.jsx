@@ -1,19 +1,32 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import WorldThresholdLink from "../../components/WorldThresholdLink";
 import ReleaseMedia from "../../components/ReleaseMedia";
 import { CollectionCard, ReleaseCard } from "../../components/cards";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
-import { formatPostDate, normalizeTitle } from "../../lib/formatters";
-import { apiBaseUrl, hasVideo } from "../../lib/site";
+import { formatPostDate } from "../../lib/formatters";
+import { apiBaseUrl, emptySiteSettings, getHomepageCuratedPosts, getVisibleCollectionsForPost, hasVideo, sortCollectionsForPublicNavigation } from "../../lib/site";
 
-export default function PublicHome({ onPlayTrack }) {
+export default function PublicHome({ onPlayTrack, siteContent }) {
   useDocumentTitle("");
   const [posts, setPosts] = useState([]);
   const [collections, setCollections] = useState([]);
   const [loading, setLoading] = useState(true);
-  const featuredPost = posts.find((post) => normalizeTitle(post.title) === "hopes song") || posts[0] || null;
-  const latestPosts = featuredPost ? posts.filter((post) => post.id !== featuredPost.id) : posts;
-  const featuredCollections = collections.slice(0, 3);
+  const homeContent = {
+    ...emptySiteSettings.home,
+    ...(siteContent?.home || {})
+  };
+  const curatedPosts = getHomepageCuratedPosts(posts);
+  const manuallyFeaturedPost =
+    posts.find((post) => post.slug === homeContent.featuredReleaseSlug) ||
+    curatedPosts.find((post) => post.slug === homeContent.featuredReleaseSlug) ||
+    null;
+  const featuredPost = manuallyFeaturedPost || curatedPosts[0] || null;
+  const latestPosts = (featuredPost ? curatedPosts.filter((post) => post.id !== featuredPost.id) : curatedPosts).slice(0, 15);
+  const featuredCollections = sortCollectionsForPublicNavigation(collections).slice(0, 4);
+  const featuredPostCollections = getVisibleCollectionsForPost(featuredPost);
+  const fractureverseCollection = collections.find((collection) => collection.slug === "fractureverse") || null;
+  const eldoriaCollection = collections.find((collection) => collection.slug === "eldoria") || null;
 
   useEffect(() => {
     async function loadHomeData() {
@@ -41,31 +54,25 @@ export default function PublicHome({ onPlayTrack }) {
       <header className="hero homepage-hero">
         <div className="homepage-hero-grid">
           <div className="hero-copy-block">
-            <p className="eyebrow">Suno Diary</p>
-            <h1>A soft archive for releases, collections, and the stories that let each song keep breathing.</h1>
-            <p className="hero-copy">
-              Browse curated groupings, move through release notes with more context, and treat the site less like a
-              feed and more like a small world of connected songs.
-            </p>
+            <p className="eyebrow">{homeContent.heroEyebrow}</p>
+            <h1>{homeContent.heroTitle}</h1>
+            <p className="hero-copy">{homeContent.heroText}</p>
             <div className="hero-links-row">
               {featuredPost ? (
                 <button className="hero-link" onClick={() => onPlayTrack(featuredPost)} type="button">
-                  Play Featured Release
+                  {homeContent.featuredCtaLabel}
                 </button>
               ) : null}
               <a className="hero-link secondary-link" href="#latest-releases">
-                Jump to Latest Releases
+                {homeContent.jumpCtaLabel}
               </a>
             </div>
           </div>
 
           <div className="hero-note-card">
-            <p className="note-label">What Changed</p>
-            <h2>Discovery is part of the identity now, not just a homepage feed.</h2>
-            <p>
-              Collections organize releases into verses, moods, and projects. Explore lets you search by title and
-              written notes. About frames the artist, the site, and the reason this archive exists.
-            </p>
+            <p className="note-label">{homeContent.noteEyebrow}</p>
+            <h2>{homeContent.noteTitle}</h2>
+            <p>{homeContent.noteText}</p>
             <div className="hero-note-stats">
               <span className="meta-badge">{loading ? "..." : `${posts.length} releases`}</span>
               <span className="meta-badge subtle-badge">{loading ? "..." : `${collections.length} curated paths`}</span>
@@ -77,38 +84,28 @@ export default function PublicHome({ onPlayTrack }) {
       <main className="content-grid">
         <section className="home-transition-grid">
           <article className="intro-card homepage-panel transition-card">
-            <p className="eyebrow">Browse</p>
-            <h2>Move through the archive by collection instead of only by chronology.</h2>
-            <p>
-              Collections turn the catalog into verses, projects, moods, and small emotional shelves rather than one
-              uninterrupted stream.
-            </p>
+            <p className="eyebrow">{homeContent.browseEyebrow}</p>
+            <h2>{homeContent.browseTitle}</h2>
+            <p>{homeContent.browseText}</p>
             <Link className="card-link" to="/collections">
-              See the collection shelves
+              {homeContent.browseLinkLabel}
             </Link>
           </article>
           <article className="intro-card homepage-panel transition-card">
-            <p className="eyebrow">Find</p>
-            <h2>Search inside release notes, titles, and lyrics when you know the feeling but not the page.</h2>
-            <p>
-              The explore view is built for rediscovery: search by phrase, narrow by collection, and jump straight into
-              the release that fits.
-            </p>
+            <p className="eyebrow">{homeContent.exploreEyebrow}</p>
+            <h2>{homeContent.exploreTitle}</h2>
+            <p>{homeContent.exploreText}</p>
             <Link className="card-link" to="/explore">
-              Open explore
+              {homeContent.exploreLinkLabel}
             </Link>
           </article>
         </section>
 
         <section className="intro-card homepage-panel">
-          <p className="eyebrow">Site Identity</p>
-          <h2>A personal home for releases, track stories, and the discovery paths between them</h2>
-          <p>
-            Each page still keeps the music close, but now the archive has a stronger structure: releases can live in
-            more than one collection, search can surface them by title or text, and the site has space to explain the
-            artist voice behind the catalog.
-          </p>
-          <p className="identity-line">A collection of songs, stories, and moments in motion.</p>
+          <p className="eyebrow">{homeContent.identityEyebrow}</p>
+          <h2>{homeContent.identityTitle}</h2>
+          <p>{homeContent.identityText}</p>
+          <p className="identity-line">{homeContent.identityLine}</p>
         </section>
 
         {featuredPost ? (
@@ -140,7 +137,7 @@ export default function PublicHome({ onPlayTrack }) {
                   <p className="featured-release-excerpt">{featuredPost.excerpt}</p>
                   <p className="meta">{formatPostDate(featuredPost.createdAt)}</p>
                   <div className="tag-row">
-                    {featuredPost.collections?.map((collection) => (
+                    {featuredPostCollections.map((collection) => (
                       <Link className="collection-chip" key={collection.slug} to={`/collections/${collection.slug}`}>
                         {collection.title}
                       </Link>
@@ -178,6 +175,58 @@ export default function PublicHome({ onPlayTrack }) {
           </div>
         </section>
 
+        {fractureverseCollection || eldoriaCollection ? (
+          <section className="world-portal-section">
+            <div className="section-head world-portal-head">
+              <h2>Enter a World</h2>
+              <span>Thresholds</span>
+            </div>
+            <p className="world-portal-intro">
+              Some stories are not meant to be browsed.
+              <br />
+              They are meant to be stepped into.
+            </p>
+            <div className="world-portal-grid">
+              {fractureverseCollection ? (
+                <WorldThresholdLink className="world-portal-link" theme="fractureverse" to={`/collections/${fractureverseCollection.slug}`}>
+                  <article className="intro-card homepage-panel world-portal-card world-portal-card-fractureverse">
+                    <div className="world-portal-topline">
+                      <p className="eyebrow">World</p>
+                      <span className="meta-badge subtle-badge">{fractureverseCollection.releaseCount} fragments</span>
+                    </div>
+                    <h3>{fractureverseCollection.title}</h3>
+                    <p>{fractureverseCollection.description}</p>
+                    <div className="world-portal-footer">
+                      <span className="world-portal-hint">Instability detected</span>
+                      <span className="world-portal-cta">
+                        Enter <span aria-hidden="true">-&gt;</span>
+                      </span>
+                    </div>
+                  </article>
+                </WorldThresholdLink>
+              ) : null}
+              {eldoriaCollection ? (
+                <WorldThresholdLink className="world-portal-link" theme="eldoria" to={`/collections/${eldoriaCollection.slug}`}>
+                  <article className="intro-card homepage-panel world-portal-card world-portal-card-eldoria">
+                    <div className="world-portal-topline">
+                      <p className="eyebrow">World</p>
+                      <span className="meta-badge subtle-badge">{eldoriaCollection.releaseCount} ballads</span>
+                    </div>
+                    <h3>{eldoriaCollection.title}</h3>
+                    <p>{eldoriaCollection.description}</p>
+                    <div className="world-portal-footer">
+                      <span className="world-portal-hint">The sigil is awake</span>
+                      <span className="world-portal-cta">
+                        Enter <span aria-hidden="true">-&gt;</span>
+                      </span>
+                    </div>
+                  </article>
+                </WorldThresholdLink>
+              ) : null}
+            </div>
+          </section>
+        ) : null}
+
         <section id="latest-releases">
           <div className="section-head">
             <h2>Latest Releases</h2>
@@ -197,8 +246,8 @@ export default function PublicHome({ onPlayTrack }) {
             </section>
           ) : (
             <div className="post-grid latest-release-grid">
-              {latestPosts.map((post) => (
-                <ReleaseCard key={post.id} onPlayTrack={onPlayTrack} post={post} />
+              {latestPosts.map((post, index) => (
+                <ReleaseCard emphasis={index < 2} key={post.id} onPlayTrack={onPlayTrack} post={post} />
               ))}
             </div>
           )}

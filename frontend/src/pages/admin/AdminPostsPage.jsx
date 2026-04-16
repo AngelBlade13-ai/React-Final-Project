@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import ReleaseMedia from "../../components/ReleaseMedia";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { formatPostDate } from "../../lib/formatters";
+import { ORIGINAL_PERSONAL_SECTION_CONFIG, RELEASE_STATUSES, SOURCE_TAG_OPTIONS, WORLD_LAYER_OPTIONS } from "../../lib/site";
 import { useAdminContext } from "../../layouts/AdminLayout";
 
 const METADATA_THEME_COPY = {
@@ -148,6 +149,103 @@ export default function AdminPostsPage() {
           <label className="full-span">
             Lyrics
             <textarea onChange={(event) => updateField("lyrics", event.target.value)} rows="8" value={form.lyrics} />
+          </label>
+          <label>
+            Subcategory
+            <select onChange={(event) => updateField("subCategory", event.target.value)} value={form.subCategory}>
+              <option value="">None / Auto</option>
+              {ORIGINAL_PERSONAL_SECTION_CONFIG.filter((section) => section.key !== "other").map((section) => (
+                <option key={section.key} value={section.key}>
+                  {section.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Source Tag
+            <select onChange={(event) => updateField("sourceTag", event.target.value)} value={form.sourceTag}>
+              {SOURCE_TAG_OPTIONS.map((option) => (
+                <option key={option || "none"} value={option}>
+                  {option || "None"}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            World Layer
+            <select onChange={(event) => updateField("worldLayer", event.target.value)} value={form.worldLayer}>
+              {WORLD_LAYER_OPTIONS.map((option) => (
+                <option key={option || "none"} value={option}>
+                  {option || "None"}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="full-span">
+            Theme Tags
+            <input
+              onChange={(event) =>
+                updateField(
+                  "themeTags",
+                  event.target.value
+                    .split(",")
+                    .map((tag) => tag.trim())
+                    .filter(Boolean)
+                )
+              }
+              placeholder="Comma-separated tags"
+              value={(form.themeTags || []).join(", ")}
+            />
+          </label>
+          <label>
+            Version Family
+            <input
+              onChange={(event) => updateField("versionFamily", event.target.value)}
+              placeholder="Shared key for alternate versions"
+              value={form.versionFamily}
+            />
+          </label>
+          <label className="checkbox-field">
+            <input
+              checked={form.isPrimaryVersion}
+              onChange={(event) => updateField("isPrimaryVersion", event.target.checked)}
+              type="checkbox"
+            />
+            <span>Primary version</span>
+          </label>
+          <label className="checkbox-field">
+            <input
+              checked={form.isHomepageEligible}
+              onChange={(event) => updateField("isHomepageEligible", event.target.checked)}
+              type="checkbox"
+            />
+            <span>Homepage eligible</span>
+          </label>
+          <label className="checkbox-field">
+            <input
+              checked={form.isPubliclyVisible}
+              onChange={(event) => updateField("isPubliclyVisible", event.target.checked)}
+              type="checkbox"
+            />
+            <span>Publicly visible</span>
+          </label>
+          <label className="checkbox-field">
+            <input
+              checked={form.isArchive}
+              onChange={(event) => updateField("isArchive", event.target.checked)}
+              type="checkbox"
+            />
+            <span>Archive entry</span>
+          </label>
+          <label>
+            Release Status
+            <select onChange={(event) => updateField("releaseStatus", event.target.value)} value={form.releaseStatus}>
+              {RELEASE_STATUSES.map((status) => (
+                <option key={status} value={status}>
+                  {status}
+                </option>
+              ))}
+            </select>
           </label>
           <fieldset className="full-span collection-picker archive-meta-panel">
             <legend>World Metadata</legend>
@@ -459,6 +557,19 @@ export default function AdminPostsPage() {
                     </span>
                   ))}
                 </div>
+                <p className="meta">
+                  {post.isPrimaryVersion ? "Primary version" : "Alternate version"} | {post.isHomepageEligible ? "Homepage eligible" : "Homepage hidden"} |{" "}
+                  {post.isArchive ? "Archive" : "Active"}
+                </p>
+                <p className="meta">Visibility: {post.isPubliclyVisible === false ? "Hidden from public" : "Publicly visible"}</p>
+                <p className="meta">Release status: {post.releaseStatus || "canon"}</p>
+                {post.versionFamily ? <p className="meta">Version family: {post.versionFamily}</p> : null}
+                {post.subCategory ? <p className="meta">Subcategory: {post.subCategory}</p> : null}
+                {post.sourceTag ? <p className="meta">Source tag: {post.sourceTag}</p> : null}
+                {post.supersededBySlug ? <p className="meta">Superseded by: {post.supersededBySlug}</p> : null}
+                {post.supersededReason ? <p className="meta">Supersession note: {post.supersededReason}</p> : null}
+                {post.worldLayer ? <p className="meta">World layer: {post.worldLayer}</p> : null}
+                {post.themeTags?.length ? <p className="meta">Theme tags: {post.themeTags.join(", ")}</p> : null}
                 {post.archiveMeta?.fragmentId ? (
                   <p className="fracture-system-note">
                     {post.archiveMeta.fragmentId} / {post.archiveMeta.state || "Unclassified"} / {post.archiveMeta.signalType || "Record"}

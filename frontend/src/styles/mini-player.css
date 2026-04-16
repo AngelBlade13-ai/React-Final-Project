@@ -28,6 +28,18 @@
   overflow: hidden;
 }
 
+.mini-player-card-eldoria {
+  box-shadow:
+    0 16px 34px color-mix(in srgb, rgba(224, 200, 138, 0.16) 72%, transparent),
+    0 6px 18px color-mix(in srgb, rgba(142, 161, 103, 0.16) 48%, transparent);
+}
+
+.mini-player-card-fractureverse {
+  box-shadow:
+    0 16px 34px color-mix(in srgb, rgba(255, 63, 135, 0.16) 72%, transparent),
+    0 6px 18px color-mix(in srgb, rgba(138, 79, 255, 0.18) 48%, transparent);
+}
+
 .mini-player-identity,
 .mini-player-center,
 .mini-player-actions {
@@ -59,8 +71,17 @@
   letter-spacing: -0.025em;
 }
 
+.mini-player-world {
+  margin: 0.16rem 0 0;
+  color: color-mix(in srgb, var(--text) 86%, var(--primary-strong) 14%);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .mini-player-meta {
-  margin: 0.18rem 0 0;
+  margin: 0.14rem 0 0;
   color: var(--muted-text);
   font-size: 0.84rem;
   white-space: nowrap;

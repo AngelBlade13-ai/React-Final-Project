@@ -23,6 +23,8 @@ project-root/
 - CRUD API for posts, collections, about content, and comments
 - MongoDB persistence for posts, collections, site content, users, and comments
 - Public comments with edit and delete controls for the comment author
+- Admin archive intelligence dashboard with health scoring, readiness signals, and quick-win surfacing
+- Admin comment moderation workspace with search plus hide and restore controls
 - Themed collection and release pages with responsive layout
 - Dynamic page titles and a custom threshold favicon
 
@@ -86,6 +88,8 @@ npm run verify
 
 cd ../frontend
 npm run verify
+
+python tools/content_audit.py
 ```
 
 On first backend startup, the API seeds MongoDB from the legacy JSON source if the database is empty.
@@ -107,6 +111,7 @@ On first backend startup, the API seeds MongoDB from the legacy JSON source if t
 3. Access the protected `/admin` dashboard
 4. Create, edit, and delete posts and collections
 5. Update About page content
+6. Open `/admin/insights` for archive health and `/admin/comments` for moderation
 
 ### Hidden admin access
 
@@ -331,3 +336,23 @@ Live backend:
 API base:
 
 - https://react-final-project-cnk7.onrender.com/api
+
+## Python Audit Tool
+
+The repo now includes a small Python audit utility for learning-friendly content checks.
+
+Examples:
+
+```bash
+python tools/content_audit.py
+python tools/content_audit.py --format markdown
+python tools/content_audit.py --format json --write docs/content-audit.json
+```
+
+The script reads `backend/data/posts.json` by default and reports:
+
+- release counts by status
+- video and lyrics coverage
+- immersive-world metadata coverage
+- featured-release coverage for public collections
+- common content gaps like missing video, missing lyrics, metadata gaps, and homepage-eligibility conflicts

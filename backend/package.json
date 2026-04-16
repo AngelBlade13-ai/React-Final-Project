@@ -4,9 +4,22 @@
   "description": "Express backend for the Suno blog scaffold",
   "main": "src/server.js",
   "scripts": {
+    "classify:release-status": "node scripts/classify-release-status.js --target=both",
+    "classify:release-status:db": "node scripts/classify-release-status.js --target=db",
+    "classify:release-status:force": "node scripts/classify-release-status.js --target=both --force",
+    "classify:release-status:db:force": "node scripts/classify-release-status.js --target=db --force",
+    "cleanup:donna-duplicates": "node scripts/apply-donna-duplicate-cleanup.js --target=both",
+    "report:donna-duplicates": "node scripts/report-donna-duplicate-candidates.js",
+    "curate:posts": "node scripts/apply-post-curation-map.js",
+    "curate:posts:db": "node scripts/apply-post-curation-map.js --target=db",
+    "backfill:public-ia": "node scripts/backfill-public-ia.js",
+    "cleanup:collections": "node scripts/cleanup-live-collection-data.js",
+    "migrate:collection-taxonomy": "node scripts/migrate-collection-taxonomy.js --target=both",
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
-    "verify": "node --check src/server.js && node --check src/app.js && node --check src/data/store.js && node --check src/middleware/auth.js && node --check src/lib/mongo.js"
+    "import:site-ready": "node scripts/import-site-ready-admin-payloads.js",
+    "reseed": "node scripts/reseed-from-posts-file.js",
+    "verify": "node --check src/server.js && node --check src/app.js && node --check src/data/store.js && node --check src/middleware/auth.js && node --check src/lib/mongo.js && node --check src/services/archiveInsights.js && node --check scripts/reseed-from-posts-file.js && node --check scripts/import-site-ready-admin-payloads.js && node --check scripts/cleanup-live-collection-data.js && node --check scripts/backfill-public-ia.js && node --check scripts/apply-post-curation-map.js && node --check scripts/classify-release-status.js && node --check scripts/report-donna-duplicate-candidates.js && node --check scripts/apply-donna-duplicate-cleanup.js && node --check scripts/migrate-collection-taxonomy.js"
   },
   "keywords": [],
   "author": "",

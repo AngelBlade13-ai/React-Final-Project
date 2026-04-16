@@ -1,5 +1,5 @@
 import { formatClock } from "../lib/formatters";
-import { getEldoriaMeta, getFractureverseMeta, getPrimaryThemeForPost, getThemeConfig } from "../lib/site";
+import { getEldoriaMeta, getFractureverseMeta, getPreferredCollectionForPost, getPrimaryThemeForPost, getThemeConfig } from "../lib/site";
 
 export default function MiniPlayer({
   collectionName,
@@ -17,6 +17,7 @@ export default function MiniPlayer({
   onVolumeChange,
   progress,
   queueLength,
+  siteContent,
   volume
 }) {
   if (!currentTrack) {
@@ -24,11 +25,18 @@ export default function MiniPlayer({
   }
 
   const primaryTheme = getPrimaryThemeForPost(currentTrack);
-  const themeConfig = getThemeConfig(primaryTheme);
+  const themeConfig = getThemeConfig(primaryTheme, siteContent);
   const fractureMeta = primaryTheme === "fractureverse" ? getFractureverseMeta(currentTrack, [currentTrack]) : null;
   const eldoriaMeta = primaryTheme === "eldoria" ? getEldoriaMeta(currentTrack) : null;
   const isEldoria = primaryTheme === "eldoria";
-  const primaryCollection = collectionName || currentTrack.collections?.[0]?.title || "";
+  const isFractureverse = primaryTheme === "fractureverse";
+  const preferredCollection = getPreferredCollectionForPost(currentTrack);
+  const primaryCollection = collectionName || preferredCollection?.title || "";
+  const playerLabel = isEldoria
+    ? "Now Playing - A Ballad"
+    : isFractureverse
+      ? "Now Playing - Active Signal"
+      : themeConfig.playerLabel || "Now Playing";
   const positionLabel =
     queueLength > 1
       ? fractureMeta?.fragmentId
@@ -48,11 +56,12 @@ export default function MiniPlayer({
 
   return (
     <div className="mini-player-shell">
-      <div className={`mini-player-card${isEldoria ? " mini-player-card-eldoria" : ""}`}>
+      <div className={`mini-player-card${isEldoria ? " mini-player-card-eldoria" : ""}${isFractureverse ? " mini-player-card-fractureverse" : ""}`}>
         <div className="mini-player-identity">
           <div className="mini-player-copy">
-            <p className="mini-player-label">{themeConfig.playerLabel || "Now Playing"}</p>
+            <p className="mini-player-label">{playerLabel}</p>
             <h2>{displayTitle}</h2>
+            {primaryCollection ? <p className="mini-player-world">{primaryCollection}</p> : null}
             {secondaryMeta ? <p className="mini-player-meta">{secondaryMeta}</p> : null}
             {flavorLine ? <p className="mini-player-flavor">{flavorLine}</p> : null}
           </div>

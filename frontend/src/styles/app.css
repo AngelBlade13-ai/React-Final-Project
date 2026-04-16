@@ -49,6 +49,37 @@ select {
   transition: color 320ms ease;
 }
 
+.threshold-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 48;
+  pointer-events: none;
+  opacity: 0;
+  background:
+    radial-gradient(circle at center, color-mix(in srgb, var(--primary) 6%, transparent), transparent 40%),
+    rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(0);
+  transition: opacity 180ms ease, backdrop-filter 220ms ease, background 220ms ease;
+}
+
+:root[data-threshold-active="true"] .threshold-overlay {
+  opacity: 1;
+  backdrop-filter: blur(4px);
+}
+
+:root[data-threshold-active="true"][data-threshold-theme="eldoria"] .threshold-overlay {
+  background:
+    radial-gradient(circle at center, rgba(224, 200, 138, 0.28), transparent 42%),
+    rgba(9, 13, 11, 0.2);
+}
+
+:root[data-threshold-active="true"][data-threshold-theme="fractureverse"] .threshold-overlay {
+  background:
+    radial-gradient(circle at center, rgba(185, 43, 102, 0.16), transparent 38%),
+    linear-gradient(90deg, rgba(138, 79, 255, 0.08), transparent 34%, rgba(255, 63, 135, 0.08)),
+    rgba(8, 9, 14, 0.24);
+}
+
 .public-site-header {
   display: flex;
   justify-content: space-between;
@@ -425,7 +456,8 @@ button:disabled {
   display: grid;
   gap: 0.8rem;
   min-height: 100%;
-  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+  overflow: hidden;
+  transition: transform 250ms ease, box-shadow 250ms ease, border-color 250ms ease, background 250ms ease;
 }
 
 :root[data-theme="light"] .collection-card {
@@ -462,6 +494,17 @@ button:disabled {
   letter-spacing: -0.03em;
 }
 
+.collection-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(0, 0, 0, 0.1));
+  opacity: 0.2;
+  transition: opacity 250ms ease;
+  pointer-events: none;
+}
+
 .collection-link:hover .collection-card,
 .collection-link:focus-visible .collection-card {
   transform: translateY(-4px);
@@ -471,6 +514,11 @@ button:disabled {
   border-color: color-mix(in srgb, var(--border) 58%, var(--primary) 42%);
 }
 
+.collection-link:hover .collection-card::after,
+.collection-link:focus-visible .collection-card::after {
+  opacity: 0.34;
+}
+
 :root[data-theme="light"] .collection-link:hover .collection-card,
 :root[data-theme="light"] .collection-link:focus-visible .collection-card {
   box-shadow:
@@ -478,6 +526,37 @@ button:disabled {
     0 8px 18px color-mix(in srgb, var(--primary) 10%, transparent),
     0 2px 0 rgba(255, 255, 255, 0.46) inset;
   border-color: color-mix(in srgb, var(--border) 52%, var(--primary) 48%);
+}
+
+.collection-link.threshold-source-active {
+  position: relative;
+  z-index: 52;
+}
+
+.collection-link.threshold-source-active .collection-card,
+.world-portal-link.threshold-source-active .world-portal-card {
+  transform: translateY(-4px) scale(1.02);
+}
+
+.eldoria-collection-card,
+.fractureverse-collection-card {
+  border-color: color-mix(in srgb, var(--border) 68%, var(--primary) 32%);
+}
+
+.collection-link:hover .eldoria-collection-card,
+.collection-link:focus-visible .eldoria-collection-card {
+  border-color: color-mix(in srgb, #c6ab6d 52%, var(--border));
+  box-shadow:
+    0 24px 50px color-mix(in srgb, rgba(198, 171, 109, 0.22) 60%, transparent),
+    0 0 0 1px rgba(224, 200, 138, 0.18) inset;
+}
+
+.collection-link:hover .fractureverse-collection-card,
+.collection-link:focus-visible .fractureverse-collection-card {
+  border-color: color-mix(in srgb, #ff3f87 54%, var(--border));
+  box-shadow:
+    0 24px 50px color-mix(in srgb, rgba(255, 63, 135, 0.18) 58%, transparent),
+    0 0 0 1px rgba(138, 79, 255, 0.16) inset;
 }
 
 .collection-card-topline {
@@ -586,6 +665,27 @@ button:disabled {
   box-shadow:
     0 18px 40px color-mix(in srgb, var(--primary) 12%, transparent),
     inset 0 1px 0 color-mix(in srgb, var(--text) 4%, transparent);
+}
+
+.release-card-media,
+.release-card-overlay,
+.post-media {
+  transition: transform 200ms ease-out, opacity 200ms ease-out, filter 200ms ease-out;
+}
+
+.release-card-link:hover .release-card-media,
+.release-card-link:focus-visible .release-card-media {
+  transform: scale(1.01);
+}
+
+.release-card-link:hover .post-media,
+.release-card-link:focus-visible .post-media {
+  transform: scale(1.035);
+}
+
+.release-card-link:hover .release-card-overlay,
+.release-card-link:focus-visible .release-card-overlay {
+  opacity: 0.92;
 }
 
 .auth-card {
@@ -776,6 +876,273 @@ select:focus {
 .homepage-post-card .post-body h3 {
   margin: 0.1rem 0 0.35rem;
   font-size: 1.35rem;
+}
+
+.release-feed-card-emphasis {
+  min-height: 100%;
+  box-shadow:
+    0 18px 40px color-mix(in srgb, var(--primary) 12%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--text) 5%, transparent);
+}
+
+.release-feed-card-emphasis .release-card-media {
+  aspect-ratio: 16 / 9;
+}
+
+.release-feed-card-emphasis .post-body {
+  padding: 1.2rem 1.3rem 1.45rem;
+}
+
+.release-feed-card-emphasis .post-body h3 {
+  font-size: 1.55rem;
+  line-height: 1;
+}
+
+.release-feed-card-emphasis .release-card-overlay {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, black 16%, transparent), transparent 28%, color-mix(in srgb, black 38%, transparent)),
+    linear-gradient(180deg, transparent, color-mix(in srgb, var(--primary) 10%, transparent));
+}
+
+.world-portal-section {
+  display: grid;
+  gap: 1rem;
+}
+
+.world-portal-head {
+  margin-bottom: 0;
+}
+
+.world-portal-intro {
+  margin: 0;
+  max-width: 34rem;
+  color: var(--muted-text);
+  line-height: 1.7;
+}
+
+.world-portal-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.world-portal-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.world-portal-card {
+  position: relative;
+  min-height: 320px;
+  display: grid;
+  align-content: end;
+  gap: 0.85rem;
+  overflow: hidden;
+  transition: transform 250ms ease, box-shadow 250ms ease, border-color 250ms ease, background 250ms ease;
+}
+
+.world-portal-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0.88;
+  transition: opacity 250ms ease, transform 250ms ease;
+  pointer-events: none;
+}
+
+.world-portal-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.world-portal-card h3 {
+  margin: 0;
+  font-size: clamp(2rem, 3vw, 2.7rem);
+  letter-spacing: -0.04em;
+}
+
+.world-portal-card-fractureverse {
+  background:
+    linear-gradient(180deg, rgba(14, 11, 20, 0.22), rgba(21, 13, 18, 0.72)),
+    linear-gradient(140deg, color-mix(in srgb, var(--surface) 28%, #221322 72%), color-mix(in srgb, var(--surface-alt) 34%, #180f1f 66%));
+}
+
+.world-portal-card-fractureverse::before {
+  background:
+    radial-gradient(circle at 82% 18%, rgba(138, 79, 255, 0.34), transparent 28%),
+    radial-gradient(circle at 16% 78%, rgba(255, 63, 135, 0.2), transparent 30%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.02), rgba(0, 0, 0, 0.16));
+}
+
+.world-portal-card-eldoria {
+  background:
+    linear-gradient(180deg, rgba(15, 19, 15, 0.12), rgba(26, 31, 22, 0.62)),
+    linear-gradient(140deg, color-mix(in srgb, var(--surface) 42%, #3a4430 58%), color-mix(in srgb, var(--surface-alt) 32%, #283127 68%));
+}
+
+.world-portal-card-eldoria::before {
+  background:
+    radial-gradient(circle at 78% 22%, rgba(224, 200, 138, 0.34), transparent 30%),
+    radial-gradient(circle at 22% 74%, rgba(142, 161, 103, 0.26), transparent 32%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.03), rgba(0, 0, 0, 0.08));
+}
+
+.world-portal-topline,
+.world-portal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.world-portal-hint {
+  color: color-mix(in srgb, var(--muted-text) 78%, var(--surface) 22%);
+  font-size: 0.86rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.world-portal-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.world-portal-cta span {
+  display: inline-block;
+  transition: transform 200ms ease-out, opacity 200ms ease-out;
+  opacity: 0.76;
+}
+
+.world-portal-link:hover .world-portal-card,
+.world-portal-link:focus-visible .world-portal-card {
+  transform: translateY(-4px);
+  box-shadow:
+    0 28px 52px color-mix(in srgb, var(--primary) 12%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--border) 46%, var(--primary) 54%) inset;
+}
+
+.world-portal-link:hover .world-portal-card::before,
+.world-portal-link:focus-visible .world-portal-card::before {
+  opacity: 1;
+  transform: scale(1.02);
+}
+
+.world-portal-link:hover .world-portal-cta span,
+.world-portal-link:focus-visible .world-portal-cta span {
+  transform: translateX(4px);
+  opacity: 1;
+}
+
+.world-portal-link:hover .world-portal-card-fractureverse,
+.world-portal-link:focus-visible .world-portal-card-fractureverse {
+  border-color: rgba(255, 63, 135, 0.42);
+}
+
+.world-portal-link:hover .world-portal-card-eldoria,
+.world-portal-link:focus-visible .world-portal-card-eldoria {
+  border-color: rgba(224, 200, 138, 0.44);
+}
+
+.world-entry-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 58;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  animation: world-entry-fade 1.45s ease forwards;
+}
+
+.world-entry-copy {
+  display: grid;
+  gap: 0.5rem;
+  text-align: center;
+}
+
+.world-entry-copy h2 {
+  margin: 0;
+  font-size: clamp(2rem, 3vw, 3rem);
+  letter-spacing: -0.04em;
+}
+
+.world-entry-screen-eldoria {
+  background:
+    radial-gradient(circle at center, rgba(224, 200, 138, 0.22), transparent 30%),
+    linear-gradient(180deg, rgba(8, 13, 11, 0.88), rgba(15, 19, 15, 0.96));
+}
+
+.world-entry-screen-fractureverse {
+  background:
+    radial-gradient(circle at center, rgba(255, 63, 135, 0.14), transparent 26%),
+    linear-gradient(90deg, rgba(138, 79, 255, 0.08), transparent 36%, rgba(255, 63, 135, 0.08)),
+    linear-gradient(180deg, rgba(6, 7, 10, 0.92), rgba(12, 10, 16, 0.98));
+}
+
+.world-entry-screen-fractureverse .world-entry-copy {
+  animation: fracture-flicker 1.1s steps(2, end) 1;
+}
+
+.world-header.world-entry-pending,
+.collection-world-page.world-entry-pending {
+  opacity: 0;
+  transform: translateY(16px) scale(0.985);
+  filter: blur(10px);
+}
+
+.world-header,
+.collection-world-page {
+  transition: opacity 420ms ease, transform 420ms ease, filter 420ms ease;
+}
+
+@keyframes world-entry-fade {
+  0% {
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  72% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes fracture-flicker {
+  0%,
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  20% {
+    opacity: 0.42;
+    transform: translateY(-1px);
+  }
+
+  40% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  60% {
+    opacity: 0.58;
+    transform: translateX(1px);
+  }
+
+  80% {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .homepage-post-card .post-body p {
@@ -1786,6 +2153,397 @@ select:focus {
   gap: 0.75rem;
 }
 
+.archive-intelligence-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(260px, 0.75fr);
+  gap: 1.2rem;
+  align-items: center;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--secondary) 16%, transparent), transparent 38%),
+    radial-gradient(circle at bottom left, color-mix(in srgb, var(--primary) 18%, transparent), transparent 42%),
+    linear-gradient(145deg, color-mix(in srgb, var(--surface) 84%, var(--primary) 16%), color-mix(in srgb, var(--surface-alt) 84%, var(--secondary) 16%));
+}
+
+.archive-intelligence-hero.score-watch {
+  border-color: color-mix(in srgb, var(--primary-strong) 44%, var(--border));
+}
+
+.archive-intelligence-hero.score-attention {
+  border-color: color-mix(in srgb, #c75b72 54%, var(--border));
+}
+
+.archive-intelligence-copy h2 {
+  margin: 0.25rem 0 0.55rem;
+}
+
+.archive-intelligence-copy p {
+  max-width: 42rem;
+}
+
+.archive-intelligence-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+}
+
+.archive-score-shell {
+  display: grid;
+  gap: 0.9rem;
+  justify-items: center;
+  padding: 1rem;
+}
+
+.archive-score-ring {
+  width: 13rem;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--border) 70%, var(--primary) 30%);
+  background:
+    radial-gradient(circle at center, color-mix(in srgb, var(--surface) 84%, transparent) 0 51%, transparent 52% 100%),
+    conic-gradient(from 210deg, var(--primary), var(--primary-strong), var(--secondary), var(--primary));
+  box-shadow: 0 20px 50px rgba(24, 18, 30, 0.14);
+}
+
+.archive-score-ring span {
+  font-size: clamp(2.6rem, 4vw, 3.6rem);
+  font-weight: 800;
+  letter-spacing: -0.06em;
+}
+
+.archive-score-ring small {
+  margin-top: -0.75rem;
+  font-size: 0.82rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted-text);
+}
+
+.archive-score-note {
+  max-width: 19rem;
+  margin: 0;
+  text-align: center;
+  color: var(--muted-text);
+}
+
+.metric-summary-grid,
+.status-breakdown-grid,
+.theme-coverage-list,
+.collection-health-grid,
+.conversation-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.metric-summary-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.metric-summary-card,
+.status-breakdown-card,
+.theme-coverage-card,
+.collection-health-card,
+.activity-card,
+.top-commented-list,
+.readiness-card,
+.insight-issue-card {
+  border-radius: 22px;
+  border: 1px solid color-mix(in srgb, var(--border) 76%, var(--primary) 24%);
+  background: color-mix(in srgb, var(--surface-alt) 72%, var(--surface) 28%);
+  box-shadow: var(--shadow-md);
+}
+
+.metric-summary-card {
+  display: grid;
+  gap: 0.45rem;
+  padding: 1.15rem 1.2rem;
+}
+
+.metric-summary-card strong {
+  font-size: clamp(2rem, 2vw, 2.5rem);
+  letter-spacing: -0.05em;
+}
+
+.metric-summary-card span,
+.readiness-card p,
+.top-commented-row p,
+.activity-card p {
+  margin: 0;
+  color: var(--muted-text);
+}
+
+.readiness-list,
+.activity-list,
+.insight-sample-list {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.readiness-card,
+.status-breakdown-card,
+.theme-coverage-card,
+.collection-health-card,
+.activity-card,
+.insight-issue-card {
+  padding: 1.1rem 1.15rem;
+}
+
+.readiness-card-head,
+.theme-coverage-head,
+.collection-health-head,
+.insight-issue-head,
+.activity-card-head,
+.top-commented-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.readiness-card-head h3,
+.theme-coverage-head h3,
+.collection-health-head h3,
+.activity-card-head h3,
+.insight-issue-head h3 {
+  margin: 0;
+}
+
+.readiness-card-head strong,
+.theme-coverage-head strong {
+  font-size: 1.15rem;
+}
+
+.readiness-meter {
+  width: 100%;
+  height: 0.8rem;
+  margin-top: 0.8rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 84%, black 16%);
+}
+
+.readiness-meter span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--primary), var(--primary-strong), var(--secondary));
+  box-shadow: 0 0 22px color-mix(in srgb, var(--primary-strong) 28%, transparent);
+}
+
+.compact-meter {
+  margin-top: 0.65rem;
+}
+
+.status-breakdown-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.status-breakdown-card {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.status-breakdown-card strong {
+  font-size: 2.2rem;
+  letter-spacing: -0.05em;
+}
+
+.status-breakdown-card span {
+  color: var(--muted-text);
+}
+
+.status-breakdown-card.status-canon {
+  border-color: color-mix(in srgb, var(--primary) 44%, var(--border));
+}
+
+.status-breakdown-card.status-alternate {
+  border-color: color-mix(in srgb, var(--secondary) 44%, var(--border));
+}
+
+.status-breakdown-card.status-working {
+  border-color: color-mix(in srgb, #c99236 52%, var(--border));
+}
+
+.insight-issue-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.insight-issue-card {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.insight-issue-card.severity-critical {
+  border-color: color-mix(in srgb, #c75b72 58%, var(--border));
+}
+
+.insight-issue-card.severity-attention {
+  border-color: color-mix(in srgb, #c99236 58%, var(--border));
+}
+
+.insight-issue-card.severity-watch {
+  border-color: color-mix(in srgb, var(--secondary) 52%, var(--border));
+}
+
+.issue-count-pill,
+.activity-status-pill,
+.collection-health-score {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.4rem;
+  min-height: 2.4rem;
+  padding: 0.2rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border) 72%, var(--primary) 28%);
+  background: color-mix(in srgb, var(--surface) 76%, var(--surface-alt) 24%);
+  font-weight: 700;
+}
+
+.activity-status-pill {
+  min-height: 2rem;
+  min-width: 0;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.activity-status-pill.status-canon,
+.activity-status-pill.status-visible,
+.collection-health-score.score-stable {
+  border-color: color-mix(in srgb, var(--primary) 48%, var(--border));
+}
+
+.activity-status-pill.status-alternate,
+.collection-health-score.score-watch {
+  border-color: color-mix(in srgb, var(--secondary) 48%, var(--border));
+}
+
+.activity-status-pill.status-working,
+.activity-status-pill.status-hidden,
+.collection-health-score.score-attention {
+  border-color: color-mix(in srgb, #c99236 56%, var(--border));
+}
+
+.insight-action-note {
+  margin: 0;
+  color: color-mix(in srgb, var(--text) 88%, var(--muted-text) 12%);
+  font-weight: 600;
+}
+
+.insight-sample-link,
+.inline-link {
+  color: var(--primary-strong);
+  text-decoration: none;
+}
+
+.insight-sample-link {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.85rem 0.95rem;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--border) 82%, var(--primary) 18%);
+  background: color-mix(in srgb, var(--surface) 82%, var(--surface-alt) 18%);
+}
+
+.insight-sample-link strong,
+.top-commented-row strong {
+  font-size: 0.96rem;
+}
+
+.insight-sample-link span,
+.insight-sample-link small {
+  color: var(--muted-text);
+}
+
+.theme-coverage-list,
+.collection-health-grid {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.collection-health-head {
+  align-items: center;
+}
+
+.collection-health-score {
+  font-size: 0.95rem;
+}
+
+.collection-health-issues {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 0.8rem;
+}
+
+.collection-health-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border) 78%, var(--primary) 22%);
+  background: color-mix(in srgb, var(--surface) 80%, var(--surface-alt) 20%);
+  font-size: 0.82rem;
+}
+
+.activity-list {
+  align-content: start;
+}
+
+.activity-card {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.top-commented-list {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1.1rem 1.15rem;
+}
+
+.top-commented-row {
+  align-items: center;
+}
+
+.top-commented-row strong,
+.top-commented-row p {
+  margin: 0;
+}
+
+.admin-comments-toolbar {
+  display: grid;
+  gap: 0.95rem;
+}
+
+.admin-comment-list {
+  gap: 1rem;
+}
+
+.admin-comment-card {
+  gap: 0.95rem;
+}
+
+.admin-comment-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.admin-comment-meta-stack {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--muted-text);
+  font-size: 0.88rem;
+}
+
 @media (max-width: 640px) {
   .page-shell {
     width: calc(100% - 1rem);
@@ -1805,6 +2563,7 @@ select:focus {
   .homepage-hero-grid,
   .admin-form,
   .explore-toolbar,
+  .world-portal-grid,
   .result-card,
   .public-site-header,
   .about-grid,
@@ -1813,7 +2572,12 @@ select:focus {
   .collection-fragment-card,
   .timeline-grid,
   .auth-page-grid,
-  .release-support-grid {
+  .release-support-grid,
+  .archive-intelligence-hero,
+  .metric-summary-grid,
+  .status-breakdown-grid,
+  .insight-issue-grid,
+  .conversation-grid {
     grid-template-columns: 1fr;
     display: grid;
   }
@@ -1832,7 +2596,13 @@ select:focus {
   .site-nav,
   .admin-subnav,
   .site-user-controls,
-  .comment-card-head {
+  .comment-card-head,
+  .readiness-card-head,
+  .theme-coverage-head,
+  .collection-health-head,
+  .insight-issue-head,
+  .activity-card-head,
+  .top-commented-row {
     justify-content: flex-start;
   }
 
@@ -1878,6 +2648,14 @@ select:focus {
 
   .comment-card-head {
     flex-direction: column;
+  }
+
+  .archive-score-shell {
+    padding: 0;
+  }
+
+  .archive-score-ring {
+    width: min(100%, 11.5rem);
   }
 
   .featured-release-card {

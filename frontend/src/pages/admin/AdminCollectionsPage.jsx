@@ -7,6 +7,7 @@ export default function AdminCollectionsPage() {
     collectionForm,
     collectionMessage,
     collections,
+    siteSettingsForm,
     editingCollectionId,
     handleCollectionDelete,
     handleCollectionSubmit,
@@ -57,13 +58,21 @@ export default function AdminCollectionsPage() {
           <label>
             Theme
             <select onChange={(event) => updateCollectionForm("theme", event.target.value)} value={collectionForm.theme}>
-              <option value="">Default</option>
-              <option value="eldoria">Eldoria</option>
-              <option value="soft-archive">Soft Archive</option>
-              <option value="fractureverse">Fractureverse</option>
-              <option value="stage">Stage / Spotlight</option>
-              <option value="signal">Signal / Broadcast</option>
+              <option value="">Default / Unassigned</option>
+              {(siteSettingsForm.collectionThemes || []).map((themeProfile) => (
+                <option key={themeProfile.key} value={themeProfile.key}>
+                  {themeProfile.label}
+                </option>
+              ))}
             </select>
+          </label>
+          <label className="checkbox-field">
+            <input
+              checked={Boolean(collectionForm.isPublicPrimary)}
+              onChange={(event) => updateCollectionForm("isPublicPrimary", event.target.checked)}
+              type="checkbox"
+            />
+            <span>Show as top-level public collection</span>
           </label>
           <label className="full-span">
             Description
@@ -101,6 +110,7 @@ export default function AdminCollectionsPage() {
               <p>{collection.description}</p>
               {collection.featuredReleaseSlug ? <p className="meta">Featured slug: {collection.featuredReleaseSlug}</p> : null}
               {collection.theme ? <p className="meta">Theme: {collection.theme}</p> : null}
+              <p className="meta">{collection.isPublicPrimary ? "Public primary collection" : "Internal/archive collection"}</p>
               <div className="admin-actions">
                 <button className="secondary-button" onClick={() => startCollectionEdit(collection)} type="button">
                   Edit

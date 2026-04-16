@@ -1,11 +1,27 @@
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import CommentsSection from "../../components/CommentsSection";
 import EldoriaSigil from "../../components/EldoriaSigil";
 import ReleaseMedia from "../../components/ReleaseMedia";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { formatPostDate } from "../../lib/formatters";
-import { apiBaseUrl, getCollectionDerivedContent, getEldoriaMeta, getFractureverseMeta, getPrimaryThemeForPost, getReleaseThemeHint, getThemeConfig, hasVideo, sortEldoriaPosts, sortFractureversePosts } from "../../lib/site";
+import {
+  apiBaseUrl,
+  getCanonicalCollectionSurfacePosts,
+  getCollectionDerivedContent,
+  getEldoriaMeta,
+  getFractureverseMeta,
+  getPreferredCollectionForPost,
+  getPrimaryCollectionSurfacePosts,
+  getPrimaryThemeForPost,
+  getReleaseThemeHint,
+  getSiblingVersionPosts,
+  getThemeConfig,
+  getVisibleCollectionsForPost,
+  hasVideo,
+  sortEldoriaPosts,
+  sortFractureversePosts
+} from "../../lib/site";
 
 export default function PublicReleasePage({
   currentUser,
@@ -14,7 +30,9 @@ export default function PublicReleasePage({
   isPlayerActive,
   onPlayTrack,
   onUserLogout,
+  setActiveCollectionTheme,
   setForcedTheme,
+  siteContent,
   userToken
 }) {
   const { slug } = useParams();
@@ -49,8 +67,9 @@ export default function PublicReleasePage({
   }, [slug]);
 
   const primaryTheme = getPrimaryThemeForPost(post);
-  const labels = getThemeConfig(primaryTheme);
-  const primaryCollection = post?.collections?.find((collection) => collection.theme) || post?.collections?.[0] || null;
+  const labels = getThemeConfig(primaryTheme, siteContent);
+  const primaryCollection = getPreferredCollectionForPost(post);
+  const visibleCollections = getVisibleCollectionsForPost(post);
   const isFractureverse = primaryTheme === "fractureverse";
   const isEldoria = primaryTheme === "eldoria";
   const isThemedSequence = isFractureverse || isEldoria;
@@ -58,7 +77,7 @@ export default function PublicReleasePage({
   const eldoriaMeta = getEldoriaMeta(post);
   const getSequenceMeta = (entry) => {
     if (isFractureverse) {
-      return getFractureverseMeta(entry, sequencePosts);
+      return getFractureverseMeta(entry, surfaceSequencePosts);
     }
 
     if (isEldoria) {
@@ -67,19 +86,33 @@ export default function PublicReleasePage({
 
     return null;
   };
-  const orderedSequence = (isFractureverse ? sortFractureversePosts(sequencePosts) : isEldoria ? sortEldoriaPosts(sequencePosts) : sequencePosts)
+  const surfaceSequencePosts = isFractureverse
+    ? getCanonicalCollectionSurfacePosts(sequencePosts, { collection: primaryCollection, surface: "release" })
+    : getPrimaryCollectionSurfacePosts(sequencePosts, { collection: primaryCollection, surface: "release" });
+  const fractureverseSequencePosts = isFractureverse
+    ? sortFractureversePosts(surfaceSequencePosts).filter((entry) => getFractureverseMeta(entry, surfaceSequencePosts))
+    : [];
+  const orderedSequence = (isFractureverse
+    ? fractureverseSequencePosts
+    : isEldoria
+      ? sortEldoriaPosts(surfaceSequencePosts)
+      : surfaceSequencePosts)
     .map((entry) => ({
       post: entry,
       meta: getSequenceMeta(entry)
     }))
-    .filter((entry) => entry.post);
+    .filter((entry) => entry.post && (!isFractureverse || entry.meta));
   const currentFragmentIndex = orderedSequence.findIndex((entry) => entry.post.slug === post?.slug);
   const previousFragment = currentFragmentIndex > 0 ? orderedSequence[currentFragmentIndex - 1] : null;
   const nextFragment =
     currentFragmentIndex >= 0 && currentFragmentIndex < orderedSequence.length - 1 ? orderedSequence[currentFragmentIndex + 1] : null;
   const linkedFragments = fractureMeta?.linkedPosts || [];
   const companionBallads = orderedSequence.filter((entry) => entry.post.slug !== post?.slug);
-  const derivedContent = getCollectionDerivedContent(primaryCollection, orderedSequence.map((entry) => entry.post));
+  const derivedContent = getCollectionDerivedContent(primaryCollection, orderedSequence.map((entry) => entry.post), siteContent);
+  const siblingVersions = getSiblingVersionPosts(sequencePosts.length ? sequencePosts : [post].filter(Boolean), post, {
+    collection: primaryCollection,
+    surface: "release"
+  });
   const hintedTheme =
     (currentTrack?.slug === slug ? getPrimaryThemeForPost(currentTrack) : "") ||
     getReleaseThemeHint(slug) ||
@@ -96,15 +129,17 @@ export default function PublicReleasePage({
         collectionSlug: primaryCollection.slug,
         queue: isThemedSequence && orderedSequence.length
           ? orderedSequence.map((entry) => entry.post)
-          : sequencePosts.length
-            ? sequencePosts
+          : surfaceSequencePosts.length
+            ? surfaceSequencePosts
+            : sequencePosts.length
+              ? sequencePosts
             : [post].filter(Boolean)
       }
     : null;
 
   useEffect(() => {
     async function loadSequence() {
-      if (!post || !isThemedSequence || !primaryCollection?.slug) {
+      if (!post || !primaryCollection?.slug) {
         setSequencePosts([]);
         return;
       }
@@ -124,23 +159,14 @@ export default function PublicReleasePage({
     }
 
     loadSequence();
-  }, [isThemedSequence, post, primaryCollection?.slug]);
+  }, [post, primaryCollection?.slug]);
 
-  useLayoutEffect(() => {
-    const root = document.documentElement;
-
-    if (hintedTheme) {
-      root.setAttribute("data-collection-theme", hintedTheme);
-      return () => {
-        root.removeAttribute("data-collection-theme");
-      };
-    }
-
-    root.removeAttribute("data-collection-theme");
+  useEffect(() => {
+    setActiveCollectionTheme?.(hintedTheme || "");
     return () => {
-      root.removeAttribute("data-collection-theme");
+      setActiveCollectionTheme?.("");
     };
-  }, [hintedTheme]);
+  }, [hintedTheme, setActiveCollectionTheme]);
 
   useEffect(() => {
     if (!setForcedTheme) {
@@ -321,7 +347,7 @@ export default function PublicReleasePage({
                 </div>
               ) : null}
               <div className="tag-row">
-                {post.collections?.map((collection) => (
+                {visibleCollections.map((collection) => (
                   <Link className="collection-chip" key={collection.slug} to={`/collections/${collection.slug}`}>
                     {collection.title}
                   </Link>
@@ -605,6 +631,26 @@ export default function PublicReleasePage({
                   ) : null}
                 </div>
               </section>
+            </section>
+          ) : null}
+
+          {siblingVersions.length ? (
+            <section className="intro-card homepage-panel">
+              <div className="section-head">
+                <h2>Other Versions</h2>
+                <span>{siblingVersions.length} available</span>
+              </div>
+              <div className="linked-echo-grid">
+                {siblingVersions.map((entry) => (
+                  <Link className="linked-echo-card" key={entry.id} to={`/release/${entry.slug}`}>
+                    <span className="fracture-sequence-state">
+                      {String(entry.releaseStatus || "alternate").replace(/^\w/, (character) => character.toUpperCase())}
+                    </span>
+                    <strong>{entry.title}</strong>
+                    <p>{entry.excerpt}</p>
+                  </Link>
+                ))}
+              </div>
             </section>
           ) : null}
 

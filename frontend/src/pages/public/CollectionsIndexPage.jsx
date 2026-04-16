@@ -28,17 +28,17 @@ export default function CollectionsIndexPage() {
     <>
       <header className="hero homepage-hero section-hero">
         <p className="eyebrow">Collections</p>
-        <h1>Curated groups for verses, projects, moods, and recurring worlds.</h1>
+        <h1>Curated entry points into the archive.</h1>
         <p className="hero-copy">
-          Collections give the archive stronger shape: some are emotional lanes, some are projects, and some are just
-          the releases that clearly belong together.
+          The public collection layer stays focused on the main paths through the catalog while the deeper taxonomy
+          remains available behind the scenes.
         </p>
       </header>
 
       <main className="content-grid">
         <section>
           <div className="section-head">
-            <h2>All Collections</h2>
+            <h2>Public Collections</h2>
             <span>{loading ? "Loading..." : `${collections.length} collections`}</span>
           </div>
           {collections.length === 0 && !loading ? (

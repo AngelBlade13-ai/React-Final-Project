@@ -1,7 +1,7 @@
 import { useDeferredValue, useEffect, useState } from "react";
 import { ReleaseCard } from "../../components/cards";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
-import { apiBaseUrl } from "../../lib/site";
+import { apiBaseUrl, getReleaseStatus, partitionCollectionsForExplore } from "../../lib/site";
 
 export default function ExplorePage({ onPlayTrack }) {
   useDocumentTitle("Explore");
@@ -9,6 +9,8 @@ export default function ExplorePage({ onPlayTrack }) {
   const [collections, setCollections] = useState([]);
   const [query, setQuery] = useState("");
   const [selectedCollection, setSelectedCollection] = useState("all");
+  const [showInternalCollections, setShowInternalCollections] = useState(false);
+  const [showWorkingVersions, setShowWorkingVersions] = useState(false);
   const [loading, setLoading] = useState(true);
   const deferredQuery = useDeferredValue(query);
   const normalizedQuery = deferredQuery.trim().toLowerCase();
@@ -18,7 +20,7 @@ export default function ExplorePage({ onPlayTrack }) {
       try {
         const [postsResponse, collectionsResponse] = await Promise.all([
           fetch(`${apiBaseUrl}/posts`),
-          fetch(`${apiBaseUrl}/collections`)
+          fetch(`${apiBaseUrl}/collections?scope=all`)
         ]);
         const postsData = await postsResponse.json();
         const collectionsData = await collectionsResponse.json();
@@ -39,9 +41,11 @@ export default function ExplorePage({ onPlayTrack }) {
       selectedCollection === "all" || (post.collectionSlugs || []).includes(selectedCollection);
     const searchHaystack = [post.title, post.excerpt, post.content, post.lyrics].join(" ").toLowerCase();
     const matchesQuery = !normalizedQuery || searchHaystack.includes(normalizedQuery);
+    const matchesReleaseStatus = showWorkingVersions ? true : getReleaseStatus(post) !== "working";
 
-    return matchesCollection && matchesQuery;
+    return matchesCollection && matchesQuery && matchesReleaseStatus;
   });
+  const { primaryCollections, internalCollections } = partitionCollectionsForExplore(collections);
 
   return (
     <>
@@ -91,7 +95,7 @@ export default function ExplorePage({ onPlayTrack }) {
               >
                 All collections
               </button>
-              {collections.map((collection) => (
+              {primaryCollections.map((collection) => (
                 <button
                   className={`filter-chip${selectedCollection === collection.slug ? " active" : ""}`}
                   key={collection.id}
@@ -102,6 +106,40 @@ export default function ExplorePage({ onPlayTrack }) {
                 </button>
               ))}
             </div>
+            {internalCollections.length ? (
+              <details className="archive-link-picker" open={showInternalCollections}>
+                <summary
+                  onClick={(event) => {
+                    event.preventDefault();
+                    setShowInternalCollections((current) => !current);
+                  }}
+                >
+                  More Filters
+                </summary>
+                {showInternalCollections ? (
+                  <div className="filter-chip-row">
+                    {internalCollections.map((collection) => (
+                      <button
+                        className={`filter-chip${selectedCollection === collection.slug ? " active" : ""}`}
+                        key={collection.id}
+                        onClick={() => setSelectedCollection(collection.slug)}
+                        type="button"
+                      >
+                        {collection.title}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </details>
+            ) : null}
+            <label className="checkbox-field">
+              <input
+                checked={showWorkingVersions}
+                onChange={(event) => setShowWorkingVersions(event.target.checked)}
+                type="checkbox"
+              />
+              <span>Include working versions</span>
+            </label>
           </div>
         </section>
 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet } from "react-router-dom";
 import ThemeToggle from "../components/ThemeToggle";
+import { emptySiteSettings } from "../lib/site";
 
 export default function PublicLayout({
   currentUser,
@@ -8,11 +9,16 @@ export default function PublicLayout({
   isThemeLocked = false,
   isUserSessionReady = true,
   onUserLogout,
+  siteContent,
   theme,
   setTheme
 }) {
   const [siteMarkPressCount, setSiteMarkPressCount] = useState(0);
   const [showAdminAccess, setShowAdminAccess] = useState(hasAdminSession);
+  const branding = {
+    ...emptySiteSettings.branding,
+    ...(siteContent?.branding || {})
+  };
 
   useEffect(() => {
     if (hasAdminSession) {
@@ -56,6 +62,7 @@ export default function PublicLayout({
 
   return (
     <div className="page-shell">
+      <div aria-hidden="true" className="threshold-overlay" />
       <header className="public-site-header">
         <Link
           className="site-mark"
@@ -66,8 +73,8 @@ export default function PublicLayout({
           }}
           to="/"
         >
-          <span className="eyebrow">Suno Diary</span>
-          <strong>Releases, collections, and notes in one place.</strong>
+          <span className="eyebrow">{branding.siteName}</span>
+          <strong>{branding.siteTagline}</strong>
         </Link>
         <div className="public-site-actions">
           <nav className="site-nav" aria-label="Primary">

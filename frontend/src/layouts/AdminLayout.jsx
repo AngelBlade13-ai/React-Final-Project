@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, Navigate, Outlet, useNavigate, useOutletContext } from "react-router-dom";
 import ThemeToggle from "../components/ThemeToggle";
-import { apiBaseUrl, emptyAbout, emptyCollection, emptyPost, tokenKey } from "../lib/site";
+import { apiBaseUrl, DEFAULT_COLLECTION_THEME_PROFILES, emptyAbout, emptyCollection, emptyPost, emptySiteSettings, emptyThemeProfile, tokenKey } from "../lib/site";
 
 export function ProtectedRoute({ children }) {
   const token = localStorage.getItem(tokenKey);
@@ -27,19 +27,24 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
   });
   const [collectionForm, setCollectionForm] = useState(emptyCollection);
   const [aboutForm, setAboutForm] = useState(emptyAbout);
+  const [siteSettingsForm, setSiteSettingsForm] = useState(emptySiteSettings);
+  const [themeProfileForm, setThemeProfileForm] = useState(emptyThemeProfile);
   const [editingId, setEditingId] = useState("");
   const [editingCollectionId, setEditingCollectionId] = useState("");
+  const [editingThemeKey, setEditingThemeKey] = useState("");
   const [selectedVideoFile, setSelectedVideoFile] = useState(null);
   const [error, setError] = useState("");
   const [uploadError, setUploadError] = useState("");
   const [saveMessage, setSaveMessage] = useState("");
   const [collectionMessage, setCollectionMessage] = useState("");
   const [aboutMessage, setAboutMessage] = useState("");
+  const [siteSettingsMessage, setSiteSettingsMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [savingCollection, setSavingCollection] = useState(false);
   const [savingAbout, setSavingAbout] = useState(false);
+  const [savingSiteSettings, setSavingSiteSettings] = useState(false);
 
   function authToken() {
     return localStorage.getItem(tokenKey);
@@ -62,7 +67,7 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
         fetch(`${apiBaseUrl}/admin/site-content`, { headers: authHeaders() })
       ]);
 
-      if (postsResponse.status === 401 || collectionsResponse.status === 401 || siteContentResponse.status === 401) {
+      if ([postsResponse.status, collectionsResponse.status, siteContentResponse.status].some((status) => status === 401 || status === 403)) {
         localStorage.removeItem(tokenKey);
         onAdminLogout?.();
         navigate("/admin/login");
@@ -75,6 +80,19 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
       setPosts(postsData.posts || []);
       setCollections(collectionsData.collections || []);
       setAboutForm({ ...emptyAbout, ...(siteContentData.siteContent?.about || {}) });
+      setSiteSettingsForm({
+        branding: {
+          ...emptySiteSettings.branding,
+          ...(siteContentData.siteContent?.branding || {})
+        },
+        home: {
+          ...emptySiteSettings.home,
+          ...(siteContentData.siteContent?.home || {})
+        },
+        collectionThemes: Array.isArray(siteContentData.siteContent?.collectionThemes)
+          ? siteContentData.siteContent.collectionThemes
+          : emptySiteSettings.collectionThemes
+      });
     } catch {
       setError("Failed to load admin data.");
     } finally {
@@ -106,6 +124,33 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
 
   function updateAboutForm(key, value) {
     setAboutForm((current) => ({ ...current, [key]: value }));
+  }
+
+  function updateSiteSettingsForm(section, key, value) {
+    setSiteSettingsForm((current) => ({
+      ...current,
+      [section]: {
+        ...current[section],
+        [key]: value
+      }
+    }));
+  }
+
+  function updateThemeProfileField(key, value) {
+    setThemeProfileForm((current) => ({ ...current, [key]: value }));
+  }
+
+  function updateThemeProfilePalette(mode, key, value) {
+    setThemeProfileForm((current) => ({
+      ...current,
+      palette: {
+        ...current.palette,
+        [mode]: {
+          ...current.palette[mode],
+          [key]: value
+        }
+      }
+    }));
   }
 
   function togglePostCollection(slug) {
@@ -141,6 +186,19 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
       excerpt: post.excerpt,
       content: post.content,
       lyrics: post.lyrics,
+      subCategory: post.subCategory || "",
+      sourceTag: post.sourceTag || "",
+      worldLayer: post.worldLayer || "",
+      themeTags: Array.isArray(post.themeTags) ? post.themeTags : [],
+      versionFamily: post.versionFamily || "",
+      isPrimaryVersion: Boolean(post.isPrimaryVersion),
+      isArchive: Boolean(post.isArchive),
+      isHomepageEligible: Boolean(post.isHomepageEligible),
+      isPubliclyVisible: post.isPubliclyVisible !== false,
+      supersededBySlug: post.supersededBySlug || "",
+      supersededReason: post.supersededReason || "",
+      supersededAt: post.supersededAt || "",
+      releaseStatus: post.releaseStatus || "canon",
       archiveMeta: {
         ...emptyPost.archiveMeta,
         ...(post.archiveMeta || {})
@@ -158,7 +216,8 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
       title: collection.title,
       description: collection.description,
       featuredReleaseSlug: collection.featuredReleaseSlug || "",
-      theme: collection.theme || ""
+      theme: collection.theme || "",
+      isPublicPrimary: Boolean(collection.isPublicPrimary)
     });
   }
 
@@ -175,6 +234,85 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
   function resetCollectionForm() {
     setCollectionForm(emptyCollection);
     setEditingCollectionId("");
+  }
+
+  function resetThemeProfileForm() {
+    setThemeProfileForm(emptyThemeProfile);
+    setEditingThemeKey("");
+  }
+
+  function startThemeProfileEdit(themeProfile) {
+    setEditingThemeKey(themeProfile.key);
+    setThemeProfileForm({
+      ...emptyThemeProfile,
+      ...themeProfile,
+      palette: {
+        light: {
+          ...emptyThemeProfile.palette.light,
+          ...(themeProfile.palette?.light || {})
+        },
+        dark: {
+          ...emptyThemeProfile.palette.dark,
+          ...(themeProfile.palette?.dark || {})
+        }
+      }
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function handleThemeProfileSave() {
+    if (!themeProfileForm.key || !themeProfileForm.label) {
+      setError("Theme key and label are required.");
+      return;
+    }
+
+    setError("");
+    setSiteSettingsMessage("");
+
+    setSiteSettingsForm((current) => {
+      const nextThemes = [...(current.collectionThemes || [])];
+      const existingIndex = nextThemes.findIndex((entry) => entry.key === editingThemeKey || entry.key === themeProfileForm.key);
+
+      if (existingIndex >= 0) {
+        nextThemes[existingIndex] = themeProfileForm;
+      } else {
+        nextThemes.push(themeProfileForm);
+      }
+
+      return {
+        ...current,
+        collectionThemes: nextThemes
+      };
+    });
+
+    setSiteSettingsMessage("Theme profile staged. Save site settings to publish it.");
+    resetThemeProfileForm();
+  }
+
+  function handleThemeProfileDelete(themeKey) {
+    const themeToDelete = (siteSettingsForm.collectionThemes || []).find((entry) => entry.key === themeKey);
+    const isBuiltInTheme = DEFAULT_COLLECTION_THEME_PROFILES.some((entry) => entry.key === themeKey);
+
+    if (themeToDelete?.kind === "immersive" || isBuiltInTheme) {
+      setError("Built-in theme profiles cannot be deleted.");
+      return;
+    }
+
+    const confirmed = window.confirm("Delete this theme profile?");
+    if (!confirmed) {
+      return;
+    }
+
+    setSiteSettingsForm((current) => ({
+      ...current,
+      collectionThemes: (current.collectionThemes || []).filter((entry) => entry.key !== themeKey)
+    }));
+
+    if (editingThemeKey === themeKey) {
+      resetThemeProfileForm();
+    }
+
+    setSiteSettingsMessage("Theme profile removed. Save site settings to publish the change.");
   }
 
   async function handleVideoUpload() {
@@ -307,18 +445,64 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
     }
   }
 
+  async function handleSiteSettingsSubmit(event) {
+    event.preventDefault();
+    setSavingSiteSettings(true);
+    setSiteSettingsMessage("");
+    setError("");
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/admin/site-content/site`, {
+        method: "PUT",
+        headers: authHeaders(),
+        body: JSON.stringify(siteSettingsForm)
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Save failed.");
+      }
+
+      setSiteSettingsForm({
+        branding: {
+          ...emptySiteSettings.branding,
+          ...(data.siteContent?.branding || {})
+        },
+        home: {
+          ...emptySiteSettings.home,
+          ...(data.siteContent?.home || {})
+        },
+        collectionThemes: Array.isArray(data.siteContent?.collectionThemes)
+          ? data.siteContent.collectionThemes
+          : emptySiteSettings.collectionThemes
+      });
+      setSiteSettingsMessage("Site settings saved successfully.");
+    } catch (apiError) {
+      setError(apiError.message);
+    } finally {
+      setSavingSiteSettings(false);
+    }
+  }
+
   async function handleDelete(id) {
     const confirmed = window.confirm("Delete this post?");
     if (!confirmed) return;
 
     try {
-      await fetch(`${apiBaseUrl}/admin/posts/${id}`, {
+      const response = await fetch(`${apiBaseUrl}/admin/posts/${id}`, {
         method: "DELETE",
         headers: authHeaders()
       });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Delete failed.");
+      }
+
       await loadAdminData();
-    } catch {
-      setError("Delete failed.");
+    } catch (apiError) {
+      setError(apiError.message || "Delete failed.");
     }
   }
 
@@ -327,13 +511,20 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
     if (!confirmed) return;
 
     try {
-      await fetch(`${apiBaseUrl}/admin/collections/${id}`, {
+      const response = await fetch(`${apiBaseUrl}/admin/collections/${id}`, {
         method: "DELETE",
         headers: authHeaders()
       });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Collection delete failed.");
+      }
+
       await loadAdminData();
-    } catch {
-      setError("Collection delete failed.");
+    } catch (apiError) {
+      setError(apiError.message || "Collection delete failed.");
     }
   }
 
@@ -363,14 +554,23 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
       </header>
 
       <nav className="admin-subnav" aria-label="Admin sections">
+        <NavLink className="admin-subnav-link" to="/admin/insights">
+          Insights
+        </NavLink>
         <NavLink className="admin-subnav-link" to="/admin/posts">
           Posts
+        </NavLink>
+        <NavLink className="admin-subnav-link" to="/admin/comments">
+          Comments
         </NavLink>
         <NavLink className="admin-subnav-link" to="/admin/collections">
           Collections
         </NavLink>
         <NavLink className="admin-subnav-link" to="/admin/about">
           About
+        </NavLink>
+        <NavLink className="admin-subnav-link" to="/admin/site">
+          Site
         </NavLink>
       </nav>
 
@@ -381,7 +581,10 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
           posts,
           collections,
           aboutForm,
+          siteSettingsForm,
+          themeProfileForm,
           collectionForm,
+          editingThemeKey,
           editingCollectionId,
           editingId,
           form,
@@ -389,16 +592,23 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
           saveMessage,
           collectionMessage,
           aboutMessage,
+          siteSettingsMessage,
           saving,
           savingAbout,
+          savingSiteSettings,
           savingCollection,
           uploading,
           uploadError,
           selectedVideoFile,
+          authHeaders,
+          loadAdminData,
           updateField,
           updateArchiveMetaField,
           updateCollectionForm,
           updateAboutForm,
+          updateSiteSettingsForm,
+          updateThemeProfileField,
+          updateThemeProfilePalette,
           togglePostCollection,
           toggleArchiveMetaLink,
           setSelectedVideoFile,
@@ -407,12 +617,18 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
           handleSubmit,
           handleCollectionSubmit,
           handleAboutSubmit,
+          handleSiteSettingsSubmit,
           handleDelete,
           handleCollectionDelete,
           startEdit,
           startCollectionEdit,
           resetPostForm,
           resetCollectionForm
+          ,
+          resetThemeProfileForm,
+          startThemeProfileEdit,
+          handleThemeProfileSave,
+          handleThemeProfileDelete
         }}
       />
     </div>

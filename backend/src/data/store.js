@@ -2,6 +2,8 @@ const fs = require("fs/promises");
 const crypto = require("crypto");
 const { getDb } = require("../lib/mongo");
 const config = require("../config");
+const { slugify } = require("../utils/slugify");
+const VALID_RELEASE_STATUSES = new Set(["canon", "alternate", "working"]);
 
 const seedCollections = [
   {
@@ -60,6 +62,214 @@ const seedPosts = [
 ];
 
 const seedSiteContent = {
+  branding: {
+    siteName: "Suno Diary",
+    siteTagline: "Releases, collections, and notes in one place."
+  },
+  home: {
+    heroEyebrow: "Suno Diary",
+    heroTitle: "A soft archive for releases, collections, and the stories that let each song keep breathing.",
+    heroText:
+      "Browse curated groupings, move through release notes with more context, and treat the site less like a feed and more like a small world of connected songs.",
+    featuredReleaseSlug: "",
+    featuredCtaLabel: "Play Featured Release",
+    jumpCtaLabel: "Jump to Latest Releases",
+    noteEyebrow: "What Changed",
+    noteTitle: "Discovery is part of the identity now, not just a homepage feed.",
+    noteText:
+      "Collections organize releases into verses, moods, and projects. Explore lets you search by title and written notes. About frames the artist, the site, and the reason this archive exists.",
+    browseEyebrow: "Browse",
+    browseTitle: "Move through the archive by collection instead of only by chronology.",
+    browseText:
+      "Collections turn the catalog into verses, projects, moods, and small emotional shelves rather than one uninterrupted stream.",
+    browseLinkLabel: "See the collection shelves",
+    exploreEyebrow: "Find",
+    exploreTitle: "Search inside release notes, titles, and lyrics when you know the feeling but not the page.",
+    exploreText:
+      "The explore view is built for rediscovery: search by phrase, narrow by collection, and jump straight into the release that fits.",
+    exploreLinkLabel: "Open explore",
+    identityEyebrow: "Site Identity",
+    identityTitle: "A personal home for releases, track stories, and the discovery paths between them",
+    identityText:
+      "Each page still keeps the music close, but now the archive has a stronger structure: releases can live in more than one collection, search can surface them by title or text, and the site has space to explain the artist voice behind the catalog.",
+    identityLine: "A collection of songs, stories, and moments in motion."
+  },
+  collectionThemes: [
+    {
+      key: "default",
+      label: "Default",
+      kind: "standard",
+      palette: {
+        light: {
+          background: "#f3d7d1",
+          surface: "#f8e4df",
+          surfaceAlt: "#f2d2cc",
+          text: "#3a2327",
+          mutedText: "#7a5158",
+          border: "#e8bdb7",
+          primary: "#df8f8a",
+          primaryStrong: "#cb726e",
+          secondary: "#f4c9c2"
+        },
+        dark: {
+          background: "#120d14",
+          surface: "#1b1320",
+          surfaceAlt: "#241826",
+          text: "#f8eaf1",
+          mutedText: "#c9b2bf",
+          border: "#3a2735",
+          primary: "#f0a6ca",
+          primaryStrong: "#ffb7d5",
+          secondary: "#cba6f7"
+        }
+      }
+    },
+    {
+      key: "eldoria",
+      label: "Eldoria",
+      kind: "immersive",
+      palette: {
+        light: {
+          background: "#ece4cf",
+          surface: "#f6efdf",
+          surfaceAlt: "#ebe2cd",
+          text: "#2f3124",
+          mutedText: "#636550",
+          border: "#cdbf9c",
+          primary: "#6b7b4a",
+          primaryStrong: "#a6884f",
+          secondary: "#88a6b3"
+        },
+        dark: {
+          background: "#16201a",
+          surface: "#1d2821",
+          surfaceAlt: "#273228",
+          text: "#f1ead7",
+          mutedText: "#c4bca5",
+          border: "#56604f",
+          primary: "#8ea167",
+          primaryStrong: "#c6ab6d",
+          secondary: "#7e9eab"
+        }
+      }
+    },
+    {
+      key: "soft-archive",
+      label: "Soft Archive",
+      kind: "standard",
+      palette: {
+        light: {
+          background: "#fbf1ee",
+          surface: "#fff8f6",
+          surfaceAlt: "#f7ebe7",
+          text: "#432930",
+          mutedText: "#87646d",
+          border: "#efd5ce",
+          primary: "#dca0ad",
+          primaryStrong: "#cb7f93",
+          secondary: "#f6ddd7"
+        },
+        dark: {
+          background: "#1a1215",
+          surface: "#25181d",
+          surfaceAlt: "#302027",
+          text: "#f7eef2",
+          mutedText: "#ccb8c0",
+          border: "#47323a",
+          primary: "#e3a4af",
+          primaryStrong: "#f2b8c2",
+          secondary: "#c8a2b1"
+        }
+      }
+    },
+    {
+      key: "fractureverse",
+      label: "Fractureverse",
+      kind: "immersive",
+      palette: {
+        light: {
+          background: "#f4d8df",
+          surface: "#f7e5ea",
+          surfaceAlt: "#efd2db",
+          text: "#421e2a",
+          mutedText: "#7b5562",
+          border: "#e2afbe",
+          primary: "#d94d86",
+          primaryStrong: "#b92b66",
+          secondary: "#8a4fff"
+        },
+        dark: {
+          background: "#140d12",
+          surface: "#1f1419",
+          surfaceAlt: "#2a1820",
+          text: "#f6eaf0",
+          mutedText: "#c6a9b6",
+          border: "#4b2233",
+          primary: "#ff6fa5",
+          primaryStrong: "#ff3f87",
+          secondary: "#8a4fff"
+        }
+      }
+    },
+    {
+      key: "stage",
+      label: "Stage",
+      kind: "standard",
+      palette: {
+        light: {
+          background: "#f6e3d8",
+          surface: "#f9ece4",
+          surfaceAlt: "#f1ddd1",
+          text: "#44251d",
+          mutedText: "#7f5a4d",
+          border: "#e2bea7",
+          primary: "#b84934",
+          primaryStrong: "#c99236",
+          secondary: "#8f261d"
+        },
+        dark: {
+          background: "#160d0d",
+          surface: "#241313",
+          surfaceAlt: "#311818",
+          text: "#faefe3",
+          mutedText: "#d7b9a6",
+          border: "#573126",
+          primary: "#c53d2c",
+          primaryStrong: "#e0a646",
+          secondary: "#8f261d"
+        }
+      }
+    },
+    {
+      key: "signal",
+      label: "Signal",
+      kind: "standard",
+      palette: {
+        light: {
+          background: "#e7e5f4",
+          surface: "#efedf9",
+          surfaceAlt: "#e0dcf3",
+          text: "#2e2945",
+          mutedText: "#676084",
+          border: "#c6bedf",
+          primary: "#7764dc",
+          primaryStrong: "#4e8ed8",
+          secondary: "#8b86c9"
+        },
+        dark: {
+          background: "#12101b",
+          surface: "#1b1727",
+          surfaceAlt: "#241d35",
+          text: "#efeefe",
+          mutedText: "#b8b4db",
+          border: "#3d345d",
+          primary: "#8c72ff",
+          primaryStrong: "#66b5ff",
+          secondary: "#4b5ec7"
+        }
+      }
+    }
+  ],
   about: {
     heroEyebrow: "About",
     heroTitle: "A small artist archive for releases that want more room than a single post can hold.",
@@ -88,14 +298,109 @@ function normalizeCollection(collection) {
     return null;
   }
 
+  const fallbackSlug = slugify(collection.title || "");
+
   return {
-    id: collection.id || crypto.randomUUID(),
-    slug: String(collection.slug || "").trim(),
+    id: String(collection.id || `col-${collection.slug || fallbackSlug}` || crypto.randomUUID()).trim(),
+    slug: String(collection.slug || fallbackSlug).trim(),
     title: String(collection.title || "").trim(),
     description: String(collection.description || "").trim(),
     featuredReleaseSlug: String(collection.featuredReleaseSlug || "").trim(),
-    theme: String(collection.theme || "").trim()
+    theme: String(collection.theme || "").trim(),
+    isPublicPrimary: Boolean(collection.isPublicPrimary)
   };
+}
+
+function extractMarkdownField(content, label) {
+  const normalizedContent = String(content || "");
+  const pattern = new RegExp(`\\*\\*${label}:\\*\\*\\s*([^\\n]+)`, "i");
+  const match = normalizedContent.match(pattern);
+  return String(match?.[1] || "").trim();
+}
+
+function getUniqueValue(candidates, usedValues, fallbackBase) {
+  const normalizedCandidates = [...new Set(candidates.map((value) => String(value || "").trim()).filter(Boolean))];
+
+  for (const candidate of normalizedCandidates) {
+    if (!usedValues.has(candidate)) {
+      usedValues.add(candidate);
+      return candidate;
+    }
+  }
+
+  const baseValue = normalizedCandidates[0] || String(fallbackBase || "").trim() || crypto.randomUUID();
+
+  if (!usedValues.has(baseValue)) {
+    usedValues.add(baseValue);
+    return baseValue;
+  }
+
+  let counter = 2;
+  let nextValue = `${baseValue}-${counter}`;
+
+  while (usedValues.has(nextValue)) {
+    counter += 1;
+    nextValue = `${baseValue}-${counter}`;
+  }
+
+  usedValues.add(nextValue);
+  return nextValue;
+}
+
+function normalizeImportedPosts(posts = []) {
+  const usedIds = new Set();
+  const usedSlugs = new Set();
+
+  return posts.map((post, index) => {
+    const title = String(post?.title || "").trim();
+    const titleSlug = slugify(title);
+    const explicitSlug = String(post?.slug || "").trim();
+    const versionLabel = extractMarkdownField(post?.content, "Version");
+    const versionSlug = slugify(versionLabel);
+    const sourceId = String(post?.sourceId || post?.id || "").trim();
+    const sourceSlug = slugify(sourceId);
+
+    const slug = getUniqueValue(
+      [
+        explicitSlug,
+        titleSlug,
+        titleSlug && versionSlug ? `${titleSlug}-${versionSlug}` : "",
+        titleSlug && sourceSlug ? `${titleSlug}-${sourceSlug}` : "",
+        sourceSlug
+      ],
+      usedSlugs,
+      `post-${index + 1}`
+    );
+
+    const id = getUniqueValue(
+      [
+        String(post?.id || "").trim(),
+        sourceId,
+        sourceId && versionSlug ? `${sourceId}-${versionSlug}` : "",
+        slug
+      ],
+      usedIds,
+      `post-${index + 1}`
+    );
+
+    return normalizePost({
+      ...post,
+      id,
+      slug
+    });
+  });
+}
+
+function normalizeImportedCollections(collections = []) {
+  return collections.map((collection) => {
+    const slug = String(collection?.slug || slugify(collection?.title || "")).trim();
+
+    return normalizeCollection({
+      ...collection,
+      id: String(collection?.id || `col-${slug}`).trim(),
+      slug
+    });
+  }).filter(Boolean);
 }
 
 function normalizeArchiveMeta(archiveMeta) {
@@ -176,11 +481,13 @@ function normalizePost(post) {
     return null;
   }
 
+  const fallbackTitleSlug = slugify(post.title || "");
+
   return {
     ...post,
-    id: post.id || crypto.randomUUID(),
+    id: String(post.id || post.sourceId || fallbackTitleSlug || crypto.randomUUID()).trim(),
     title: String(post.title || "").trim(),
-    slug: String(post.slug || "").trim(),
+    slug: String(post.slug || fallbackTitleSlug).trim(),
     videoUrl: String(post.videoUrl || "").trim(),
     excerpt: String(post.excerpt || "").trim(),
     content: String(post.content || "").trim(),
@@ -188,6 +495,23 @@ function normalizePost(post) {
     createdAt: post.createdAt || new Date().toISOString(),
     published: Boolean(post.published),
     archiveMeta: normalizeArchiveMeta(post.archiveMeta),
+    subCategory: String(post.subCategory || "").trim(),
+    sourceTag: String(post.sourceTag || "").trim(),
+    worldLayer: String(post.worldLayer || "").trim(),
+    themeTags: Array.isArray(post.themeTags)
+      ? [...new Set(post.themeTags.map((tag) => String(tag).trim()).filter(Boolean))]
+      : [],
+    versionFamily: String(post.versionFamily || "").trim(),
+    isPrimaryVersion: Boolean(post.isPrimaryVersion),
+    isArchive: Boolean(post.isArchive),
+    isHomepageEligible: Boolean(post.isHomepageEligible),
+    isPubliclyVisible: typeof post.isPubliclyVisible === "boolean" ? post.isPubliclyVisible : true,
+    supersededBySlug: String(post.supersededBySlug || "").trim(),
+    supersededReason: String(post.supersededReason || "").trim(),
+    supersededAt: String(post.supersededAt || "").trim(),
+    releaseStatus: VALID_RELEASE_STATUSES.has(String(post.releaseStatus || "").trim().toLowerCase())
+      ? String(post.releaseStatus || "").trim().toLowerCase()
+      : "canon",
     collectionSlugs: Array.isArray(post.collectionSlugs)
       ? [...new Set(post.collectionSlugs.map((slug) => String(slug).trim()).filter(Boolean))]
       : []
@@ -196,6 +520,57 @@ function normalizePost(post) {
 
 function normalizeSiteContent(siteContent = {}) {
   return {
+    branding: {
+      ...seedSiteContent.branding,
+      ...(siteContent.branding || {})
+    },
+    home: {
+      ...seedSiteContent.home,
+      ...(siteContent.home || {})
+    },
+    collectionThemes: Array.isArray(siteContent.collectionThemes)
+      ? siteContent.collectionThemes.map((theme) => ({
+          ...theme,
+          key: String(theme?.key || "").trim(),
+          label: String(theme?.label || "").trim(),
+          kind: String(theme?.kind || "standard").trim() || "standard",
+          worldEyebrow: String(theme?.worldEyebrow || "").trim(),
+          featuredLabel: String(theme?.featuredLabel || "").trim(),
+          featuredAction: String(theme?.featuredAction || "").trim(),
+          listLabel: String(theme?.listLabel || "").trim(),
+          worldNoteTitle: String(theme?.worldNoteTitle || "").trim(),
+          worldNoteText: String(theme?.worldNoteText || "").trim(),
+          itemName: String(theme?.itemName || "").trim(),
+          itemPlural: String(theme?.itemPlural || "").trim(),
+          itemAction: String(theme?.itemAction || "").trim(),
+          playerLabel: String(theme?.playerLabel || "").trim(),
+          playerUpNextLabel: String(theme?.playerUpNextLabel || "").trim(),
+          palette: {
+            light: {
+              background: String(theme?.palette?.light?.background || "").trim(),
+              surface: String(theme?.palette?.light?.surface || "").trim(),
+              surfaceAlt: String(theme?.palette?.light?.surfaceAlt || "").trim(),
+              text: String(theme?.palette?.light?.text || "").trim(),
+              mutedText: String(theme?.palette?.light?.mutedText || "").trim(),
+              border: String(theme?.palette?.light?.border || "").trim(),
+              primary: String(theme?.palette?.light?.primary || "").trim(),
+              primaryStrong: String(theme?.palette?.light?.primaryStrong || "").trim(),
+              secondary: String(theme?.palette?.light?.secondary || "").trim()
+            },
+            dark: {
+              background: String(theme?.palette?.dark?.background || "").trim(),
+              surface: String(theme?.palette?.dark?.surface || "").trim(),
+              surfaceAlt: String(theme?.palette?.dark?.surfaceAlt || "").trim(),
+              text: String(theme?.palette?.dark?.text || "").trim(),
+              mutedText: String(theme?.palette?.dark?.mutedText || "").trim(),
+              border: String(theme?.palette?.dark?.border || "").trim(),
+              primary: String(theme?.palette?.dark?.primary || "").trim(),
+              primaryStrong: String(theme?.palette?.dark?.primaryStrong || "").trim(),
+              secondary: String(theme?.palette?.dark?.secondary || "").trim()
+            }
+          }
+        })).filter((theme) => theme.key)
+      : seedSiteContent.collectionThemes.map((theme) => ({ ...theme })),
     about: {
       ...seedSiteContent.about,
       ...(siteContent.about || {})
@@ -251,9 +626,9 @@ async function readLegacySeed() {
     const data = JSON.parse(file);
 
     return {
-      posts: Array.isArray(data.posts) ? data.posts.map(normalizePost).filter(Boolean) : seedPosts.map(normalizePost),
+      posts: Array.isArray(data.posts) ? normalizeImportedPosts(data.posts) : seedPosts.map(normalizePost),
       collections: Array.isArray(data.collections)
-        ? data.collections.map(normalizeCollection).filter(Boolean)
+        ? normalizeImportedCollections(data.collections)
         : seedCollections.map(normalizeCollection),
       users: Array.isArray(data.users) ? data.users.map(normalizeUser).filter(Boolean) : seedUsers.map(normalizeUser),
       comments: Array.isArray(data.comments) ? data.comments.map(normalizeComment).filter(Boolean) : seedComments.map(normalizeComment),
@@ -430,6 +805,7 @@ async function writeComments(comments) {
 
 module.exports = {
   ensureStore,
+  readLegacySeed,
   readStore,
   writeStore,
   readPosts,

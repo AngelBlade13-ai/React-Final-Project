@@ -1,14 +1,16 @@
 import { Link } from "react-router-dom";
 import ReleaseMedia from "../ReleaseMedia";
 import { formatPostDate } from "../../lib/formatters";
-import { getPrimaryThemeForPost, hasVideo } from "../../lib/site";
+import { getPrimaryThemeForPost, getVisibleCollectionsForPost, hasVideo } from "../../lib/site";
 
-export default function ReleaseCard({ post, onPlayTrack, layout = "card" }) {
+export default function ReleaseCard({ emphasis = false, post, onPlayTrack, layout = "card" }) {
   const primaryTheme = getPrimaryThemeForPost(post);
+  const visibleCollections = getVisibleCollectionsForPost(post);
+  const emphasisClass = emphasis ? " release-feed-card-emphasis" : "";
 
   return (
     <Link className="release-card-link" to={`/release/${post.slug}`}>
-      <article className={`post-card homepage-post-card release-feed-card ${layout === "horizontal" ? "result-card" : ""}`}>
+      <article className={`post-card homepage-post-card release-feed-card${emphasisClass} ${layout === "horizontal" ? "result-card" : ""}`}>
         <div className="release-card-media">
           <ReleaseMedia
             className="post-media"
@@ -27,7 +29,7 @@ export default function ReleaseCard({ post, onPlayTrack, layout = "card" }) {
           <h3>{post.title}</h3>
           <p>{post.excerpt}</p>
           <div className="tag-row compact-tag-row">
-            {(post.collections || []).map((collection) => (
+            {visibleCollections.map((collection) => (
               <span className="collection-chip static-chip" key={collection.slug}>
                 {collection.title}
               </span>

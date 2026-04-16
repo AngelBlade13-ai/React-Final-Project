@@ -3,11 +3,14 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import MiniPlayer from "./components/MiniPlayer";
 import PublicLayout from "./layouts/PublicLayout";
 import AdminLayout, { ProtectedRoute } from "./layouts/AdminLayout";
-import { apiBaseUrl, hasVideo, themeKey, tokenKey, userTokenKey } from "./lib/site";
+import { apiBaseUrl, emptySiteSettings, getPreferredCollectionForPost, getThemeCssVariables, hasVideo, themeKey, tokenKey, userTokenKey } from "./lib/site";
 import AdminAboutPage from "./pages/admin/AdminAboutPage";
+import AdminCommentsPage from "./pages/admin/AdminCommentsPage";
 import AdminCollectionsPage from "./pages/admin/AdminCollectionsPage";
+import AdminInsightsPage from "./pages/admin/AdminInsightsPage";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminPostsPage from "./pages/admin/AdminPostsPage";
+import AdminSitePage from "./pages/admin/AdminSitePage";
 import AboutPage from "./pages/public/AboutPage";
 import AccountPage from "./pages/public/AccountPage";
 import CollectionDetailPage from "./pages/public/CollectionDetailPage";
@@ -29,12 +32,14 @@ function App() {
       : "dark";
   });
   const [forcedTheme, setForcedTheme] = useState(null);
+  const [activeCollectionTheme, setActiveCollectionTheme] = useState("");
   const [hasAdminSession, setHasAdminSession] = useState(() =>
     Boolean(localStorage.getItem("suno-blog-admin-token")),
   );
   const [userToken, setUserToken] = useState(() => localStorage.getItem(userTokenKey) || "");
   const [currentUser, setCurrentUser] = useState(null);
   const [isUserSessionReady, setIsUserSessionReady] = useState(false);
+  const [siteContent, setSiteContent] = useState(emptySiteSettings);
   const [playerQueue, setPlayerQueue] = useState([]);
   const [currentQueueIndex, setCurrentQueueIndex] = useState(-1);
   const [playerCollectionId, setPlayerCollectionId] = useState("");
@@ -54,12 +59,95 @@ function App() {
   const activeTheme = forcedTheme || theme;
 
   useEffect(() => {
-    document.documentElement.setAttribute("data-theme", activeTheme);
-  }, [activeTheme]);
+    const root = document.documentElement;
+    root.setAttribute("data-theme", activeTheme);
+
+    if (activeCollectionTheme) {
+      root.setAttribute("data-collection-theme", activeCollectionTheme);
+    } else {
+      root.removeAttribute("data-collection-theme");
+    }
+
+    const themeVars = getThemeCssVariables(activeCollectionTheme, activeTheme, siteContent);
+    const knownVars = [
+      "--background",
+      "--surface",
+      "--surface-alt",
+      "--text",
+      "--muted-text",
+      "--border",
+      "--primary",
+      "--primary-strong",
+      "--secondary",
+      "--player-progress-start",
+      "--player-progress-mid",
+      "--player-progress-end",
+      "--player-progress-glow",
+      "--player-progress-glow-strong",
+      "--player-thumb",
+      "--player-track",
+      "--player-volume-track",
+      "--player-volume-fill-start",
+      "--player-volume-fill-end",
+      "--player-volume-thumb",
+      "--player-volume-thumb-glow"
+    ];
+
+    knownVars.forEach((cssVar) => {
+      if (themeVars[cssVar]) {
+        root.style.setProperty(cssVar, themeVars[cssVar]);
+      } else {
+        root.style.removeProperty(cssVar);
+      }
+    });
+  }, [activeCollectionTheme, activeTheme, siteContent]);
 
   useEffect(() => {
     localStorage.setItem(themeKey, theme);
   }, [theme]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadSiteContent() {
+      try {
+        const response = await fetch(`${apiBaseUrl}/site-content`);
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || "Failed to load site content.");
+        }
+
+        if (!cancelled) {
+          setSiteContent({
+            ...emptySiteSettings,
+            ...(data.siteContent || {}),
+            branding: {
+              ...emptySiteSettings.branding,
+              ...(data.siteContent?.branding || {})
+            },
+            home: {
+              ...emptySiteSettings.home,
+              ...(data.siteContent?.home || {})
+            },
+            collectionThemes: Array.isArray(data.siteContent?.collectionThemes)
+              ? data.siteContent.collectionThemes
+              : emptySiteSettings.collectionThemes
+          });
+        }
+      } catch {
+        if (!cancelled) {
+          setSiteContent(emptySiteSettings);
+        }
+      }
+    }
+
+    loadSiteContent();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (userToken) {
@@ -232,7 +320,8 @@ function App() {
     let queue = normalizeQueue(options.queue || []);
     let collectionId = options.collectionId || "";
     let collectionName = options.collectionName || "";
-    const requestedCollectionSlug = options.collectionSlug || track.collections?.[0]?.slug || "";
+    const preferredCollection = getPreferredCollectionForPost(track);
+    const requestedCollectionSlug = options.collectionSlug || preferredCollection?.slug || "";
 
     if (requestedCollectionSlug && queue.length <= 1) {
       try {
@@ -259,8 +348,8 @@ function App() {
 
     return {
       queue,
-      collectionId: collectionId || track.collections?.[0]?.id || requestedCollectionSlug || track.slug,
-      collectionName: collectionName || track.collections?.[0]?.title || ""
+      collectionId: collectionId || preferredCollection?.id || requestedCollectionSlug || track.slug,
+      collectionName: collectionName || preferredCollection?.title || ""
     };
   }
 
@@ -408,6 +497,7 @@ function App() {
               isThemeLocked={Boolean(forcedTheme)}
               isUserSessionReady={isUserSessionReady}
               onUserLogout={handleUserLogout}
+              siteContent={siteContent}
               theme={theme}
               setTheme={setTheme}
             />
@@ -419,6 +509,7 @@ function App() {
               <PublicHome
                 hasAdminSession={hasAdminSession}
                 onPlayTrack={playTrack}
+                siteContent={siteContent}
               />
             }
           />
@@ -430,7 +521,9 @@ function App() {
                 currentTrack={currentTrack}
                 isPlayerActive={isMiniPlayerPlaying}
                 onPlayTrack={playTrack}
+                setActiveCollectionTheme={setActiveCollectionTheme}
                 setForcedTheme={setForcedTheme}
+                siteContent={siteContent}
               />
             }
           />
@@ -462,7 +555,9 @@ function App() {
                 onPlayTrack={playTrack}
                 onUserAuthSuccess={handleUserAuthSuccess}
                 onUserLogout={handleUserLogout}
+                setActiveCollectionTheme={setActiveCollectionTheme}
                 setForcedTheme={setForcedTheme}
+                siteContent={siteContent}
                 userToken={userToken}
               />
             }
@@ -490,10 +585,13 @@ function App() {
             </ProtectedRoute>
           }
         >
-          <Route index element={<Navigate replace to="/admin/posts" />} />
+          <Route index element={<Navigate replace to="/admin/insights" />} />
+          <Route path="insights" element={<AdminInsightsPage />} />
           <Route path="posts" element={<AdminPostsPage />} />
+          <Route path="comments" element={<AdminCommentsPage />} />
           <Route path="collections" element={<AdminCollectionsPage />} />
           <Route path="about" element={<AdminAboutPage />} />
+          <Route path="site" element={<AdminSitePage />} />
         </Route>
       </Routes>
       <MiniPlayer
@@ -513,6 +611,7 @@ function App() {
         previousTrack={previousQueueIndex !== -1 ? playerQueue[previousQueueIndex] : null}
         progress={playerProgress}
         queueLength={playerQueue.length}
+        siteContent={siteContent}
         volume={playerVolume}
       />
     </BrowserRouter>

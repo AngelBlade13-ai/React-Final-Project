@@ -8,10 +8,13 @@ const bcrypt = require("bcryptjs");
 const config = require("./config");
 const { authenticate, requireAdmin, requireUser } = require("./middleware/auth");
 const { readStore, writeStore } = require("./data/store");
+const { buildArchiveInsights } = require("./services/archiveInsights");
 const { slugify } = require("./utils/slugify");
 const uploadRoutes = require("./routes/upload.routes");
 
 const app = express();
+const PUBLIC_PRIMARY_COLLECTION_SLUGS = ["fractureverse", "eldoria", "original-personal", "standalone"];
+const VALID_RELEASE_STATUSES = new Set(["canon", "alternate", "working"]);
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 5,
@@ -55,38 +58,46 @@ function normalizeCollectionInput(input, existingCollection = {}) {
     slug: slugify(input.slug || input.title || existingCollection.slug || existingCollection.title || ""),
     description: String(input.description || existingCollection.description || "").trim(),
     featuredReleaseSlug: String(input.featuredReleaseSlug || "").trim(),
-    theme: String(input.theme || existingCollection.theme || "").trim()
+    theme: String(input.theme || existingCollection.theme || "").trim(),
+    isPublicPrimary:
+      typeof input.isPublicPrimary === "boolean"
+        ? input.isPublicPrimary
+        : typeof existingCollection.isPublicPrimary === "boolean"
+          ? existingCollection.isPublicPrimary
+          : false
   };
 }
 
 function normalizeArchiveMetaInput(input = {}, existingArchiveMeta = null) {
+  const normalizedInput = input && typeof input === "object" ? input : {};
+
   const archiveMeta = {
     ...(existingArchiveMeta || {}),
-    fragmentId: String(input.fragmentId || existingArchiveMeta?.fragmentId || "").trim(),
-    state: String(input.state || existingArchiveMeta?.state || "").trim(),
-    perspective: String(input.perspective || existingArchiveMeta?.perspective || "").trim(),
-    signalType: String(input.signalType || existingArchiveMeta?.signalType || "").trim(),
-    description: String(input.description || existingArchiveMeta?.description || "").trim(),
-    systemNote: String(input.systemNote || existingArchiveMeta?.systemNote || "").trim(),
-    linkedSlugs: Array.isArray(input.linkedSlugs)
-      ? [...new Set(input.linkedSlugs.map((slug) => String(slug).trim()).filter(Boolean))]
+    fragmentId: String(normalizedInput.fragmentId || existingArchiveMeta?.fragmentId || "").trim(),
+    state: String(normalizedInput.state || existingArchiveMeta?.state || "").trim(),
+    perspective: String(normalizedInput.perspective || existingArchiveMeta?.perspective || "").trim(),
+    signalType: String(normalizedInput.signalType || existingArchiveMeta?.signalType || "").trim(),
+    description: String(normalizedInput.description || existingArchiveMeta?.description || "").trim(),
+    systemNote: String(normalizedInput.systemNote || existingArchiveMeta?.systemNote || "").trim(),
+    linkedSlugs: Array.isArray(normalizedInput.linkedSlugs)
+      ? [...new Set(normalizedInput.linkedSlugs.map((slug) => String(slug).trim()).filter(Boolean))]
       : existingArchiveMeta?.linkedSlugs || [],
-    chapterNumber: String(input.chapterNumber || existingArchiveMeta?.chapterNumber || "").trim(),
-    entryType: String(input.entryType || existingArchiveMeta?.entryType || "").trim(),
-    subtitle: String(input.subtitle || existingArchiveMeta?.subtitle || "").trim(),
-    openingPassage: String(input.openingPassage || existingArchiveMeta?.openingPassage || "").trim(),
-    coreSituation: String(input.coreSituation || existingArchiveMeta?.coreSituation || "").trim(),
-    coreTension: String(input.coreTension || existingArchiveMeta?.coreTension || "").trim(),
-    chronicleObservation: String(input.chronicleObservation || existingArchiveMeta?.chronicleObservation || "").trim(),
-    chronicleContradiction: String(input.chronicleContradiction || existingArchiveMeta?.chronicleContradiction || "").trim(),
-    chronicleConclusion: String(input.chronicleConclusion || existingArchiveMeta?.chronicleConclusion || "").trim(),
-    emotionalState: String(input.emotionalState || existingArchiveMeta?.emotionalState || "").trim(),
-    coreConflict: String(input.coreConflict || existingArchiveMeta?.coreConflict || "").trim(),
-    risk: String(input.risk || existingArchiveMeta?.risk || "").trim(),
-    anchorQuote: String(input.anchorQuote || existingArchiveMeta?.anchorQuote || "").trim(),
-    resolution: String(input.resolution || existingArchiveMeta?.resolution || "").trim(),
-    entryStatus: String(input.entryStatus || existingArchiveMeta?.entryStatus || "").trim(),
-    playerFlavorLine: String(input.playerFlavorLine || existingArchiveMeta?.playerFlavorLine || "").trim()
+    chapterNumber: String(normalizedInput.chapterNumber || existingArchiveMeta?.chapterNumber || "").trim(),
+    entryType: String(normalizedInput.entryType || existingArchiveMeta?.entryType || "").trim(),
+    subtitle: String(normalizedInput.subtitle || existingArchiveMeta?.subtitle || "").trim(),
+    openingPassage: String(normalizedInput.openingPassage || existingArchiveMeta?.openingPassage || "").trim(),
+    coreSituation: String(normalizedInput.coreSituation || existingArchiveMeta?.coreSituation || "").trim(),
+    coreTension: String(normalizedInput.coreTension || existingArchiveMeta?.coreTension || "").trim(),
+    chronicleObservation: String(normalizedInput.chronicleObservation || existingArchiveMeta?.chronicleObservation || "").trim(),
+    chronicleContradiction: String(normalizedInput.chronicleContradiction || existingArchiveMeta?.chronicleContradiction || "").trim(),
+    chronicleConclusion: String(normalizedInput.chronicleConclusion || existingArchiveMeta?.chronicleConclusion || "").trim(),
+    emotionalState: String(normalizedInput.emotionalState || existingArchiveMeta?.emotionalState || "").trim(),
+    coreConflict: String(normalizedInput.coreConflict || existingArchiveMeta?.coreConflict || "").trim(),
+    risk: String(normalizedInput.risk || existingArchiveMeta?.risk || "").trim(),
+    anchorQuote: String(normalizedInput.anchorQuote || existingArchiveMeta?.anchorQuote || "").trim(),
+    resolution: String(normalizedInput.resolution || existingArchiveMeta?.resolution || "").trim(),
+    entryStatus: String(normalizedInput.entryStatus || existingArchiveMeta?.entryStatus || "").trim(),
+    playerFlavorLine: String(normalizedInput.playerFlavorLine || existingArchiveMeta?.playerFlavorLine || "").trim()
   };
 
   if (
@@ -126,11 +137,14 @@ function normalizePostInput(input, collections, existingPost = {}) {
     ? input.collectionSlugs
     : existingPost.collectionSlugs || [];
   const hasVideoUrlInput = typeof input.videoUrl === "string";
+  const normalizedTitle = String(input.title || existingPost.title || "").trim();
+  const normalizedSlugSource = String(input.slug || "").trim() || normalizedTitle || existingPost.slug || existingPost.title || "";
+  const normalizedReleaseStatus = String(input.releaseStatus || existingPost.releaseStatus || "canon").trim().toLowerCase();
 
   return {
     ...existingPost,
-    title: String(input.title || existingPost.title || "").trim(),
-    slug: slugify(input.title || existingPost.title || ""),
+    title: normalizedTitle,
+    slug: slugify(normalizedSlugSource),
     videoUrl: hasVideoUrlInput ? input.videoUrl.trim() : String(existingPost.videoUrl || "").trim(),
     excerpt: String(input.excerpt || existingPost.excerpt || "").trim(),
     content: String(input.content || existingPost.content || "").trim(),
@@ -143,7 +157,66 @@ function normalizePostInput(input, collections, existingPost = {}) {
     archiveMeta: normalizeArchiveMetaInput(input.archiveMeta, existingPost.archiveMeta),
     createdAt: existingPost.createdAt || input.createdAt || new Date().toISOString(),
     published: typeof input.published === "boolean" ? input.published : Boolean(existingPost.published),
-    collectionSlugs: [...new Set(requestedCollections.map((slug) => String(slug).trim()).filter((slug) => collectionSlugSet.has(slug)))]
+    collectionSlugs: [...new Set(requestedCollections.map((slug) => String(slug).trim()).filter((slug) => collectionSlugSet.has(slug)))],
+    subCategory:
+      typeof input.subCategory === "string"
+        ? input.subCategory.trim()
+        : typeof existingPost.subCategory === "string"
+          ? existingPost.subCategory.trim()
+          : "",
+    sourceTag:
+      typeof input.sourceTag === "string"
+        ? input.sourceTag.trim()
+        : typeof existingPost.sourceTag === "string"
+          ? existingPost.sourceTag.trim()
+          : "",
+    worldLayer:
+      typeof input.worldLayer === "string"
+        ? input.worldLayer.trim()
+        : typeof existingPost.worldLayer === "string"
+          ? existingPost.worldLayer.trim()
+          : "",
+    themeTags: Array.isArray(input.themeTags)
+      ? [...new Set(input.themeTags.map((tag) => String(tag).trim()).filter(Boolean))]
+      : Array.isArray(existingPost.themeTags)
+        ? [...new Set(existingPost.themeTags.map((tag) => String(tag).trim()).filter(Boolean))]
+        : [],
+    versionFamily:
+      typeof input.versionFamily === "string"
+        ? input.versionFamily.trim()
+        : typeof existingPost.versionFamily === "string"
+          ? existingPost.versionFamily.trim()
+          : "",
+    isPrimaryVersion:
+      typeof input.isPrimaryVersion === "boolean" ? input.isPrimaryVersion : Boolean(existingPost.isPrimaryVersion),
+    isArchive: typeof input.isArchive === "boolean" ? input.isArchive : Boolean(existingPost.isArchive),
+    isHomepageEligible:
+      typeof input.isHomepageEligible === "boolean" ? input.isHomepageEligible : Boolean(existingPost.isHomepageEligible),
+    isPubliclyVisible:
+      typeof input.isPubliclyVisible === "boolean"
+        ? input.isPubliclyVisible
+        : typeof existingPost.isPubliclyVisible === "boolean"
+          ? existingPost.isPubliclyVisible
+          : true,
+    supersededBySlug:
+      typeof input.supersededBySlug === "string"
+        ? input.supersededBySlug.trim()
+        : typeof existingPost.supersededBySlug === "string"
+          ? existingPost.supersededBySlug.trim()
+          : "",
+    supersededReason:
+      typeof input.supersededReason === "string"
+        ? input.supersededReason.trim()
+        : typeof existingPost.supersededReason === "string"
+          ? existingPost.supersededReason.trim()
+          : "",
+    supersededAt:
+      typeof input.supersededAt === "string"
+        ? input.supersededAt.trim()
+        : typeof existingPost.supersededAt === "string"
+          ? existingPost.supersededAt.trim()
+          : "",
+    releaseStatus: VALID_RELEASE_STATUSES.has(normalizedReleaseStatus) ? normalizedReleaseStatus : "canon"
   };
 }
 
@@ -196,6 +269,83 @@ function normalizeAboutContent(input = {}, existingAbout = {}) {
     quoteEyebrow: String(input.quoteEyebrow || existingAbout.quoteEyebrow || "").trim(),
     quoteTitle: String(input.quoteTitle || existingAbout.quoteTitle || "").trim(),
     quoteText: String(input.quoteText || existingAbout.quoteText || "").trim()
+  };
+}
+
+function normalizeBrandingContent(input = {}, existingBranding = {}) {
+  return {
+    siteName: String(input.siteName || existingBranding.siteName || "").trim(),
+    siteTagline: String(input.siteTagline || existingBranding.siteTagline || "").trim()
+  };
+}
+
+function normalizeHomeContent(input = {}, existingHome = {}) {
+  return {
+    heroEyebrow: String(input.heroEyebrow || existingHome.heroEyebrow || "").trim(),
+    heroTitle: String(input.heroTitle || existingHome.heroTitle || "").trim(),
+    heroText: String(input.heroText || existingHome.heroText || "").trim(),
+    featuredReleaseSlug: String(input.featuredReleaseSlug || existingHome.featuredReleaseSlug || "").trim(),
+    featuredCtaLabel: String(input.featuredCtaLabel || existingHome.featuredCtaLabel || "").trim(),
+    jumpCtaLabel: String(input.jumpCtaLabel || existingHome.jumpCtaLabel || "").trim(),
+    noteEyebrow: String(input.noteEyebrow || existingHome.noteEyebrow || "").trim(),
+    noteTitle: String(input.noteTitle || existingHome.noteTitle || "").trim(),
+    noteText: String(input.noteText || existingHome.noteText || "").trim(),
+    browseEyebrow: String(input.browseEyebrow || existingHome.browseEyebrow || "").trim(),
+    browseTitle: String(input.browseTitle || existingHome.browseTitle || "").trim(),
+    browseText: String(input.browseText || existingHome.browseText || "").trim(),
+    browseLinkLabel: String(input.browseLinkLabel || existingHome.browseLinkLabel || "").trim(),
+    exploreEyebrow: String(input.exploreEyebrow || existingHome.exploreEyebrow || "").trim(),
+    exploreTitle: String(input.exploreTitle || existingHome.exploreTitle || "").trim(),
+    exploreText: String(input.exploreText || existingHome.exploreText || "").trim(),
+    exploreLinkLabel: String(input.exploreLinkLabel || existingHome.exploreLinkLabel || "").trim(),
+    identityEyebrow: String(input.identityEyebrow || existingHome.identityEyebrow || "").trim(),
+    identityTitle: String(input.identityTitle || existingHome.identityTitle || "").trim(),
+    identityText: String(input.identityText || existingHome.identityText || "").trim(),
+    identityLine: String(input.identityLine || existingHome.identityLine || "").trim()
+  };
+}
+
+function normalizeThemeProfileInput(input = {}, existingTheme = {}) {
+  return {
+    ...existingTheme,
+    key: slugify(input.key || existingTheme.key || ""),
+    label: String(input.label || existingTheme.label || "").trim(),
+    kind: String(input.kind || existingTheme.kind || "standard").trim() || "standard",
+    worldEyebrow: String(input.worldEyebrow || existingTheme.worldEyebrow || "").trim(),
+    featuredLabel: String(input.featuredLabel || existingTheme.featuredLabel || "").trim(),
+    featuredAction: String(input.featuredAction || existingTheme.featuredAction || "").trim(),
+    listLabel: String(input.listLabel || existingTheme.listLabel || "").trim(),
+    worldNoteTitle: String(input.worldNoteTitle || existingTheme.worldNoteTitle || "").trim(),
+    worldNoteText: String(input.worldNoteText || existingTheme.worldNoteText || "").trim(),
+    itemName: String(input.itemName || existingTheme.itemName || "").trim(),
+    itemPlural: String(input.itemPlural || existingTheme.itemPlural || "").trim(),
+    itemAction: String(input.itemAction || existingTheme.itemAction || "").trim(),
+    playerLabel: String(input.playerLabel || existingTheme.playerLabel || "").trim(),
+    playerUpNextLabel: String(input.playerUpNextLabel || existingTheme.playerUpNextLabel || "").trim(),
+    palette: {
+      light: {
+        background: String(input.palette?.light?.background || existingTheme.palette?.light?.background || "").trim(),
+        surface: String(input.palette?.light?.surface || existingTheme.palette?.light?.surface || "").trim(),
+        surfaceAlt: String(input.palette?.light?.surfaceAlt || existingTheme.palette?.light?.surfaceAlt || "").trim(),
+        text: String(input.palette?.light?.text || existingTheme.palette?.light?.text || "").trim(),
+        mutedText: String(input.palette?.light?.mutedText || existingTheme.palette?.light?.mutedText || "").trim(),
+        border: String(input.palette?.light?.border || existingTheme.palette?.light?.border || "").trim(),
+        primary: String(input.palette?.light?.primary || existingTheme.palette?.light?.primary || "").trim(),
+        primaryStrong: String(input.palette?.light?.primaryStrong || existingTheme.palette?.light?.primaryStrong || "").trim(),
+        secondary: String(input.palette?.light?.secondary || existingTheme.palette?.light?.secondary || "").trim()
+      },
+      dark: {
+        background: String(input.palette?.dark?.background || existingTheme.palette?.dark?.background || "").trim(),
+        surface: String(input.palette?.dark?.surface || existingTheme.palette?.dark?.surface || "").trim(),
+        surfaceAlt: String(input.palette?.dark?.surfaceAlt || existingTheme.palette?.dark?.surfaceAlt || "").trim(),
+        text: String(input.palette?.dark?.text || existingTheme.palette?.dark?.text || "").trim(),
+        mutedText: String(input.palette?.dark?.mutedText || existingTheme.palette?.dark?.mutedText || "").trim(),
+        border: String(input.palette?.dark?.border || existingTheme.palette?.dark?.border || "").trim(),
+        primary: String(input.palette?.dark?.primary || existingTheme.palette?.dark?.primary || "").trim(),
+        primaryStrong: String(input.palette?.dark?.primaryStrong || existingTheme.palette?.dark?.primaryStrong || "").trim(),
+        secondary: String(input.palette?.dark?.secondary || existingTheme.palette?.dark?.secondary || "").trim()
+      }
+    }
   };
 }
 
@@ -268,8 +418,12 @@ function canManageComment(actor, comment) {
   return actor?.role === "admin" || actor?.sub === comment.authorId;
 }
 
+function isPostPubliclyVisible(post) {
+  return post?.published === true && post?.isPubliclyVisible !== false;
+}
+
 function findPublishedPost(store, slug) {
-  return store.posts.find((entry) => entry.slug === slug && entry.published);
+  return store.posts.find((entry) => entry.slug === slug && isPostPubliclyVisible(entry));
 }
 
 app.get("/", (req, res) => {
@@ -444,7 +598,7 @@ app.get("/api/posts", async (req, res, next) => {
   try {
     const store = await readStore();
     const publishedPosts = store.posts
-      .filter((post) => post.published)
+      .filter((post) => isPostPubliclyVisible(post))
       .map((post) => attachCollectionDetails(post, store.collections));
 
     res.json({ posts: publishedPosts });
@@ -456,7 +610,7 @@ app.get("/api/posts", async (req, res, next) => {
 app.get("/api/posts/:slug", async (req, res, next) => {
   try {
     const store = await readStore();
-    const post = store.posts.find((entry) => entry.slug === req.params.slug && entry.published);
+    const post = store.posts.find((entry) => entry.slug === req.params.slug && isPostPubliclyVisible(entry));
 
     if (!post) {
       return res.status(404).json({ message: "Release not found." });
@@ -588,8 +742,21 @@ app.delete("/api/comments/:id", commentWriteLimiter, requireUser, async (req, re
 app.get("/api/collections", async (req, res, next) => {
   try {
     const store = await readStore();
-    const publishedPosts = store.posts.filter((post) => post.published);
-    const collections = store.collections.map((collection) => buildCollectionSummary(collection, publishedPosts));
+    const publishedPosts = store.posts.filter((post) => isPostPubliclyVisible(post));
+    const scope = String(req.query.scope || "").trim().toLowerCase();
+    const collections = store.collections
+      .filter((collection) => (scope === "all" ? true : collection.isPublicPrimary))
+      .sort((left, right) => {
+        const leftIndex = PUBLIC_PRIMARY_COLLECTION_SLUGS.indexOf(left.slug);
+        const rightIndex = PUBLIC_PRIMARY_COLLECTION_SLUGS.indexOf(right.slug);
+
+        if (leftIndex !== rightIndex) {
+          return (leftIndex === -1 ? Number.MAX_SAFE_INTEGER : leftIndex) - (rightIndex === -1 ? Number.MAX_SAFE_INTEGER : rightIndex);
+        }
+
+        return left.title.localeCompare(right.title);
+      })
+      .map((collection) => buildCollectionSummary(collection, publishedPosts));
 
     res.json({ collections });
   } catch (error) {
@@ -607,7 +774,7 @@ app.get("/api/collections/:slug", async (req, res, next) => {
     }
 
     const releases = store.posts
-      .filter((post) => post.published && post.collectionSlugs.includes(collection.slug))
+      .filter((post) => isPostPubliclyVisible(post) && post.collectionSlugs.includes(collection.slug))
       .map((post) => attachCollectionDetails(post, store.collections));
 
     res.json({
@@ -623,6 +790,15 @@ app.get("/api/about", async (req, res, next) => {
   try {
     const store = await readStore();
     res.json({ about: store.siteContent.about });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/site-content", async (req, res, next) => {
+  try {
+    const store = await readStore();
+    res.json({ siteContent: store.siteContent });
   } catch (error) {
     next(error);
   }
@@ -729,6 +905,15 @@ app.get("/api/admin/site-content", requireAdmin, async (req, res, next) => {
   }
 });
 
+app.get("/api/admin/insights", requireAdmin, async (req, res, next) => {
+  try {
+    const store = await readStore();
+    res.json({ insights: buildArchiveInsights(store) });
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.put("/api/admin/site-content/about", requireAdmin, async (req, res, next) => {
   try {
     const store = await readStore();
@@ -745,6 +930,40 @@ app.put("/api/admin/site-content/about", requireAdmin, async (req, res, next) =>
 
     await writeStore(store);
     res.json({ about });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.put("/api/admin/site-content/site", requireAdmin, async (req, res, next) => {
+  try {
+    const store = await readStore();
+    const branding = normalizeBrandingContent(req.body.branding, store.siteContent.branding);
+    const home = normalizeHomeContent(req.body.home, store.siteContent.home);
+    const existingThemes = Array.isArray(store.siteContent.collectionThemes) ? store.siteContent.collectionThemes : [];
+    const collectionThemes = Array.isArray(req.body.collectionThemes)
+      ? req.body.collectionThemes
+          .map((theme) => normalizeThemeProfileInput(theme, existingThemes.find((entry) => entry.key === theme.key) || {}))
+          .filter((theme) => theme.key)
+      : existingThemes;
+
+    if (!branding.siteName || !branding.siteTagline) {
+      return res.status(400).json({ message: "Site name and tagline are required." });
+    }
+
+    if (!home.heroTitle || !home.heroText || !home.noteTitle || !home.identityTitle) {
+      return res.status(400).json({ message: "Complete the main homepage sections before saving." });
+    }
+
+    store.siteContent = {
+      ...store.siteContent,
+      branding,
+      home,
+      collectionThemes
+    };
+
+    await writeStore(store);
+    res.json({ siteContent: store.siteContent });
   } catch (error) {
     next(error);
   }

@@ -9,6 +9,7 @@ const config = {
   adminPassword: process.env.ADMIN_PASSWORD || "Admin123!",
   adminPasswordHash: process.env.ADMIN_PASSWORD_HASH || "",
   mongoUri: process.env.MONGODB_URI || "mongodb://127.0.0.1:27017",
+  mongoDirectUri: process.env.MONGODB_DIRECT_URI || "",
   mongoDbName: process.env.MONGODB_DB_NAME || "suno_blog",
   postsFile: process.env.POSTS_FILE || path.join(__dirname, "..", "data", "posts.json"),
   cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME || "",
