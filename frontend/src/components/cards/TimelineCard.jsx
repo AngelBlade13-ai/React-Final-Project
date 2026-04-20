@@ -43,14 +43,15 @@ export default function TimelineCard({ index, onEnterChronicle, onPlayTrack, pla
           }
         }
       : {};
+  const releasePath = `/release/${post.slug}`;
 
   return (
-    <Link className="release-card-link" to={`/release/${post.slug}`} {...linkProps}>
-      <article
-        className={`post-card homepage-post-card release-feed-card timeline-card${isEldoria ? " eldoria-chronicle-card" : ""}${
-          entryState ? ` eldoria-entry-${entryState.key}` : ""
-        }`}
-      >
+    <article
+      className={`release-card-link post-card homepage-post-card release-feed-card timeline-card${isEldoria ? " eldoria-chronicle-card" : ""}${
+        entryState ? ` eldoria-entry-${entryState.key}` : ""
+      }`}
+    >
+      <Link className="release-card-surface" to={releasePath} {...linkProps}>
         <div className="release-card-media timeline-card-media">
           <ReleaseMedia
             className="post-media"
@@ -66,35 +67,38 @@ export default function TimelineCard({ index, onEnterChronicle, onPlayTrack, pla
           />
           <div className="release-card-overlay" />
         </div>
-        <div className="post-body timeline-card-body">
-          <p className="meta">
-            {isEldoria
-              ? eldoriaMeta?.identityLine || eldoriaMeta?.chapterLabel || `Chapter ${String(index + 1).padStart(2, "0")}`
-              : `${themeConfig.itemName} #${String(index + 1).padStart(2, "0")}`}
-          </p>
-          {entryState ? <p className="eldoria-entry-state">{entryState.label}</p> : null}
-          <h3>{displayTitle}</h3>
-          <p>{previewCopy}</p>
-          <div className="card-action-row">
-            <button
-              className="secondary-button mini-player-trigger"
-              disabled={!hasVideo(post.videoUrl)}
-              onClick={(event) => {
-                event.preventDefault();
-                onPlayTrack(post, playbackContext);
-              }}
-              type="button"
-            >
-              {hasVideo(post.videoUrl)
-                ? themeConfig.itemName === "Ballad"
-                  ? "Listen to Ballad"
-                  : "Play in Mini Player"
-                : "Video Pending"}
-            </button>
-            <span className="result-card-cta">{themeConfig.itemAction}</span>
-          </div>
+      </Link>
+      <div className="post-body timeline-card-body">
+        <p className="meta">
+          {isEldoria
+            ? eldoriaMeta?.identityLine || eldoriaMeta?.chapterLabel || `Chapter ${String(index + 1).padStart(2, "0")}`
+            : `${themeConfig.itemName} #${String(index + 1).padStart(2, "0")}`}
+        </p>
+        {entryState ? <p className="eldoria-entry-state">{entryState.label}</p> : null}
+        <h3>
+          <Link className="card-title-link" to={releasePath} {...linkProps}>
+            {displayTitle}
+          </Link>
+        </h3>
+        <p>{previewCopy}</p>
+        <div className="card-action-row">
+          <button
+            className="secondary-button mini-player-trigger"
+            disabled={!hasVideo(post.videoUrl)}
+            onClick={() => onPlayTrack(post, playbackContext)}
+            type="button"
+          >
+            {hasVideo(post.videoUrl)
+              ? themeConfig.itemName === "Ballad"
+                ? "Listen to Ballad"
+                : "Play in Mini Player"
+              : "Video Pending"}
+          </button>
+          <Link className="result-card-cta" to={releasePath} {...linkProps}>
+            {themeConfig.itemAction}
+          </Link>
         </div>
-      </article>
-    </Link>
+      </div>
+    </article>
   );
 }

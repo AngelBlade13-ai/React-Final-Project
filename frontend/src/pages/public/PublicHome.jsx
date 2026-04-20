@@ -114,8 +114,8 @@ export default function PublicHome({ onPlayTrack, siteContent }) {
               <h2>Featured Release</h2>
               <span>Now Playing</span>
             </div>
-            <Link className="featured-release-link" to={`/release/${featuredPost.slug}`}>
-              <article className="intro-card homepage-panel featured-release-card">
+            <article className="featured-release-link intro-card homepage-panel featured-release-card">
+              <Link className="featured-release-surface" to={`/release/${featuredPost.slug}`}>
                 <div className="featured-release-media">
                   <ReleaseMedia
                     className="featured-release-video"
@@ -128,38 +128,41 @@ export default function PublicHome({ onPlayTrack, siteContent }) {
                   <div className="release-card-overlay" />
                   <div className="play-pill featured-play-pill">{hasVideo(featuredPost.videoUrl) ? "Featured" : "Video Pending"}</div>
                 </div>
-                <div className="featured-release-copy">
-                  <p className="eyebrow">New Drop</p>
-                  <h3>{featuredPost.title}</h3>
-                  <p className="featured-release-intro">
-                    A focused release entry with the song front and center, followed by the note behind it.
-                  </p>
-                  <p className="featured-release-excerpt">{featuredPost.excerpt}</p>
-                  <p className="meta">{formatPostDate(featuredPost.createdAt)}</p>
-                  <div className="tag-row">
-                    {featuredPostCollections.map((collection) => (
-                      <Link className="collection-chip" key={collection.slug} to={`/collections/${collection.slug}`}>
-                        {collection.title}
-                      </Link>
-                    ))}
-                  </div>
-                  <div className="featured-release-actions">
-                    <button
-                      className="secondary-button mini-player-trigger"
-                      disabled={!hasVideo(featuredPost.videoUrl)}
-                      onClick={(event) => {
-                        event.preventDefault();
-                        onPlayTrack(featuredPost);
-                      }}
-                      type="button"
-                    >
-                      {hasVideo(featuredPost.videoUrl) ? "Play in Mini Player" : "Video Pending"}
-                    </button>
-                    <span className="hero-link">Enter Release</span>
-                  </div>
+              </Link>
+              <div className="featured-release-copy">
+                <p className="eyebrow">New Drop</p>
+                <h3>
+                  <Link className="card-title-link" to={`/release/${featuredPost.slug}`}>
+                    {featuredPost.title}
+                  </Link>
+                </h3>
+                <p className="featured-release-intro">
+                  A focused release entry with the song front and center, followed by the note behind it.
+                </p>
+                <p className="featured-release-excerpt">{featuredPost.excerpt}</p>
+                <p className="meta">{formatPostDate(featuredPost.createdAt)}</p>
+                <div className="tag-row">
+                  {featuredPostCollections.map((collection) => (
+                    <Link className="collection-chip" key={collection.slug} to={`/collections/${collection.slug}`}>
+                      {collection.title}
+                    </Link>
+                  ))}
                 </div>
-              </article>
-            </Link>
+                <div className="featured-release-actions">
+                  <button
+                    className="secondary-button mini-player-trigger"
+                    disabled={!hasVideo(featuredPost.videoUrl)}
+                    onClick={() => onPlayTrack(featuredPost)}
+                    type="button"
+                  >
+                    {hasVideo(featuredPost.videoUrl) ? "Play in Mini Player" : "Video Pending"}
+                  </button>
+                  <Link className="hero-link" to={`/release/${featuredPost.slug}`}>
+                    Enter Release
+                  </Link>
+                </div>
+              </div>
+            </article>
           </section>
         ) : null}
 

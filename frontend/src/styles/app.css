@@ -337,7 +337,12 @@ button:disabled {
 
 .featured-release-link {
   display: block;
+}
+
+.featured-release-surface {
+  display: block;
   text-decoration: none;
+  color: inherit;
 }
 
 .featured-release-card {
@@ -638,7 +643,16 @@ button:disabled {
 
 .release-card-link {
   display: block;
+}
+
+.release-card-surface,
+.card-title-link {
   text-decoration: none;
+  color: inherit;
+}
+
+.release-card-surface {
+  display: block;
 }
 
 .homepage-post-card {
@@ -658,8 +672,8 @@ button:disabled {
   transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
 }
 
-.release-card-link:hover .release-feed-card,
-.release-card-link:focus-visible .release-feed-card {
+.release-card-link:hover,
+.release-card-link:focus-within {
   transform: translateY(-4px);
   border-color: color-mix(in srgb, var(--border) 62%, var(--primary) 38%);
   box-shadow:
@@ -674,17 +688,17 @@ button:disabled {
 }
 
 .release-card-link:hover .release-card-media,
-.release-card-link:focus-visible .release-card-media {
+.release-card-link:focus-within .release-card-media {
   transform: scale(1.01);
 }
 
 .release-card-link:hover .post-media,
-.release-card-link:focus-visible .post-media {
+.release-card-link:focus-within .post-media {
   transform: scale(1.035);
 }
 
 .release-card-link:hover .release-card-overlay,
-.release-card-link:focus-visible .release-card-overlay {
+.release-card-link:focus-within .release-card-overlay {
   opacity: 0.92;
 }
 
@@ -858,7 +872,7 @@ select:focus {
 }
 
 .release-card-link:hover .release-card-arrow,
-.release-card-link:focus-visible .release-card-arrow {
+.release-card-link:focus-within .release-card-arrow {
   opacity: 1;
   transform: translateY(0);
 }
@@ -1163,6 +1177,7 @@ select:focus {
 .result-card-cta {
   color: var(--text);
   font-weight: 700;
+  text-decoration: none;
 }
 
 .meta {

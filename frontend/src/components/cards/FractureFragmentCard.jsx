@@ -13,19 +13,18 @@ export default function FractureFragmentCard({
   post,
   primaryInfluenced
 }) {
+  const releasePath = `/release/${post.slug}`;
+
   return (
-    <Link
-      className="release-card-link"
+    <article
+      className={`release-card-link post-card homepage-post-card release-feed-card fracture-fragment-card fracture-${meta.state.toLowerCase()}${
+        active ? " active" : ""
+      }${highlighted ? " highlighted" : ""}${dimmed ? " dimmed" : ""}${primaryInfluenced ? " primary-influenced" : ""}`}
       onFocus={() => onFocusFragment(post.slug)}
       onMouseEnter={() => onFocusFragment(post.slug)}
       onMouseLeave={() => onFocusFragment("")}
-      to={`/release/${post.slug}`}
     >
-      <article
-        className={`post-card homepage-post-card release-feed-card fracture-fragment-card fracture-${meta.state.toLowerCase()}${
-          active ? " active" : ""
-        }${highlighted ? " highlighted" : ""}${dimmed ? " dimmed" : ""}${primaryInfluenced ? " primary-influenced" : ""}`}
-      >
+      <Link className="release-card-surface" to={releasePath}>
         <div className="release-card-media fracture-fragment-media">
           <ReleaseMedia
             className="post-media"
@@ -42,30 +41,33 @@ export default function FractureFragmentCard({
           />
           <div className="release-card-overlay" />
         </div>
-        <div className="post-body fracture-fragment-body">
-          <p className="fracture-fragment-meta">
-            {meta.fragmentId} / {meta.state} / {meta.perspective} / {meta.signalType}
-          </p>
-          <h3>{meta.title}</h3>
-          <p>{meta.description}</p>
-          <p className="fracture-relation-line">Linked to: {meta.linkedTo.join(", ")}</p>
-          <p className="fracture-system-note">{meta.systemNote}</p>
-          <div className="card-action-row">
-            <button
-              className="secondary-button mini-player-trigger"
-              disabled={!hasVideo(post.videoUrl)}
-              onClick={(event) => {
-                event.preventDefault();
-                onPlayTrack(post, playbackContext);
-              }}
-              type="button"
-            >
-              {hasVideo(post.videoUrl) ? "Begin Playback" : "Signal Unavailable"}
-            </button>
-            <span className="result-card-cta">Enter Fragment</span>
-          </div>
+      </Link>
+      <div className="post-body fracture-fragment-body">
+        <p className="fracture-fragment-meta">
+          {meta.fragmentId} / {meta.state} / {meta.perspective} / {meta.signalType}
+        </p>
+        <h3>
+          <Link className="card-title-link" to={releasePath}>
+            {meta.title}
+          </Link>
+        </h3>
+        <p>{meta.description}</p>
+        <p className="fracture-relation-line">Linked to: {meta.linkedTo.join(", ")}</p>
+        <p className="fracture-system-note">{meta.systemNote}</p>
+        <div className="card-action-row">
+          <button
+            className="secondary-button mini-player-trigger"
+            disabled={!hasVideo(post.videoUrl)}
+            onClick={() => onPlayTrack(post, playbackContext)}
+            type="button"
+          >
+            {hasVideo(post.videoUrl) ? "Begin Playback" : "Signal Unavailable"}
+          </button>
+          <Link className="result-card-cta" to={releasePath}>
+            Enter Fragment
+          </Link>
         </div>
-      </article>
-    </Link>
+      </div>
+    </article>
   );
 }
