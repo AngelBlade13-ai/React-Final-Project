@@ -10,6 +10,13 @@ export default function ReleaseMedia({
   controls = false,
   muted = false
 }) {
+  const posterUrl = getVideoPosterUrl(videoUrl);
+  const preferPoster = compact && !controls;
+
+  if (hasVideo(videoUrl) && preferPoster && posterUrl) {
+    return <img alt="" className={className} decoding="async" loading="lazy" src={posterUrl} />;
+  }
+
   if (hasVideo(videoUrl)) {
     return (
       <video
@@ -17,8 +24,8 @@ export default function ReleaseMedia({
         controls={controls}
         muted={muted}
         playsInline
-        poster={getVideoPosterUrl(videoUrl) || undefined}
-        preload="metadata"
+        poster={posterUrl || undefined}
+        preload={controls ? "metadata" : "none"}
         src={videoUrl}
       />
     );
