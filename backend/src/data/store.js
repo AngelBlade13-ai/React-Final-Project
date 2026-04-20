@@ -1,6 +1,6 @@
 const fs = require("fs/promises");
 const crypto = require("crypto");
-const { getDb } = require("../lib/mongo");
+const { getDb, runWithTransaction } = require("../lib/mongo");
 const config = require("../config");
 const { slugify } = require("../utils/slugify");
 const VALID_RELEASE_STATUSES = new Set(["canon", "alternate", "working"]);
@@ -721,46 +721,137 @@ async function readStore() {
   };
 }
 
-async function writeStore(store) {
+function getSessionOptions(options = {}) {
+  return options.session ? { session: options.session } : {};
+}
+
+function normalizeDocuments(documents, normalizer) {
+  return Array.isArray(documents) ? documents.map(normalizer).filter(Boolean) : [];
+}
+
+async function upsertDocumentsById(collectionName, documents, options = {}) {
+  if (!documents.length) {
+    return documents;
+  }
+
+  const db = getDb();
+  const collection = db.collection(collectionName);
+  const sessionOptions = getSessionOptions(options);
+
+  await collection.bulkWrite(
+    documents.map((document) => ({
+      replaceOne: {
+        filter: { id: document.id },
+        replacement: document,
+        upsert: true
+      }
+    })),
+    {
+      ordered: true,
+      ...sessionOptions
+    }
+  );
+
+  return documents;
+}
+
+async function syncDocumentsById(collectionName, documents, options = {}) {
+  const db = getDb();
+  const collection = db.collection(collectionName);
+  const sessionOptions = getSessionOptions(options);
+  const nextIds = new Set(documents.map((document) => document.id));
+  const existingIds = (
+    await collection
+      .find({}, { projection: { id: 1, _id: 0 }, ...sessionOptions })
+      .toArray()
+  )
+    .map((entry) => String(entry.id || "").trim())
+    .filter(Boolean);
+  const idsToDelete = existingIds.filter((id) => !nextIds.has(id));
+
+  if (idsToDelete.length) {
+    await collection.deleteMany({ id: { $in: idsToDelete } }, sessionOptions);
+  }
+
+  return upsertDocumentsById(collectionName, documents, options);
+}
+
+async function insertNormalizedDocument(collectionName, document, options = {}) {
+  if (!document) {
+    return null;
+  }
+
+  const db = getDb();
+  await db.collection(collectionName).insertOne(document, getSessionOptions(options));
+  return document;
+}
+
+async function replaceNormalizedDocumentById(collectionName, document, options = {}) {
+  if (!document) {
+    return null;
+  }
+
+  const db = getDb();
+  await db.collection(collectionName).replaceOne(
+    { id: document.id },
+    document,
+    getSessionOptions(options)
+  );
+  return document;
+}
+
+async function deleteDocuments(collectionName, filter, options = {}) {
+  const db = getDb();
+  return db.collection(collectionName).deleteMany(filter, getSessionOptions(options));
+}
+
+async function deleteDocumentById(collectionName, id, options = {}) {
+  const db = getDb();
+  return db.collection(collectionName).deleteOne({ id }, getSessionOptions(options));
+}
+
+async function updateDocuments(collectionName, filter, update, options = {}) {
+  const db = getDb();
+  return db.collection(collectionName).updateMany(filter, update, getSessionOptions(options));
+}
+
+async function runStoreTransaction(work) {
+  await ensureStore();
+  return runWithTransaction((session) => work(session));
+}
+
+async function writeSiteContent(siteContent, options = {}) {
   await ensureStore();
   const db = getDb();
-  const posts = Array.isArray(store.posts) ? store.posts.map(normalizePost).filter(Boolean) : [];
-  const collections = Array.isArray(store.collections) ? store.collections.map(normalizeCollection).filter(Boolean) : [];
-  const users = Array.isArray(store.users) ? store.users.map(normalizeUser).filter(Boolean) : [];
-  const comments = Array.isArray(store.comments) ? store.comments.map(normalizeComment).filter(Boolean) : [];
-  const siteContent = normalizeSiteContent(store.siteContent);
-
-  await Promise.all([
-    db.collection("posts").deleteMany({}),
-    db.collection("collections").deleteMany({})
-  ]);
-
-  if (posts.length) {
-    await db.collection("posts").insertMany(posts);
-  }
-
-  if (collections.length) {
-    await db.collection("collections").insertMany(collections);
-  }
-
-  await Promise.all([
-    db.collection("users").deleteMany({}),
-    db.collection("comments").deleteMany({})
-  ]);
-
-  if (users.length) {
-    await db.collection("users").insertMany(users);
-  }
-
-  if (comments.length) {
-    await db.collection("comments").insertMany(comments);
-  }
+  const normalizedSiteContent = normalizeSiteContent(siteContent);
 
   await db.collection("siteContent").updateOne(
     { key: "siteContent" },
-    { $set: { key: "siteContent", ...siteContent } },
-    { upsert: true }
+    { $set: { key: "siteContent", ...normalizedSiteContent } },
+    {
+      upsert: true,
+      ...getSessionOptions(options)
+    }
   );
+
+  return normalizedSiteContent;
+}
+
+async function writeStore(store) {
+  await ensureStore();
+  const posts = normalizeDocuments(store.posts, normalizePost);
+  const collections = normalizeDocuments(store.collections, normalizeCollection);
+  const users = normalizeDocuments(store.users, normalizeUser);
+  const comments = normalizeDocuments(store.comments, normalizeComment);
+  const siteContent = normalizeSiteContent(store.siteContent);
+
+  await runStoreTransaction(async (session) => {
+    await syncDocumentsById("posts", posts, { session });
+    await syncDocumentsById("collections", collections, { session });
+    await syncDocumentsById("users", users, { session });
+    await syncDocumentsById("comments", comments, { session });
+    await writeSiteContent(siteContent, { session });
+  });
 }
 
 async function readPosts() {
@@ -768,9 +859,9 @@ async function readPosts() {
   return store.posts;
 }
 
-async function writePosts(posts) {
-  const store = await readStore();
-  await writeStore({ ...store, posts });
+async function writePosts(posts, options = {}) {
+  await ensureStore();
+  return syncDocumentsById("posts", normalizeDocuments(posts, normalizePost), options);
 }
 
 async function readCollections() {
@@ -778,9 +869,9 @@ async function readCollections() {
   return store.collections;
 }
 
-async function writeCollections(collections) {
-  const store = await readStore();
-  await writeStore({ ...store, collections });
+async function writeCollections(collections, options = {}) {
+  await ensureStore();
+  return syncDocumentsById("collections", normalizeDocuments(collections, normalizeCollection), options);
 }
 
 async function readUsers() {
@@ -788,9 +879,9 @@ async function readUsers() {
   return store.users;
 }
 
-async function writeUsers(users) {
-  const store = await readStore();
-  await writeStore({ ...store, users });
+async function writeUsers(users, options = {}) {
+  await ensureStore();
+  return syncDocumentsById("users", normalizeDocuments(users, normalizeUser), options);
 }
 
 async function readComments() {
@@ -798,15 +889,96 @@ async function readComments() {
   return store.comments;
 }
 
-async function writeComments(comments) {
-  const store = await readStore();
-  await writeStore({ ...store, comments });
+async function writeComments(comments, options = {}) {
+  await ensureStore();
+  return syncDocumentsById("comments", normalizeDocuments(comments, normalizeComment), options);
+}
+
+async function insertUser(user, options = {}) {
+  await ensureStore();
+  return insertNormalizedDocument("users", normalizeUser(user), options);
+}
+
+async function replaceUser(user, options = {}) {
+  await ensureStore();
+  return replaceNormalizedDocumentById("users", normalizeUser(user), options);
+}
+
+async function insertComment(comment, options = {}) {
+  await ensureStore();
+  return insertNormalizedDocument("comments", normalizeComment(comment), options);
+}
+
+async function replaceComment(comment, options = {}) {
+  await ensureStore();
+  return replaceNormalizedDocumentById("comments", normalizeComment(comment), options);
+}
+
+async function deleteCommentById(id, options = {}) {
+  await ensureStore();
+  return deleteDocumentById("comments", String(id || "").trim(), options);
+}
+
+async function renameCommentsForPostSlug(previousSlug, nextSlug, options = {}) {
+  await ensureStore();
+
+  if (!previousSlug || previousSlug === nextSlug) {
+    return null;
+  }
+
+  return updateDocuments(
+    "comments",
+    { postSlug: String(previousSlug).trim() },
+    { $set: { postSlug: String(nextSlug || "").trim() } },
+    options
+  );
+}
+
+async function deleteCommentsByPostSlug(postSlug, options = {}) {
+  await ensureStore();
+  return deleteDocuments("comments", { postSlug: String(postSlug || "").trim() }, options);
+}
+
+async function insertPost(post, options = {}) {
+  await ensureStore();
+  return insertNormalizedDocument("posts", normalizePost(post), options);
+}
+
+async function replacePost(post, options = {}) {
+  await ensureStore();
+  return replaceNormalizedDocumentById("posts", normalizePost(post), options);
+}
+
+async function replacePosts(posts, options = {}) {
+  await ensureStore();
+  return upsertDocumentsById("posts", normalizeDocuments(posts, normalizePost), options);
+}
+
+async function deletePostById(id, options = {}) {
+  await ensureStore();
+  return deleteDocumentById("posts", String(id || "").trim(), options);
+}
+
+async function insertCollection(collection, options = {}) {
+  await ensureStore();
+  return insertNormalizedDocument("collections", normalizeCollection(collection), options);
+}
+
+async function replaceCollections(collections, options = {}) {
+  await ensureStore();
+  return upsertDocumentsById("collections", normalizeDocuments(collections, normalizeCollection), options);
+}
+
+async function deleteCollectionById(id, options = {}) {
+  await ensureStore();
+  return deleteDocumentById("collections", String(id || "").trim(), options);
 }
 
 module.exports = {
   ensureStore,
   readLegacySeed,
   readStore,
+  runStoreTransaction,
   writeStore,
   readPosts,
   writePosts,
@@ -815,5 +987,20 @@ module.exports = {
   readUsers,
   writeUsers,
   readComments,
-  writeComments
+  writeComments,
+  writeSiteContent,
+  insertUser,
+  replaceUser,
+  insertComment,
+  replaceComment,
+  deleteCommentById,
+  renameCommentsForPostSlug,
+  deleteCommentsByPostSlug,
+  insertPost,
+  replacePost,
+  replacePosts,
+  deletePostById,
+  insertCollection,
+  replaceCollections,
+  deleteCollectionById
 };

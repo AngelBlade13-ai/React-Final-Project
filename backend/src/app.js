@@ -7,7 +7,25 @@ const rateLimit = require("express-rate-limit");
 const bcrypt = require("bcryptjs");
 const config = require("./config");
 const { authenticate, requireAdmin, requireUser } = require("./middleware/auth");
-const { readStore, writeStore } = require("./data/store");
+const {
+  readStore,
+  runStoreTransaction,
+  writeSiteContent,
+  insertUser,
+  replaceUser,
+  insertComment,
+  replaceComment,
+  deleteCommentById,
+  renameCommentsForPostSlug,
+  deleteCommentsByPostSlug,
+  insertPost,
+  replacePost,
+  replacePosts,
+  deletePostById,
+  insertCollection,
+  replaceCollections,
+  deleteCollectionById
+} = require("./data/store");
 const { buildArchiveInsights } = require("./services/archiveInsights");
 const { slugify } = require("./utils/slugify");
 const uploadRoutes = require("./routes/upload.routes");
@@ -251,8 +269,14 @@ function reconcileCollections(collections, posts) {
       : {
           ...collection,
           featuredReleaseSlug: ""
-        };
+      };
   });
+}
+
+function collectChangedEntries(previousEntries, nextEntries) {
+  const previousById = new Map(previousEntries.map((entry) => [entry.id, JSON.stringify(entry)]));
+
+  return nextEntries.filter((entry) => previousById.get(entry.id) !== JSON.stringify(entry));
 }
 
 function normalizeAboutContent(input = {}, existingAbout = {}) {
@@ -491,8 +515,7 @@ app.post("/api/auth/register", userAuthLimiter, async (req, res, next) => {
       updatedAt: timestamp
     };
 
-    store.users.unshift(user);
-    await writeStore(store);
+    await insertUser(user);
 
     return res.status(201).json({
       token: issueAuthToken(user),
@@ -583,7 +606,7 @@ app.put("/api/auth/me", requireUser, async (req, res, next) => {
       updatedAt: new Date().toISOString()
     };
 
-    await writeStore(store);
+    await replaceUser(store.users[index]);
 
     return res.json({
       token: issueAuthToken(store.users[index]),
@@ -678,8 +701,7 @@ app.post("/api/posts/:slug/comments", commentWriteLimiter, requireUser, async (r
       updatedAt: timestamp
     };
 
-    store.comments.push(comment);
-    await writeStore(store);
+    await insertComment(comment);
 
     return res.status(201).json({ comment: attachCommentDetails(comment, store.users) });
   } catch (error) {
@@ -708,8 +730,7 @@ app.put("/api/comments/:id", commentWriteLimiter, requireUser, async (req, res, 
       return res.status(400).json({ message: "Comment text must be at least 2 characters." });
     }
 
-    store.comments[index] = nextComment;
-    await writeStore(store);
+    await replaceComment(nextComment);
 
     return res.json({ comment: attachCommentDetails(nextComment, store.users) });
   } catch (error) {
@@ -730,8 +751,7 @@ app.delete("/api/comments/:id", commentWriteLimiter, requireUser, async (req, re
       return res.status(403).json({ message: "You do not have permission to delete this comment." });
     }
 
-    store.comments = store.comments.filter((entry) => entry.id !== req.params.id);
-    await writeStore(store);
+    await deleteCommentById(req.params.id);
 
     return res.json({ message: "Comment deleted." });
   } catch (error) {
@@ -833,9 +853,11 @@ app.post("/api/admin/posts", requireAdmin, async (req, res, next) => {
       return res.status(400).json({ message: "Title, excerpt, and content are required." });
     }
 
-    store.posts.unshift(newPost);
-    store.collections = reconcileCollections(store.collections, store.posts);
-    await writeStore(store);
+    if (store.posts.some((entry) => entry.slug === newPost.slug)) {
+      return res.status(400).json({ message: "A post with that slug already exists." });
+    }
+
+    await insertPost(newPost);
     res.status(201).json({ post: attachCollectionDetails(newPost, store.collections) });
   } catch (error) {
     next(error);
@@ -853,15 +875,29 @@ app.put("/api/admin/posts/:id", requireAdmin, async (req, res, next) => {
 
     const previousPost = store.posts[index];
     const updatedPost = normalizePostInput(req.body, store.collections, previousPost);
+    const slugConflict = store.posts.some((post) => post.id !== previousPost.id && post.slug === updatedPost.slug);
 
-    store.posts[index] = updatedPost;
-    store.comments = store.comments.map((comment) => ({
-      ...comment,
-      postSlug: comment.postSlug === previousPost.slug ? updatedPost.slug : comment.postSlug
-    }));
-    store.collections = reconcileCollections(store.collections, store.posts);
-    await writeStore(store);
-    res.json({ post: attachCollectionDetails(updatedPost, store.collections) });
+    if (slugConflict) {
+      return res.status(400).json({ message: "A post with that slug already exists." });
+    }
+
+    const nextPosts = store.posts.map((post) => (post.id === previousPost.id ? updatedPost : post));
+    const nextCollections = reconcileCollections(store.collections, nextPosts);
+    const changedCollections = collectChangedEntries(store.collections, nextCollections);
+
+    await runStoreTransaction(async (session) => {
+      await replacePost(updatedPost, { session });
+
+      if (previousPost.slug !== updatedPost.slug) {
+        await renameCommentsForPostSlug(previousPost.slug, updatedPost.slug, { session });
+      }
+
+      if (changedCollections.length) {
+        await replaceCollections(changedCollections, { session });
+      }
+    });
+
+    res.json({ post: attachCollectionDetails(updatedPost, nextCollections) });
   } catch (error) {
     next(error);
   }
@@ -877,10 +913,18 @@ app.delete("/api/admin/posts/:id", requireAdmin, async (req, res, next) => {
       return res.status(404).json({ message: "Post not found." });
     }
 
-    store.posts = remaining;
-    store.comments = store.comments.filter((comment) => comment.postSlug !== post.slug);
-    store.collections = reconcileCollections(store.collections, store.posts);
-    await writeStore(store);
+    const nextCollections = reconcileCollections(store.collections, remaining);
+    const changedCollections = collectChangedEntries(store.collections, nextCollections);
+
+    await runStoreTransaction(async (session) => {
+      await deletePostById(post.id, { session });
+      await deleteCommentsByPostSlug(post.slug, { session });
+
+      if (changedCollections.length) {
+        await replaceCollections(changedCollections, { session });
+      }
+    });
+
     res.json({ message: "Post deleted." });
   } catch (error) {
     next(error);
@@ -928,7 +972,7 @@ app.put("/api/admin/site-content/about", requireAdmin, async (req, res, next) =>
       about
     };
 
-    await writeStore(store);
+    await writeSiteContent(store.siteContent);
     res.json({ about });
   } catch (error) {
     next(error);
@@ -962,7 +1006,7 @@ app.put("/api/admin/site-content/site", requireAdmin, async (req, res, next) => 
       collectionThemes
     };
 
-    await writeStore(store);
+    await writeSiteContent(store.siteContent);
     res.json({ siteContent: store.siteContent });
   } catch (error) {
     next(error);
@@ -1004,7 +1048,7 @@ app.put("/api/admin/comments/:id", requireAdmin, async (req, res, next) => {
       updatedAt: new Date().toISOString()
     };
 
-    await writeStore(store);
+    await replaceComment(store.comments[index]);
     res.json({ comment: attachCommentDetails(store.comments[index], store.users) });
   } catch (error) {
     next(error);
@@ -1024,8 +1068,7 @@ app.post("/api/admin/collections", requireAdmin, async (req, res, next) => {
       return res.status(400).json({ message: "A collection with that title already exists." });
     }
 
-    store.collections.unshift(collection);
-    await writeStore(store);
+    await insertCollection(collection);
     res.status(201).json({ collection });
   } catch (error) {
     next(error);
@@ -1056,17 +1099,32 @@ app.put("/api/admin/collections/:id", requireAdmin, async (req, res, next) => {
       return res.status(400).json({ message: "A collection with that title already exists." });
     }
 
-    store.collections[index] = updatedCollection;
-    store.posts = store.posts.map((post) => ({
+    const nextPosts = store.posts.map((post) => ({
       ...post,
       collectionSlugs: post.collectionSlugs.map((slug) =>
         slug === previousCollection.slug ? updatedCollection.slug : slug
       )
     }));
-    store.collections = reconcileCollections(store.collections, store.posts);
+    const changedPosts = collectChangedEntries(store.posts, nextPosts);
+    const nextCollections = reconcileCollections(
+      store.collections.map((collection) => (collection.id === previousCollection.id ? updatedCollection : collection)),
+      nextPosts
+    );
+    const changedCollections = collectChangedEntries(store.collections, nextCollections);
 
-    await writeStore(store);
-    res.json({ collection: updatedCollection });
+    await runStoreTransaction(async (session) => {
+      if (changedPosts.length) {
+        await replacePosts(changedPosts, { session });
+      }
+
+      if (changedCollections.length) {
+        await replaceCollections(changedCollections, { session });
+      }
+    });
+
+    res.json({
+      collection: nextCollections.find((collection) => collection.id === updatedCollection.id) || updatedCollection
+    });
   } catch (error) {
     next(error);
   }
@@ -1081,14 +1139,27 @@ app.delete("/api/admin/collections/:id", requireAdmin, async (req, res, next) =>
       return res.status(404).json({ message: "Collection not found." });
     }
 
-    store.collections = store.collections.filter((entry) => entry.id !== req.params.id);
-    store.posts = store.posts.map((post) => ({
+    const remainingCollections = store.collections.filter((entry) => entry.id !== req.params.id);
+    const nextPosts = store.posts.map((post) => ({
       ...post,
       collectionSlugs: post.collectionSlugs.filter((slug) => slug !== collection.slug)
     }));
-    store.collections = reconcileCollections(store.collections, store.posts);
+    const changedPosts = collectChangedEntries(store.posts, nextPosts);
+    const nextCollections = reconcileCollections(remainingCollections, nextPosts);
+    const changedCollections = collectChangedEntries(remainingCollections, nextCollections);
 
-    await writeStore(store);
+    await runStoreTransaction(async (session) => {
+      await deleteCollectionById(collection.id, { session });
+
+      if (changedPosts.length) {
+        await replacePosts(changedPosts, { session });
+      }
+
+      if (changedCollections.length) {
+        await replaceCollections(changedCollections, { session });
+      }
+    });
+
     res.json({ message: "Collection deleted." });
   } catch (error) {
     next(error);

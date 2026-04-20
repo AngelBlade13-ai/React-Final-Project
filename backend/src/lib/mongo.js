@@ -5,6 +5,7 @@ const config = require("../config");
 let clientPromise = null;
 let database = null;
 let activeClient = null;
+let warnedAboutTransactionFallback = false;
 
 function createClient(uri) {
   return new MongoClient(uri, {
@@ -190,8 +191,60 @@ async function closeDatabase() {
   database = null;
 }
 
+function isTransactionUnsupportedError(error) {
+  const message = String(error?.message || "");
+
+  return (
+    error?.code === 20 ||
+    message.includes("Standalone servers do not support transactions") ||
+    message.includes("Transaction numbers are only allowed on a replica set member or mongos") ||
+    message.includes("Transaction support is not available") ||
+    message.includes("Current topology does not support sessions") ||
+    message.includes("Current topology does not support retryable writes")
+  );
+}
+
+async function runWithTransaction(work) {
+  if (!activeClient) {
+    throw new Error("MongoDB has not been initialized. Call connectToDatabase() first.");
+  }
+
+  let session = null;
+  let shouldFallbackWithoutTransaction = false;
+
+  try {
+    session = activeClient.startSession();
+
+    return await session.withTransaction(
+      async () => work(session),
+      {
+        readConcern: { level: "snapshot" },
+        writeConcern: { w: "majority" }
+      }
+    );
+  } catch (error) {
+    if (!isTransactionUnsupportedError(error)) {
+      throw error;
+    }
+
+    shouldFallbackWithoutTransaction = true;
+  } finally {
+    if (session) {
+      await session.endSession();
+    }
+  }
+
+  if (!warnedAboutTransactionFallback) {
+    warnedAboutTransactionFallback = true;
+    console.warn("MongoDB transactions are unavailable. Falling back to ordered non-transactional writes.");
+  }
+
+  return work(null);
+}
+
 module.exports = {
   closeDatabase,
   connectToDatabase,
-  getDb
+  getDb,
+  runWithTransaction
 };
