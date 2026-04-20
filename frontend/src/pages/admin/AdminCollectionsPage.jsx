@@ -18,6 +18,12 @@ export default function AdminCollectionsPage() {
     startCollectionEdit,
     updateCollectionForm
   } = useAdminContext();
+  const activeCollection = editingCollectionId ? collections.find((collection) => collection.id === editingCollectionId) || null : null;
+  const featuredCollectionSlug = activeCollection?.slug || collectionForm.slug;
+  const featuredReleaseCandidates = posts.filter((post) => (post.collectionSlugs || []).includes(featuredCollectionSlug));
+  const hasInvalidFeaturedSelection =
+    collectionForm.featuredReleaseSlug &&
+    !featuredReleaseCandidates.some((post) => post.slug === collectionForm.featuredReleaseSlug);
 
   return (
     <main className="admin-grid">
@@ -56,17 +62,26 @@ export default function AdminCollectionsPage() {
           <label>
             Featured Release
             <select
+              disabled={!featuredReleaseCandidates.length && !hasInvalidFeaturedSelection}
               onChange={(event) => updateCollectionForm("featuredReleaseSlug", event.target.value)}
               value={collectionForm.featuredReleaseSlug}
             >
               <option value="">None</option>
-              {posts.map((post) => (
+              {hasInvalidFeaturedSelection ? (
+                <option value={collectionForm.featuredReleaseSlug}>{`Current selection no longer belongs to this collection (${collectionForm.featuredReleaseSlug})`}</option>
+              ) : null}
+              {featuredReleaseCandidates.map((post) => (
                 <option key={post.id} value={post.slug}>
                   {post.title}
                 </option>
               ))}
             </select>
           </label>
+          <p className="meta full-span">
+            {featuredReleaseCandidates.length
+              ? `${featuredReleaseCandidates.length} release${featuredReleaseCandidates.length === 1 ? "" : "s"} currently belong to this collection.`
+              : "Add releases to this collection in Posts before choosing a featured release."}
+          </p>
           <label>
             Theme
             <select onChange={(event) => updateCollectionForm("theme", event.target.value)} value={collectionForm.theme}>

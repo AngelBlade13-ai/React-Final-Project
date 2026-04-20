@@ -405,6 +405,22 @@ function remapPostSlugReferences(posts, collections, siteContent, previousSlug, 
   };
 }
 
+function isFeaturedReleaseValidForCollection(posts, collectionSlug, featuredReleaseSlug) {
+  const normalizedCollectionSlug = String(collectionSlug || "").trim();
+  const normalizedFeaturedReleaseSlug = String(featuredReleaseSlug || "").trim();
+
+  if (!normalizedFeaturedReleaseSlug) {
+    return true;
+  }
+
+  return posts.some(
+    (post) =>
+      post.slug === normalizedFeaturedReleaseSlug &&
+      Array.isArray(post.collectionSlugs) &&
+      post.collectionSlugs.includes(normalizedCollectionSlug)
+  );
+}
+
 function normalizeAboutContent(input = {}, existingAbout = {}) {
   return {
     heroEyebrow: String(input.heroEyebrow || existingAbout.heroEyebrow || "").trim(),
@@ -1258,6 +1274,10 @@ app.post("/api/admin/collections", requireAdmin, async (req, res, next) => {
       return res.status(400).json({ message: "A collection already uses or reserves that slug." });
     }
 
+    if (!isFeaturedReleaseValidForCollection(store.posts, collection.slug, collection.featuredReleaseSlug)) {
+      return res.status(400).json({ message: "The featured release must already belong to this collection." });
+    }
+
     await insertCollection(collection);
     res.status(201).json({ collection });
   } catch (error) {
@@ -1303,6 +1323,11 @@ app.put("/api/admin/collections/:id", requireAdmin, async (req, res, next) => {
         slug === previousCollection.slug ? updatedCollection.slug : slug
       )
     }));
+
+    if (!isFeaturedReleaseValidForCollection(nextPosts, updatedCollection.slug, updatedCollection.featuredReleaseSlug)) {
+      return res.status(400).json({ message: "The featured release must belong to this collection." });
+    }
+
     const changedPosts = collectChangedEntries(store.posts, nextPosts);
     const nextCollections = reconcileCollections(
       store.collections.map((collection) => (collection.id === previousCollection.id ? updatedCollection : collection)),
