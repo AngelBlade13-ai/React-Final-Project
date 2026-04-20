@@ -4,6 +4,8 @@
   "description": "Express backend for the Suno blog scaffold",
   "main": "src/server.js",
   "scripts": {
+    "catalog:diff-live": "node scripts/sync-tracked-catalog-from-live.js --report",
+    "catalog:sync-live": "node scripts/sync-tracked-catalog-from-live.js --write --report",
     "classify:release-status": "node scripts/classify-release-status.js --target=both",
     "classify:release-status:db": "node scripts/classify-release-status.js --target=db",
     "classify:release-status:force": "node scripts/classify-release-status.js --target=both --force",

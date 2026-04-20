@@ -1,6 +1,6 @@
-# Suno Blog Scaffold
+# Suno Diary
 
-Suno Blog Scaffold is a full-stack music archive built with React, Vite, Express, and MongoDB. It combines public release browsing, immersive collection worlds, protected admin management, and public user accounts with comments.
+Suno Diary is a full-stack music archive built with React, Vite, Express, and MongoDB. It combines public release browsing, immersive collection worlds, protected admin management, and public user accounts with comments.
 
 ## Project Structure
 
@@ -85,6 +85,7 @@ npm run dev
 ```bash
 cd backend
 npm run verify
+npm run catalog:diff-live
 
 cd ../frontend
 npm run verify
@@ -322,6 +323,8 @@ Update response example:
 - `.gitignore` excludes `node_modules`, build output, and `.env`
 - `.env.example` lists the required configuration variables
 - commit history uses feature-focused commit messages on separate branches
+- `backend/data/posts.json` is the repo-tracked source of truth for authored catalog content
+- `docs/catalog-source-of-truth.md` documents catalog sync, backup layers, and restore guidance
 
 ## Deployment
 
