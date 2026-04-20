@@ -182,6 +182,8 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
     setUploadError("");
     setForm({
       title: post.title,
+      slug: post.slug || "",
+      slugHistory: Array.isArray(post.slugHistory) ? post.slugHistory : [],
       videoUrl: post.videoUrl,
       excerpt: post.excerpt,
       content: post.content,
@@ -214,6 +216,8 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
     setEditingCollectionId(collection.id);
     setCollectionForm({
       title: collection.title,
+      slug: collection.slug || "",
+      slugHistory: Array.isArray(collection.slugHistory) ? collection.slugHistory : [],
       description: collection.description,
       featuredReleaseSlug: collection.featuredReleaseSlug || "",
       theme: collection.theme || "",

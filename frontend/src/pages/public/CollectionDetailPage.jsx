@@ -134,11 +134,17 @@ export default function CollectionDetailPage({ currentTrack, isPlayerActive, onP
   useEffect(() => {
     async function loadCollection() {
       try {
+        setLoading(true);
+        setError("");
         const response = await fetch(`${apiBaseUrl}/collections/${slug}`);
         const data = await response.json();
 
         if (!response.ok) {
           throw new Error(data.message || "Failed to load collection.");
+        }
+
+        if (data.redirectSlug && data.redirectSlug !== slug) {
+          navigate(`/collections/${data.redirectSlug}`, { replace: true });
         }
 
         setCollection(data.collection);
@@ -151,7 +157,7 @@ export default function CollectionDetailPage({ currentTrack, isPlayerActive, onP
     }
 
     loadCollection();
-  }, [slug]);
+  }, [navigate, slug]);
 
   const publicReleases = getPublicCollectionPosts(releases);
   const themeConfig = getThemeConfig(collection?.theme, siteContent);

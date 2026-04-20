@@ -293,16 +293,24 @@ const seedSiteContent = {
 const seedUsers = [];
 const seedComments = [];
 
+function normalizeSlugHistory(slugHistory, currentSlug) {
+  return Array.isArray(slugHistory)
+    ? [...new Set(slugHistory.map((slug) => String(slug || "").trim()).filter((slug) => slug && slug !== currentSlug))]
+    : [];
+}
+
 function normalizeCollection(collection) {
   if (!collection) {
     return null;
   }
 
   const fallbackSlug = slugify(collection.title || "");
+  const slug = String(collection.slug || fallbackSlug).trim();
 
   return {
     id: String(collection.id || `col-${collection.slug || fallbackSlug}` || crypto.randomUUID()).trim(),
-    slug: String(collection.slug || fallbackSlug).trim(),
+    slug,
+    slugHistory: normalizeSlugHistory(collection.slugHistory, slug),
     title: String(collection.title || "").trim(),
     description: String(collection.description || "").trim(),
     featuredReleaseSlug: String(collection.featuredReleaseSlug || "").trim(),
@@ -482,12 +490,14 @@ function normalizePost(post) {
   }
 
   const fallbackTitleSlug = slugify(post.title || "");
+  const slug = String(post.slug || fallbackTitleSlug).trim();
 
   return {
     ...post,
     id: String(post.id || post.sourceId || fallbackTitleSlug || crypto.randomUUID()).trim(),
     title: String(post.title || "").trim(),
-    slug: String(post.slug || fallbackTitleSlug).trim(),
+    slug,
+    slugHistory: normalizeSlugHistory(post.slugHistory, slug),
     videoUrl: String(post.videoUrl || "").trim(),
     excerpt: String(post.excerpt || "").trim(),
     content: String(post.content || "").trim(),
@@ -626,9 +636,9 @@ async function readLegacySeed() {
     const data = JSON.parse(file);
 
     return {
-      posts: Array.isArray(data.posts) ? normalizeImportedPosts(data.posts) : seedPosts.map(normalizePost),
+      posts: Array.isArray(data.posts) ? normalizeImportedPosts(data.posts).map(normalizePost).filter(Boolean) : seedPosts.map(normalizePost),
       collections: Array.isArray(data.collections)
-        ? normalizeImportedCollections(data.collections)
+        ? normalizeImportedCollections(data.collections).map(normalizeCollection).filter(Boolean)
         : seedCollections.map(normalizeCollection),
       users: Array.isArray(data.users) ? data.users.map(normalizeUser).filter(Boolean) : seedUsers.map(normalizeUser),
       comments: Array.isArray(data.comments) ? data.comments.map(normalizeComment).filter(Boolean) : seedComments.map(normalizeComment),
@@ -944,11 +954,6 @@ async function insertPost(post, options = {}) {
   return insertNormalizedDocument("posts", normalizePost(post), options);
 }
 
-async function replacePost(post, options = {}) {
-  await ensureStore();
-  return replaceNormalizedDocumentById("posts", normalizePost(post), options);
-}
-
 async function replacePosts(posts, options = {}) {
   await ensureStore();
   return upsertDocumentsById("posts", normalizeDocuments(posts, normalizePost), options);
@@ -997,7 +1002,6 @@ module.exports = {
   renameCommentsForPostSlug,
   deleteCommentsByPostSlug,
   insertPost,
-  replacePost,
   replacePosts,
   deletePostById,
   insertCollection,

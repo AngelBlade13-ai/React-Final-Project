@@ -5,6 +5,8 @@ export const themeKey = "suno-blog-theme";
 
 export const emptyPost = {
   title: "",
+  slug: "",
+  slugHistory: [],
   videoUrl: "",
   excerpt: "",
   content: "",
@@ -54,6 +56,8 @@ export const emptyPost = {
 
 export const emptyCollection = {
   title: "",
+  slug: "",
+  slugHistory: [],
   description: "",
   featuredReleaseSlug: "",
   theme: "",

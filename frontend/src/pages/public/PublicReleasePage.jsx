@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import CommentsSection from "../../components/CommentsSection";
 import EldoriaSigil from "../../components/EldoriaSigil";
 import ReleaseMedia from "../../components/ReleaseMedia";
@@ -36,6 +36,7 @@ export default function PublicReleasePage({
   userToken
 }) {
   const { slug } = useParams();
+  const navigate = useNavigate();
   const [post, setPost] = useState(null);
   const [sequencePosts, setSequencePosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -48,11 +49,17 @@ export default function PublicReleasePage({
   useEffect(() => {
     async function loadPost() {
       try {
+        setLoading(true);
+        setError("");
         const response = await fetch(`${apiBaseUrl}/posts/${slug}`);
         const data = await response.json();
 
         if (!response.ok) {
           throw new Error(data.message || "Failed to load release.");
+        }
+
+        if (data.redirectSlug && data.redirectSlug !== slug) {
+          navigate(`/release/${data.redirectSlug}`, { replace: true });
         }
 
         setPost(data.post);
@@ -64,7 +71,7 @@ export default function PublicReleasePage({
     }
 
     loadPost();
-  }, [slug]);
+  }, [navigate, slug]);
 
   const primaryTheme = getPrimaryThemeForPost(post);
   const labels = getThemeConfig(primaryTheme, siteContent);

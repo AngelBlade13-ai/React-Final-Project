@@ -42,6 +42,18 @@ export default function AdminCollectionsPage() {
             />
           </label>
           <label>
+            Slug
+            <input
+              onChange={(event) => updateCollectionForm("slug", event.target.value)}
+              placeholder="Stable collection URL"
+              value={collectionForm.slug}
+            />
+            <small className="input-help-text">Changing the slug preserves redirects from earlier collection URLs.</small>
+          </label>
+          {collectionForm.slugHistory?.length ? (
+            <p className="meta full-span">Redirecting old slugs: {collectionForm.slugHistory.join(", ")}</p>
+          ) : null}
+          <label>
             Featured Release
             <select
               onChange={(event) => updateCollectionForm("featuredReleaseSlug", event.target.value)}
@@ -108,6 +120,8 @@ export default function AdminCollectionsPage() {
               <p className="eyebrow">Collection</p>
               <h3>{collection.title}</h3>
               <p>{collection.description}</p>
+              <p className="meta">Slug: {collection.slug}</p>
+              {collection.slugHistory?.length ? <p className="meta">Redirects: {collection.slugHistory.join(", ")}</p> : null}
               {collection.featuredReleaseSlug ? <p className="meta">Featured slug: {collection.featuredReleaseSlug}</p> : null}
               {collection.theme ? <p className="meta">Theme: {collection.theme}</p> : null}
               <p className="meta">{collection.isPublicPrimary ? "Public primary collection" : "Internal/archive collection"}</p>

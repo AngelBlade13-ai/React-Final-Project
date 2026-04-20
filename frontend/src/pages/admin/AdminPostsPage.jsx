@@ -101,6 +101,18 @@ export default function AdminPostsPage() {
             Title
             <input onChange={(event) => updateField("title", event.target.value)} required value={form.title} />
           </label>
+          <label>
+            Slug
+            <input
+              onChange={(event) => updateField("slug", event.target.value)}
+              placeholder="Stable release URL"
+              value={form.slug}
+            />
+            <small className="input-help-text">Changing the slug preserves redirects from earlier release URLs.</small>
+          </label>
+          {form.slugHistory?.length ? (
+            <p className="meta full-span">Redirecting old slugs: {form.slugHistory.join(", ")}</p>
+          ) : null}
           <div className="full-span upload-panel">
             <label>
               Video File
@@ -562,6 +574,8 @@ export default function AdminPostsPage() {
                   {post.isArchive ? "Archive" : "Active"}
                 </p>
                 <p className="meta">Visibility: {post.isPubliclyVisible === false ? "Hidden from public" : "Publicly visible"}</p>
+                <p className="meta">Slug: {post.slug}</p>
+                {post.slugHistory?.length ? <p className="meta">Redirects: {post.slugHistory.join(", ")}</p> : null}
                 <p className="meta">Release status: {post.releaseStatus || "canon"}</p>
                 {post.versionFamily ? <p className="meta">Version family: {post.versionFamily}</p> : null}
                 {post.subCategory ? <p className="meta">Subcategory: {post.subCategory}</p> : null}

@@ -19,7 +19,6 @@ const {
   renameCommentsForPostSlug,
   deleteCommentsByPostSlug,
   insertPost,
-  replacePost,
   replacePosts,
   deletePostById,
   insertCollection,
@@ -70,10 +69,12 @@ app.use(express.json());
 app.use("/api/uploads", uploadRoutes);
 
 function normalizeCollectionInput(input, existingCollection = {}) {
+  const explicitSlug = typeof input.slug === "string" ? input.slug.trim() : "";
+
   return {
     ...existingCollection,
     title: String(input.title || existingCollection.title || "").trim(),
-    slug: slugify(input.slug || input.title || existingCollection.slug || existingCollection.title || ""),
+    slug: slugify(explicitSlug || existingCollection.slug || input.title || existingCollection.title || ""),
     description: String(input.description || existingCollection.description || "").trim(),
     featuredReleaseSlug: String(input.featuredReleaseSlug || "").trim(),
     theme: String(input.theme || existingCollection.theme || "").trim(),
@@ -156,7 +157,8 @@ function normalizePostInput(input, collections, existingPost = {}) {
     : existingPost.collectionSlugs || [];
   const hasVideoUrlInput = typeof input.videoUrl === "string";
   const normalizedTitle = String(input.title || existingPost.title || "").trim();
-  const normalizedSlugSource = String(input.slug || "").trim() || normalizedTitle || existingPost.slug || existingPost.title || "";
+  const explicitSlug = typeof input.slug === "string" ? input.slug.trim() : "";
+  const normalizedSlugSource = explicitSlug || existingPost.slug || normalizedTitle || existingPost.title || "";
   const normalizedReleaseStatus = String(input.releaseStatus || existingPost.releaseStatus || "canon").trim().toLowerCase();
 
   return {
@@ -277,6 +279,130 @@ function collectChangedEntries(previousEntries, nextEntries) {
   const previousById = new Map(previousEntries.map((entry) => [entry.id, JSON.stringify(entry)]));
 
   return nextEntries.filter((entry) => previousById.get(entry.id) !== JSON.stringify(entry));
+}
+
+function findEntryBySlugOrHistory(entries, slug, predicate = () => true) {
+  const requestedSlug = String(slug || "").trim();
+
+  if (!requestedSlug) {
+    return {
+      entry: null,
+      redirectSlug: ""
+    };
+  }
+
+  const directMatch = entries.find((entry) => predicate(entry) && entry.slug === requestedSlug);
+
+  if (directMatch) {
+    return {
+      entry: directMatch,
+      redirectSlug: ""
+    };
+  }
+
+  const redirectMatch = entries.find(
+    (entry) => predicate(entry) && Array.isArray(entry.slugHistory) && entry.slugHistory.includes(requestedSlug)
+  );
+
+  return {
+    entry: redirectMatch || null,
+    redirectSlug: redirectMatch ? redirectMatch.slug : ""
+  };
+}
+
+function appendSlugHistory(existingHistory, previousSlug, nextSlug) {
+  return [
+    ...new Set(
+      [...(Array.isArray(existingHistory) ? existingHistory : []), String(previousSlug || "").trim()]
+        .map((slug) => String(slug || "").trim())
+        .filter((slug) => slug && slug !== nextSlug)
+    )
+  ];
+}
+
+function slugIsReserved(entries, nextSlug, currentId = "") {
+  const candidateSlug = String(nextSlug || "").trim();
+
+  if (!candidateSlug) {
+    return false;
+  }
+
+  return entries.some(
+    (entry) =>
+      entry.id !== currentId &&
+      (entry.slug === candidateSlug || (Array.isArray(entry.slugHistory) && entry.slugHistory.includes(candidateSlug)))
+  );
+}
+
+function remapSlugList(values, previousSlug, nextSlug) {
+  return [
+    ...new Set(
+      (Array.isArray(values) ? values : [])
+        .map((slug) => (slug === previousSlug ? nextSlug : slug))
+        .map((slug) => String(slug || "").trim())
+        .filter(Boolean)
+    )
+  ];
+}
+
+function remapPostSlugReferences(posts, collections, siteContent, previousSlug, nextSlug, updatedPostId) {
+  if (!previousSlug || previousSlug === nextSlug) {
+    return {
+      posts,
+      collections,
+      siteContent
+    };
+  }
+
+  const nextPosts = posts.map((post) => {
+    if (post.id === updatedPostId) {
+      return post;
+    }
+
+    const nextArchiveMeta = post.archiveMeta
+      ? {
+          ...post.archiveMeta,
+          linkedSlugs: remapSlugList(post.archiveMeta.linkedSlugs, previousSlug, nextSlug)
+        }
+      : post.archiveMeta;
+    const nextSupersededBySlug = post.supersededBySlug === previousSlug ? nextSlug : post.supersededBySlug;
+    const archiveMetaChanged = JSON.stringify(nextArchiveMeta) !== JSON.stringify(post.archiveMeta || null);
+
+    if (!archiveMetaChanged && nextSupersededBySlug === post.supersededBySlug) {
+      return post;
+    }
+
+    return {
+      ...post,
+      archiveMeta: nextArchiveMeta,
+      supersededBySlug: nextSupersededBySlug
+    };
+  });
+
+  const nextCollections = collections.map((collection) =>
+    collection.featuredReleaseSlug === previousSlug
+      ? {
+          ...collection,
+          featuredReleaseSlug: nextSlug
+        }
+      : collection
+  );
+  const nextSiteContent =
+    siteContent?.home?.featuredReleaseSlug === previousSlug
+      ? {
+          ...siteContent,
+          home: {
+            ...siteContent.home,
+            featuredReleaseSlug: nextSlug
+          }
+        }
+      : siteContent;
+
+  return {
+    posts: nextPosts,
+    collections: nextCollections,
+    siteContent: nextSiteContent
+  };
 }
 
 function normalizeAboutContent(input = {}, existingAbout = {}) {
@@ -446,8 +572,12 @@ function isPostPubliclyVisible(post) {
   return post?.published === true && post?.isPubliclyVisible !== false;
 }
 
-function findPublishedPost(store, slug) {
-  return store.posts.find((entry) => entry.slug === slug && isPostPubliclyVisible(entry));
+function resolvePublishedPost(store, slug) {
+  return findEntryBySlugOrHistory(store.posts, slug, isPostPubliclyVisible);
+}
+
+function resolveCollectionBySlug(store, slug) {
+  return findEntryBySlugOrHistory(store.collections, slug);
 }
 
 app.get("/", (req, res) => {
@@ -633,13 +763,16 @@ app.get("/api/posts", async (req, res, next) => {
 app.get("/api/posts/:slug", async (req, res, next) => {
   try {
     const store = await readStore();
-    const post = store.posts.find((entry) => entry.slug === req.params.slug && isPostPubliclyVisible(entry));
+    const { entry: post, redirectSlug } = resolvePublishedPost(store, req.params.slug);
 
     if (!post) {
       return res.status(404).json({ message: "Release not found." });
     }
 
-    return res.json({ post: attachCollectionDetails(post, store.collections) });
+    return res.json({
+      post: attachCollectionDetails(post, store.collections),
+      redirectSlug
+    });
   } catch (error) {
     next(error);
   }
@@ -648,18 +781,18 @@ app.get("/api/posts/:slug", async (req, res, next) => {
 app.get("/api/posts/:slug/comments", async (req, res, next) => {
   try {
     const store = await readStore();
-    const post = findPublishedPost(store, req.params.slug);
+    const { entry: post, redirectSlug } = resolvePublishedPost(store, req.params.slug);
 
     if (!post) {
       return res.status(404).json({ message: "Release not found." });
     }
 
     const comments = store.comments
-      .filter((comment) => comment.postSlug === req.params.slug && comment.status === "visible")
+      .filter((comment) => comment.postSlug === post.slug && comment.status === "visible")
       .sort((left, right) => String(left.createdAt).localeCompare(String(right.createdAt)))
       .map((comment) => attachCommentDetails(comment, store.users));
 
-    return res.json({ comments });
+    return res.json({ comments, redirectSlug });
   } catch (error) {
     next(error);
   }
@@ -672,7 +805,7 @@ app.post("/api/posts/:slug/comments", commentWriteLimiter, requireUser, async (r
     }
 
     const store = await readStore();
-    const post = findPublishedPost(store, req.params.slug);
+    const { entry: post, redirectSlug } = resolvePublishedPost(store, req.params.slug);
 
     if (!post) {
       return res.status(404).json({ message: "Release not found." });
@@ -693,7 +826,7 @@ app.post("/api/posts/:slug/comments", commentWriteLimiter, requireUser, async (r
     const timestamp = new Date().toISOString();
     const comment = {
       id: crypto.randomUUID(),
-      postSlug: req.params.slug,
+      postSlug: post.slug,
       authorId: user.id,
       body,
       status: "visible",
@@ -703,7 +836,10 @@ app.post("/api/posts/:slug/comments", commentWriteLimiter, requireUser, async (r
 
     await insertComment(comment);
 
-    return res.status(201).json({ comment: attachCommentDetails(comment, store.users) });
+    return res.status(201).json({
+      comment: attachCommentDetails(comment, store.users),
+      redirectSlug
+    });
   } catch (error) {
     next(error);
   }
@@ -787,7 +923,7 @@ app.get("/api/collections", async (req, res, next) => {
 app.get("/api/collections/:slug", async (req, res, next) => {
   try {
     const store = await readStore();
-    const collection = store.collections.find((entry) => entry.slug === req.params.slug);
+    const { entry: collection, redirectSlug } = resolveCollectionBySlug(store, req.params.slug);
 
     if (!collection) {
       return res.status(404).json({ message: "Collection not found." });
@@ -799,7 +935,8 @@ app.get("/api/collections/:slug", async (req, res, next) => {
 
     res.json({
       collection: buildCollectionSummary(collection, releases),
-      releases
+      releases,
+      redirectSlug
     });
   } catch (error) {
     next(error);
@@ -853,8 +990,8 @@ app.post("/api/admin/posts", requireAdmin, async (req, res, next) => {
       return res.status(400).json({ message: "Title, excerpt, and content are required." });
     }
 
-    if (store.posts.some((entry) => entry.slug === newPost.slug)) {
-      return res.status(400).json({ message: "A post with that slug already exists." });
+    if (slugIsReserved(store.posts, newPost.slug)) {
+      return res.status(400).json({ message: "A post already uses or reserves that slug." });
     }
 
     await insertPost(newPost);
@@ -874,19 +1011,51 @@ app.put("/api/admin/posts/:id", requireAdmin, async (req, res, next) => {
     }
 
     const previousPost = store.posts[index];
-    const updatedPost = normalizePostInput(req.body, store.collections, previousPost);
-    const slugConflict = store.posts.some((post) => post.id !== previousPost.id && post.slug === updatedPost.slug);
+    const normalizedPost = normalizePostInput(req.body, store.collections, previousPost);
+    const updatedPost =
+      previousPost.slug !== normalizedPost.slug
+        ? {
+            ...normalizedPost,
+            slugHistory: appendSlugHistory(previousPost.slugHistory, previousPost.slug, normalizedPost.slug)
+          }
+        : {
+            ...normalizedPost,
+            slugHistory: Array.isArray(previousPost.slugHistory) ? previousPost.slugHistory : []
+          };
+    const slugConflict = slugIsReserved(store.posts, updatedPost.slug, previousPost.id);
 
     if (slugConflict) {
-      return res.status(400).json({ message: "A post with that slug already exists." });
+      return res.status(400).json({ message: "A post already uses or reserves that slug." });
     }
 
-    const nextPosts = store.posts.map((post) => (post.id === previousPost.id ? updatedPost : post));
-    const nextCollections = reconcileCollections(store.collections, nextPosts);
+    let nextPosts = store.posts.map((post) => (post.id === previousPost.id ? updatedPost : post));
+    let nextCollections = store.collections;
+    let nextSiteContent = store.siteContent;
+
+    if (previousPost.slug !== updatedPost.slug) {
+      const rewritten = remapPostSlugReferences(
+        nextPosts,
+        nextCollections,
+        nextSiteContent,
+        previousPost.slug,
+        updatedPost.slug,
+        updatedPost.id
+      );
+
+      nextPosts = rewritten.posts;
+      nextCollections = rewritten.collections;
+      nextSiteContent = rewritten.siteContent;
+    }
+
+    nextCollections = reconcileCollections(nextCollections, nextPosts);
+    const changedPosts = collectChangedEntries(store.posts, nextPosts);
     const changedCollections = collectChangedEntries(store.collections, nextCollections);
+    const siteContentChanged = JSON.stringify(store.siteContent) !== JSON.stringify(nextSiteContent);
 
     await runStoreTransaction(async (session) => {
-      await replacePost(updatedPost, { session });
+      if (changedPosts.length) {
+        await replacePosts(changedPosts, { session });
+      }
 
       if (previousPost.slug !== updatedPost.slug) {
         await renameCommentsForPostSlug(previousPost.slug, updatedPost.slug, { session });
@@ -895,9 +1064,15 @@ app.put("/api/admin/posts/:id", requireAdmin, async (req, res, next) => {
       if (changedCollections.length) {
         await replaceCollections(changedCollections, { session });
       }
+
+      if (siteContentChanged) {
+        await writeSiteContent(nextSiteContent, { session });
+      }
     });
 
-    res.json({ post: attachCollectionDetails(updatedPost, nextCollections) });
+    const savedPost = nextPosts.find((post) => post.id === updatedPost.id) || updatedPost;
+
+    res.json({ post: attachCollectionDetails(savedPost, nextCollections) });
   } catch (error) {
     next(error);
   }
@@ -915,6 +1090,17 @@ app.delete("/api/admin/posts/:id", requireAdmin, async (req, res, next) => {
 
     const nextCollections = reconcileCollections(store.collections, remaining);
     const changedCollections = collectChangedEntries(store.collections, nextCollections);
+    const nextSiteContent =
+      store.siteContent?.home?.featuredReleaseSlug === post.slug
+        ? {
+            ...store.siteContent,
+            home: {
+              ...store.siteContent.home,
+              featuredReleaseSlug: ""
+            }
+          }
+        : store.siteContent;
+    const siteContentChanged = JSON.stringify(store.siteContent) !== JSON.stringify(nextSiteContent);
 
     await runStoreTransaction(async (session) => {
       await deletePostById(post.id, { session });
@@ -922,6 +1108,10 @@ app.delete("/api/admin/posts/:id", requireAdmin, async (req, res, next) => {
 
       if (changedCollections.length) {
         await replaceCollections(changedCollections, { session });
+      }
+
+      if (siteContentChanged) {
+        await writeSiteContent(nextSiteContent, { session });
       }
     });
 
@@ -1064,8 +1254,8 @@ app.post("/api/admin/collections", requireAdmin, async (req, res, next) => {
       return res.status(400).json({ message: "Title and description are required." });
     }
 
-    if (store.collections.some((entry) => entry.slug === collection.slug)) {
-      return res.status(400).json({ message: "A collection with that title already exists." });
+    if (slugIsReserved(store.collections, collection.slug)) {
+      return res.status(400).json({ message: "A collection already uses or reserves that slug." });
     }
 
     await insertCollection(collection);
@@ -1085,18 +1275,26 @@ app.put("/api/admin/collections/:id", requireAdmin, async (req, res, next) => {
     }
 
     const previousCollection = store.collections[index];
-    const updatedCollection = normalizeCollectionInput(req.body, previousCollection);
+    const normalizedCollection = normalizeCollectionInput(req.body, previousCollection);
+    const updatedCollection =
+      previousCollection.slug !== normalizedCollection.slug
+        ? {
+            ...normalizedCollection,
+            slugHistory: appendSlugHistory(previousCollection.slugHistory, previousCollection.slug, normalizedCollection.slug)
+          }
+        : {
+            ...normalizedCollection,
+            slugHistory: Array.isArray(previousCollection.slugHistory) ? previousCollection.slugHistory : []
+          };
 
     if (!updatedCollection.title || !updatedCollection.description) {
       return res.status(400).json({ message: "Title and description are required." });
     }
 
-    const slugConflict = store.collections.some(
-      (collection) => collection.id !== previousCollection.id && collection.slug === updatedCollection.slug
-    );
+    const slugConflict = slugIsReserved(store.collections, updatedCollection.slug, previousCollection.id);
 
     if (slugConflict) {
-      return res.status(400).json({ message: "A collection with that title already exists." });
+      return res.status(400).json({ message: "A collection already uses or reserves that slug." });
     }
 
     const nextPosts = store.posts.map((post) => ({
