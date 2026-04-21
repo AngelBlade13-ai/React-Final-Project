@@ -210,8 +210,6 @@ async function runWithTransaction(work) {
   }
 
   let session = null;
-  let shouldFallbackWithoutTransaction = false;
-
   try {
     session = activeClient.startSession();
 
@@ -226,8 +224,6 @@ async function runWithTransaction(work) {
     if (!isTransactionUnsupportedError(error)) {
       throw error;
     }
-
-    shouldFallbackWithoutTransaction = true;
   } finally {
     if (session) {
       await session.endSession();

@@ -90,8 +90,8 @@ function recommendFamily(familyKey, posts) {
   const donnaSignals = getCanonicalSignals(donnaPosts);
   const nonDonnaSignals = getCanonicalSignals(nonDonnaPosts);
   const reasons = [];
-  let recommendation = "keep-donna";
-  let confidence = "medium";
+  let recommendation;
+  let confidence;
 
   if (publicDonnaPosts.length > 0 && publicNonDonnaPosts.length > 0) {
     recommendation = "keep-both";

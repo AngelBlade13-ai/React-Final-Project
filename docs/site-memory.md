@@ -1,6 +1,7 @@
 # Site Memory
 
 ## Purpose
+
 - Site name: `Suno Diary`
 - Site tagline: `Releases, collections, and notes in one place.`
 - Site identity line: `A collection of songs, stories, and moments in motion.`
@@ -9,6 +10,7 @@
 - Discovery framing: collections organize releases into verses, moods, and projects; Explore is the utility layer; About frames the artist, the site, and the reason the archive exists.
 
 ## Public Information Architecture
+
 - Public top-level collections: `Fractureverse`, `Eldoria`, `Original / Personal`, `Standalone`
 - Internal collections remain in the system for organization, filtering, direct URLs, and admin management.
 - Public collection navigation and `/collections` use only public-primary collections.
@@ -16,6 +18,7 @@
 - Public collection chips on release cards/pages use only visible public-primary collections.
 
 ## Collection Philosophy
+
 - Collections are treated as curated paths, not equal competing shelves.
 - Public collection pages are curation surfaces.
 - Working versions are hidden from public collection browsing by default.
@@ -39,6 +42,7 @@
   - `Other`
 
 ## Release Classification
+
 - `releaseStatus` values:
   - `canon`
   - `alternate`
@@ -54,6 +58,7 @@
   - `isHomepageEligible`
 
 ## Homepage Hierarchy
+
 - Hero
   - headline and archive framing
   - primary CTA: `Play Featured Release`
@@ -74,6 +79,7 @@
 - `From Eldoria`
 
 ## Homepage Curation Rules
+
 - Homepage uses `getHomepageCuratedPosts`.
 - Eligible posts must satisfy:
   - `isHomepageEligible === true`
@@ -100,6 +106,7 @@
   - `alternate`
 
 ## Player Behavior
+
 - The mini player theme is derived from the current track’s preferred themed collection.
 - Preferred collection resolution:
   - first public-primary collection on the post
@@ -130,6 +137,7 @@
   - `Dismiss`
 
 ## Release Page Logic
+
 - Release pages remain listening-first and record-first.
 - Written release pages are valid even before a final video upload.
 - Standard release copy framing:
@@ -143,6 +151,7 @@
 - Immersive releases force Midnight Mode / dark mode.
 
 ## Style System
+
 - Theme system is collection-driven.
 - Built-in theme keys:
   - `default`
@@ -166,6 +175,7 @@
 - Immersive collections force dark mode.
 
 ## Visual Language
+
 - Release cards use:
   - media-first layout
   - overlay treatment
@@ -178,6 +188,7 @@
 - Collections, releases, and worlds are presented as shelves, records, fragments, ballads, signals, or acts depending on theme.
 
 ## Fractureverse
+
 - Theme key: `fractureverse`
 - World eyebrow: `World / Fractureverse`
 - Core description: a fractured reality where every choice creates a new world, and every version of love carries a different cost.
@@ -209,6 +220,7 @@
   - system-note language
 
 ## Eldoria
+
 - Theme key: `eldoria`
 - Collection language:
   - `First Chronicle Entry`
@@ -236,6 +248,7 @@
   - `Next Ballad`
 
 ## Eldoria Map And Chronicle Navigation
+
 - Eldoria collection page includes `The Realm Of Eldoria`.
 - Map statement: geography and chronology now share the same surface.
 - The map is interactive:
@@ -261,6 +274,7 @@
 - Eldoria transition screen copy: `The world remembers you.`
 
 ## Icon And Symbol Direction
+
 - Eldoria uses a sigil system rather than generic UI icons.
 - `EldoriaSigil` structure:
   - concentric rings
@@ -288,6 +302,7 @@
   - sequence nodes
 
 ## Navigation Systems
+
 - Global public nav:
   - `Home`
   - `Collections`
@@ -303,6 +318,7 @@
 - Release pages are the detailed record surface.
 
 ## Recurring Product Constraints
+
 - Do not treat the site like a raw chronological dump.
 - Keep written release records first-class even when video is pending.
 - Preserve collection context around playback and navigation.

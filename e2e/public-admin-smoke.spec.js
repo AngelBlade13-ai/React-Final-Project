@@ -1,0 +1,46 @@
+const { test, expect } = require("@playwright/test");
+
+test("public account and admin smoke paths work against the test stack", async ({
+  browser,
+  page
+}) => {
+  await page.goto("/");
+  await expect(
+    page.getByRole("heading", { name: /soft archive/i })
+  ).toBeVisible();
+
+  await page.goto("/account");
+  await page.getByRole("button", { name: "Create Account" }).click();
+  await page.getByLabel("Display Name").fill("Quality Gate User");
+  await page.getByLabel("Email").fill("quality@example.com");
+  await page.getByLabel("Password").fill("Password123!");
+  await page.getByRole("button", { name: "Create Account" }).first().click();
+
+  await expect(
+    page.getByRole("heading", { name: "Quality Gate User" })
+  ).toBeVisible();
+
+  await page.reload();
+  await expect(
+    page.getByRole("heading", { name: "Quality Gate User" })
+  ).toBeVisible();
+
+  const adminContext = await browser.newContext();
+  const adminPage = await adminContext.newPage();
+
+  await adminPage.goto("/admin/login");
+  await adminPage.getByLabel("Email").fill("admin@example.com");
+  await adminPage.getByLabel("Password").fill("Admin123!");
+  await adminPage.getByRole("button", { name: "Login" }).click();
+
+  await expect(
+    adminPage.getByRole("heading", { name: "Manage Site Content" })
+  ).toBeVisible();
+
+  await adminPage.reload();
+  await expect(
+    adminPage.getByRole("heading", { name: "Manage Site Content" })
+  ).toBeVisible();
+
+  await adminContext.close();
+});

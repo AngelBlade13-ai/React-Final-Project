@@ -441,7 +441,9 @@ function App() {
         method: "POST",
         credentials: "include"
       });
-    } catch {}
+    } catch {
+      // Ignore logout transport failures and still clear local session state.
+    }
 
     setCurrentUser(null);
     setIsUserSessionReady(true);
@@ -460,7 +462,9 @@ function App() {
         method: "POST",
         credentials: "include"
       });
-    } catch {}
+    } catch {
+      // Ignore logout transport failures and still clear local session state.
+    }
 
     setHasAdminSession(false);
     setIsAdminSessionReady(true);

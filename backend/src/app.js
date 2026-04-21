@@ -38,7 +38,7 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
-app.use((error, req, res, next) => {
+app.use((error, req, res, _next) => {
   console.error(error);
   res.status(500).json({ message: "Internal server error." });
 });

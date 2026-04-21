@@ -626,7 +626,7 @@ function sanitizeDoc(doc) {
     return null;
   }
 
-  const { _id, ...rest } = doc;
+  const { _id: _ignoredId, ...rest } = doc;
   return rest;
 }
 
