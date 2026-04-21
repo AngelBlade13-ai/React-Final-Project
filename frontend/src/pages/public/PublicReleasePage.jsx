@@ -14,11 +14,13 @@ import {
   getPreferredCollectionForPost,
   getPrimaryCollectionSurfacePosts,
   getPrimaryThemeForPost,
+  getReleaseStatus,
   getReleaseThemeHint,
   getSiblingVersionPosts,
   getThemeConfig,
   getVisibleCollectionsForPost,
   hasVideo,
+  sortCollectionPostsForDisplay,
   sortEldoriaPosts,
   sortFractureversePosts
 } from "../../lib/site";
@@ -120,6 +122,15 @@ export default function PublicReleasePage({
     collection: primaryCollection,
     surface: "release"
   });
+  const versionFamilyEntries = sortCollectionPostsForDisplay([post, ...siblingVersions], {
+    collection: primaryCollection,
+    surface: "release"
+  });
+  const primaryFamilyEntry =
+    versionFamilyEntries.find((entry) => entry.isPrimaryVersion) ||
+    versionFamilyEntries.find((entry) => getReleaseStatus(entry) === "canon") ||
+    versionFamilyEntries[0] ||
+    null;
   const journeyTitle = isFractureverse
     ? "Continue Through The Sequence"
     : isEldoria
@@ -667,19 +678,49 @@ export default function PublicReleasePage({
           ) : null}
 
           {siblingVersions.length ? (
-            <section className="intro-card homepage-panel">
+            <section className="intro-card homepage-panel version-family-panel">
               <div className="section-head">
-                <h2>Other Versions</h2>
-                <span>{siblingVersions.length} available</span>
+                <h2>Version Family</h2>
+                <span>{versionFamilyEntries.length} public version{versionFamilyEntries.length === 1 ? "" : "s"}</span>
               </div>
-              <div className="linked-echo-grid">
-                {siblingVersions.map((entry) => (
-                  <Link className="linked-echo-card" key={entry.id} to={`/release/${entry.slug}`}>
+              <div className="version-family-summary">
+                <div className="journey-summary-card">
+                  <p className="eyebrow">Current Version</p>
+                  <h3>{post.title}</h3>
+                  <p>
+                    {post.slug === primaryFamilyEntry?.slug
+                      ? "This release is currently the surface lead for its family."
+                      : "This release branches from a larger version family and sits beside the main surface lead."}
+                  </p>
+                  <div className="tag-row">
+                    <span className="meta-badge">{String(getReleaseStatus(post)).replace(/^\w/, (character) => character.toUpperCase())}</span>
+                    {post.isPrimaryVersion ? <span className="meta-badge subtle-badge">Primary</span> : null}
+                  </div>
+                </div>
+                {primaryFamilyEntry && primaryFamilyEntry.slug !== post.slug ? (
+                  <Link className="linked-echo-card version-family-lead-card" to={`/release/${primaryFamilyEntry.slug}`}>
+                    <span className="fracture-sequence-state">Surface Lead</span>
+                    <strong>{primaryFamilyEntry.title}</strong>
+                    <p>{primaryFamilyEntry.excerpt}</p>
+                  </Link>
+                ) : null}
+              </div>
+              <div className="linked-echo-grid version-family-grid">
+                {versionFamilyEntries.map((entry) => (
+                  <Link
+                    className={`linked-echo-card version-family-card${entry.slug === post.slug ? " current" : ""}${entry.slug === primaryFamilyEntry?.slug ? " primary" : ""}`}
+                    key={entry.id}
+                    to={`/release/${entry.slug}`}
+                  >
                     <span className="fracture-sequence-state">
-                      {String(entry.releaseStatus || "alternate").replace(/^\w/, (character) => character.toUpperCase())}
+                      {String(getReleaseStatus(entry)).replace(/^\w/, (character) => character.toUpperCase())}
                     </span>
                     <strong>{entry.title}</strong>
                     <p>{entry.excerpt}</p>
+                    <div className="tag-row compact-tag-row">
+                      {entry.slug === primaryFamilyEntry?.slug ? <span className="meta-badge">Surface Lead</span> : null}
+                      {entry.slug === post.slug ? <span className="meta-badge subtle-badge">Current</span> : null}
+                    </div>
                   </Link>
                 ))}
               </div>

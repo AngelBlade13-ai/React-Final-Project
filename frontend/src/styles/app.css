@@ -2027,6 +2027,31 @@ select:focus {
   min-height: 100%;
 }
 
+.version-family-panel,
+.version-family-summary {
+  display: grid;
+  gap: 1rem;
+}
+
+.version-family-summary {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.version-family-lead-card,
+.version-family-card {
+  min-height: 100%;
+}
+
+.version-family-card.current {
+  border-color: color-mix(in srgb, var(--border) 54%, var(--primary-strong) 46%);
+}
+
+.version-family-card.primary {
+  box-shadow:
+    0 16px 30px color-mix(in srgb, var(--primary) 10%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--primary-strong) 14%, transparent);
+}
+
 .eldoria-song-cycle {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -3259,7 +3284,8 @@ select:focus {
   .post-editor-layout,
   .editor-review-grid,
   .editor-status-stack,
-  .journey-rail-grid {
+  .journey-rail-grid,
+  .version-family-summary {
     grid-template-columns: 1fr;
   }
 

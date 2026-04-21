@@ -972,10 +972,10 @@ export default function CollectionDetailPage({ currentTrack, isPlayerActive, onP
           {secondaryVersionReleases.length ? (
             <section className="intro-card homepage-panel">
               <details className="archive-link-picker">
-                <summary>Other Versions</summary>
+                <summary>Version Family Branches</summary>
                 <div className="collection-section-stack secondary-version-stack">
                   <p className="hero-copy">
-                    Alternate cuts stay available here, but the main surface now holds one primary record per song family.
+                    The main surface holds one lead record per song family. Alternate public branches stay here when you want to follow the wider family tree.
                   </p>
                   <div className={`timeline-grid${isEldoria ? " eldoria-chronicle-grid" : ""}`}>
                     {secondaryVersionReleases.map((post, index) => (
