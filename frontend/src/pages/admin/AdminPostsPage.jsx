@@ -3,6 +3,7 @@ import ReleaseMedia from "../../components/ReleaseMedia";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { formatPostDate } from "../../lib/formatters";
 import {
+  apiBaseUrl,
   emptyPost,
   getReleaseStatus,
   ORIGINAL_PERSONAL_SECTION_CONFIG,
@@ -253,9 +254,52 @@ function buildValidationState({ form, posts, editingId, isFractureverseEntry, is
   return { blocking, advisory };
 }
 
+function matchesPostCatalogFilters(post, filters = {}) {
+  const search = String(filters.search || "").trim().toLowerCase();
+  const collectionSlug = String(filters.collectionSlug || "").trim();
+  const releaseStatus = String(filters.releaseStatus || "").trim();
+  const sourceTag = String(filters.sourceTag || "");
+  const worldLayer = String(filters.worldLayer || "");
+  const searchableText = [
+    post.title,
+    post.slug,
+    post.excerpt,
+    post.content,
+    post.versionFamily,
+    post.supersededBySlug,
+    ...(post.themeTags || []),
+    ...((post.collections || []).map((collection) => collection.title))
+  ]
+    .join(" ")
+    .toLowerCase();
+
+  if (search && !searchableText.includes(search)) {
+    return false;
+  }
+
+  if (collectionSlug && !(post.collectionSlugs || []).includes(collectionSlug)) {
+    return false;
+  }
+
+  if (releaseStatus && getReleaseStatus(post) !== releaseStatus) {
+    return false;
+  }
+
+  if (sourceTag && String(post.sourceTag || "") !== sourceTag) {
+    return false;
+  }
+
+  if (worldLayer && String(post.worldLayer || "") !== worldLayer) {
+    return false;
+  }
+
+  return true;
+}
+
 export default function AdminPostsPage() {
   useDocumentTitle("Admin Posts");
   const {
+    authHeaders,
     collections,
     clearVideoSelection,
     editingId,
@@ -263,6 +307,7 @@ export default function AdminPostsPage() {
     handleDelete,
     handleSubmit,
     handleVideoUpload,
+    loadAdminData,
     loading,
     posts,
     replacePostForm,
@@ -282,6 +327,23 @@ export default function AdminPostsPage() {
   const [activeMetadataTheme, setActiveMetadataTheme] = useState("");
   const [activeSection, setActiveSection] = useState("essentials");
   const [storedDraft, setStoredDraft] = useState(null);
+  const [catalogSearch, setCatalogSearch] = useState("");
+  const [catalogCollectionSlug, setCatalogCollectionSlug] = useState("");
+  const [catalogReleaseStatus, setCatalogReleaseStatus] = useState("");
+  const [catalogSourceTag, setCatalogSourceTag] = useState("");
+  const [catalogWorldLayer, setCatalogWorldLayer] = useState("");
+  const [selectedPostIds, setSelectedPostIds] = useState([]);
+  const [bulkVisibility, setBulkVisibility] = useState("__keep__");
+  const [bulkArchive, setBulkArchive] = useState("__keep__");
+  const [bulkHomepageEligibility, setBulkHomepageEligibility] = useState("__keep__");
+  const [bulkReleaseStatus, setBulkReleaseStatus] = useState("__keep__");
+  const [bulkSourceTag, setBulkSourceTag] = useState("__keep__");
+  const [bulkWorldLayer, setBulkWorldLayer] = useState("__keep__");
+  const [bulkCollectionOperation, setBulkCollectionOperation] = useState("");
+  const [bulkCollectionSlug, setBulkCollectionSlug] = useState("");
+  const [bulkSubmitting, setBulkSubmitting] = useState(false);
+  const [bulkMessage, setBulkMessage] = useState("");
+  const [bulkError, setBulkError] = useState("");
 
   const fractureverseCollection = collections.find((collection) => collection.theme === "fractureverse");
   const eldoriaCollection = collections.find((collection) => collection.theme === "eldoria");
@@ -302,6 +364,19 @@ export default function AdminPostsPage() {
   const sortedPosts = useMemo(
     () => [...posts].sort((left, right) => String(right.createdAt || "").localeCompare(String(left.createdAt || ""))),
     [posts]
+  );
+  const filteredPosts = useMemo(
+    () =>
+      sortedPosts.filter((post) =>
+        matchesPostCatalogFilters(post, {
+          search: catalogSearch,
+          collectionSlug: catalogCollectionSlug,
+          releaseStatus: catalogReleaseStatus,
+          sourceTag: catalogSourceTag,
+          worldLayer: catalogWorldLayer
+        })
+      ),
+    [catalogCollectionSlug, catalogReleaseStatus, catalogSearch, catalogSourceTag, catalogWorldLayer, sortedPosts]
   );
   const themedCollections = useMemo(
     () =>
@@ -361,6 +436,8 @@ export default function AdminPostsPage() {
     [validation.advisory, validation.blocking]
   );
   const activeSectionMeta = POST_EDITOR_SECTIONS.find((section) => section.id === activeSection) || POST_EDITOR_SECTIONS[0];
+  const selectedPostIdSet = useMemo(() => new Set(selectedPostIds), [selectedPostIds]);
+  const allFilteredSelected = Boolean(filteredPosts.length) && filteredPosts.every((post) => selectedPostIdSet.has(post.id));
 
   useEffect(() => {
     if (!metadataThemes.length) {
@@ -428,6 +505,11 @@ export default function AdminPostsPage() {
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [isDirty]);
 
+  useEffect(() => {
+    const validPostIds = new Set(posts.map((post) => post.id));
+    setSelectedPostIds((current) => current.filter((postId) => validPostIds.has(postId)));
+  }, [posts]);
+
   function confirmAbandonChanges(actionLabel) {
     if (!isDirty) {
       return true;
@@ -477,6 +559,105 @@ export default function AdminPostsPage() {
 
     removeDraftEntry(draftKey);
     setStoredDraft(null);
+  }
+
+  function togglePostSelection(postId) {
+    setSelectedPostIds((current) =>
+      current.includes(postId) ? current.filter((entry) => entry !== postId) : [...current, postId]
+    );
+  }
+
+  function toggleSelectAllFiltered() {
+    setSelectedPostIds((current) => {
+      const currentSet = new Set(current);
+
+      if (allFilteredSelected) {
+        return current.filter((postId) => !filteredPosts.some((post) => post.id === postId));
+      }
+
+      filteredPosts.forEach((post) => currentSet.add(post.id));
+      return Array.from(currentSet);
+    });
+  }
+
+  function resetBulkActionForm() {
+    setBulkVisibility("__keep__");
+    setBulkArchive("__keep__");
+    setBulkHomepageEligibility("__keep__");
+    setBulkReleaseStatus("__keep__");
+    setBulkSourceTag("__keep__");
+    setBulkWorldLayer("__keep__");
+    setBulkCollectionOperation("");
+    setBulkCollectionSlug("");
+  }
+
+  async function handleBulkApply(event) {
+    event.preventDefault();
+    setBulkError("");
+    setBulkMessage("");
+
+    if (isDirty) {
+      setBulkError("Save or reset the current editor changes before applying bulk catalog updates.");
+      return;
+    }
+
+    if (!selectedPostIds.length) {
+      setBulkError("Select at least one post before applying a bulk action.");
+      return;
+    }
+
+    if (bulkCollectionOperation && !bulkCollectionSlug) {
+      setBulkError("Choose a collection when applying a bulk add/remove collection action.");
+      return;
+    }
+
+    const updates = {
+      isPubliclyVisible: bulkVisibility,
+      isArchive: bulkArchive,
+      isHomepageEligible: bulkHomepageEligibility,
+      releaseStatus: bulkReleaseStatus,
+      sourceTag: bulkSourceTag,
+      worldLayer: bulkWorldLayer,
+      collectionOperation: bulkCollectionOperation,
+      collectionSlug: bulkCollectionSlug
+    };
+    const hasUpdates = Object.values(updates).some((value) => value && value !== "__keep__");
+
+    if (!hasUpdates) {
+      setBulkError("Choose at least one catalog change before applying it.");
+      return;
+    }
+
+    setBulkSubmitting(true);
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/admin/posts/bulk-update`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({
+          postIds: selectedPostIds,
+          updates
+        })
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Bulk update failed.");
+      }
+
+      await loadAdminData();
+      setSelectedPostIds([]);
+      resetBulkActionForm();
+      setBulkMessage(
+        data.updatedCount
+          ? `Updated ${data.updatedCount} selected release${data.updatedCount === 1 ? "" : "s"}.`
+          : "Selected releases already matched the requested catalog state."
+      );
+    } catch (apiError) {
+      setBulkError(apiError.message);
+    } finally {
+      setBulkSubmitting(false);
+    }
   }
 
   return (
@@ -1167,13 +1348,193 @@ export default function AdminPostsPage() {
         </form>
       </section>
 
+      <section className="intro-card catalog-tools-panel">
+        <div className="section-head">
+          <div>
+            <h2>Catalog Tools</h2>
+            <p className="catalog-tools-copy">
+              Search, narrow, select, and update multiple releases without manually opening them one by one.
+            </p>
+          </div>
+          <span>{loading ? "Loading..." : `${filteredPosts.length} of ${posts.length} posts shown`}</span>
+        </div>
+
+        <div className="admin-form catalog-filter-grid">
+          <label className="full-span">
+            Search
+            <input
+              onChange={(event) => setCatalogSearch(event.target.value)}
+              placeholder="Title, slug, excerpt, version family, theme tag..."
+              value={catalogSearch}
+            />
+          </label>
+          <label>
+            Collection
+            <select onChange={(event) => setCatalogCollectionSlug(event.target.value)} value={catalogCollectionSlug}>
+              <option value="">All collections</option>
+              {collections.map((collection) => (
+                <option key={collection.id} value={collection.slug}>
+                  {collection.title}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Release Status
+            <select onChange={(event) => setCatalogReleaseStatus(event.target.value)} value={catalogReleaseStatus}>
+              <option value="">All statuses</option>
+              {RELEASE_STATUSES.map((status) => (
+                <option key={status} value={status}>
+                  {status}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Source Tag
+            <select onChange={(event) => setCatalogSourceTag(event.target.value)} value={catalogSourceTag}>
+              <option value="">All source tags</option>
+              {SOURCE_TAG_OPTIONS.filter(Boolean).map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            World Layer
+            <select onChange={(event) => setCatalogWorldLayer(event.target.value)} value={catalogWorldLayer}>
+              <option value="">All world layers</option>
+              {WORLD_LAYER_OPTIONS.filter(Boolean).map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <form className="catalog-bulk-panel" onSubmit={handleBulkApply}>
+          <div className="catalog-selection-row">
+            <button className="secondary-button" disabled={!filteredPosts.length} onClick={toggleSelectAllFiltered} type="button">
+              {allFilteredSelected ? "Unselect Filtered" : "Select Filtered"}
+            </button>
+            <span>{selectedPostIds.length} selected</span>
+          </div>
+
+          <div className="admin-form catalog-bulk-grid">
+            <label>
+              Visibility
+              <select onChange={(event) => setBulkVisibility(event.target.value)} value={bulkVisibility}>
+                <option value="__keep__">No change</option>
+                <option value="true">Set public</option>
+                <option value="false">Set hidden</option>
+              </select>
+            </label>
+            <label>
+              Archive State
+              <select onChange={(event) => setBulkArchive(event.target.value)} value={bulkArchive}>
+                <option value="__keep__">No change</option>
+                <option value="true">Mark archive</option>
+                <option value="false">Mark active</option>
+              </select>
+            </label>
+            <label>
+              Homepage Eligibility
+              <select onChange={(event) => setBulkHomepageEligibility(event.target.value)} value={bulkHomepageEligibility}>
+                <option value="__keep__">No change</option>
+                <option value="true">Make eligible</option>
+                <option value="false">Remove eligibility</option>
+              </select>
+            </label>
+            <label>
+              Release Status
+              <select onChange={(event) => setBulkReleaseStatus(event.target.value)} value={bulkReleaseStatus}>
+                <option value="__keep__">No change</option>
+                {RELEASE_STATUSES.map((status) => (
+                  <option key={status} value={status}>
+                    {status}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Source Tag
+              <select onChange={(event) => setBulkSourceTag(event.target.value)} value={bulkSourceTag}>
+                <option value="__keep__">No change</option>
+                <option value="">Clear source tag</option>
+                {SOURCE_TAG_OPTIONS.filter(Boolean).map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              World Layer
+              <select onChange={(event) => setBulkWorldLayer(event.target.value)} value={bulkWorldLayer}>
+                <option value="__keep__">No change</option>
+                <option value="">Clear world layer</option>
+                {WORLD_LAYER_OPTIONS.filter(Boolean).map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Collection Action
+              <select onChange={(event) => setBulkCollectionOperation(event.target.value)} value={bulkCollectionOperation}>
+                <option value="">No change</option>
+                <option value="add">Add collection</option>
+                <option value="remove">Remove collection</option>
+              </select>
+            </label>
+            <label>
+              Collection Target
+              <select onChange={(event) => setBulkCollectionSlug(event.target.value)} value={bulkCollectionSlug}>
+                <option value="">Choose collection</option>
+                {collections.map((collection) => (
+                  <option key={collection.id} value={collection.slug}>
+                    {collection.title}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="catalog-bulk-footer">
+            <div className="catalog-bulk-messages">
+              {bulkError ? <p className="error-text">{bulkError}</p> : null}
+              {bulkMessage ? <p className="success-text">{bulkMessage}</p> : null}
+            </div>
+            <div className="admin-form-actions">
+              <button disabled={bulkSubmitting || !selectedPostIds.length} type="submit">
+                {bulkSubmitting ? "Applying..." : "Apply Bulk Changes"}
+              </button>
+              <button
+                className="secondary-button"
+                onClick={() => {
+                  resetBulkActionForm();
+                  setBulkError("");
+                  setBulkMessage("");
+                }}
+                type="button"
+              >
+                Reset Bulk Actions
+              </button>
+            </div>
+          </div>
+        </form>
+      </section>
+
       <section>
         <div className="section-head">
           <h2>All Posts</h2>
-          <span>{loading ? "Loading..." : `${posts.length} posts`}</span>
+          <span>{loading ? "Loading..." : `${filteredPosts.length} posts`}</span>
         </div>
         <div className="post-grid">
-          {sortedPosts.map((post) => (
+          {filteredPosts.map((post) => (
             <article className="post-card" key={post.id}>
               <ReleaseMedia
                 className="post-media"
@@ -1184,6 +1545,14 @@ export default function AdminPostsPage() {
                 videoUrl={post.videoUrl}
               />
               <div className="post-body">
+                <label className="catalog-select-toggle">
+                  <input
+                    checked={selectedPostIdSet.has(post.id)}
+                    onChange={() => togglePostSelection(post.id)}
+                    type="checkbox"
+                  />
+                  <span>Select for bulk actions</span>
+                </label>
                 <p className="meta">
                   {formatPostDate(post.createdAt)} | {post.published ? "Published" : "Draft"}
                 </p>
@@ -1237,6 +1606,7 @@ export default function AdminPostsPage() {
             </article>
           ))}
         </div>
+        {!filteredPosts.length ? <p className="form-helper-text">No posts match the current catalog filters.</p> : null}
       </section>
     </main>
   );

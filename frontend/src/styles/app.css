@@ -1629,6 +1629,62 @@ select:focus {
   top: 1rem;
 }
 
+.catalog-tools-panel,
+.catalog-bulk-panel,
+.catalog-bulk-messages {
+  display: grid;
+  gap: 1rem;
+}
+
+.catalog-tools-copy {
+  margin: 0.2rem 0 0;
+  color: var(--muted-text);
+}
+
+.catalog-filter-grid,
+.catalog-bulk-grid {
+  gap: 0.95rem;
+}
+
+.catalog-bulk-panel {
+  padding: 1rem;
+  border-radius: 22px;
+  border: 1px solid color-mix(in srgb, var(--border) 76%, var(--primary) 24%);
+  background: color-mix(in srgb, var(--surface-alt) 74%, var(--surface) 26%);
+  box-shadow: var(--shadow-md);
+}
+
+.catalog-selection-row,
+.catalog-bulk-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.catalog-selection-row button {
+  margin-top: 0;
+}
+
+.catalog-select-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.7rem;
+  padding: 0.5rem 0.78rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border) 78%, var(--primary) 22%);
+  background: color-mix(in srgb, var(--surface-alt) 72%, var(--surface) 28%);
+  color: var(--text);
+  font-weight: 700;
+}
+
+.catalog-select-toggle input {
+  width: auto;
+  margin: 0;
+}
+
 .archive-meta-panel {
   display: grid;
   gap: 0.95rem;
@@ -3050,7 +3106,9 @@ select:focus {
     flex-direction: column;
   }
 
-  .editor-status-row {
+  .editor-status-row,
+  .catalog-selection-row,
+  .catalog-bulk-footer {
     justify-content: flex-start;
   }
 

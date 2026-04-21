@@ -240,6 +240,110 @@ function normalizePostInput(input, collections, existingPost = {}) {
   };
 }
 
+function normalizeBulkPostUpdateInput(input = {}, collections = []) {
+  const normalizedInput = input && typeof input === "object" ? input : {};
+  const collectionSlugSet = new Set(collections.map((collection) => collection.slug));
+  const requestedReleaseStatus = String(normalizedInput.releaseStatus || "").trim().toLowerCase();
+  const requestedCollectionOperation = String(normalizedInput.collectionOperation || "").trim().toLowerCase();
+  const requestedCollectionSlug = String(normalizedInput.collectionSlug || "").trim();
+
+  return {
+    isPubliclyVisible:
+      normalizedInput.isPubliclyVisible === "true"
+        ? true
+        : normalizedInput.isPubliclyVisible === "false"
+          ? false
+          : undefined,
+    isArchive:
+      normalizedInput.isArchive === "true"
+        ? true
+        : normalizedInput.isArchive === "false"
+          ? false
+          : undefined,
+    isHomepageEligible:
+      normalizedInput.isHomepageEligible === "true"
+        ? true
+        : normalizedInput.isHomepageEligible === "false"
+          ? false
+          : undefined,
+    releaseStatus: VALID_RELEASE_STATUSES.has(requestedReleaseStatus) ? requestedReleaseStatus : undefined,
+    sourceTag:
+      typeof normalizedInput.sourceTag === "string" && normalizedInput.sourceTag !== "__keep__"
+        ? normalizedInput.sourceTag.trim()
+        : undefined,
+    worldLayer:
+      typeof normalizedInput.worldLayer === "string" && normalizedInput.worldLayer !== "__keep__"
+        ? normalizedInput.worldLayer.trim()
+        : undefined,
+    collectionOperation: ["add", "remove"].includes(requestedCollectionOperation) ? requestedCollectionOperation : "",
+    collectionSlug: collectionSlugSet.has(requestedCollectionSlug) ? requestedCollectionSlug : ""
+  };
+}
+
+function hasBulkPostUpdates(updates = {}) {
+  return (
+    typeof updates.isPubliclyVisible === "boolean" ||
+    typeof updates.isArchive === "boolean" ||
+    typeof updates.isHomepageEligible === "boolean" ||
+    typeof updates.releaseStatus === "string" ||
+    typeof updates.sourceTag === "string" ||
+    typeof updates.worldLayer === "string" ||
+    (updates.collectionOperation && updates.collectionSlug)
+  );
+}
+
+function applyBulkPostUpdates(post, updates = {}) {
+  let nextPost = { ...post };
+  let changed = false;
+
+  if (typeof updates.isPubliclyVisible === "boolean" && post.isPubliclyVisible !== updates.isPubliclyVisible) {
+    nextPost.isPubliclyVisible = updates.isPubliclyVisible;
+    changed = true;
+  }
+
+  if (typeof updates.isArchive === "boolean" && post.isArchive !== updates.isArchive) {
+    nextPost.isArchive = updates.isArchive;
+    changed = true;
+  }
+
+  if (typeof updates.isHomepageEligible === "boolean" && post.isHomepageEligible !== updates.isHomepageEligible) {
+    nextPost.isHomepageEligible = updates.isHomepageEligible;
+    changed = true;
+  }
+
+  if (typeof updates.releaseStatus === "string" && post.releaseStatus !== updates.releaseStatus) {
+    nextPost.releaseStatus = updates.releaseStatus;
+    changed = true;
+  }
+
+  if (typeof updates.sourceTag === "string" && String(post.sourceTag || "") !== updates.sourceTag) {
+    nextPost.sourceTag = updates.sourceTag;
+    changed = true;
+  }
+
+  if (typeof updates.worldLayer === "string" && String(post.worldLayer || "") !== updates.worldLayer) {
+    nextPost.worldLayer = updates.worldLayer;
+    changed = true;
+  }
+
+  if (updates.collectionOperation && updates.collectionSlug) {
+    const currentCollectionSlugs = Array.isArray(nextPost.collectionSlugs) ? nextPost.collectionSlugs : [];
+    const hasCollection = currentCollectionSlugs.includes(updates.collectionSlug);
+
+    if (updates.collectionOperation === "add" && !hasCollection) {
+      nextPost.collectionSlugs = [...currentCollectionSlugs, updates.collectionSlug];
+      changed = true;
+    }
+
+    if (updates.collectionOperation === "remove" && hasCollection) {
+      nextPost.collectionSlugs = currentCollectionSlugs.filter((slug) => slug !== updates.collectionSlug);
+      changed = true;
+    }
+  }
+
+  return changed ? nextPost : post;
+}
+
 function attachCollectionDetails(post, collections) {
   return {
     ...post,
@@ -1012,6 +1116,53 @@ app.post("/api/admin/posts", requireAdmin, async (req, res, next) => {
 
     await insertPost(newPost);
     res.status(201).json({ post: attachCollectionDetails(newPost, store.collections) });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/admin/posts/bulk-update", requireAdmin, async (req, res, next) => {
+  try {
+    const store = await readStore();
+    const postIds = Array.isArray(req.body.postIds)
+      ? [...new Set(req.body.postIds.map((id) => String(id || "").trim()).filter(Boolean))]
+      : [];
+    const updates = normalizeBulkPostUpdateInput(req.body.updates, store.collections);
+
+    if (!postIds.length) {
+      return res.status(400).json({ message: "Select at least one post before applying a bulk action." });
+    }
+
+    if (!hasBulkPostUpdates(updates)) {
+      return res.status(400).json({ message: "Choose at least one bulk change before applying it." });
+    }
+
+    const postIdSet = new Set(postIds);
+    const matchingPosts = store.posts.filter((post) => postIdSet.has(post.id));
+
+    if (matchingPosts.length !== postIds.length) {
+      return res.status(404).json({ message: "One or more selected posts no longer exist." });
+    }
+
+    const nextPosts = store.posts.map((post) => (postIdSet.has(post.id) ? applyBulkPostUpdates(post, updates) : post));
+    const changedPosts = collectChangedEntries(store.posts, nextPosts);
+    const nextCollections = reconcileCollections(store.collections, nextPosts);
+    const changedCollections = collectChangedEntries(store.collections, nextCollections);
+
+    await runStoreTransaction(async (session) => {
+      if (changedPosts.length) {
+        await replacePosts(changedPosts, { session });
+      }
+
+      if (changedCollections.length) {
+        await replaceCollections(changedCollections, { session });
+      }
+    });
+
+    return res.json({
+      updatedCount: changedPosts.length,
+      unchangedCount: postIds.length - changedPosts.length
+    });
   } catch (error) {
     next(error);
   }

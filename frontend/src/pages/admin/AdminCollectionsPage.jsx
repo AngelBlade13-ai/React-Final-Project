@@ -1,5 +1,31 @@
+import { useMemo, useState } from "react";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { useAdminContext } from "../../layouts/AdminLayout";
+
+function matchesCollectionFilters(collection, filters = {}) {
+  const search = String(filters.search || "").trim().toLowerCase();
+  const theme = String(filters.theme || "").trim();
+  const visibility = String(filters.visibility || "").trim();
+  const searchableText = [collection.title, collection.slug, collection.description, collection.featuredReleaseSlug].join(" ").toLowerCase();
+
+  if (search && !searchableText.includes(search)) {
+    return false;
+  }
+
+  if (theme && String(collection.theme || "") !== theme) {
+    return false;
+  }
+
+  if (visibility === "public" && !collection.isPublicPrimary) {
+    return false;
+  }
+
+  if (visibility === "internal" && collection.isPublicPrimary) {
+    return false;
+  }
+
+  return true;
+}
 
 export default function AdminCollectionsPage() {
   useDocumentTitle("Admin Collections");
@@ -18,12 +44,28 @@ export default function AdminCollectionsPage() {
     startCollectionEdit,
     updateCollectionForm
   } = useAdminContext();
+  const [collectionSearch, setCollectionSearch] = useState("");
+  const [collectionThemeFilter, setCollectionThemeFilter] = useState("");
+  const [collectionVisibilityFilter, setCollectionVisibilityFilter] = useState("");
   const activeCollection = editingCollectionId ? collections.find((collection) => collection.id === editingCollectionId) || null : null;
   const featuredCollectionSlug = activeCollection?.slug || collectionForm.slug;
   const featuredReleaseCandidates = posts.filter((post) => (post.collectionSlugs || []).includes(featuredCollectionSlug));
   const hasInvalidFeaturedSelection =
     collectionForm.featuredReleaseSlug &&
     !featuredReleaseCandidates.some((post) => post.slug === collectionForm.featuredReleaseSlug);
+  const filteredCollections = useMemo(
+    () =>
+      collections
+        .filter((collection) =>
+          matchesCollectionFilters(collection, {
+            search: collectionSearch,
+            theme: collectionThemeFilter,
+            visibility: collectionVisibilityFilter
+          })
+        )
+        .sort((left, right) => String(left.title || "").localeCompare(String(right.title || ""))),
+    [collectionSearch, collectionThemeFilter, collectionVisibilityFilter, collections]
+  );
 
   return (
     <main className="admin-grid">
@@ -124,13 +166,54 @@ export default function AdminCollectionsPage() {
         </form>
       </section>
 
+      <section className="intro-card catalog-tools-panel">
+        <div className="section-head">
+          <div>
+            <h2>Collection Catalog</h2>
+            <p className="catalog-tools-copy">
+              Narrow collection views by search, theme, and public/internal status so cleanup work stays manageable as the archive grows.
+            </p>
+          </div>
+          <span>{loading ? "Loading..." : `${filteredCollections.length} of ${collections.length} collections shown`}</span>
+        </div>
+        <div className="admin-form catalog-filter-grid">
+          <label className="full-span">
+            Search
+            <input
+              onChange={(event) => setCollectionSearch(event.target.value)}
+              placeholder="Title, slug, description, featured release..."
+              value={collectionSearch}
+            />
+          </label>
+          <label>
+            Theme
+            <select onChange={(event) => setCollectionThemeFilter(event.target.value)} value={collectionThemeFilter}>
+              <option value="">All themes</option>
+              {(siteSettingsForm.collectionThemes || []).map((themeProfile) => (
+                <option key={themeProfile.key} value={themeProfile.key}>
+                  {themeProfile.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Visibility
+            <select onChange={(event) => setCollectionVisibilityFilter(event.target.value)} value={collectionVisibilityFilter}>
+              <option value="">All collections</option>
+              <option value="public">Public primary only</option>
+              <option value="internal">Internal/archive only</option>
+            </select>
+          </label>
+        </div>
+      </section>
+
       <section>
         <div className="section-head">
           <h2>Collections</h2>
-          <span>{loading ? "Loading..." : `${collections.length} collections`}</span>
+          <span>{loading ? "Loading..." : `${filteredCollections.length} collections`}</span>
         </div>
         <div className="collection-grid">
-          {collections.map((collection) => (
+          {filteredCollections.map((collection) => (
             <article className="intro-card homepage-panel collection-card" key={collection.id}>
               <p className="eyebrow">Collection</p>
               <h3>{collection.title}</h3>
@@ -151,6 +234,7 @@ export default function AdminCollectionsPage() {
             </article>
           ))}
         </div>
+        {!filteredCollections.length ? <p className="form-helper-text">No collections match the current catalog filters.</p> : null}
       </section>
     </main>
   );
