@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import ThemeToggle from "../../components/ThemeToggle";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
-import { apiBaseUrl, tokenKey } from "../../lib/site";
+import { apiBaseUrl } from "../../lib/site";
 
 export default function AdminLogin({ onAdminAuthSuccess, theme, setTheme }) {
   useDocumentTitle("Admin Login");
@@ -20,6 +20,7 @@ export default function AdminLogin({ onAdminAuthSuccess, theme, setTheme }) {
     try {
       const response = await fetch(`${apiBaseUrl}/admin/login`, {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json"
         },
@@ -32,7 +33,6 @@ export default function AdminLogin({ onAdminAuthSuccess, theme, setTheme }) {
         throw new Error(data.message || "Login failed.");
       }
 
-      localStorage.setItem(tokenKey, data.token);
       onAdminAuthSuccess?.();
       navigate("/admin");
     } catch (apiError) {

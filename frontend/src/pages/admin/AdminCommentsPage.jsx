@@ -11,7 +11,7 @@ function getCommentAuthor(comment) {
 
 export default function AdminCommentsPage() {
   useDocumentTitle("Admin Comments");
-  const { authHeaders, posts } = useAdminContext();
+  const { adminFetch, posts } = useAdminContext();
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -27,9 +27,7 @@ export default function AdminCommentsPage() {
       try {
         setLoading(true);
         setError("");
-        const response = await fetch(`${apiBaseUrl}/admin/comments`, {
-          headers: authHeaders()
-        });
+        const response = await adminFetch(`${apiBaseUrl}/admin/comments`);
         const data = await response.json();
 
         if (!response.ok) {
@@ -61,9 +59,8 @@ export default function AdminCommentsPage() {
     try {
       setUpdatingId(commentId);
       setError("");
-      const response = await fetch(`${apiBaseUrl}/admin/comments/${commentId}`, {
+      const response = await adminFetch(`${apiBaseUrl}/admin/comments/${commentId}`, {
         method: "PUT",
-        headers: authHeaders(),
         body: JSON.stringify({ status: nextStatus })
       });
       const data = await response.json();

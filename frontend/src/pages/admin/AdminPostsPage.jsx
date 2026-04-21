@@ -299,7 +299,7 @@ function matchesPostCatalogFilters(post, filters = {}) {
 export default function AdminPostsPage() {
   useDocumentTitle("Admin Posts");
   const {
-    authHeaders,
+    adminFetch,
     collections,
     clearVideoSelection,
     editingId,
@@ -631,9 +631,8 @@ export default function AdminPostsPage() {
     setBulkSubmitting(true);
 
     try {
-      const response = await fetch(`${apiBaseUrl}/admin/posts/bulk-update`, {
+      const response = await adminFetch(`${apiBaseUrl}/admin/posts/bulk-update`, {
         method: "POST",
-        headers: authHeaders(),
         body: JSON.stringify({
           postIds: selectedPostIds,
           updates

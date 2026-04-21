@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
-import { apiBaseUrl, userTokenKey } from "../../lib/site";
+import { apiBaseUrl } from "../../lib/site";
 
 export default function AccountPage({ currentUser, hasAdminSession, isUserSessionReady, onUserAuthSuccess, onUserLogout }) {
   useDocumentTitle(currentUser ? "Account" : "Sign In");
@@ -57,6 +57,7 @@ export default function AccountPage({ currentUser, hasAdminSession, isUserSessio
     try {
       const response = await fetch(`${apiBaseUrl}/auth/${mode === "register" ? "register" : "login"}`, {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json"
         },
@@ -104,12 +105,11 @@ export default function AccountPage({ currentUser, hasAdminSession, isUserSessio
     }
 
     try {
-      const token = localStorage.getItem(userTokenKey) || "";
       const response = await fetch(`${apiBaseUrl}/auth/me`, {
         method: "PUT",
+        credentials: "include",
         headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           displayName: profileName,

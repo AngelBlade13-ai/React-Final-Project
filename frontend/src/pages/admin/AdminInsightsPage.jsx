@@ -25,7 +25,7 @@ function formatSeverity(severity) {
 
 export default function AdminInsightsPage() {
   useDocumentTitle("Admin Insights");
-  const { authHeaders } = useAdminContext();
+  const { adminFetch } = useAdminContext();
   const [insights, setInsights] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -37,9 +37,7 @@ export default function AdminInsightsPage() {
       try {
         setLoading(true);
         setError("");
-        const response = await fetch(`${apiBaseUrl}/admin/insights`, {
-          headers: authHeaders()
-        });
+        const response = await adminFetch(`${apiBaseUrl}/admin/insights`);
         const data = await response.json();
 
         if (!response.ok) {

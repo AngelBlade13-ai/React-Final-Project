@@ -34,8 +34,7 @@ export default function PublicReleasePage({
   onUserLogout,
   setActiveCollectionTheme,
   setForcedTheme,
-  siteContent,
-  userToken
+  siteContent
 }) {
   const { slug } = useParams();
   const navigate = useNavigate();
@@ -732,7 +731,7 @@ export default function PublicReleasePage({
             </section>
           ) : null}
 
-          <CommentsSection currentUser={currentUser} onUserLogout={onUserLogout} postSlug={post.slug} userToken={userToken} />
+          <CommentsSection currentUser={currentUser} onUserLogout={onUserLogout} postSlug={post.slug} />
         </main>
       ) : null}
     </>

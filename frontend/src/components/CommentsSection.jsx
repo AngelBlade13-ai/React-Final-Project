@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { apiBaseUrl } from "../lib/site";
 
-export default function CommentsSection({ currentUser, onUserLogout, postSlug, userToken }) {
+export default function CommentsSection({ currentUser, onUserLogout, postSlug }) {
   const [comments, setComments] = useState([]);
   const [draft, setDraft] = useState("");
   const [editingId, setEditingId] = useState("");
@@ -57,9 +57,9 @@ export default function CommentsSection({ currentUser, onUserLogout, postSlug, u
     try {
       const response = await fetch(`${apiBaseUrl}/posts/${postSlug}/comments`, {
         method: "POST",
+        credentials: "include",
         headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${userToken}`
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({ body: draft })
       });
@@ -91,9 +91,9 @@ export default function CommentsSection({ currentUser, onUserLogout, postSlug, u
     try {
       const response = await fetch(`${apiBaseUrl}/comments/${commentId}`, {
         method: "PUT",
+        credentials: "include",
         headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${userToken}`
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({ body: editingBody })
       });
@@ -132,9 +132,7 @@ export default function CommentsSection({ currentUser, onUserLogout, postSlug, u
     try {
       const response = await fetch(`${apiBaseUrl}/comments/${commentId}`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${userToken}`
-        }
+        credentials: "include"
       });
       const data = await response.json();
 

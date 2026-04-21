@@ -4,7 +4,7 @@ import MiniPlayer from "./components/MiniPlayer";
 import PublicLayout from "./layouts/PublicLayout";
 import AdminLayout, { ProtectedRoute } from "./layouts/AdminLayout";
 import { useSiteContent } from "./hooks/usePublicApi";
-import { apiBaseUrl, getPreferredCollectionForPost, getThemeCssVariables, hasVideo, themeKey, tokenKey, userTokenKey } from "./lib/site";
+import { apiBaseUrl, getPreferredCollectionForPost, getThemeCssVariables, hasVideo, themeKey } from "./lib/site";
 import AdminAboutPage from "./pages/admin/AdminAboutPage";
 import AdminCommentsPage from "./pages/admin/AdminCommentsPage";
 import AdminCollectionsPage from "./pages/admin/AdminCollectionsPage";
@@ -36,10 +36,8 @@ function App() {
   });
   const [forcedTheme, setForcedTheme] = useState(null);
   const [activeCollectionTheme, setActiveCollectionTheme] = useState("");
-  const [hasAdminSession, setHasAdminSession] = useState(() =>
-    Boolean(localStorage.getItem("suno-blog-admin-token")),
-  );
-  const [userToken, setUserToken] = useState(() => localStorage.getItem(userTokenKey) || "");
+  const [hasAdminSession, setHasAdminSession] = useState(false);
+  const [isAdminSessionReady, setIsAdminSessionReady] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [isUserSessionReady, setIsUserSessionReady] = useState(false);
   const [playerQueue, setPlayerQueue] = useState([]);
@@ -110,33 +108,14 @@ function App() {
   }, [theme]);
 
   useEffect(() => {
-    if (userToken) {
-      localStorage.setItem(userTokenKey, userToken);
-      return;
-    }
-
-    localStorage.removeItem(userTokenKey);
-  }, [userToken]);
-
-  useEffect(() => {
     let isCancelled = false;
 
     async function loadCurrentUser() {
-      if (!userToken) {
-        if (!isCancelled) {
-          setCurrentUser(null);
-          setIsUserSessionReady(true);
-        }
-        return;
-      }
-
       try {
         const response = await fetch(`${apiBaseUrl}/auth/me`, {
-          headers: {
-            Authorization: `Bearer ${userToken}`
-          }
+          credentials: "include"
         });
-        const data = await response.json();
+        const data = await response.json().catch(() => ({}));
 
         if (!response.ok) {
           throw new Error(data.message || "Session expired.");
@@ -147,7 +126,6 @@ function App() {
         }
       } catch {
         if (!isCancelled) {
-          setUserToken("");
           setCurrentUser(null);
         }
       } finally {
@@ -163,7 +141,43 @@ function App() {
     return () => {
       isCancelled = true;
     };
-  }, [userToken]);
+  }, []);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function loadAdminSession() {
+      try {
+        const response = await fetch(`${apiBaseUrl}/admin/session`, {
+          credentials: "include"
+        });
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(data.message || "Admin session unavailable.");
+        }
+
+        if (!isCancelled) {
+          setHasAdminSession(Boolean(data.admin));
+        }
+      } catch {
+        if (!isCancelled) {
+          setHasAdminSession(false);
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsAdminSessionReady(true);
+        }
+      }
+    }
+
+    setIsAdminSessionReady(false);
+    loadAdminSession();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -415,30 +429,41 @@ function App() {
   }
 
   function handleUserAuthSuccess(payload) {
-    localStorage.removeItem(tokenKey);
     setHasAdminSession(false);
-    setUserToken(payload?.token || "");
+    setIsAdminSessionReady(true);
     setCurrentUser(payload?.user || null);
     setIsUserSessionReady(true);
   }
 
-  function handleUserLogout() {
-    setUserToken("");
+  async function handleUserLogout() {
+    try {
+      await fetch(`${apiBaseUrl}/auth/logout`, {
+        method: "POST",
+        credentials: "include"
+      });
+    } catch {}
+
     setCurrentUser(null);
     setIsUserSessionReady(true);
   }
 
   function handleAdminAuthSuccess() {
-    localStorage.removeItem(userTokenKey);
-    setUserToken("");
     setCurrentUser(null);
     setIsUserSessionReady(true);
     setHasAdminSession(true);
+    setIsAdminSessionReady(true);
   }
 
-  function handleAdminLogout() {
-    localStorage.removeItem(tokenKey);
+  async function handleAdminLogout() {
+    try {
+      await fetch(`${apiBaseUrl}/admin/logout`, {
+        method: "POST",
+        credentials: "include"
+      });
+    } catch {}
+
     setHasAdminSession(false);
+    setIsAdminSessionReady(true);
   }
 
   const previousQueueIndex = findAdjacentPlayableIndex(playerQueue, currentQueueIndex, -1);
@@ -524,12 +549,10 @@ function App() {
                 hasAdminSession={hasAdminSession}
                 isPlayerActive={isMiniPlayerPlaying}
                 onPlayTrack={playTrack}
-                onUserAuthSuccess={handleUserAuthSuccess}
                 onUserLogout={handleUserLogout}
                 setActiveCollectionTheme={setActiveCollectionTheme}
                 setForcedTheme={setForcedTheme}
                 siteContent={siteContent}
-                userToken={userToken}
               />
             }
           />
@@ -547,7 +570,7 @@ function App() {
         <Route
           path="/admin"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute hasAdminSession={hasAdminSession} isAdminSessionReady={isAdminSessionReady}>
               <AdminLayout
                 onAdminLogout={handleAdminLogout}
                 theme={theme}

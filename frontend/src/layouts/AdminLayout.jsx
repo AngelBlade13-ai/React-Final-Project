@@ -1,12 +1,22 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, Navigate, Outlet, useNavigate, useOutletContext } from "react-router-dom";
 import ThemeToggle from "../components/ThemeToggle";
-import { apiBaseUrl, DEFAULT_COLLECTION_THEME_PROFILES, emptyAbout, emptyCollection, emptyPost, emptySiteSettings, emptyThemeProfile, tokenKey } from "../lib/site";
+import { apiBaseUrl, DEFAULT_COLLECTION_THEME_PROFILES, emptyAbout, emptyCollection, emptyPost, emptySiteSettings, emptyThemeProfile } from "../lib/site";
 
-export function ProtectedRoute({ children }) {
-  const token = localStorage.getItem(tokenKey);
+export function ProtectedRoute({ children, hasAdminSession, isAdminSessionReady }) {
+  if (!isAdminSessionReady) {
+    return (
+      <div className="page-shell">
+        <section className="intro-card homepage-panel">
+          <p className="eyebrow">Admin Session</p>
+          <h2>Checking access.</h2>
+          <p>Validating the current admin session before loading the dashboard.</p>
+        </section>
+      </div>
+    );
+  }
 
-  if (!token) {
+  if (!hasAdminSession) {
     return <Navigate replace to="/admin/login" />;
   }
 
@@ -46,15 +56,31 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
   const [savingAbout, setSavingAbout] = useState(false);
   const [savingSiteSettings, setSavingSiteSettings] = useState(false);
 
-  function authToken() {
-    return localStorage.getItem(tokenKey);
+  async function handleSessionExpired() {
+    await Promise.resolve(onAdminLogout?.());
+    navigate("/admin/login");
   }
 
-  function authHeaders() {
-    return {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${authToken()}`
-    };
+  async function adminFetch(url, options = {}) {
+    const headers = { ...(options.headers || {}) };
+    const hasBody = Object.prototype.hasOwnProperty.call(options, "body");
+    const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
+
+    if (hasBody && !isFormData && !headers["Content-Type"]) {
+      headers["Content-Type"] = "application/json";
+    }
+
+    const response = await fetch(url, {
+      credentials: "include",
+      ...options,
+      headers
+    });
+
+    if (response.status === 401 || response.status === 403) {
+      await handleSessionExpired();
+    }
+
+    return response;
   }
 
   async function loadAdminData() {
@@ -62,15 +88,12 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
       setLoading(true);
       setError("");
       const [postsResponse, collectionsResponse, siteContentResponse] = await Promise.all([
-        fetch(`${apiBaseUrl}/admin/posts`, { headers: authHeaders() }),
-        fetch(`${apiBaseUrl}/admin/collections`, { headers: authHeaders() }),
-        fetch(`${apiBaseUrl}/admin/site-content`, { headers: authHeaders() })
+        adminFetch(`${apiBaseUrl}/admin/posts`),
+        adminFetch(`${apiBaseUrl}/admin/collections`),
+        adminFetch(`${apiBaseUrl}/admin/site-content`)
       ]);
 
       if ([postsResponse.status, collectionsResponse.status, siteContentResponse.status].some((status) => status === 401 || status === 403)) {
-        localStorage.removeItem(tokenKey);
-        onAdminLogout?.();
-        navigate("/admin/login");
         return;
       }
 
@@ -340,11 +363,8 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
       const uploadForm = new FormData();
       uploadForm.append("video", selectedVideoFile);
 
-      const response = await fetch(`${apiBaseUrl}/uploads`, {
+      const response = await adminFetch(`${apiBaseUrl}/uploads`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${authToken()}`
-        },
         body: uploadForm
       });
 
@@ -377,9 +397,8 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
     setSaveMessage("");
 
     try {
-      const response = await fetch(editingId ? `${apiBaseUrl}/admin/posts/${editingId}` : `${apiBaseUrl}/admin/posts`, {
+      const response = await adminFetch(editingId ? `${apiBaseUrl}/admin/posts/${editingId}` : `${apiBaseUrl}/admin/posts`, {
         method: editingId ? "PUT" : "POST",
-        headers: authHeaders(),
         body: JSON.stringify(form)
       });
       const data = await response.json();
@@ -405,11 +424,10 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
     setError("");
 
     try {
-      const response = await fetch(
+      const response = await adminFetch(
         editingCollectionId ? `${apiBaseUrl}/admin/collections/${editingCollectionId}` : `${apiBaseUrl}/admin/collections`,
         {
           method: editingCollectionId ? "PUT" : "POST",
-          headers: authHeaders(),
           body: JSON.stringify(collectionForm)
         }
       );
@@ -436,9 +454,8 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
     setError("");
 
     try {
-      const response = await fetch(`${apiBaseUrl}/admin/site-content/about`, {
+      const response = await adminFetch(`${apiBaseUrl}/admin/site-content/about`, {
         method: "PUT",
-        headers: authHeaders(),
         body: JSON.stringify(aboutForm)
       });
       const data = await response.json();
@@ -463,9 +480,8 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
     setError("");
 
     try {
-      const response = await fetch(`${apiBaseUrl}/admin/site-content/site`, {
+      const response = await adminFetch(`${apiBaseUrl}/admin/site-content/site`, {
         method: "PUT",
-        headers: authHeaders(),
         body: JSON.stringify(siteSettingsForm)
       });
       const data = await response.json();
@@ -500,9 +516,8 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
     if (!confirmed) return;
 
     try {
-      const response = await fetch(`${apiBaseUrl}/admin/posts/${id}`, {
-        method: "DELETE",
-        headers: authHeaders()
+      const response = await adminFetch(`${apiBaseUrl}/admin/posts/${id}`, {
+        method: "DELETE"
       });
 
       const data = await response.json();
@@ -522,9 +537,8 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
     if (!confirmed) return;
 
     try {
-      const response = await fetch(`${apiBaseUrl}/admin/collections/${id}`, {
-        method: "DELETE",
-        headers: authHeaders()
+      const response = await adminFetch(`${apiBaseUrl}/admin/collections/${id}`, {
+        method: "DELETE"
       });
 
       const data = await response.json();
@@ -539,9 +553,8 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
     }
   }
 
-  function handleLogout() {
-    localStorage.removeItem(tokenKey);
-    onAdminLogout?.();
+  async function handleLogout() {
+    await Promise.resolve(onAdminLogout?.());
     navigate("/admin/login");
   }
 
@@ -611,7 +624,7 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
           uploading,
           uploadError,
           selectedVideoFile,
-          authHeaders,
+          adminFetch,
           loadAdminData,
           updateField,
           replacePostForm,

@@ -49,6 +49,15 @@ const router = express.Router();
 
 router.use(requireAdmin);
 
+router.get("/session", (req, res) => {
+  return res.json({
+    admin: {
+      email: req.admin.email,
+      role: "admin"
+    }
+  });
+});
+
 router.get("/posts", async (req, res, next) => {
   try {
     const store = await readStore();

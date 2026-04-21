@@ -3,7 +3,7 @@ const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const config = require("../config");
 const { readStore, insertUser, replaceUser } = require("../data/store");
-const { authenticate, requireUser } = require("../middleware/auth");
+const { requireUser } = require("../middleware/auth");
 const { loginLimiter, userAuthLimiter } = require("../middleware/rateLimiters");
 const {
   issueAdminToken,
@@ -11,6 +11,12 @@ const {
   normalizeUserInput,
   sanitizeUser
 } = require("../services/authUserService");
+const {
+  clearAdminSessionCookie,
+  clearUserSessionCookie,
+  setAdminSessionCookie,
+  setUserSessionCookie
+} = require("../services/sessionCookieService");
 const {
   validateProfileUpdateInput,
   validateRegistrationInput
@@ -32,8 +38,12 @@ router.post("/admin/login", loginLimiter, async (req, res, next) => {
       return res.status(401).json({ message: "Invalid admin credentials." });
     }
 
+    const token = issueAdminToken();
+    clearUserSessionCookie(res);
+    setAdminSessionCookie(res, token);
+
     return res.json({
-      token: issueAdminToken(),
+      token,
       admin: {
         email: config.adminEmail,
         role: "admin"
@@ -72,6 +82,8 @@ router.post("/auth/register", userAuthLimiter, async (req, res, next) => {
     };
 
     await insertUser(user);
+    clearAdminSessionCookie(res);
+    setUserSessionCookie(res, issueAuthToken(user));
 
     return res.status(201).json({
       token: issueAuthToken(user),
@@ -99,6 +111,9 @@ router.post("/auth/login", userAuthLimiter, async (req, res, next) => {
       return res.status(401).json({ message: "Invalid email or password." });
     }
 
+    clearAdminSessionCookie(res);
+    setUserSessionCookie(res, issueAuthToken(user));
+
     return res.json({
       token: issueAuthToken(user),
       user: sanitizeUser(user)
@@ -108,18 +123,20 @@ router.post("/auth/login", userAuthLimiter, async (req, res, next) => {
   }
 });
 
-router.get("/auth/me", authenticate, async (req, res, next) => {
+router.post("/auth/logout", (req, res) => {
+  clearUserSessionCookie(res);
+  return res.json({ message: "Signed out." });
+});
+
+router.post("/admin/logout", (req, res) => {
+  clearAdminSessionCookie(res);
+  return res.json({ message: "Signed out." });
+});
+
+router.get("/auth/me", requireUser, async (req, res, next) => {
   try {
     if (req.auth.role === "admin") {
-      return res.json({
-        user: {
-          id: "admin",
-          email: req.auth.email,
-          displayName: req.auth.displayName || "Admin",
-          role: "admin",
-          status: "active"
-        }
-      });
+      return res.status(403).json({ message: "Admin sessions are managed separately." });
     }
 
     const store = await readStore();
@@ -164,6 +181,8 @@ router.put("/auth/me", requireUser, async (req, res, next) => {
     };
 
     await replaceUser(nextUser);
+    clearAdminSessionCookie(res);
+    setUserSessionCookie(res, issueAuthToken(nextUser));
 
     return res.json({
       token: issueAuthToken(nextUser),

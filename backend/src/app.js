@@ -1,4 +1,5 @@
 const express = require("express");
+const cookieParser = require("cookie-parser");
 const cors = require("cors");
 const helmet = require("helmet");
 const config = require("./config");
@@ -17,9 +18,11 @@ app.use(
 );
 app.use(
   cors({
-    origin: config.clientUrl
+    origin: config.clientUrl,
+    credentials: true
   })
 );
+app.use(cookieParser());
 app.use(express.json());
 
 app.use("/api/uploads", uploadRoutes);
