@@ -108,6 +108,17 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
     setForm((current) => ({ ...current, [key]: value }));
   }
 
+  function replacePostForm(nextForm) {
+    setForm({
+      ...emptyPost,
+      ...nextForm,
+      archiveMeta: {
+        ...emptyPost.archiveMeta,
+        ...(nextForm?.archiveMeta || {})
+      }
+    });
+  }
+
   function updateArchiveMetaField(key, value) {
     setForm((current) => ({
       ...current,
@@ -180,7 +191,8 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
     setEditingId(post.id);
     setSelectedVideoFile(null);
     setUploadError("");
-    setForm({
+    setSaveMessage("");
+    replacePostForm({
       title: post.title,
       slug: post.slug || "",
       slugHistory: Array.isArray(post.slugHistory) ? post.slugHistory : [],
@@ -201,10 +213,7 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
       supersededReason: post.supersededReason || "",
       supersededAt: post.supersededAt || "",
       releaseStatus: post.releaseStatus || "canon",
-      archiveMeta: {
-        ...emptyPost.archiveMeta,
-        ...(post.archiveMeta || {})
-      },
+      archiveMeta: post.archiveMeta || {},
       createdAt: post.createdAt,
       published: post.published,
       collectionSlugs: post.collectionSlugs || []
@@ -226,13 +235,11 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
   }
 
   function resetPostForm() {
-    setForm({
-      ...emptyPost,
-      archiveMeta: { ...emptyPost.archiveMeta }
-    });
+    replacePostForm(emptyPost);
     setEditingId("");
     setSelectedVideoFile(null);
     setUploadError("");
+    setSaveMessage("");
   }
 
   function resetCollectionForm() {
@@ -607,6 +614,7 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
           authHeaders,
           loadAdminData,
           updateField,
+          replacePostForm,
           updateArchiveMetaField,
           updateCollectionForm,
           updateAboutForm,

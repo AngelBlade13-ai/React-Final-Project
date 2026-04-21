@@ -1385,8 +1385,248 @@ select:focus {
   margin: 0.2rem 0 0.5rem;
 }
 
+.input-help-text {
+  display: block;
+  margin-top: 0.35rem;
+  color: var(--muted-text);
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
 .full-span {
   grid-column: 1 / -1;
+}
+
+.post-editor-shell-card {
+  display: grid;
+  gap: 1.15rem;
+}
+
+.post-editor-header,
+.editor-section-head,
+.editor-validation-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.post-editor-header h2,
+.editor-section-head h3 {
+  margin: 0.2rem 0 0;
+  letter-spacing: -0.03em;
+}
+
+.post-editor-header-copy,
+.editor-section-aside,
+.editor-sidebar-intro {
+  color: var(--muted-text);
+}
+
+.post-editor-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(300px, 0.85fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.post-editor-main,
+.post-editor-sidebar,
+.editor-section-body,
+.editor-validation-group,
+.editor-issue-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.editor-status-row,
+.editor-status-stack {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.editor-status-pill,
+.editor-validation-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.15rem;
+  padding: 0.42rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border) 72%, var(--primary) 28%);
+  background: color-mix(in srgb, var(--surface-alt) 76%, var(--surface) 24%);
+  color: var(--text);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.editor-status-pill.is-dirty,
+.editor-validation-panel.has-blocking .editor-validation-count {
+  border-color: color-mix(in srgb, #c75b72 58%, var(--border));
+  background: color-mix(in srgb, #c75b72 12%, var(--surface-alt));
+}
+
+.post-editor-tab-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.85rem;
+}
+
+.post-editor-tab {
+  margin-top: 0;
+  display: grid;
+  gap: 0.3rem;
+  align-content: start;
+  min-height: 100%;
+  padding: 0.95rem 1rem;
+  border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--border) 76%, var(--primary) 24%);
+  background: color-mix(in srgb, var(--surface-alt) 74%, var(--surface) 26%);
+  color: var(--text);
+  text-align: left;
+}
+
+.post-editor-tab span,
+.post-editor-tab strong {
+  line-height: 1.3;
+}
+
+.post-editor-tab span {
+  font-size: 0.98rem;
+}
+
+.post-editor-tab small {
+  color: var(--muted-text);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.post-editor-tab strong {
+  color: color-mix(in srgb, var(--text) 88%, var(--primary-strong) 12%);
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.post-editor-tab.active {
+  border-color: color-mix(in srgb, var(--primary-strong) 44%, var(--border));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 86%, var(--primary) 14%), color-mix(in srgb, var(--surface-alt) 84%, var(--surface) 16%)),
+    var(--surface);
+}
+
+.editor-section-card,
+.editor-sidebar-card,
+.editor-review-card {
+  border-radius: 22px;
+  border: 1px solid color-mix(in srgb, var(--border) 76%, var(--primary) 24%);
+  background: color-mix(in srgb, var(--surface-alt) 74%, var(--surface) 26%);
+  box-shadow: var(--shadow-md);
+}
+
+.editor-section-card,
+.editor-sidebar-card {
+  padding: 1.15rem;
+}
+
+.editor-review-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.editor-review-card {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1rem 1.05rem;
+}
+
+.editor-review-card strong,
+.editor-validation-head strong,
+.editor-mini-stat strong {
+  font-size: 0.98rem;
+}
+
+.editor-status-stack {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.editor-mini-stat,
+.editor-draft-panel,
+.editor-validation-panel,
+.catalog-toggle-field {
+  padding: 0.95rem 1rem;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--border) 78%, var(--primary) 22%);
+  background: color-mix(in srgb, var(--surface) 80%, var(--surface-alt) 20%);
+}
+
+.editor-mini-stat {
+  display: grid;
+  gap: 0.22rem;
+}
+
+.editor-mini-stat span {
+  color: var(--muted-text);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.editor-draft-panel,
+.editor-validation-panel {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.editor-validation-panel.has-blocking {
+  border-color: color-mix(in srgb, #c75b72 54%, var(--border));
+}
+
+.editor-issue-link {
+  margin-top: 0;
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.9rem 0.95rem;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--border) 78%, var(--primary) 22%);
+  background: color-mix(in srgb, var(--surface) 82%, var(--surface-alt) 18%);
+  color: var(--text);
+  text-align: left;
+}
+
+.editor-issue-link strong {
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.editor-issue-link span {
+  color: var(--muted-text);
+  line-height: 1.5;
+}
+
+.editor-issue-link.advisory {
+  border-color: color-mix(in srgb, var(--secondary) 36%, var(--border));
+}
+
+.editor-actions-stack {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.editor-actions-stack button {
+  width: 100%;
+}
+
+.post-editor-sticky {
+  position: sticky;
+  top: 1rem;
 }
 
 .archive-meta-panel {
@@ -2796,6 +3036,30 @@ select:focus {
   .about-stat-grid,
   .release-signal-grid {
     grid-template-columns: 1fr;
+  }
+
+  .post-editor-layout,
+  .editor-review-grid,
+  .editor-status-stack {
+    grid-template-columns: 1fr;
+  }
+
+  .post-editor-header,
+  .editor-section-head,
+  .editor-validation-head {
+    flex-direction: column;
+  }
+
+  .editor-status-row {
+    justify-content: flex-start;
+  }
+
+  .post-editor-tab-row {
+    grid-template-columns: 1fr;
+  }
+
+  .post-editor-sticky {
+    position: static;
   }
 }
 
