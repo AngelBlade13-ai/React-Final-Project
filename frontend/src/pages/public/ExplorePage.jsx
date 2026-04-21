@@ -1,40 +1,20 @@
-import { useDeferredValue, useEffect, useState } from "react";
+import { useDeferredValue, useState } from "react";
 import { ReleaseCard } from "../../components/cards";
+import { usePublicCollections, usePublicPosts } from "../../hooks/usePublicApi";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
-import { apiBaseUrl, getReleaseStatus, partitionCollectionsForExplore } from "../../lib/site";
+import { getReleaseStatus, partitionCollectionsForExplore } from "../../lib/site";
 
 export default function ExplorePage({ onPlayTrack }) {
   useDocumentTitle("Explore");
-  const [posts, setPosts] = useState([]);
-  const [collections, setCollections] = useState([]);
+  const { posts, isLoading: postsLoading } = usePublicPosts();
+  const { collections, isLoading: collectionsLoading } = usePublicCollections("all");
   const [query, setQuery] = useState("");
   const [selectedCollection, setSelectedCollection] = useState("all");
   const [showInternalCollections, setShowInternalCollections] = useState(false);
   const [showWorkingVersions, setShowWorkingVersions] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const loading = postsLoading || collectionsLoading;
   const deferredQuery = useDeferredValue(query);
   const normalizedQuery = deferredQuery.trim().toLowerCase();
-
-  useEffect(() => {
-    async function loadExploreData() {
-      try {
-        const [postsResponse, collectionsResponse] = await Promise.all([
-          fetch(`${apiBaseUrl}/posts`),
-          fetch(`${apiBaseUrl}/collections?scope=all`)
-        ]);
-        const postsData = await postsResponse.json();
-        const collectionsData = await collectionsResponse.json();
-        setPosts(postsData.posts || []);
-        setCollections(collectionsData.collections || []);
-      } catch (error) {
-        console.error("Failed to load explore data", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadExploreData();
-  }, []);
 
   const filteredPosts = posts.filter((post) => {
     const matchesCollection =

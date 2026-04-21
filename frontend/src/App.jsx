@@ -3,7 +3,8 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import MiniPlayer from "./components/MiniPlayer";
 import PublicLayout from "./layouts/PublicLayout";
 import AdminLayout, { ProtectedRoute } from "./layouts/AdminLayout";
-import { apiBaseUrl, emptySiteSettings, getPreferredCollectionForPost, getThemeCssVariables, hasVideo, themeKey, tokenKey, userTokenKey } from "./lib/site";
+import { useSiteContent } from "./hooks/usePublicApi";
+import { apiBaseUrl, getPreferredCollectionForPost, getThemeCssVariables, hasVideo, themeKey, tokenKey, userTokenKey } from "./lib/site";
 import AdminAboutPage from "./pages/admin/AdminAboutPage";
 import AdminCommentsPage from "./pages/admin/AdminCommentsPage";
 import AdminCollectionsPage from "./pages/admin/AdminCollectionsPage";
@@ -41,7 +42,6 @@ function App() {
   const [userToken, setUserToken] = useState(() => localStorage.getItem(userTokenKey) || "");
   const [currentUser, setCurrentUser] = useState(null);
   const [isUserSessionReady, setIsUserSessionReady] = useState(false);
-  const [siteContent, setSiteContent] = useState(emptySiteSettings);
   const [playerQueue, setPlayerQueue] = useState([]);
   const [currentQueueIndex, setCurrentQueueIndex] = useState(-1);
   const [playerCollectionId, setPlayerCollectionId] = useState("");
@@ -53,6 +53,7 @@ function App() {
   const audioRef = useRef(null);
   const playerStateRef = useRef({ queue: [], index: -1 });
   const currentTrack = currentQueueIndex >= 0 ? playerQueue[currentQueueIndex] || null : null;
+  const { siteContent } = useSiteContent();
 
   useEffect(() => {
     playerStateRef.current = { queue: playerQueue, index: currentQueueIndex };
@@ -107,49 +108,6 @@ function App() {
   useEffect(() => {
     localStorage.setItem(themeKey, theme);
   }, [theme]);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadSiteContent() {
-      try {
-        const response = await fetch(`${apiBaseUrl}/site-content`);
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.message || "Failed to load site content.");
-        }
-
-        if (!cancelled) {
-          setSiteContent({
-            ...emptySiteSettings,
-            ...(data.siteContent || {}),
-            branding: {
-              ...emptySiteSettings.branding,
-              ...(data.siteContent?.branding || {})
-            },
-            home: {
-              ...emptySiteSettings.home,
-              ...(data.siteContent?.home || {})
-            },
-            collectionThemes: Array.isArray(data.siteContent?.collectionThemes)
-              ? data.siteContent.collectionThemes
-              : emptySiteSettings.collectionThemes
-          });
-        }
-      } catch {
-        if (!cancelled) {
-          setSiteContent(emptySiteSettings);
-        }
-      }
-    }
-
-    loadSiteContent();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   useEffect(() => {
     if (userToken) {

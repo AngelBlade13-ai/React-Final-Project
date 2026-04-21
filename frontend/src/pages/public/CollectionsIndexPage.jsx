@@ -1,28 +1,10 @@
-import { useEffect, useState } from "react";
 import { CollectionCard } from "../../components/cards";
+import { usePublicCollections } from "../../hooks/usePublicApi";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
-import { apiBaseUrl } from "../../lib/site";
 
 export default function CollectionsIndexPage() {
   useDocumentTitle("Collections");
-  const [collections, setCollections] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function loadCollections() {
-      try {
-        const response = await fetch(`${apiBaseUrl}/collections`);
-        const data = await response.json();
-        setCollections(data.collections || []);
-      } catch (error) {
-        console.error("Failed to load collections", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadCollections();
-  }, []);
+  const { collections, isLoading: loading } = usePublicCollections();
 
   return (
     <>

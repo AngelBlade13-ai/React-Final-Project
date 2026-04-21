@@ -4,9 +4,9 @@ import EldoriaSigil from "../../components/EldoriaSigil";
 import EldoriaWorldMap from "../../components/EldoriaWorldMap";
 import ReleaseMedia from "../../components/ReleaseMedia";
 import { FractureFragmentCard, TimelineCard } from "../../components/cards";
+import { usePublicCollection } from "../../hooks/usePublicApi";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import {
-  apiBaseUrl,
   FRACTUREVERSE_FEATURED_SLUG,
   FRACTUREVERSE_ORDER,
   FRACTUREVERSE_WORLD,
@@ -120,44 +120,26 @@ function buildFractureInteraction(activeSlug, featuredSlug, releases) {
 export default function CollectionDetailPage({ currentTrack, isPlayerActive, onPlayTrack, setActiveCollectionTheme, setForcedTheme, siteContent }) {
   const { slug } = useParams();
   const navigate = useNavigate();
-  const [collection, setCollection] = useState(null);
-  const [releases, setReleases] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const {
+    collection,
+    releases,
+    redirectSlug,
+    error: collectionError,
+    isLoading: loading
+  } = usePublicCollection(slug);
   const [activeFragmentSlug, setActiveFragmentSlug] = useState("");
   const [eldoriaMousePosition, setEldoriaMousePosition] = useState({ x: 50, y: 34 });
   const [eldoriaScrollDepth, setEldoriaScrollDepth] = useState(0);
   const [eldoriaTransitionSlug, setEldoriaTransitionSlug] = useState("");
   const [worldEntryMode, setWorldEntryMode] = useState("");
+  const error = collectionError?.message || "";
   useDocumentTitle(collection?.title || "Collection");
 
   useEffect(() => {
-    async function loadCollection() {
-      try {
-        setLoading(true);
-        setError("");
-        const response = await fetch(`${apiBaseUrl}/collections/${slug}`);
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.message || "Failed to load collection.");
-        }
-
-        if (data.redirectSlug && data.redirectSlug !== slug) {
-          navigate(`/collections/${data.redirectSlug}`, { replace: true });
-        }
-
-        setCollection(data.collection);
-        setReleases(data.releases || []);
-      } catch (apiError) {
-        setError(apiError.message);
-      } finally {
-        setLoading(false);
-      }
+    if (redirectSlug && redirectSlug !== slug) {
+      navigate(`/collections/${redirectSlug}`, { replace: true });
     }
-
-    loadCollection();
-  }, [navigate, slug]);
+  }, [navigate, redirectSlug, slug]);
 
   const publicReleases = getPublicCollectionPosts(releases);
   const themeConfig = getThemeConfig(collection?.theme, siteContent);

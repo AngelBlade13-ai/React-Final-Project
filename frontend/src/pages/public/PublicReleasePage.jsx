@@ -3,10 +3,10 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import CommentsSection from "../../components/CommentsSection";
 import EldoriaSigil from "../../components/EldoriaSigil";
 import ReleaseMedia from "../../components/ReleaseMedia";
+import { usePublicCollection, usePublicRelease } from "../../hooks/usePublicApi";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { formatPostDate } from "../../lib/formatters";
 import {
-  apiBaseUrl,
   getCanonicalCollectionSurfacePosts,
   getCollectionDerivedContent,
   getEldoriaMeta,
@@ -39,45 +39,27 @@ export default function PublicReleasePage({
 }) {
   const { slug } = useParams();
   const navigate = useNavigate();
-  const [post, setPost] = useState(null);
-  const [sequencePosts, setSequencePosts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const {
+    post,
+    redirectSlug,
+    error: postError,
+    isLoading: postLoading
+  } = usePublicRelease(slug);
   const [showLyrics, setShowLyrics] = useState(false);
   const [eldoriaMousePosition, setEldoriaMousePosition] = useState({ x: 52, y: 30 });
   const [eldoriaScrollDepth, setEldoriaScrollDepth] = useState(0);
   useDocumentTitle(post?.title || "Release");
 
-  useEffect(() => {
-    async function loadPost() {
-      try {
-        setLoading(true);
-        setError("");
-        const response = await fetch(`${apiBaseUrl}/posts/${slug}`);
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.message || "Failed to load release.");
-        }
-
-        if (data.redirectSlug && data.redirectSlug !== slug) {
-          navigate(`/release/${data.redirectSlug}`, { replace: true });
-        }
-
-        setPost(data.post);
-      } catch (apiError) {
-        setError(apiError.message);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadPost();
-  }, [navigate, slug]);
-
   const primaryTheme = getPrimaryThemeForPost(post);
   const labels = getThemeConfig(primaryTheme, siteContent);
   const primaryCollection = getPreferredCollectionForPost(post);
+  const {
+    releases: sequencePosts,
+    error: sequenceError,
+    isLoading: sequenceLoading
+  } = usePublicCollection(primaryCollection?.slug);
+  const loading = postLoading || (Boolean(primaryCollection?.slug) && sequenceLoading);
+  const error = postError?.message || sequenceError?.message || "";
   const visibleCollections = getVisibleCollectionsForPost(post);
   const isFractureverse = primaryTheme === "fractureverse";
   const isEldoria = primaryTheme === "eldoria";
@@ -169,28 +151,10 @@ export default function PublicReleasePage({
     : null;
 
   useEffect(() => {
-    async function loadSequence() {
-      if (!post || !primaryCollection?.slug) {
-        setSequencePosts([]);
-        return;
-      }
-
-      try {
-        const response = await fetch(`${apiBaseUrl}/collections/${primaryCollection.slug}`);
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.message || "Failed to load collection context.");
-        }
-
-        setSequencePosts(data.releases || []);
-      } catch {
-        setSequencePosts([]);
-      }
+    if (redirectSlug && redirectSlug !== slug) {
+      navigate(`/release/${redirectSlug}`, { replace: true });
     }
-
-    loadSequence();
-  }, [post, primaryCollection?.slug]);
+  }, [navigate, redirectSlug, slug]);
 
   useEffect(() => {
     setActiveCollectionTheme?.(hintedTheme || "");

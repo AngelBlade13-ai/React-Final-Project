@@ -1,27 +1,9 @@
-import { useEffect, useState } from "react";
+import { useAboutContent } from "../../hooks/usePublicApi";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
-import { apiBaseUrl, emptyAbout } from "../../lib/site";
 
 export default function AboutPage() {
   useDocumentTitle("About");
-  const [about, setAbout] = useState(emptyAbout);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function loadAbout() {
-      try {
-        const response = await fetch(`${apiBaseUrl}/about`);
-        const data = await response.json();
-        setAbout({ ...emptyAbout, ...(data.about || {}) });
-      } catch (error) {
-        console.error("Failed to load about content", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadAbout();
-  }, []);
+  const { about, isLoading: loading } = useAboutContent();
 
   return (
     <>

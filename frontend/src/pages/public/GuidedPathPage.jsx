@@ -1,46 +1,19 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { usePublicCollections, usePublicPosts } from "../../hooks/usePublicApi";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { formatPostDate } from "../../lib/formatters";
 import { resolveGuidedListeningPath } from "../../lib/listeningPaths";
-import { apiBaseUrl, getVisibleCollectionsForPost, hasVideo } from "../../lib/site";
+import { getVisibleCollectionsForPost, hasVideo } from "../../lib/site";
 
 export default function GuidedPathPage({ onPlayTrack, setActiveCollectionTheme, setForcedTheme }) {
   const { slug } = useParams();
   const navigate = useNavigate();
-  const [posts, setPosts] = useState([]);
-  const [collections, setCollections] = useState([]);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    async function loadPathData() {
-      try {
-        setLoading(true);
-        setError("");
-        const [postsResponse, collectionsResponse] = await Promise.all([
-          fetch(`${apiBaseUrl}/posts`),
-          fetch(`${apiBaseUrl}/collections?scope=all`)
-        ]);
-        const postsData = await postsResponse.json();
-        const collectionsData = await collectionsResponse.json();
-
-        if (!postsResponse.ok || !collectionsResponse.ok) {
-          throw new Error(postsData.message || collectionsData.message || "Failed to load guided path.");
-        }
-
-        setPosts(postsData.posts || []);
-        setCollections(collectionsData.collections || []);
-      } catch (apiError) {
-        setError(apiError.message);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadPathData();
-  }, []);
+  const { posts, error: postsError, isLoading: postsLoading } = usePublicPosts();
+  const { collections, error: collectionsError, isLoading: collectionsLoading } = usePublicCollections("all");
+  const loading = postsLoading || collectionsLoading;
+  const error = postsError?.message || collectionsError?.message || "";
 
   const path = resolveGuidedListeningPath(slug, posts, collections);
   const activePost = path?.posts?.[activeIndex] || null;

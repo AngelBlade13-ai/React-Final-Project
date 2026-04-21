@@ -1,43 +1,14 @@
-import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { usePublicCollections, usePublicPosts } from "../../hooks/usePublicApi";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
-import { apiBaseUrl } from "../../lib/site";
 import { resolveGuidedListeningPaths } from "../../lib/listeningPaths";
 
 export default function GuidedPathsIndexPage() {
   useDocumentTitle("Guided Paths");
-  const [posts, setPosts] = useState([]);
-  const [collections, setCollections] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    async function loadPathData() {
-      try {
-        setLoading(true);
-        setError("");
-        const [postsResponse, collectionsResponse] = await Promise.all([
-          fetch(`${apiBaseUrl}/posts`),
-          fetch(`${apiBaseUrl}/collections?scope=all`)
-        ]);
-        const postsData = await postsResponse.json();
-        const collectionsData = await collectionsResponse.json();
-
-        if (!postsResponse.ok || !collectionsResponse.ok) {
-          throw new Error(postsData.message || collectionsData.message || "Failed to load guided paths.");
-        }
-
-        setPosts(postsData.posts || []);
-        setCollections(collectionsData.collections || []);
-      } catch (apiError) {
-        setError(apiError.message);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadPathData();
-  }, []);
+  const { posts, error: postsError, isLoading: postsLoading } = usePublicPosts();
+  const { collections, error: collectionsError, isLoading: collectionsLoading } = usePublicCollections("all");
+  const loading = postsLoading || collectionsLoading;
+  const error = postsError?.message || collectionsError?.message || "";
 
   const paths = resolveGuidedListeningPaths(posts, collections);
 

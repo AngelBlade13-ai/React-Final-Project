@@ -1,12 +1,11 @@
-import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import WorldThresholdLink from "../../components/WorldThresholdLink";
 import ReleaseMedia from "../../components/ReleaseMedia";
 import { CollectionCard, ReleaseCard } from "../../components/cards";
+import { usePublicCollections, usePublicPosts } from "../../hooks/usePublicApi";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { formatPostDate } from "../../lib/formatters";
 import {
-  apiBaseUrl,
   emptySiteSettings,
   getHomepageCuratedPosts,
   getVisibleCollectionsForPost,
@@ -16,9 +15,9 @@ import {
 
 export default function PublicHome({ onPlayTrack, siteContent }) {
   useDocumentTitle("");
-  const [posts, setPosts] = useState([]);
-  const [collections, setCollections] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { posts, isLoading: postsLoading } = usePublicPosts();
+  const { collections, isLoading: collectionsLoading } = usePublicCollections();
+  const loading = postsLoading || collectionsLoading;
   const homeContent = {
     ...emptySiteSettings.home,
     ...(siteContent?.home || {})
@@ -34,27 +33,6 @@ export default function PublicHome({ onPlayTrack, siteContent }) {
   const featuredPostCollections = getVisibleCollectionsForPost(featuredPost);
   const fractureverseCollection = collections.find((collection) => collection.slug === "fractureverse") || null;
   const eldoriaCollection = collections.find((collection) => collection.slug === "eldoria") || null;
-
-  useEffect(() => {
-    async function loadHomeData() {
-      try {
-        const [postsResponse, collectionsResponse] = await Promise.all([
-          fetch(`${apiBaseUrl}/posts`),
-          fetch(`${apiBaseUrl}/collections`)
-        ]);
-        const postsData = await postsResponse.json();
-        const collectionsData = await collectionsResponse.json();
-        setPosts(postsData.posts || []);
-        setCollections(collectionsData.collections || []);
-      } catch (error) {
-        console.error("Failed to load homepage data", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadHomeData();
-  }, []);
 
   return (
     <>
