@@ -156,8 +156,8 @@ export default function PublicHome({ onPlayTrack, siteContent }) {
                 <Link className="card-link" to="/collections">
                   {homeContent.browseLinkLabel}
                 </Link>
-                <Link className="secondary-link home-doorway-secondary-link" to="/explore">
-                  {homeContent.exploreLinkLabel}
+                <Link className="secondary-link home-doorway-secondary-link" to="/paths">
+                  Guided Paths
                 </Link>
               </div>
             </article>

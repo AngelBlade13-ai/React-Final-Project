@@ -1433,6 +1433,98 @@ select:focus {
   gap: 0.55rem;
 }
 
+.guided-paths-hero {
+  background:
+    radial-gradient(circle at 84% 18%, color-mix(in srgb, var(--secondary) 16%, transparent), transparent 26%),
+    radial-gradient(circle at 16% 22%, color-mix(in srgb, var(--primary) 18%, transparent), transparent 28%),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 86%, var(--primary) 14%), color-mix(in srgb, var(--surface-alt) 88%, var(--surface) 12%));
+}
+
+.guided-path-grid,
+.guided-path-sequence {
+  display: grid;
+  gap: 1rem;
+}
+
+.guided-path-grid {
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.guided-path-card,
+.guided-path-focus-card {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.guided-path-card h2,
+.guided-path-focus-copy h3 {
+  margin: 0;
+  letter-spacing: -0.03em;
+}
+
+.guided-path-note {
+  margin: 0;
+  color: var(--text);
+  font-style: italic;
+}
+
+.guided-path-focus-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(220px, 0.75fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.guided-path-focus-copy,
+.guided-path-step-controls {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.guided-path-step-controls button {
+  width: 100%;
+}
+
+.guided-path-sequence {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.guided-path-step {
+  margin-top: 0;
+  display: grid;
+  gap: 0.35rem;
+  padding: 1rem 1.05rem;
+  border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--border) 74%, var(--primary) 26%);
+  background: color-mix(in srgb, var(--surface-alt) 74%, var(--surface) 26%);
+  color: var(--text);
+  text-align: left;
+}
+
+.guided-path-step strong,
+.guided-path-step p {
+  margin: 0;
+}
+
+.guided-path-step p {
+  color: var(--muted-text);
+}
+
+.guided-path-step.active {
+  border-color: color-mix(in srgb, var(--primary-strong) 46%, var(--border));
+  box-shadow:
+    0 18px 34px color-mix(in srgb, var(--primary) 10%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--primary-strong) 12%, transparent);
+}
+
+.guided-path-step-index {
+  color: var(--muted-text);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .home-transition-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3285,7 +3377,9 @@ select:focus {
   .editor-review-grid,
   .editor-status-stack,
   .journey-rail-grid,
-  .version-family-summary {
+  .version-family-summary,
+  .guided-path-focus-layout,
+  .guided-path-sequence {
     grid-template-columns: 1fr;
   }
 

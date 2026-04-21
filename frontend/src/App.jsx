@@ -16,6 +16,8 @@ import AccountPage from "./pages/public/AccountPage";
 import CollectionDetailPage from "./pages/public/CollectionDetailPage";
 import CollectionsIndexPage from "./pages/public/CollectionsIndexPage";
 import ExplorePage from "./pages/public/ExplorePage";
+import GuidedPathPage from "./pages/public/GuidedPathPage";
+import GuidedPathsIndexPage from "./pages/public/GuidedPathsIndexPage";
 import PublicHome from "./pages/public/PublicHome";
 import PublicReleasePage from "./pages/public/PublicReleasePage";
 
@@ -530,6 +532,17 @@ function App() {
           <Route
             path="/explore"
             element={<ExplorePage onPlayTrack={playTrack} />}
+          />
+          <Route path="/paths" element={<GuidedPathsIndexPage />} />
+          <Route
+            path="/paths/:slug"
+            element={
+              <GuidedPathPage
+                onPlayTrack={playTrack}
+                setActiveCollectionTheme={setActiveCollectionTheme}
+                setForcedTheme={setForcedTheme}
+              />
+            }
           />
           <Route
             path="/account"

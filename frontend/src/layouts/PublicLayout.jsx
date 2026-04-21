@@ -84,6 +84,9 @@ export default function PublicLayout({
             <NavLink className={({ isActive }) => `site-nav-link${isActive ? " active" : ""}`} to="/collections">
               Collections
             </NavLink>
+            <NavLink className={({ isActive }) => `site-nav-link${isActive ? " active" : ""}`} to="/paths">
+              Paths
+            </NavLink>
             <NavLink className={({ isActive }) => `site-nav-link${isActive ? " active" : ""}`} to="/explore">
               Explore
             </NavLink>
