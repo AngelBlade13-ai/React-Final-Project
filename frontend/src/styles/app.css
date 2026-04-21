@@ -1998,6 +1998,35 @@ select:focus {
   gap: 0.85rem;
 }
 
+.journey-rail-card {
+  display: grid;
+  gap: 1rem;
+}
+
+.journey-rail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.journey-summary-card {
+  display: grid;
+  gap: 0.55rem;
+  padding: 1rem 1.05rem;
+  border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--border) 74%, var(--primary) 26%);
+  background: color-mix(in srgb, var(--surface-alt) 72%, var(--surface) 28%);
+}
+
+.journey-summary-card h3,
+.journey-summary-card p {
+  margin: 0;
+}
+
+.journey-rail-link {
+  min-height: 100%;
+}
+
 .eldoria-song-cycle {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -3229,7 +3258,8 @@ select:focus {
 
   .post-editor-layout,
   .editor-review-grid,
-  .editor-status-stack {
+  .editor-status-stack,
+  .journey-rail-grid {
     grid-template-columns: 1fr;
   }
 

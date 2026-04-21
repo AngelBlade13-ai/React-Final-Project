@@ -222,6 +222,29 @@ export default function CollectionDetailPage({ currentTrack, isPlayerActive, onP
     interaction: fractureInteraction
   });
   const derivedContent = getCollectionDerivedContent(collection, displayTimelineReleases, siteContent);
+  const journeySequence = isFractureverse ? fractureverseTimelineReleases : displayTimelineReleases;
+  const collectionJourneyStops = [
+    journeySequence[0]
+      ? {
+          label: isFractureverse ? "Start With The First Fragment" : isEldoria ? "Begin With The Opening Ballad" : "Start Here",
+          post: journeySequence[0]
+        }
+      : null,
+    featuredRelease
+      ? {
+          label: isFractureverse ? "Primary Anchor" : isEldoria ? "Lead Ballad" : "Featured Entry",
+          post: featuredRelease
+        }
+      : null,
+    journeySequence.length > 1
+      ? {
+          label: isFractureverse ? "Latest Observed Fragment" : isEldoria ? "Most Recent Chapter" : "Continue Deeper",
+          post: journeySequence[journeySequence.length - 1]
+        }
+      : null
+  ]
+    .filter(Boolean)
+    .filter((entry, index, entries) => entries.findIndex((candidate) => candidate.post.slug === entry.post.slug) === index);
   const eldoriaFeaturedMeta = getEldoriaMeta(featuredRelease);
   const featuredCollections = getVisibleCollectionsForPost(featuredRelease);
   const originalPersonalSections = isOriginalPersonal ? groupOriginalPersonalPosts(displayTimelineReleases) : [];
@@ -676,6 +699,49 @@ export default function CollectionDetailPage({ currentTrack, isPlayerActive, onP
                   </div>
                 </div>
               </article>
+            </section>
+          ) : null}
+
+          {collectionJourneyStops.length ? (
+            <section className="intro-card homepage-panel journey-rail-card">
+              <div className="section-head">
+                <h2>{isFractureverse ? "Continue Through The Sequence" : isEldoria ? "Continue Through The Chronicle" : "Continue Through This Collection"}</h2>
+                <span>{journeySequence.length ? derivedContent.releaseSequenceLabel : derivedContent.collectionCountLabel}</span>
+              </div>
+              <div className="journey-rail-grid">
+                <article className="journey-summary-card">
+                  <p className="eyebrow">{isFractureverse ? "World Guide" : isEldoria ? "Chronicle Guide" : "Collection Guide"}</p>
+                  <h3>{collection.title}</h3>
+                  <p>
+                    {isFractureverse
+                      ? "Move from the earliest stable anchor through the primary fragment and out toward the most recent observed collapse."
+                      : isEldoria
+                        ? "Treat the world like a guided chronicle: begin at the opening, pass through the lead ballad, and continue toward the latest recorded chapter."
+                        : "Use this rail to start at the clearest entry point, then continue toward the collection's later releases without losing the thread."}
+                  </p>
+                </article>
+                {collectionJourneyStops.map((entry) => {
+                  const entryMeta = isFractureverse
+                    ? getFractureverseMeta(entry.post, journeySequence)
+                    : isEldoria
+                      ? getEldoriaMeta(entry.post)
+                      : null;
+
+                  return (
+                    <Link className="linked-echo-card journey-rail-link" key={`${entry.label}-${entry.post.slug}`} to={`/release/${entry.post.slug}`}>
+                      <span className="fracture-sequence-state">{entry.label}</span>
+                      <strong>{entry.post.title}</strong>
+                      <p>
+                        {isFractureverse
+                          ? [entryMeta?.fragmentId, entryMeta?.state, entryMeta?.signalType].filter(Boolean).join(" / ")
+                          : isEldoria
+                            ? entryMeta?.chapterLabel || entryMeta?.openingPassage || entry.post.excerpt
+                            : entry.post.excerpt}
+                      </p>
+                    </Link>
+                  );
+                })}
+              </div>
             </section>
           ) : null}
 

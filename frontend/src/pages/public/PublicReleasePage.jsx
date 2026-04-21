@@ -120,6 +120,19 @@ export default function PublicReleasePage({
     collection: primaryCollection,
     surface: "release"
   });
+  const journeyTitle = isFractureverse
+    ? "Continue Through The Sequence"
+    : isEldoria
+      ? "Continue Through The Chronicle"
+      : primaryCollection
+        ? "Continue Through This Collection"
+        : "Continue Listening";
+  const journeyProgressLabel =
+    currentFragmentIndex >= 0 && orderedSequence.length
+      ? `${currentFragmentIndex + 1} of ${orderedSequence.length}`
+      : primaryCollection
+        ? derivedContent.releaseSequenceLabel
+        : "Standalone release";
   const hintedTheme =
     (currentTrack?.slug === slug ? getPrimaryThemeForPost(currentTrack) : "") ||
     getReleaseThemeHint(slug) ||
@@ -404,6 +417,71 @@ export default function PublicReleasePage({
               : undefined
           }
         >
+          {primaryCollection ? (
+            <section className="intro-card homepage-panel journey-rail-card">
+              <div className="section-head">
+                <h2>{journeyTitle}</h2>
+                <span>{journeyProgressLabel}</span>
+              </div>
+              <div className="journey-rail-grid">
+                <article className="journey-summary-card">
+                  <p className="eyebrow">{isFractureverse ? "World Guide" : isEldoria ? "Chronicle Guide" : "Collection Guide"}</p>
+                  <h3>{primaryCollection.title}</h3>
+                  <p>
+                    {isFractureverse
+                      ? "Move through the fragments in observed order, then branch into linked echoes only after the main sequence has taken hold."
+                      : isEldoria
+                        ? "Treat this release as one chapter inside a larger telling. Follow the previous and next ballads to keep the world coherent."
+                        : "Use the collection as the main thread, not just the single page, so each release keeps its context."}
+                  </p>
+                  <Link className="card-link" to={`/collections/${primaryCollection.slug}`}>
+                    Return To {isFractureverse ? "Sequence" : isEldoria ? "Chronicle" : "Collection"}
+                  </Link>
+                </article>
+
+                {previousFragment ? (
+                  <Link className="linked-echo-card journey-rail-link" to={`/release/${previousFragment.post.slug}`}>
+                    <span className="fracture-sequence-state">{isFractureverse ? "Previous Fragment" : isEldoria ? "Previous Ballad" : "Previous Release"}</span>
+                    <strong>{previousFragment.post.title}</strong>
+                    <p>
+                      {isFractureverse
+                        ? [previousFragment.meta?.fragmentId, previousFragment.meta?.state, previousFragment.meta?.signalType].filter(Boolean).join(" / ")
+                        : isEldoria
+                          ? previousFragment.meta?.chapterLabel || "Earlier chapter"
+                          : previousFragment.post.excerpt}
+                    </p>
+                  </Link>
+                ) : (
+                  <div className="linked-echo-card journey-rail-link static-card">
+                    <span className="fracture-sequence-state">Start Of Path</span>
+                    <strong>This release currently opens the sequence.</strong>
+                    <p>{isFractureverse ? "There is no earlier observed fragment." : isEldoria ? "There is no earlier recorded ballad." : "There is no earlier collection release in the current surface order."}</p>
+                  </div>
+                )}
+
+                {nextFragment ? (
+                  <Link className="linked-echo-card journey-rail-link" to={`/release/${nextFragment.post.slug}`}>
+                    <span className="fracture-sequence-state">{isFractureverse ? "Next Fragment" : isEldoria ? "Next Ballad" : "Next Release"}</span>
+                    <strong>{nextFragment.post.title}</strong>
+                    <p>
+                      {isFractureverse
+                        ? [nextFragment.meta?.fragmentId, nextFragment.meta?.state, nextFragment.meta?.signalType].filter(Boolean).join(" / ")
+                        : isEldoria
+                          ? nextFragment.meta?.chapterLabel || "Later chapter"
+                          : nextFragment.post.excerpt}
+                    </p>
+                  </Link>
+                ) : (
+                  <div className="linked-echo-card journey-rail-link static-card">
+                    <span className="fracture-sequence-state">Current Edge</span>
+                    <strong>This release currently ends the path.</strong>
+                    <p>{isFractureverse ? "No later fragment has been mapped in the main sequence yet." : isEldoria ? "No later ballad has been recorded in this chronicle yet." : "No later collection release appears after this one in the current surface order."}</p>
+                  </div>
+                )}
+              </div>
+            </section>
+          ) : null}
+
           <section className={`intro-card homepage-panel release-copy-panel${isEldoria ? " eldoria-royal-record" : ""}`}>
             <p className="eyebrow">{isEldoria ? "Royal Record" : labels.releaseNote}</p>
             {isFractureverse && fractureMeta ? (
@@ -561,29 +639,6 @@ export default function PublicReleasePage({
                   <p className="lyrics-placeholder">No linked echoes have been mapped for this fragment yet.</p>
                 )}
               </section>
-
-              <section className="intro-card homepage-panel fracture-release-panel">
-                <div className="section-head">
-                  <h2>Fragment Navigation</h2>
-                  <span>Move through the archive</span>
-                </div>
-                <div className="release-nav-stack">
-                  {previousFragment ? (
-                    <Link className="linked-echo-card release-nav-card" to={`/release/${previousFragment.post.slug}`}>
-                      <span className="fracture-sequence-state">Previous Fragment</span>
-                      <strong>{previousFragment.meta.fragmentId} / {previousFragment.meta.title}</strong>
-                      <p>{previousFragment.meta.state} / {previousFragment.meta.signalType}</p>
-                    </Link>
-                  ) : null}
-                  {nextFragment ? (
-                    <Link className="linked-echo-card release-nav-card" to={`/release/${nextFragment.post.slug}`}>
-                      <span className="fracture-sequence-state">Next Fragment</span>
-                      <strong>{nextFragment.meta.fragmentId} / {nextFragment.meta.title}</strong>
-                      <p>{nextFragment.meta.state} / {nextFragment.meta.signalType}</p>
-                    </Link>
-                  ) : null}
-                </div>
-              </section>
             </section>
           ) : null}
 
@@ -607,36 +662,6 @@ export default function PublicReleasePage({
                 ) : (
                   <p className="lyrics-placeholder">No companion ballads have been gathered into this part of the chronicle yet.</p>
                 )}
-              </section>
-
-              <section className="intro-card homepage-panel eldoria-release-panel">
-                <div className="section-head">
-                  <h2>Chronicle Path</h2>
-                  <span>Move through the telling</span>
-                </div>
-                <div className="release-nav-stack">
-                  {previousFragment ? (
-                    <Link className="linked-echo-card release-nav-card eldoria-linked-card" to={`/release/${previousFragment.post.slug}`}>
-                      <span className="fracture-sequence-state">Previous Ballad</span>
-                      <strong>{previousFragment.post.title}</strong>
-                      <p>{previousFragment.meta?.chapterLabel || "Earlier chapter"} in this world.</p>
-                    </Link>
-                  ) : null}
-                  {nextFragment ? (
-                    <Link className="linked-echo-card release-nav-card eldoria-linked-card" to={`/release/${nextFragment.post.slug}`}>
-                      <span className="fracture-sequence-state">Next Ballad</span>
-                      <strong>{nextFragment.post.title}</strong>
-                      <p>{nextFragment.meta?.chapterLabel || "Later chapter"} awaits further along the chronicle.</p>
-                    </Link>
-                  ) : null}
-                  {!previousFragment && !nextFragment ? (
-                    <div className="linked-echo-card release-nav-card eldoria-linked-card static-card">
-                      <span className="fracture-sequence-state">Single Ballad Chronicle</span>
-                      <strong>This entry currently stands alone.</strong>
-                      <p>As more ballads are added, the path through Eldoria will begin to branch outward from here.</p>
-                    </div>
-                  ) : null}
-                </div>
               </section>
             </section>
           ) : null}
