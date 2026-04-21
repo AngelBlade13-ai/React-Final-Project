@@ -1301,6 +1301,138 @@ select:focus {
   margin-top: 0.75rem;
 }
 
+.home-hero-threshold-note {
+  display: grid;
+  gap: 0.4rem;
+  margin-top: 1rem;
+  padding: 0.95rem 1rem;
+  border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--border) 78%, var(--primary) 22%);
+  background: color-mix(in srgb, var(--surface) 76%, var(--surface-alt) 24%);
+}
+
+.home-hero-threshold-note p,
+.home-hero-threshold-note strong {
+  margin: 0;
+}
+
+.home-doorway-section {
+  display: grid;
+  gap: 1rem;
+}
+
+.home-doorway-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.home-doorway-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.home-doorway-card {
+  display: grid;
+  gap: 0.8rem;
+  min-height: 100%;
+  transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
+}
+
+.home-doorway-featured {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 82%, var(--primary) 18%), color-mix(in srgb, var(--surface-alt) 86%, var(--surface) 14%)),
+    var(--surface);
+}
+
+.home-doorway-fractureverse {
+  background:
+    linear-gradient(180deg, rgba(14, 11, 20, 0.18), rgba(21, 13, 18, 0.6)),
+    linear-gradient(140deg, color-mix(in srgb, var(--surface) 36%, #211321 64%), color-mix(in srgb, var(--surface-alt) 30%, #170e1f 70%));
+}
+
+.home-doorway-eldoria {
+  background:
+    linear-gradient(180deg, rgba(18, 21, 14, 0.12), rgba(27, 32, 23, 0.54)),
+    linear-gradient(140deg, color-mix(in srgb, var(--surface) 46%, #38412f 54%), color-mix(in srgb, var(--surface-alt) 34%, #253028 66%));
+}
+
+.home-doorway-utility {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 90%, var(--secondary) 10%), color-mix(in srgb, var(--surface-alt) 86%, var(--surface) 14%)),
+    var(--surface);
+}
+
+.home-doorway-link:hover .home-doorway-card,
+.home-doorway-link:focus-visible .home-doorway-card {
+  transform: translateY(-4px);
+  box-shadow:
+    0 22px 42px color-mix(in srgb, var(--primary) 12%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--text) 4%, transparent);
+  border-color: color-mix(in srgb, var(--border) 58%, var(--primary) 42%);
+}
+
+.home-doorway-card h3,
+.home-identity-panel h2 {
+  margin: 0;
+  font-size: clamp(1.45rem, 2.4vw, 2rem);
+  letter-spacing: -0.03em;
+}
+
+.home-doorway-support {
+  margin: 0;
+  color: var(--muted-text);
+}
+
+.home-doorway-footer,
+.home-doorway-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.home-doorway-footer {
+  margin-top: auto;
+}
+
+.home-doorway-stat {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border) 74%, var(--primary) 26%);
+  background: color-mix(in srgb, var(--surface) 76%, var(--surface-alt) 24%);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.home-doorway-cta {
+  font-weight: 700;
+}
+
+.home-doorway-secondary-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.78rem 1rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border) 76%, var(--primary) 24%);
+  background: color-mix(in srgb, var(--surface-alt) 78%, var(--surface) 22%);
+  color: var(--text);
+  text-decoration: none;
+  box-shadow: var(--shadow-md);
+  font-weight: 700;
+}
+
+.home-identity-panel {
+  display: grid;
+  gap: 0.55rem;
+}
+
 .home-transition-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2874,6 +3006,7 @@ select:focus {
   .homepage-hero-grid,
   .admin-form,
   .explore-toolbar,
+  .home-doorway-grid,
   .world-portal-grid,
   .result-card,
   .public-site-header,
