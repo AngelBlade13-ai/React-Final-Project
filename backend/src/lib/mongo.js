@@ -1,6 +1,7 @@
 const { Resolver } = require("node:dns").promises;
 const { MongoClient, ServerApiVersion } = require("mongodb");
 const config = require("../config");
+const { logWarn } = require("./logger");
 
 let clientPromise = null;
 let database = null;
@@ -21,19 +22,21 @@ function isSrvDnsFailure(error, uri) {
   return (
     typeof uri === "string" &&
     uri.startsWith("mongodb+srv://") &&
-    (error?.code === "ECONNREFUSED" || error?.code === "ENOTFOUND" || error?.code === "ETIMEOUT") &&
+    (error?.code === "ECONNREFUSED" ||
+      error?.code === "ENOTFOUND" ||
+      error?.code === "ETIMEOUT") &&
     error?.syscall === "querySrv"
   );
 }
 
 function buildTxtRecordValue(txtRecords = []) {
-  return txtRecords
-    .map((entry) => entry.join(""))
-    .find(Boolean) || "";
+  return txtRecords.map((entry) => entry.join("")).find(Boolean) || "";
 }
 
 function parseSrvAnswerData(answer = "") {
-  const match = String(answer).trim().match(/^\d+\s+\d+\s+(\d+)\s+(.+)$/);
+  const match = String(answer)
+    .trim()
+    .match(/^\d+\s+\d+\s+(\d+)\s+(.+)$/);
 
   if (!match) {
     return null;
@@ -64,16 +67,24 @@ async function resolveAtlasRecordsWithPublicDns(hostname) {
 async function resolveAtlasRecordsWithDoh(hostname) {
   const serviceName = `_mongodb._tcp.${hostname}`;
   const [srvResponse, txtResponse] = await Promise.all([
-    fetch(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(serviceName)}&type=SRV`, {
-      headers: { accept: "application/dns-json" }
-    }),
-    fetch(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(hostname)}&type=TXT`, {
-      headers: { accept: "application/dns-json" }
-    })
+    fetch(
+      `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(serviceName)}&type=SRV`,
+      {
+        headers: { accept: "application/dns-json" }
+      }
+    ),
+    fetch(
+      `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(hostname)}&type=TXT`,
+      {
+        headers: { accept: "application/dns-json" }
+      }
+    )
   ]);
 
   if (!srvResponse.ok) {
-    throw new Error(`Cloudflare DNS-over-HTTPS SRV lookup failed with status ${srvResponse.status}.`);
+    throw new Error(
+      `Cloudflare DNS-over-HTTPS SRV lookup failed with status ${srvResponse.status}.`
+    );
   }
 
   const srvJson = await srvResponse.json();
@@ -85,9 +96,14 @@ async function resolveAtlasRecordsWithDoh(hostname) {
     .map((answer) => parseSrvAnswerData(answer?.data))
     .filter(Boolean);
 
-  const txtValue = txtAnswers
-    .map((answer) => String(answer?.data || "").replace(/^"|"$/g, "").replace(/\\"/g, "\""))
-    .find(Boolean) || "";
+  const txtValue =
+    txtAnswers
+      .map((answer) =>
+        String(answer?.data || "")
+          .replace(/^"|"$/g, "")
+          .replace(/\\"/g, '"')
+      )
+      .find(Boolean) || "";
 
   return { srvRecords, txtValue };
 }
@@ -110,7 +126,9 @@ async function buildDirectMongoUriFromSrv(srvUri) {
   const { srvRecords, txtValue } = await resolveAtlasRecords(parsed.hostname);
 
   if (!srvRecords.length) {
-    throw new Error(`No MongoDB SRV records were returned for ${parsed.hostname}.`);
+    throw new Error(
+      `No MongoDB SRV records were returned for ${parsed.hostname}.`
+    );
   }
 
   const params = new URLSearchParams(parsed.searchParams);
@@ -129,16 +147,19 @@ async function buildDirectMongoUriFromSrv(srvUri) {
     params.set("tls", "true");
   }
 
-  const username = parsed.username ? encodeURIComponent(decodeURIComponent(parsed.username)) : "";
-  const password = parsed.password ? encodeURIComponent(decodeURIComponent(parsed.password)) : "";
+  const username = parsed.username
+    ? encodeURIComponent(decodeURIComponent(parsed.username))
+    : "";
+  const password = parsed.password
+    ? encodeURIComponent(decodeURIComponent(parsed.password))
+    : "";
   const auth =
-    username || password
-      ? `${username}${password ? `:${password}` : ""}@`
-      : "";
+    username || password ? `${username}${password ? `:${password}` : ""}@` : "";
   const hosts = srvRecords
     .map((record) => `${record.name}:${record.port}`)
     .join(",");
-  const pathname = parsed.pathname && parsed.pathname !== "/" ? parsed.pathname : "/";
+  const pathname =
+    parsed.pathname && parsed.pathname !== "/" ? parsed.pathname : "/";
   const query = params.toString();
 
   return `mongodb://${auth}${hosts}${pathname}${query ? `?${query}` : ""}`;
@@ -152,8 +173,13 @@ async function connectWithFallback(uri) {
       throw error;
     }
 
-    const fallbackUri = config.mongoDirectUri || (await buildDirectMongoUriFromSrv(uri));
-    console.warn("MongoDB SRV lookup failed. Retrying with a direct connection URI for restricted DNS environments.");
+    const fallbackUri =
+      config.mongoDirectUri || (await buildDirectMongoUriFromSrv(uri));
+    logWarn("mongo.srv_lookup_failed", {
+      fallbackStrategy: config.mongoDirectUri
+        ? "direct_uri"
+        : "resolved_srv_hosts"
+    });
     return createClient(fallbackUri).connect();
   }
 }
@@ -175,10 +201,16 @@ async function connectToDatabase() {
 
 function getDb() {
   if (!database) {
-    throw new Error("MongoDB has not been initialized. Call connectToDatabase() first.");
+    throw new Error(
+      "MongoDB has not been initialized. Call connectToDatabase() first."
+    );
   }
 
   return database;
+}
+
+function isDatabaseReady() {
+  return Boolean(database);
 }
 
 async function closeDatabase() {
@@ -197,7 +229,9 @@ function isTransactionUnsupportedError(error) {
   return (
     error?.code === 20 ||
     message.includes("Standalone servers do not support transactions") ||
-    message.includes("Transaction numbers are only allowed on a replica set member or mongos") ||
+    message.includes(
+      "Transaction numbers are only allowed on a replica set member or mongos"
+    ) ||
     message.includes("Transaction support is not available") ||
     message.includes("Current topology does not support sessions") ||
     message.includes("Current topology does not support retryable writes")
@@ -206,20 +240,19 @@ function isTransactionUnsupportedError(error) {
 
 async function runWithTransaction(work) {
   if (!activeClient) {
-    throw new Error("MongoDB has not been initialized. Call connectToDatabase() first.");
+    throw new Error(
+      "MongoDB has not been initialized. Call connectToDatabase() first."
+    );
   }
 
   let session = null;
   try {
     session = activeClient.startSession();
 
-    return await session.withTransaction(
-      async () => work(session),
-      {
-        readConcern: { level: "snapshot" },
-        writeConcern: { w: "majority" }
-      }
-    );
+    return await session.withTransaction(async () => work(session), {
+      readConcern: { level: "snapshot" },
+      writeConcern: { w: "majority" }
+    });
   } catch (error) {
     if (!isTransactionUnsupportedError(error)) {
       throw error;
@@ -232,7 +265,9 @@ async function runWithTransaction(work) {
 
   if (!warnedAboutTransactionFallback) {
     warnedAboutTransactionFallback = true;
-    console.warn("MongoDB transactions are unavailable. Falling back to ordered non-transactional writes.");
+    logWarn("mongo.transactions_unavailable", {
+      fallback: "ordered_non_transactional_writes"
+    });
   }
 
   return work(null);
@@ -242,5 +277,6 @@ module.exports = {
   closeDatabase,
   connectToDatabase,
   getDb,
+  isDatabaseReady,
   runWithTransaction
 };

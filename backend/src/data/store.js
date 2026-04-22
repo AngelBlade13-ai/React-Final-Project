@@ -18,7 +18,8 @@ const seedCollections = [
     id: crypto.randomUUID(),
     slug: "late-night-drafts",
     title: "Late Night Drafts",
-    description: "Songs that feel like notebook pages, unfinished thoughts, and after-hours sketches.",
+    description:
+      "Songs that feel like notebook pages, unfinished thoughts, and after-hours sketches.",
     featuredReleaseSlug: "second-window",
     theme: ""
   },
@@ -26,7 +27,8 @@ const seedCollections = [
     id: crypto.randomUUID(),
     slug: "cinematic-pop",
     title: "Cinematic Pop",
-    description: "Big hooks, widescreen emotion, and music built to feel like motion.",
+    description:
+      "Big hooks, widescreen emotion, and music built to feel like motion.",
     featuredReleaseSlug: "beautiful-and-real-sunshine",
     theme: ""
   }
@@ -38,7 +40,8 @@ const seedPosts = [
     title: "Beautiful & Real Sunshine",
     slug: "beautiful-and-real-sunshine",
     videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4",
-    excerpt: "A first release post with the song video, a short note, and room for the lyrics that shaped it.",
+    excerpt:
+      "A first release post with the song video, a short note, and room for the lyrics that shaped it.",
     content:
       "This is the release format going forward: one entry per song, a short written note, and the video at the center of the post.",
     lyrics: "You can add full lyrics here whenever a song needs them.",
@@ -51,7 +54,8 @@ const seedPosts = [
     title: "Second Window",
     slug: "second-window",
     videoUrl: "https://www.w3schools.com/html/movie.mp4",
-    excerpt: "A quieter draft kept in the dashboard until the post is ready to go live.",
+    excerpt:
+      "A quieter draft kept in the dashboard until the post is ready to go live.",
     content:
       "Draft posts stay simple too. Add the video, write the release note, optionally paste lyrics, and publish when it feels finished.",
     lyrics: "",
@@ -68,28 +72,33 @@ const seedSiteContent = {
   },
   home: {
     heroEyebrow: "Suno Diary",
-    heroTitle: "A soft archive for releases, collections, and the stories that let each song keep breathing.",
+    heroTitle:
+      "A soft archive for releases, collections, and the stories that let each song keep breathing.",
     heroText:
       "Browse curated groupings, move through release notes with more context, and treat the site less like a feed and more like a small world of connected songs.",
     featuredReleaseSlug: "",
     featuredCtaLabel: "Play Featured Release",
     jumpCtaLabel: "Jump to Latest Releases",
     noteEyebrow: "What Changed",
-    noteTitle: "Discovery is part of the identity now, not just a homepage feed.",
+    noteTitle:
+      "Discovery is part of the identity now, not just a homepage feed.",
     noteText:
       "Collections organize releases into verses, moods, and projects. Explore lets you search by title and written notes. About frames the artist, the site, and the reason this archive exists.",
     browseEyebrow: "Browse",
-    browseTitle: "Move through the archive by collection instead of only by chronology.",
+    browseTitle:
+      "Move through the archive by collection instead of only by chronology.",
     browseText:
       "Collections turn the catalog into verses, projects, moods, and small emotional shelves rather than one uninterrupted stream.",
     browseLinkLabel: "See the collection shelves",
     exploreEyebrow: "Find",
-    exploreTitle: "Search inside release notes, titles, and lyrics when you know the feeling but not the page.",
+    exploreTitle:
+      "Search inside release notes, titles, and lyrics when you know the feeling but not the page.",
     exploreText:
       "The explore view is built for rediscovery: search by phrase, narrow by collection, and jump straight into the release that fits.",
     exploreLinkLabel: "Open explore",
     identityEyebrow: "Site Identity",
-    identityTitle: "A personal home for releases, track stories, and the discovery paths between them",
+    identityTitle:
+      "A personal home for releases, track stories, and the discovery paths between them",
     identityText:
       "Each page still keeps the music close, but now the archive has a stronger structure: releases can live in more than one collection, search can surface them by title or text, and the site has space to explain the artist voice behind the catalog.",
     identityLine: "A collection of songs, stories, and moments in motion."
@@ -272,15 +281,18 @@ const seedSiteContent = {
   ],
   about: {
     heroEyebrow: "About",
-    heroTitle: "A small artist archive for releases that want more room than a single post can hold.",
+    heroTitle:
+      "A small artist archive for releases that want more room than a single post can hold.",
     heroText:
       "The site is part release feed, part notebook, part identity statement: a place where the songs, their notes, and the worlds around them can stay connected.",
     artistEyebrow: "The Artist",
-    artistTitle: "Emotion first, then atmosphere, then the details that make a release feel lived in.",
+    artistTitle:
+      "Emotion first, then atmosphere, then the details that make a release feel lived in.",
     artistText:
       "This archive frames the artist as someone building songs through feeling, imagery, and narrative context. The music leans toward cinematic emotion, reflective notes, and releases that carry a clear inner voice.",
     siteEyebrow: "The Site",
-    siteTitle: "Built for listening, reading, and finding connections between songs.",
+    siteTitle:
+      "Built for listening, reading, and finding connections between songs.",
     siteText:
       "Release pages keep the music close. Collections create repeatable paths through the catalog. Explore turns the written notes into something searchable. Together they make the archive feel intentional instead of accidental.",
     quoteEyebrow: "Why It Exists",
@@ -295,7 +307,13 @@ const seedComments = [];
 
 function normalizeSlugHistory(slugHistory, currentSlug) {
   return Array.isArray(slugHistory)
-    ? [...new Set(slugHistory.map((slug) => String(slug || "").trim()).filter((slug) => slug && slug !== currentSlug))]
+    ? [
+        ...new Set(
+          slugHistory
+            .map((slug) => String(slug || "").trim())
+            .filter((slug) => slug && slug !== currentSlug)
+        )
+      ]
     : [];
 }
 
@@ -308,7 +326,11 @@ function normalizeCollection(collection) {
   const slug = String(collection.slug || fallbackSlug).trim();
 
   return {
-    id: String(collection.id || `col-${collection.slug || fallbackSlug}` || crypto.randomUUID()).trim(),
+    id: String(
+      collection.id ||
+        `col-${collection.slug || fallbackSlug}` ||
+        crypto.randomUUID()
+    ).trim(),
     slug,
     slugHistory: normalizeSlugHistory(collection.slugHistory, slug),
     title: String(collection.title || "").trim(),
@@ -327,7 +349,11 @@ function extractMarkdownField(content, label) {
 }
 
 function getUniqueValue(candidates, usedValues, fallbackBase) {
-  const normalizedCandidates = [...new Set(candidates.map((value) => String(value || "").trim()).filter(Boolean))];
+  const normalizedCandidates = [
+    ...new Set(
+      candidates.map((value) => String(value || "").trim()).filter(Boolean)
+    )
+  ];
 
   for (const candidate of normalizedCandidates) {
     if (!usedValues.has(candidate)) {
@@ -336,7 +362,10 @@ function getUniqueValue(candidates, usedValues, fallbackBase) {
     }
   }
 
-  const baseValue = normalizedCandidates[0] || String(fallbackBase || "").trim() || crypto.randomUUID();
+  const baseValue =
+    normalizedCandidates[0] ||
+    String(fallbackBase || "").trim() ||
+    crypto.randomUUID();
 
   if (!usedValues.has(baseValue)) {
     usedValues.add(baseValue);
@@ -400,15 +429,19 @@ function normalizeImportedPosts(posts = []) {
 }
 
 function normalizeImportedCollections(collections = []) {
-  return collections.map((collection) => {
-    const slug = String(collection?.slug || slugify(collection?.title || "")).trim();
+  return collections
+    .map((collection) => {
+      const slug = String(
+        collection?.slug || slugify(collection?.title || "")
+      ).trim();
 
-    return normalizeCollection({
-      ...collection,
-      id: String(collection?.id || `col-${slug}`).trim(),
-      slug
-    });
-  }).filter(Boolean);
+      return normalizeCollection({
+        ...collection,
+        id: String(collection?.id || `col-${slug}`).trim(),
+        slug
+      });
+    })
+    .filter(Boolean);
 }
 
 function normalizeArchiveMeta(archiveMeta) {
@@ -424,8 +457,14 @@ function normalizeArchiveMeta(archiveMeta) {
     description: String(archiveMeta.description || "").trim(),
     systemNote: String(archiveMeta.systemNote || "").trim(),
     linkedSlugs: Array.isArray(archiveMeta.linkedSlugs)
-      ? [...new Set(archiveMeta.linkedSlugs.map((slug) => String(slug).trim()).filter(Boolean))]
-      : [],
+      ? [
+          ...new Set(
+            archiveMeta.linkedSlugs
+              .map((slug) => String(slug).trim())
+              .filter(Boolean)
+          )
+        ]
+      : []
   };
 
   const eldoriaMeta = {
@@ -436,7 +475,9 @@ function normalizeArchiveMeta(archiveMeta) {
     coreSituation: String(archiveMeta.coreSituation || "").trim(),
     coreTension: String(archiveMeta.coreTension || "").trim(),
     chronicleObservation: String(archiveMeta.chronicleObservation || "").trim(),
-    chronicleContradiction: String(archiveMeta.chronicleContradiction || "").trim(),
+    chronicleContradiction: String(
+      archiveMeta.chronicleContradiction || ""
+    ).trim(),
     chronicleConclusion: String(archiveMeta.chronicleConclusion || "").trim(),
     emotionalState: String(archiveMeta.emotionalState || "").trim(),
     coreConflict: String(archiveMeta.coreConflict || "").trim(),
@@ -494,7 +535,9 @@ function normalizePost(post) {
 
   return {
     ...post,
-    id: String(post.id || post.sourceId || fallbackTitleSlug || crypto.randomUUID()).trim(),
+    id: String(
+      post.id || post.sourceId || fallbackTitleSlug || crypto.randomUUID()
+    ).trim(),
     title: String(post.title || "").trim(),
     slug,
     slugHistory: normalizeSlugHistory(post.slugHistory, slug),
@@ -509,21 +552,40 @@ function normalizePost(post) {
     sourceTag: String(post.sourceTag || "").trim(),
     worldLayer: String(post.worldLayer || "").trim(),
     themeTags: Array.isArray(post.themeTags)
-      ? [...new Set(post.themeTags.map((tag) => String(tag).trim()).filter(Boolean))]
+      ? [
+          ...new Set(
+            post.themeTags.map((tag) => String(tag).trim()).filter(Boolean)
+          )
+        ]
       : [],
     versionFamily: String(post.versionFamily || "").trim(),
     isPrimaryVersion: Boolean(post.isPrimaryVersion),
     isArchive: Boolean(post.isArchive),
     isHomepageEligible: Boolean(post.isHomepageEligible),
-    isPubliclyVisible: typeof post.isPubliclyVisible === "boolean" ? post.isPubliclyVisible : true,
+    isPubliclyVisible:
+      typeof post.isPubliclyVisible === "boolean"
+        ? post.isPubliclyVisible
+        : true,
     supersededBySlug: String(post.supersededBySlug || "").trim(),
     supersededReason: String(post.supersededReason || "").trim(),
     supersededAt: String(post.supersededAt || "").trim(),
-    releaseStatus: VALID_RELEASE_STATUSES.has(String(post.releaseStatus || "").trim().toLowerCase())
-      ? String(post.releaseStatus || "").trim().toLowerCase()
+    releaseStatus: VALID_RELEASE_STATUSES.has(
+      String(post.releaseStatus || "")
+        .trim()
+        .toLowerCase()
+    )
+      ? String(post.releaseStatus || "")
+          .trim()
+          .toLowerCase()
       : "canon",
     collectionSlugs: Array.isArray(post.collectionSlugs)
-      ? [...new Set(post.collectionSlugs.map((slug) => String(slug).trim()).filter(Boolean))]
+      ? [
+          ...new Set(
+            post.collectionSlugs
+              .map((slug) => String(slug).trim())
+              .filter(Boolean)
+          )
+        ]
       : []
   };
 }
@@ -539,47 +601,63 @@ function normalizeSiteContent(siteContent = {}) {
       ...(siteContent.home || {})
     },
     collectionThemes: Array.isArray(siteContent.collectionThemes)
-      ? siteContent.collectionThemes.map((theme) => ({
-          ...theme,
-          key: String(theme?.key || "").trim(),
-          label: String(theme?.label || "").trim(),
-          kind: String(theme?.kind || "standard").trim() || "standard",
-          worldEyebrow: String(theme?.worldEyebrow || "").trim(),
-          featuredLabel: String(theme?.featuredLabel || "").trim(),
-          featuredAction: String(theme?.featuredAction || "").trim(),
-          listLabel: String(theme?.listLabel || "").trim(),
-          worldNoteTitle: String(theme?.worldNoteTitle || "").trim(),
-          worldNoteText: String(theme?.worldNoteText || "").trim(),
-          itemName: String(theme?.itemName || "").trim(),
-          itemPlural: String(theme?.itemPlural || "").trim(),
-          itemAction: String(theme?.itemAction || "").trim(),
-          playerLabel: String(theme?.playerLabel || "").trim(),
-          playerUpNextLabel: String(theme?.playerUpNextLabel || "").trim(),
-          palette: {
-            light: {
-              background: String(theme?.palette?.light?.background || "").trim(),
-              surface: String(theme?.palette?.light?.surface || "").trim(),
-              surfaceAlt: String(theme?.palette?.light?.surfaceAlt || "").trim(),
-              text: String(theme?.palette?.light?.text || "").trim(),
-              mutedText: String(theme?.palette?.light?.mutedText || "").trim(),
-              border: String(theme?.palette?.light?.border || "").trim(),
-              primary: String(theme?.palette?.light?.primary || "").trim(),
-              primaryStrong: String(theme?.palette?.light?.primaryStrong || "").trim(),
-              secondary: String(theme?.palette?.light?.secondary || "").trim()
-            },
-            dark: {
-              background: String(theme?.palette?.dark?.background || "").trim(),
-              surface: String(theme?.palette?.dark?.surface || "").trim(),
-              surfaceAlt: String(theme?.palette?.dark?.surfaceAlt || "").trim(),
-              text: String(theme?.palette?.dark?.text || "").trim(),
-              mutedText: String(theme?.palette?.dark?.mutedText || "").trim(),
-              border: String(theme?.palette?.dark?.border || "").trim(),
-              primary: String(theme?.palette?.dark?.primary || "").trim(),
-              primaryStrong: String(theme?.palette?.dark?.primaryStrong || "").trim(),
-              secondary: String(theme?.palette?.dark?.secondary || "").trim()
+      ? siteContent.collectionThemes
+          .map((theme) => ({
+            ...theme,
+            key: String(theme?.key || "").trim(),
+            label: String(theme?.label || "").trim(),
+            kind: String(theme?.kind || "standard").trim() || "standard",
+            worldEyebrow: String(theme?.worldEyebrow || "").trim(),
+            featuredLabel: String(theme?.featuredLabel || "").trim(),
+            featuredAction: String(theme?.featuredAction || "").trim(),
+            listLabel: String(theme?.listLabel || "").trim(),
+            worldNoteTitle: String(theme?.worldNoteTitle || "").trim(),
+            worldNoteText: String(theme?.worldNoteText || "").trim(),
+            itemName: String(theme?.itemName || "").trim(),
+            itemPlural: String(theme?.itemPlural || "").trim(),
+            itemAction: String(theme?.itemAction || "").trim(),
+            playerLabel: String(theme?.playerLabel || "").trim(),
+            playerUpNextLabel: String(theme?.playerUpNextLabel || "").trim(),
+            palette: {
+              light: {
+                background: String(
+                  theme?.palette?.light?.background || ""
+                ).trim(),
+                surface: String(theme?.palette?.light?.surface || "").trim(),
+                surfaceAlt: String(
+                  theme?.palette?.light?.surfaceAlt || ""
+                ).trim(),
+                text: String(theme?.palette?.light?.text || "").trim(),
+                mutedText: String(
+                  theme?.palette?.light?.mutedText || ""
+                ).trim(),
+                border: String(theme?.palette?.light?.border || "").trim(),
+                primary: String(theme?.palette?.light?.primary || "").trim(),
+                primaryStrong: String(
+                  theme?.palette?.light?.primaryStrong || ""
+                ).trim(),
+                secondary: String(theme?.palette?.light?.secondary || "").trim()
+              },
+              dark: {
+                background: String(
+                  theme?.palette?.dark?.background || ""
+                ).trim(),
+                surface: String(theme?.palette?.dark?.surface || "").trim(),
+                surfaceAlt: String(
+                  theme?.palette?.dark?.surfaceAlt || ""
+                ).trim(),
+                text: String(theme?.palette?.dark?.text || "").trim(),
+                mutedText: String(theme?.palette?.dark?.mutedText || "").trim(),
+                border: String(theme?.palette?.dark?.border || "").trim(),
+                primary: String(theme?.palette?.dark?.primary || "").trim(),
+                primaryStrong: String(
+                  theme?.palette?.dark?.primaryStrong || ""
+                ).trim(),
+                secondary: String(theme?.palette?.dark?.secondary || "").trim()
+              }
             }
-          }
-        })).filter((theme) => theme.key)
+          }))
+          .filter((theme) => theme.key)
       : seedSiteContent.collectionThemes.map((theme) => ({ ...theme })),
     about: {
       ...seedSiteContent.about,
@@ -595,7 +673,9 @@ function normalizeUser(user) {
 
   return {
     id: user.id || crypto.randomUUID(),
-    email: String(user.email || "").trim().toLowerCase(),
+    email: String(user.email || "")
+      .trim()
+      .toLowerCase(),
     displayName: String(user.displayName || "").trim(),
     passwordHash: String(user.passwordHash || "").trim(),
     role: String(user.role || "user").trim() || "user",
@@ -617,7 +697,39 @@ function normalizeComment(comment) {
     body: String(comment.body || "").trim(),
     status: String(comment.status || "visible").trim() || "visible",
     createdAt: comment.createdAt || new Date().toISOString(),
-    updatedAt: comment.updatedAt || comment.createdAt || new Date().toISOString()
+    updatedAt:
+      comment.updatedAt || comment.createdAt || new Date().toISOString()
+  };
+}
+
+function normalizeAdminAuditLog(log) {
+  if (!log) {
+    return null;
+  }
+
+  const details = (() => {
+    try {
+      return JSON.parse(JSON.stringify(log.details || {}));
+    } catch {
+      return {};
+    }
+  })();
+
+  return {
+    id: String(log.id || crypto.randomUUID()).trim(),
+    actorEmail: String(log.actorEmail || "").trim(),
+    actorRole: String(log.actorRole || "admin").trim() || "admin",
+    action: String(log.action || "").trim(),
+    entityType: String(log.entityType || "").trim(),
+    entityId: String(log.entityId || "").trim(),
+    entityLabel: String(log.entityLabel || "").trim(),
+    requestId: String(log.requestId || "").trim(),
+    method: String(log.method || "")
+      .trim()
+      .toUpperCase(),
+    path: String(log.path || "").trim(),
+    details,
+    createdAt: log.createdAt || new Date().toISOString()
   };
 }
 
@@ -636,12 +748,20 @@ async function readLegacySeed() {
     const data = JSON.parse(file);
 
     return {
-      posts: Array.isArray(data.posts) ? normalizeImportedPosts(data.posts).map(normalizePost).filter(Boolean) : seedPosts.map(normalizePost),
+      posts: Array.isArray(data.posts)
+        ? normalizeImportedPosts(data.posts).map(normalizePost).filter(Boolean)
+        : seedPosts.map(normalizePost),
       collections: Array.isArray(data.collections)
-        ? normalizeImportedCollections(data.collections).map(normalizeCollection).filter(Boolean)
+        ? normalizeImportedCollections(data.collections)
+            .map(normalizeCollection)
+            .filter(Boolean)
         : seedCollections.map(normalizeCollection),
-      users: Array.isArray(data.users) ? data.users.map(normalizeUser).filter(Boolean) : seedUsers.map(normalizeUser),
-      comments: Array.isArray(data.comments) ? data.comments.map(normalizeComment).filter(Boolean) : seedComments.map(normalizeComment),
+      users: Array.isArray(data.users)
+        ? data.users.map(normalizeUser).filter(Boolean)
+        : seedUsers.map(normalizeUser),
+      comments: Array.isArray(data.comments)
+        ? data.comments.map(normalizeComment).filter(Boolean)
+        : seedComments.map(normalizeComment),
       siteContent: normalizeSiteContent(data.siteContent)
     };
   } catch {
@@ -660,6 +780,7 @@ async function ensureStore() {
   const postsCollection = db.collection("posts");
   const collectionsCollection = db.collection("collections");
   const siteContentCollection = db.collection("siteContent");
+  const adminAuditCollection = db.collection("adminAuditLogs");
 
   await Promise.all([
     postsCollection.createIndex({ id: 1 }, { unique: true }),
@@ -669,20 +790,41 @@ async function ensureStore() {
     db.collection("users").createIndex({ id: 1 }, { unique: true }),
     db.collection("users").createIndex({ email: 1 }, { unique: true }),
     db.collection("comments").createIndex({ id: 1 }, { unique: true }),
-    db.collection("comments").createIndex({ postSlug: 1, status: 1, createdAt: -1 }),
+    db
+      .collection("comments")
+      .createIndex({ postSlug: 1, status: 1, createdAt: -1 }),
     db.collection("comments").createIndex({ authorId: 1, createdAt: -1 }),
-    siteContentCollection.createIndex({ key: 1 }, { unique: true })
+    siteContentCollection.createIndex({ key: 1 }, { unique: true }),
+    adminAuditCollection.createIndex({ id: 1 }, { unique: true }),
+    adminAuditCollection.createIndex({ createdAt: -1, _id: -1 }),
+    adminAuditCollection.createIndex({ actorEmail: 1, createdAt: -1 }),
+    adminAuditCollection.createIndex({ action: 1, createdAt: -1 })
   ]);
 
-  const [postCount, collectionCount, userCount, commentCount, siteContentCount] = await Promise.all([
+  const [
+    postCount,
+    collectionCount,
+    userCount,
+    commentCount,
+    siteContentCount,
+    auditCount
+  ] = await Promise.all([
     postsCollection.countDocuments(),
     collectionsCollection.countDocuments(),
     db.collection("users").countDocuments(),
     db.collection("comments").countDocuments(),
-    siteContentCollection.countDocuments()
+    siteContentCollection.countDocuments(),
+    adminAuditCollection.countDocuments()
   ]);
 
-  if (postCount || collectionCount || userCount || commentCount || siteContentCount) {
+  if (
+    postCount ||
+    collectionCount ||
+    userCount ||
+    commentCount ||
+    siteContentCount ||
+    auditCount
+  ) {
     return;
   }
 
@@ -714,17 +856,33 @@ async function readStore() {
   await ensureStore();
   const db = getDb();
 
-  const [posts, collections, users, comments, siteContentDoc] = await Promise.all([
-    db.collection("posts").find({}).sort({ createdAt: -1, _id: -1 }).toArray(),
-    db.collection("collections").find({}).sort({ title: 1, _id: 1 }).toArray(),
-    db.collection("users").find({}).sort({ createdAt: 1, _id: 1 }).toArray(),
-    db.collection("comments").find({}).sort({ createdAt: -1, _id: -1 }).toArray(),
-    db.collection("siteContent").findOne({ key: "siteContent" })
-  ]);
+  const [posts, collections, users, comments, siteContentDoc] =
+    await Promise.all([
+      db
+        .collection("posts")
+        .find({})
+        .sort({ createdAt: -1, _id: -1 })
+        .toArray(),
+      db
+        .collection("collections")
+        .find({})
+        .sort({ title: 1, _id: 1 })
+        .toArray(),
+      db.collection("users").find({}).sort({ createdAt: 1, _id: 1 }).toArray(),
+      db
+        .collection("comments")
+        .find({})
+        .sort({ createdAt: -1, _id: -1 })
+        .toArray(),
+      db.collection("siteContent").findOne({ key: "siteContent" })
+    ]);
 
   return {
     posts: posts.map(sanitizeDoc).map(normalizePost).filter(Boolean),
-    collections: collections.map(sanitizeDoc).map(normalizeCollection).filter(Boolean),
+    collections: collections
+      .map(sanitizeDoc)
+      .map(normalizeCollection)
+      .filter(Boolean),
     users: users.map(sanitizeDoc).map(normalizeUser).filter(Boolean),
     comments: comments.map(sanitizeDoc).map(normalizeComment).filter(Boolean),
     siteContent: normalizeSiteContent(sanitizeDoc(siteContentDoc))
@@ -736,7 +894,9 @@ function getSessionOptions(options = {}) {
 }
 
 function normalizeDocuments(documents, normalizer) {
-  return Array.isArray(documents) ? documents.map(normalizer).filter(Boolean) : [];
+  return Array.isArray(documents)
+    ? documents.map(normalizer).filter(Boolean)
+    : [];
 }
 
 async function upsertDocumentsById(collectionName, documents, options = {}) {
@@ -786,43 +946,57 @@ async function syncDocumentsById(collectionName, documents, options = {}) {
   return upsertDocumentsById(collectionName, documents, options);
 }
 
-async function insertNormalizedDocument(collectionName, document, options = {}) {
+async function insertNormalizedDocument(
+  collectionName,
+  document,
+  options = {}
+) {
   if (!document) {
     return null;
   }
 
   const db = getDb();
-  await db.collection(collectionName).insertOne(document, getSessionOptions(options));
+  await db
+    .collection(collectionName)
+    .insertOne(document, getSessionOptions(options));
   return document;
 }
 
-async function replaceNormalizedDocumentById(collectionName, document, options = {}) {
+async function replaceNormalizedDocumentById(
+  collectionName,
+  document,
+  options = {}
+) {
   if (!document) {
     return null;
   }
 
   const db = getDb();
-  await db.collection(collectionName).replaceOne(
-    { id: document.id },
-    document,
-    getSessionOptions(options)
-  );
+  await db
+    .collection(collectionName)
+    .replaceOne({ id: document.id }, document, getSessionOptions(options));
   return document;
 }
 
 async function deleteDocuments(collectionName, filter, options = {}) {
   const db = getDb();
-  return db.collection(collectionName).deleteMany(filter, getSessionOptions(options));
+  return db
+    .collection(collectionName)
+    .deleteMany(filter, getSessionOptions(options));
 }
 
 async function deleteDocumentById(collectionName, id, options = {}) {
   const db = getDb();
-  return db.collection(collectionName).deleteOne({ id }, getSessionOptions(options));
+  return db
+    .collection(collectionName)
+    .deleteOne({ id }, getSessionOptions(options));
 }
 
 async function updateDocuments(collectionName, filter, update, options = {}) {
   const db = getDb();
-  return db.collection(collectionName).updateMany(filter, update, getSessionOptions(options));
+  return db
+    .collection(collectionName)
+    .updateMany(filter, update, getSessionOptions(options));
 }
 
 async function runStoreTransaction(work) {
@@ -850,7 +1024,10 @@ async function writeSiteContent(siteContent, options = {}) {
 async function writeStore(store) {
   await ensureStore();
   const posts = normalizeDocuments(store.posts, normalizePost);
-  const collections = normalizeDocuments(store.collections, normalizeCollection);
+  const collections = normalizeDocuments(
+    store.collections,
+    normalizeCollection
+  );
   const users = normalizeDocuments(store.users, normalizeUser);
   const comments = normalizeDocuments(store.comments, normalizeComment);
   const siteContent = normalizeSiteContent(store.siteContent);
@@ -871,7 +1048,11 @@ async function readPosts() {
 
 async function writePosts(posts, options = {}) {
   await ensureStore();
-  return syncDocumentsById("posts", normalizeDocuments(posts, normalizePost), options);
+  return syncDocumentsById(
+    "posts",
+    normalizeDocuments(posts, normalizePost),
+    options
+  );
 }
 
 async function readCollections() {
@@ -881,7 +1062,11 @@ async function readCollections() {
 
 async function writeCollections(collections, options = {}) {
   await ensureStore();
-  return syncDocumentsById("collections", normalizeDocuments(collections, normalizeCollection), options);
+  return syncDocumentsById(
+    "collections",
+    normalizeDocuments(collections, normalizeCollection),
+    options
+  );
 }
 
 async function readUsers() {
@@ -891,7 +1076,11 @@ async function readUsers() {
 
 async function writeUsers(users, options = {}) {
   await ensureStore();
-  return syncDocumentsById("users", normalizeDocuments(users, normalizeUser), options);
+  return syncDocumentsById(
+    "users",
+    normalizeDocuments(users, normalizeUser),
+    options
+  );
 }
 
 async function readComments() {
@@ -899,9 +1088,30 @@ async function readComments() {
   return store.comments;
 }
 
+async function readAdminAuditLogs(options = {}) {
+  await ensureStore();
+  const db = getDb();
+  const numericLimit = Number(options.limit);
+  const cursor = db
+    .collection("adminAuditLogs")
+    .find({})
+    .sort({ createdAt: -1, _id: -1 });
+
+  if (Number.isFinite(numericLimit) && numericLimit > 0) {
+    cursor.limit(numericLimit);
+  }
+
+  const auditLogs = await cursor.toArray();
+  return auditLogs.map(sanitizeDoc).map(normalizeAdminAuditLog).filter(Boolean);
+}
+
 async function writeComments(comments, options = {}) {
   await ensureStore();
-  return syncDocumentsById("comments", normalizeDocuments(comments, normalizeComment), options);
+  return syncDocumentsById(
+    "comments",
+    normalizeDocuments(comments, normalizeComment),
+    options
+  );
 }
 
 async function insertUser(user, options = {}) {
@@ -916,12 +1126,29 @@ async function replaceUser(user, options = {}) {
 
 async function insertComment(comment, options = {}) {
   await ensureStore();
-  return insertNormalizedDocument("comments", normalizeComment(comment), options);
+  return insertNormalizedDocument(
+    "comments",
+    normalizeComment(comment),
+    options
+  );
+}
+
+async function insertAdminAuditLog(log, options = {}) {
+  await ensureStore();
+  return insertNormalizedDocument(
+    "adminAuditLogs",
+    normalizeAdminAuditLog(log),
+    options
+  );
 }
 
 async function replaceComment(comment, options = {}) {
   await ensureStore();
-  return replaceNormalizedDocumentById("comments", normalizeComment(comment), options);
+  return replaceNormalizedDocumentById(
+    "comments",
+    normalizeComment(comment),
+    options
+  );
 }
 
 async function deleteCommentById(id, options = {}) {
@@ -946,7 +1173,11 @@ async function renameCommentsForPostSlug(previousSlug, nextSlug, options = {}) {
 
 async function deleteCommentsByPostSlug(postSlug, options = {}) {
   await ensureStore();
-  return deleteDocuments("comments", { postSlug: String(postSlug || "").trim() }, options);
+  return deleteDocuments(
+    "comments",
+    { postSlug: String(postSlug || "").trim() },
+    options
+  );
 }
 
 async function insertPost(post, options = {}) {
@@ -956,7 +1187,11 @@ async function insertPost(post, options = {}) {
 
 async function replacePosts(posts, options = {}) {
   await ensureStore();
-  return upsertDocumentsById("posts", normalizeDocuments(posts, normalizePost), options);
+  return upsertDocumentsById(
+    "posts",
+    normalizeDocuments(posts, normalizePost),
+    options
+  );
 }
 
 async function deletePostById(id, options = {}) {
@@ -966,12 +1201,20 @@ async function deletePostById(id, options = {}) {
 
 async function insertCollection(collection, options = {}) {
   await ensureStore();
-  return insertNormalizedDocument("collections", normalizeCollection(collection), options);
+  return insertNormalizedDocument(
+    "collections",
+    normalizeCollection(collection),
+    options
+  );
 }
 
 async function replaceCollections(collections, options = {}) {
   await ensureStore();
-  return upsertDocumentsById("collections", normalizeDocuments(collections, normalizeCollection), options);
+  return upsertDocumentsById(
+    "collections",
+    normalizeDocuments(collections, normalizeCollection),
+    options
+  );
 }
 
 async function deleteCollectionById(id, options = {}) {
@@ -992,11 +1235,13 @@ module.exports = {
   readUsers,
   writeUsers,
   readComments,
+  readAdminAuditLogs,
   writeComments,
   writeSiteContent,
   insertUser,
   replaceUser,
   insertComment,
+  insertAdminAuditLog,
   replaceComment,
   deleteCommentById,
   renameCommentsForPostSlug,

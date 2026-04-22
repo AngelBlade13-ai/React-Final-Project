@@ -25,6 +25,7 @@ project-root/
 - Public comments with edit and delete controls for the comment author
 - Admin archive intelligence dashboard with health scoring, readiness signals, and quick-win surfacing
 - Admin comment moderation workspace with search plus hide and restore controls
+- Structured request logging, `x-request-id` tracing, runtime health snapshots, and persisted admin audit logs
 - Themed collection and release pages with responsive layout
 - Dynamic page titles and a custom threshold favicon
 
@@ -53,6 +54,14 @@ Required backend values:
 - `ADMIN_PASSWORD` or `ADMIN_PASSWORD_HASH`
 - `MONGODB_URI`
 - `MONGODB_DB_NAME`
+
+Optional backend operations values:
+
+- `LOG_LEVEL`
+- `ENABLE_REQUEST_LOGGING`
+- `ENABLE_ADMIN_AUDIT_LOGGING`
+- `SLOW_REQUEST_THRESHOLD_MS`
+- `MONITORING_WEBHOOK_URL`
 
 Frontend API base URL:
 
@@ -86,6 +95,7 @@ npm run dev
 cd backend
 npm run verify
 npm run catalog:diff-live
+npm run backup:ops -- --label=smoke
 
 cd ../frontend
 npm run verify
@@ -112,7 +122,8 @@ On first backend startup, the API seeds MongoDB from the legacy JSON source if t
 3. Access the protected `/admin` dashboard
 4. Create, edit, and delete posts and collections
 5. Update About page content
-6. Open `/admin/insights` for archive health and `/admin/comments` for moderation
+6. Open `/admin/insights` for archive health, runtime status, and the admin audit trail
+7. Open `/admin/comments` for moderation
 
 ### Hidden admin access
 
@@ -137,6 +148,13 @@ Security measures currently in code:
 - `helmet` security headers
 - rate limiting on login and comment write routes
 - ownership checks on comment edits and deletes
+
+## Operations
+
+- `GET /api/health` returns runtime status, database connectivity, uptime, and logging configuration.
+- `GET /api/admin/audit-logs` returns the most recent admin mutations for operational review.
+- `cd backend && npm run backup:ops -- --label=pre-release` writes a JSON operational snapshot to `backend/backups/`.
+- `docs/operations-runbook.md` documents backups, restore expectations, and versioning notes for operational changes.
 
 ## API Documentation
 

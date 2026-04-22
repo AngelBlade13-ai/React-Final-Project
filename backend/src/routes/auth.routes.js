@@ -17,6 +17,7 @@ const {
   setAdminSessionCookie,
   setUserSessionCookie
 } = require("../services/sessionCookieService");
+const { recordAdminAuditEvent } = require("../services/adminAuditService");
 const {
   validateProfileUpdateInput,
   validateRegistrationInput
@@ -41,6 +42,16 @@ router.post("/admin/login", loginLimiter, async (req, res, next) => {
     const token = issueAdminToken();
     clearUserSessionCookie(res);
     setAdminSessionCookie(res, token);
+    await recordAdminAuditEvent(req, {
+      action: "session.login",
+      actorEmail: config.adminEmail,
+      entityType: "session",
+      entityId: config.adminEmail,
+      entityLabel: "Admin session",
+      details: {
+        source: "admin_login"
+      }
+    });
 
     return res.json({
       token,
@@ -66,7 +77,9 @@ router.post("/auth/register", userAuthLimiter, async (req, res, next) => {
     }
 
     if (store.users.some((entry) => entry.email === userInput.email)) {
-      return res.status(400).json({ message: "An account with that email already exists." });
+      return res
+        .status(400)
+        .json({ message: "An account with that email already exists." });
     }
 
     const timestamp = new Date().toISOString();
@@ -97,7 +110,9 @@ router.post("/auth/register", userAuthLimiter, async (req, res, next) => {
 router.post("/auth/login", userAuthLimiter, async (req, res, next) => {
   try {
     const store = await readStore();
-    const email = String(req.body.email || "").trim().toLowerCase();
+    const email = String(req.body.email || "")
+      .trim()
+      .toLowerCase();
     const password = String(req.body.password || "");
     const user = store.users.find((entry) => entry.email === email);
 
@@ -136,14 +151,18 @@ router.post("/admin/logout", (req, res) => {
 router.get("/auth/me", requireUser, async (req, res, next) => {
   try {
     if (req.auth.role === "admin") {
-      return res.status(403).json({ message: "Admin sessions are managed separately." });
+      return res
+        .status(403)
+        .json({ message: "Admin sessions are managed separately." });
     }
 
     const store = await readStore();
     const user = store.users.find((entry) => entry.id === req.auth.sub);
 
     if (!user || user.status !== "active") {
-      return res.status(401).json({ message: "User session is no longer valid." });
+      return res
+        .status(401)
+        .json({ message: "User session is no longer valid." });
     }
 
     return res.json({ user: sanitizeUser(user) });
@@ -155,7 +174,9 @@ router.get("/auth/me", requireUser, async (req, res, next) => {
 router.put("/auth/me", requireUser, async (req, res, next) => {
   try {
     if (req.user.role === "admin") {
-      return res.status(403).json({ message: "Admin accounts are managed separately." });
+      return res
+        .status(403)
+        .json({ message: "Admin accounts are managed separately." });
     }
 
     const store = await readStore();
@@ -176,7 +197,9 @@ router.put("/auth/me", requireUser, async (req, res, next) => {
     const nextUser = {
       ...existingUser,
       displayName: nextDisplayName,
-      passwordHash: nextPassword ? await bcrypt.hash(nextPassword, 12) : existingUser.passwordHash,
+      passwordHash: nextPassword
+        ? await bcrypt.hash(nextPassword, 12)
+        : existingUser.passwordHash,
       updatedAt: new Date().toISOString()
     };
 

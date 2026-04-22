@@ -4,6 +4,14 @@ const config = {
   nodeEnv: process.env.NODE_ENV || "development",
   port: Number(process.env.PORT) || 4000,
   clientUrl: process.env.CLIENT_URL || "http://localhost:5173",
+  logLevel: process.env.LOG_LEVEL || "info",
+  enableRequestLogging:
+    process.env.ENABLE_REQUEST_LOGGING === undefined
+      ? process.env.NODE_ENV !== "test"
+      : process.env.ENABLE_REQUEST_LOGGING !== "false",
+  enableAdminAuditLogging: process.env.ENABLE_ADMIN_AUDIT_LOGGING !== "false",
+  slowRequestThresholdMs: Number(process.env.SLOW_REQUEST_THRESHOLD_MS) || 1200,
+  monitoringWebhookUrl: process.env.MONITORING_WEBHOOK_URL || "",
   jwtSecret: process.env.JWT_SECRET || "change-me",
   adminEmail: process.env.ADMIN_EMAIL || "admin@example.com",
   adminPassword: process.env.ADMIN_PASSWORD || "Admin123!",
@@ -11,12 +19,14 @@ const config = {
   mongoUri: process.env.MONGODB_URI || "mongodb://127.0.0.1:27017",
   mongoDirectUri: process.env.MONGODB_DIRECT_URI || "",
   mongoDbName: process.env.MONGODB_DB_NAME || "suno_blog",
-  postsFile: process.env.POSTS_FILE || path.join(__dirname, "..", "data", "posts.json"),
+  postsFile:
+    process.env.POSTS_FILE || path.join(__dirname, "..", "data", "posts.json"),
   cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME || "",
   cloudinaryApiKey: process.env.CLOUDINARY_API_KEY || "",
   cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET || "",
   cloudinaryFolder: process.env.CLOUDINARY_FOLDER || "suno-releases",
-  cloudinaryChunkSize: Number(process.env.CLOUDINARY_CHUNK_SIZE) || 20 * 1024 * 1024
+  cloudinaryChunkSize:
+    Number(process.env.CLOUDINARY_CHUNK_SIZE) || 20 * 1024 * 1024
 };
 
 function assertSecureConfig() {
@@ -37,8 +47,13 @@ function assertSecureConfig() {
       throw new Error("ADMIN_EMAIL is required in production.");
     }
 
-    if (!config.adminPasswordHash && (!process.env.ADMIN_PASSWORD || config.adminPassword === "Admin123!")) {
-      throw new Error("Set ADMIN_PASSWORD_HASH or a strong ADMIN_PASSWORD in production.");
+    if (
+      !config.adminPasswordHash &&
+      (!process.env.ADMIN_PASSWORD || config.adminPassword === "Admin123!")
+    ) {
+      throw new Error(
+        "Set ADMIN_PASSWORD_HASH or a strong ADMIN_PASSWORD in production."
+      );
     }
   }
 }

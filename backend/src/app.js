@@ -3,9 +3,15 @@ const cookieParser = require("cookie-parser");
 const cors = require("cors");
 const helmet = require("helmet");
 const config = require("./config");
+const { reportError } = require("./lib/logger");
+const {
+  getActorSnapshot,
+  requestContext
+} = require("./middleware/requestContext");
 const adminRoutes = require("./routes/admin.routes");
 const authRoutes = require("./routes/auth.routes");
 const publicRoutes = require("./routes/public.routes");
+const { buildHealthSnapshot } = require("./services/operationsService");
 const uploadRoutes = require("./routes/upload.routes");
 
 const app = express();
@@ -22,6 +28,7 @@ app.use(
     credentials: true
   })
 );
+app.use(requestContext);
 app.use(cookieParser());
 app.use(express.json());
 
@@ -35,12 +42,21 @@ app.get("/", (req, res) => {
 });
 
 app.get("/api/health", (req, res) => {
-  res.json({ status: "ok" });
+  res.json(buildHealthSnapshot());
 });
 
 app.use((error, req, res, _next) => {
-  console.error(error);
-  res.status(500).json({ message: "Internal server error." });
+  reportError(error, {
+    event: "http.unhandled_error",
+    actor: getActorSnapshot(req),
+    method: req.method,
+    path: req.originalUrl || req.url,
+    requestId: req.requestId || ""
+  }).catch(() => {});
+  res.status(500).json({
+    message: "Internal server error.",
+    requestId: req.requestId || ""
+  });
 });
 
 module.exports = app;
