@@ -1,9 +1,15 @@
 import { useAboutContent } from "../../hooks/usePublicApi";
-import useDocumentTitle from "../../hooks/useDocumentTitle";
+import usePageMetadata from "../../hooks/usePageMetadata";
 
 export default function AboutPage() {
-  useDocumentTitle("About");
   const { about, isLoading: loading } = useAboutContent();
+  usePageMetadata({
+    description:
+      about.heroText ||
+      about.siteText ||
+      "Learn about the artist and the archive behind the songs.",
+    title: "About"
+  });
 
   return (
     <>

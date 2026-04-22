@@ -1,12 +1,24 @@
 import { Link } from "react-router-dom";
 import { usePublicCollections, usePublicPosts } from "../../hooks/usePublicApi";
-import useDocumentTitle from "../../hooks/useDocumentTitle";
+import usePageMetadata from "../../hooks/usePageMetadata";
 import { resolveGuidedListeningPaths } from "../../lib/listeningPaths";
 
 export default function GuidedPathsIndexPage() {
-  useDocumentTitle("Guided Paths");
-  const { posts, error: postsError, isLoading: postsLoading } = usePublicPosts();
-  const { collections, error: collectionsError, isLoading: collectionsLoading } = usePublicCollections("all");
+  usePageMetadata({
+    description:
+      "Enter the archive through authored routes built around worlds, moods, and recurring themes.",
+    title: "Guided Paths"
+  });
+  const {
+    posts,
+    error: postsError,
+    isLoading: postsLoading
+  } = usePublicPosts();
+  const {
+    collections,
+    error: collectionsError,
+    isLoading: collectionsLoading
+  } = usePublicCollections("all");
   const loading = postsLoading || collectionsLoading;
   const error = postsError?.message || collectionsError?.message || "";
 
@@ -18,7 +30,8 @@ export default function GuidedPathsIndexPage() {
         <p className="eyebrow">Guided Listening Paths</p>
         <h1>Enter the archive through authored routes.</h1>
         <p className="hero-copy">
-          These are not generic filters. Each path is meant to feel like a chosen doorway into a mood, world, or thread of identity.
+          These are not generic filters. Each path is meant to feel like a
+          chosen doorway into a mood, world, or thread of identity.
         </p>
       </header>
 
@@ -26,13 +39,18 @@ export default function GuidedPathsIndexPage() {
         {error ? <p className="error-text">{error}</p> : null}
         <section className="guided-path-grid">
           {paths.map((path) => (
-            <article className="intro-card homepage-panel guided-path-card" key={path.slug}>
+            <article
+              className="intro-card homepage-panel guided-path-card"
+              key={path.slug}
+            >
               <p className="eyebrow">{path.eyebrow}</p>
               <h2>{path.title}</h2>
               <p>{path.intro}</p>
               <p className="guided-path-note">{path.moodNote}</p>
               <div className="tag-row">
-                <span className="meta-badge">{loading ? "..." : `${path.count} tracks`}</span>
+                <span className="meta-badge">
+                  {loading ? "..." : `${path.count} tracks`}
+                </span>
                 {path.posts.slice(0, 2).map((post) => (
                   <span className="meta-badge subtle-badge" key={post.slug}>
                     {post.title}

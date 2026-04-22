@@ -3,7 +3,7 @@ import WorldThresholdLink from "../../components/WorldThresholdLink";
 import ReleaseMedia from "../../components/ReleaseMedia";
 import { CollectionCard, ReleaseCard } from "../../components/cards";
 import { usePublicCollections, usePublicPosts } from "../../hooks/usePublicApi";
-import useDocumentTitle from "../../hooks/useDocumentTitle";
+import usePageMetadata from "../../hooks/usePageMetadata";
 import { formatPostDate } from "../../lib/formatters";
 import {
   emptySiteSettings,
@@ -14,25 +14,39 @@ import {
 } from "../../lib/site";
 
 export default function PublicHome({ onPlayTrack, siteContent }) {
-  useDocumentTitle("");
-  const { posts, isLoading: postsLoading } = usePublicPosts();
-  const { collections, isLoading: collectionsLoading } = usePublicCollections();
-  const loading = postsLoading || collectionsLoading;
   const homeContent = {
     ...emptySiteSettings.home,
     ...(siteContent?.home || {})
   };
+  usePageMetadata({
+    description: homeContent.heroText,
+    title: ""
+  });
+  const { posts, isLoading: postsLoading } = usePublicPosts();
+  const { collections, isLoading: collectionsLoading } = usePublicCollections();
+  const loading = postsLoading || collectionsLoading;
   const curatedPosts = getHomepageCuratedPosts(posts);
   const manuallyFeaturedPost =
     posts.find((post) => post.slug === homeContent.featuredReleaseSlug) ||
-    curatedPosts.find((post) => post.slug === homeContent.featuredReleaseSlug) ||
+    curatedPosts.find(
+      (post) => post.slug === homeContent.featuredReleaseSlug
+    ) ||
     null;
   const featuredPost = manuallyFeaturedPost || curatedPosts[0] || null;
-  const latestPosts = (featuredPost ? curatedPosts.filter((post) => post.id !== featuredPost.id) : curatedPosts).slice(0, 4);
-  const featuredCollections = sortCollectionsForPublicNavigation(collections).slice(0, 4);
+  const latestPosts = (
+    featuredPost
+      ? curatedPosts.filter((post) => post.id !== featuredPost.id)
+      : curatedPosts
+  ).slice(0, 4);
+  const featuredCollections = sortCollectionsForPublicNavigation(
+    collections
+  ).slice(0, 4);
   const featuredPostCollections = getVisibleCollectionsForPost(featuredPost);
-  const fractureverseCollection = collections.find((collection) => collection.slug === "fractureverse") || null;
-  const eldoriaCollection = collections.find((collection) => collection.slug === "eldoria") || null;
+  const fractureverseCollection =
+    collections.find((collection) => collection.slug === "fractureverse") ||
+    null;
+  const eldoriaCollection =
+    collections.find((collection) => collection.slug === "eldoria") || null;
 
   return (
     <>
@@ -44,7 +58,11 @@ export default function PublicHome({ onPlayTrack, siteContent }) {
             <p className="hero-copy">{homeContent.heroText}</p>
             <div className="hero-links-row">
               {featuredPost ? (
-                <button className="hero-link" onClick={() => onPlayTrack(featuredPost)} type="button">
+                <button
+                  className="hero-link"
+                  onClick={() => onPlayTrack(featuredPost)}
+                  type="button"
+                >
                   {homeContent.featuredCtaLabel}
                 </button>
               ) : null}
@@ -59,12 +77,19 @@ export default function PublicHome({ onPlayTrack, siteContent }) {
             <h2>{homeContent.noteTitle}</h2>
             <p>{homeContent.noteText}</p>
             <div className="hero-note-stats">
-              <span className="meta-badge">{loading ? "..." : `${posts.length} releases`}</span>
-              <span className="meta-badge subtle-badge">{loading ? "..." : `${collections.length} curated paths`}</span>
+              <span className="meta-badge">
+                {loading ? "..." : `${posts.length} releases`}
+              </span>
+              <span className="meta-badge subtle-badge">
+                {loading ? "..." : `${collections.length} curated paths`}
+              </span>
             </div>
             <div className="home-hero-threshold-note">
               <strong>The threshold is curated.</strong>
-              <p>Start with a release, enter a world, or choose a collection that acts like an authored path instead of a pile of posts.</p>
+              <p>
+                Start with a release, enter a world, or choose a collection that
+                acts like an authored path instead of a pile of posts.
+              </p>
             </div>
           </div>
         </div>
@@ -78,13 +103,18 @@ export default function PublicHome({ onPlayTrack, siteContent }) {
           </div>
           <div className="home-doorway-grid">
             {featuredPost ? (
-              <Link className="home-doorway-link" to={`/release/${featuredPost.slug}`}>
+              <Link
+                className="home-doorway-link"
+                to={`/release/${featuredPost.slug}`}
+              >
                 <article className="intro-card homepage-panel home-doorway-card home-doorway-featured">
                   <p className="eyebrow">Featured Release</p>
                   <h3>{featuredPost.title}</h3>
                   <p>{featuredPost.excerpt}</p>
                   <div className="home-doorway-footer">
-                    <span className="home-doorway-stat">{formatPostDate(featuredPost.createdAt)}</span>
+                    <span className="home-doorway-stat">
+                      {formatPostDate(featuredPost.createdAt)}
+                    </span>
                     <span className="home-doorway-cta">
                       Enter release <span aria-hidden="true">-&gt;</span>
                     </span>
@@ -94,13 +124,19 @@ export default function PublicHome({ onPlayTrack, siteContent }) {
             ) : null}
 
             {fractureverseCollection ? (
-              <WorldThresholdLink className="home-doorway-link" theme="fractureverse" to={`/collections/${fractureverseCollection.slug}`}>
+              <WorldThresholdLink
+                className="home-doorway-link"
+                theme="fractureverse"
+                to={`/collections/${fractureverseCollection.slug}`}
+              >
                 <article className="intro-card homepage-panel home-doorway-card home-doorway-fractureverse">
                   <p className="eyebrow">World</p>
                   <h3>{fractureverseCollection.title}</h3>
                   <p>{fractureverseCollection.description}</p>
                   <div className="home-doorway-footer">
-                    <span className="home-doorway-stat">{fractureverseCollection.releaseCount} fragments</span>
+                    <span className="home-doorway-stat">
+                      {fractureverseCollection.releaseCount} fragments
+                    </span>
                     <span className="home-doorway-cta">
                       Enter world <span aria-hidden="true">-&gt;</span>
                     </span>
@@ -110,13 +146,19 @@ export default function PublicHome({ onPlayTrack, siteContent }) {
             ) : null}
 
             {eldoriaCollection ? (
-              <WorldThresholdLink className="home-doorway-link" theme="eldoria" to={`/collections/${eldoriaCollection.slug}`}>
+              <WorldThresholdLink
+                className="home-doorway-link"
+                theme="eldoria"
+                to={`/collections/${eldoriaCollection.slug}`}
+              >
                 <article className="intro-card homepage-panel home-doorway-card home-doorway-eldoria">
                   <p className="eyebrow">World</p>
                   <h3>{eldoriaCollection.title}</h3>
                   <p>{eldoriaCollection.description}</p>
                   <div className="home-doorway-footer">
-                    <span className="home-doorway-stat">{eldoriaCollection.releaseCount} ballads</span>
+                    <span className="home-doorway-stat">
+                      {eldoriaCollection.releaseCount} ballads
+                    </span>
                     <span className="home-doorway-cta">
                       Enter world <span aria-hidden="true">-&gt;</span>
                     </span>
@@ -134,7 +176,10 @@ export default function PublicHome({ onPlayTrack, siteContent }) {
                 <Link className="card-link" to="/collections">
                   {homeContent.browseLinkLabel}
                 </Link>
-                <Link className="secondary-link home-doorway-secondary-link" to="/paths">
+                <Link
+                  className="secondary-link home-doorway-secondary-link"
+                  to="/paths"
+                >
                   Guided Paths
                 </Link>
               </div>
@@ -156,7 +201,10 @@ export default function PublicHome({ onPlayTrack, siteContent }) {
               <span>Lead entry</span>
             </div>
             <article className="featured-release-link intro-card homepage-panel featured-release-card">
-              <Link className="featured-release-surface" to={`/release/${featuredPost.slug}`}>
+              <Link
+                className="featured-release-surface"
+                to={`/release/${featuredPost.slug}`}
+              >
                 <div className="featured-release-media">
                   <ReleaseMedia
                     className="featured-release-video"
@@ -167,24 +215,38 @@ export default function PublicHome({ onPlayTrack, siteContent }) {
                     videoUrl={featuredPost.videoUrl}
                   />
                   <div className="release-card-overlay" />
-                  <div className="play-pill featured-play-pill">{hasVideo(featuredPost.videoUrl) ? "Featured" : "Video Pending"}</div>
+                  <div className="play-pill featured-play-pill">
+                    {hasVideo(featuredPost.videoUrl)
+                      ? "Featured"
+                      : "Video Pending"}
+                  </div>
                 </div>
               </Link>
               <div className="featured-release-copy">
                 <p className="eyebrow">Threshold Lead</p>
                 <h3>
-                  <Link className="card-title-link" to={`/release/${featuredPost.slug}`}>
+                  <Link
+                    className="card-title-link"
+                    to={`/release/${featuredPost.slug}`}
+                  >
                     {featuredPost.title}
                   </Link>
                 </h3>
                 <p className="featured-release-intro">
-                  Start with the release itself, then let the archive widen from there into worlds, versions, and collections.
+                  Start with the release itself, then let the archive widen from
+                  there into worlds, versions, and collections.
                 </p>
-                <p className="featured-release-excerpt">{featuredPost.excerpt}</p>
+                <p className="featured-release-excerpt">
+                  {featuredPost.excerpt}
+                </p>
                 <p className="meta">{formatPostDate(featuredPost.createdAt)}</p>
                 <div className="tag-row">
                   {featuredPostCollections.map((collection) => (
-                    <Link className="collection-chip" key={collection.slug} to={`/collections/${collection.slug}`}>
+                    <Link
+                      className="collection-chip"
+                      key={collection.slug}
+                      to={`/collections/${collection.slug}`}
+                    >
                       {collection.title}
                     </Link>
                   ))}
@@ -196,9 +258,14 @@ export default function PublicHome({ onPlayTrack, siteContent }) {
                     onClick={() => onPlayTrack(featuredPost)}
                     type="button"
                   >
-                    {hasVideo(featuredPost.videoUrl) ? "Play in Mini Player" : "Video Pending"}
+                    {hasVideo(featuredPost.videoUrl)
+                      ? "Play in Mini Player"
+                      : "Video Pending"}
                   </button>
-                  <Link className="hero-link" to={`/release/${featuredPost.slug}`}>
+                  <Link
+                    className="hero-link"
+                    to={`/release/${featuredPost.slug}`}
+                  >
                     Enter Release
                   </Link>
                 </div>
@@ -210,7 +277,11 @@ export default function PublicHome({ onPlayTrack, siteContent }) {
         <section>
           <div className="section-head">
             <h2>Begin With a Collection</h2>
-            <span>{loading ? "Loading..." : `${featuredCollections.length} curated entries`}</span>
+            <span>
+              {loading
+                ? "Loading..."
+                : `${featuredCollections.length} curated entries`}
+            </span>
           </div>
           <div className="collection-grid collection-index-grid">
             {featuredCollections.map((collection) => (
@@ -222,24 +293,39 @@ export default function PublicHome({ onPlayTrack, siteContent }) {
         <section id="latest-releases">
           <div className="section-head">
             <h2>Latest at the Threshold</h2>
-            <span>{loading ? "Loading..." : `${latestPosts.length} recent selections`}</span>
+            <span>
+              {loading
+                ? "Loading..."
+                : `${latestPosts.length} recent selections`}
+            </span>
           </div>
           {!loading && posts.length === 0 ? (
             <section className="intro-card homepage-panel empty-state-card">
               <p className="eyebrow">No Releases Yet</p>
               <h3>Something is coming.</h3>
-              <p>No releases have been published yet. Check back soon for the first threshold entry.</p>
+              <p>
+                No releases have been published yet. Check back soon for the
+                first threshold entry.
+              </p>
             </section>
           ) : !loading && latestPosts.length === 0 ? (
             <section className="intro-card homepage-panel empty-state-card">
               <p className="eyebrow">More Soon</p>
               <h3>The lead release is live.</h3>
-              <p>Additional curated entries will appear here as the archive expands.</p>
+              <p>
+                Additional curated entries will appear here as the archive
+                expands.
+              </p>
             </section>
           ) : (
             <div className="post-grid latest-release-grid">
               {latestPosts.map((post, index) => (
-                <ReleaseCard emphasis={index < 2} key={post.id} onPlayTrack={onPlayTrack} post={post} />
+                <ReleaseCard
+                  emphasis={index < 2}
+                  key={post.id}
+                  onPlayTrack={onPlayTrack}
+                  post={post}
+                />
               ))}
             </div>
           )}

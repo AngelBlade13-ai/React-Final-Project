@@ -1,17 +1,29 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { usePublicCollections, usePublicPosts } from "../../hooks/usePublicApi";
-import useDocumentTitle from "../../hooks/useDocumentTitle";
+import usePageMetadata from "../../hooks/usePageMetadata";
 import { formatPostDate } from "../../lib/formatters";
 import { resolveGuidedListeningPath } from "../../lib/listeningPaths";
 import { getVisibleCollectionsForPost, hasVideo } from "../../lib/site";
 
-export default function GuidedPathPage({ onPlayTrack, setActiveCollectionTheme, setForcedTheme }) {
+export default function GuidedPathPage({
+  onPlayTrack,
+  setActiveCollectionTheme,
+  setForcedTheme
+}) {
   const { slug } = useParams();
   const navigate = useNavigate();
   const [activeIndex, setActiveIndex] = useState(0);
-  const { posts, error: postsError, isLoading: postsLoading } = usePublicPosts();
-  const { collections, error: collectionsError, isLoading: collectionsLoading } = usePublicCollections("all");
+  const {
+    posts,
+    error: postsError,
+    isLoading: postsLoading
+  } = usePublicPosts();
+  const {
+    collections,
+    error: collectionsError,
+    isLoading: collectionsLoading
+  } = usePublicCollections("all");
   const loading = postsLoading || collectionsLoading;
   const error = postsError?.message || collectionsError?.message || "";
 
@@ -27,7 +39,10 @@ export default function GuidedPathPage({ onPlayTrack, setActiveCollectionTheme, 
       }
     : null;
 
-  useDocumentTitle(path?.title || "Guided Path");
+  usePageMetadata({
+    description: path?.intro || "Follow an authored route through the archive.",
+    title: path?.title || "Guided Path"
+  });
 
   useEffect(() => {
     setActiveIndex(0);
@@ -105,7 +120,9 @@ export default function GuidedPathPage({ onPlayTrack, setActiveCollectionTheme, 
             <section className="intro-card homepage-panel guided-path-focus-card">
               <div className="section-head">
                 <h2>Current Step</h2>
-                <span>{activeIndex + 1} / {path.posts.length}</span>
+                <span>
+                  {activeIndex + 1} / {path.posts.length}
+                </span>
               </div>
               <div className="guided-path-focus-layout">
                 <div className="guided-path-focus-copy">
@@ -115,7 +132,11 @@ export default function GuidedPathPage({ onPlayTrack, setActiveCollectionTheme, 
                   <p className="meta">{formatPostDate(activePost.createdAt)}</p>
                   <div className="tag-row">
                     {activeCollections.map((collection) => (
-                      <Link className="collection-chip" key={collection.slug} to={`/collections/${collection.slug}`}>
+                      <Link
+                        className="collection-chip"
+                        key={collection.slug}
+                        to={`/collections/${collection.slug}`}
+                      >
                         {collection.title}
                       </Link>
                     ))}
@@ -127,9 +148,14 @@ export default function GuidedPathPage({ onPlayTrack, setActiveCollectionTheme, 
                       onClick={() => onPlayTrack(activePost, playbackContext)}
                       type="button"
                     >
-                      {hasVideo(activePost.videoUrl) ? "Play In Path Queue" : "Video Pending"}
+                      {hasVideo(activePost.videoUrl)
+                        ? "Play In Path Queue"
+                        : "Video Pending"}
                     </button>
-                    <Link className="hero-link" to={`/release/${activePost.slug}`}>
+                    <Link
+                      className="hero-link"
+                      to={`/release/${activePost.slug}`}
+                    >
                       Open Release
                     </Link>
                   </div>
@@ -138,7 +164,9 @@ export default function GuidedPathPage({ onPlayTrack, setActiveCollectionTheme, 
                   <button
                     className="secondary-button"
                     disabled={activeIndex === 0}
-                    onClick={() => setActiveIndex((current) => Math.max(0, current - 1))}
+                    onClick={() =>
+                      setActiveIndex((current) => Math.max(0, current - 1))
+                    }
                     type="button"
                   >
                     Previous Step
@@ -146,7 +174,11 @@ export default function GuidedPathPage({ onPlayTrack, setActiveCollectionTheme, 
                   <button
                     className="secondary-button"
                     disabled={activeIndex >= path.posts.length - 1}
-                    onClick={() => setActiveIndex((current) => Math.min(path.posts.length - 1, current + 1))}
+                    onClick={() =>
+                      setActiveIndex((current) =>
+                        Math.min(path.posts.length - 1, current + 1)
+                      )
+                    }
                     type="button"
                   >
                     Next Step
@@ -168,7 +200,9 @@ export default function GuidedPathPage({ onPlayTrack, setActiveCollectionTheme, 
                     onClick={() => setActiveIndex(index)}
                     type="button"
                   >
-                    <span className="guided-path-step-index">{String(index + 1).padStart(2, "0")}</span>
+                    <span className="guided-path-step-index">
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
                     <strong>{entry.title}</strong>
                     <p>{entry.excerpt}</p>
                   </button>

@@ -1,15 +1,28 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import useDocumentTitle from "../../hooks/useDocumentTitle";
+import usePageMetadata from "../../hooks/usePageMetadata";
 import { apiBaseUrl } from "../../lib/site";
 
-export default function AccountPage({ currentUser, hasAdminSession, isUserSessionReady, onUserAuthSuccess, onUserLogout }) {
-  useDocumentTitle(currentUser ? "Account" : "Sign In");
+export default function AccountPage({
+  currentUser,
+  hasAdminSession,
+  isUserSessionReady,
+  onUserAuthSuccess,
+  onUserLogout
+}) {
+  usePageMetadata({
+    description: currentUser
+      ? "Manage your public account and stay connected to the archive conversation."
+      : "Create an account, sign in, and join the public conversation around each release.",
+    title: currentUser ? "Account" : "Sign In"
+  });
   const [mode, setMode] = useState("login");
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [profileName, setProfileName] = useState(currentUser?.displayName || "");
+  const [profileName, setProfileName] = useState(
+    currentUser?.displayName || ""
+  );
   const [profilePassword, setProfilePassword] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -55,18 +68,21 @@ export default function AccountPage({ currentUser, hasAdminSession, isUserSessio
     }
 
     try {
-      const response = await fetch(`${apiBaseUrl}/auth/${mode === "register" ? "register" : "login"}`, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          displayName,
-          email,
-          password
-        })
-      });
+      const response = await fetch(
+        `${apiBaseUrl}/auth/${mode === "register" ? "register" : "login"}`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            displayName,
+            email,
+            password
+          })
+        }
+      );
       const data = await response.json();
 
       if (!response.ok) {
@@ -141,10 +157,13 @@ export default function AccountPage({ currentUser, hasAdminSession, isUserSessio
           </Link>
         </div>
         <p className="eyebrow">Community Access</p>
-        <h1>Create an account, keep your place, and speak inside the archive.</h1>
+        <h1>
+          Create an account, keep your place, and speak inside the archive.
+        </h1>
         <p className="hero-copy">
-          User accounts unlock public interaction. Right now that means comments on release pages, plus a basic account
-          profile you can update without touching the admin workspace.
+          User accounts unlock public interaction. Right now that means comments
+          on release pages, plus a basic account profile you can update without
+          touching the admin workspace.
         </p>
       </section>
 
@@ -159,8 +178,8 @@ export default function AccountPage({ currentUser, hasAdminSession, isUserSessio
             <p className="eyebrow">Admin Session Active</p>
             <h2>User accounts are separate from admin access.</h2>
             <p>
-              You are currently signed in as an admin. Public user accounts are used for comments and community actions,
-              not for site management.
+              You are currently signed in as an admin. Public user accounts are
+              used for comments and community actions, not for site management.
             </p>
           </div>
           <div className="account-action-row">
@@ -182,7 +201,13 @@ export default function AccountPage({ currentUser, hasAdminSession, isUserSessio
           <form className="account-form-grid" onSubmit={handleProfileSubmit}>
             <label>
               Display Name
-              <input minLength="2" onChange={(event) => setProfileName(event.target.value)} required type="text" value={profileName} />
+              <input
+                minLength="2"
+                onChange={(event) => setProfileName(event.target.value)}
+                required
+                type="text"
+                value={profileName}
+              />
             </label>
             <label>
               New Password
@@ -194,12 +219,21 @@ export default function AccountPage({ currentUser, hasAdminSession, isUserSessio
                 value={profilePassword}
               />
             </label>
-            <p className="form-helper-text">Leave the password blank to keep the current one. New passwords must be at least 8 characters.</p>
+            <p className="form-helper-text">
+              Leave the password blank to keep the current one. New passwords
+              must be at least 8 characters.
+            </p>
             {error ? <p className="error-text">{error}</p> : null}
             {success ? <p className="success-text">{success}</p> : null}
             <div className="account-action-row">
-              <button type="submit">{submitting ? "Saving..." : "Update Account"}</button>
-              <button className="secondary-button" onClick={onUserLogout} type="button">
+              <button type="submit">
+                {submitting ? "Saving..." : "Update Account"}
+              </button>
+              <button
+                className="secondary-button"
+                onClick={onUserLogout}
+                type="button"
+              >
                 Sign Out
               </button>
             </div>
@@ -208,20 +242,37 @@ export default function AccountPage({ currentUser, hasAdminSession, isUserSessio
       ) : (
         <section className="auth-card auth-login-card account-panel">
           <div className="auth-form-intro">
-            <p className="eyebrow">{mode === "register" ? "Create Account" : "Welcome Back"}</p>
+            <p className="eyebrow">
+              {mode === "register" ? "Create Account" : "Welcome Back"}
+            </p>
             <h2>{mode === "register" ? "Join the archive" : "User Sign In"}</h2>
-            <p>{mode === "register" ? "Create an account to comment on releases." : "Sign in to manage your comments."}</p>
+            <p>
+              {mode === "register"
+                ? "Create an account to comment on releases."
+                : "Sign in to manage your comments."}
+            </p>
           </div>
           <form className="account-form-grid" onSubmit={handleAuthSubmit}>
             {mode === "register" ? (
               <label>
                 Display Name
-                <input minLength="2" onChange={(event) => setDisplayName(event.target.value)} required type="text" value={displayName} />
+                <input
+                  minLength="2"
+                  onChange={(event) => setDisplayName(event.target.value)}
+                  required
+                  type="text"
+                  value={displayName}
+                />
               </label>
             ) : null}
             <label>
               Email
-              <input onChange={(event) => setEmail(event.target.value)} required type="email" value={email} />
+              <input
+                onChange={(event) => setEmail(event.target.value)}
+                required
+                type="email"
+                value={email}
+              />
             </label>
             <label>
               Password
@@ -233,15 +284,27 @@ export default function AccountPage({ currentUser, hasAdminSession, isUserSessio
                 value={password}
               />
             </label>
-            {mode === "register" ? <p className="form-helper-text">Use at least 8 characters for account passwords.</p> : null}
+            {mode === "register" ? (
+              <p className="form-helper-text">
+                Use at least 8 characters for account passwords.
+              </p>
+            ) : null}
             {error ? <p className="error-text">{error}</p> : null}
             {success ? <p className="success-text">{success}</p> : null}
             <div className="account-action-row">
-              <button type="submit">{submitting ? "Working..." : mode === "register" ? "Create Account" : "Sign In"}</button>
+              <button type="submit">
+                {submitting
+                  ? "Working..."
+                  : mode === "register"
+                    ? "Create Account"
+                    : "Sign In"}
+              </button>
               <button
                 className="secondary-button"
                 onClick={() => {
-                  setMode((current) => (current === "register" ? "login" : "register"));
+                  setMode((current) =>
+                    current === "register" ? "login" : "register"
+                  );
                   setError("");
                   setSuccess("");
                 }}

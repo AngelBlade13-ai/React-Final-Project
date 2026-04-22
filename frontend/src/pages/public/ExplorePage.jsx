@@ -1,13 +1,21 @@
 import { useDeferredValue, useState } from "react";
 import { ReleaseCard } from "../../components/cards";
 import { usePublicCollections, usePublicPosts } from "../../hooks/usePublicApi";
-import useDocumentTitle from "../../hooks/useDocumentTitle";
-import { getReleaseStatus, partitionCollectionsForExplore } from "../../lib/site";
+import usePageMetadata from "../../hooks/usePageMetadata";
+import {
+  getReleaseStatus,
+  partitionCollectionsForExplore
+} from "../../lib/site";
 
 export default function ExplorePage({ onPlayTrack }) {
-  useDocumentTitle("Explore");
+  usePageMetadata({
+    description:
+      "Search releases, collections, and lyrical fragments across the archive.",
+    title: "Explore"
+  });
   const { posts, isLoading: postsLoading } = usePublicPosts();
-  const { collections, isLoading: collectionsLoading } = usePublicCollections("all");
+  const { collections, isLoading: collectionsLoading } =
+    usePublicCollections("all");
   const [query, setQuery] = useState("");
   const [selectedCollection, setSelectedCollection] = useState("all");
   const [showInternalCollections, setShowInternalCollections] = useState(false);
@@ -18,14 +26,21 @@ export default function ExplorePage({ onPlayTrack }) {
 
   const filteredPosts = posts.filter((post) => {
     const matchesCollection =
-      selectedCollection === "all" || (post.collectionSlugs || []).includes(selectedCollection);
-    const searchHaystack = [post.title, post.excerpt, post.content, post.lyrics].join(" ").toLowerCase();
-    const matchesQuery = !normalizedQuery || searchHaystack.includes(normalizedQuery);
-    const matchesReleaseStatus = showWorkingVersions ? true : getReleaseStatus(post) !== "working";
+      selectedCollection === "all" ||
+      (post.collectionSlugs || []).includes(selectedCollection);
+    const searchHaystack = [post.title, post.excerpt, post.content, post.lyrics]
+      .join(" ")
+      .toLowerCase();
+    const matchesQuery =
+      !normalizedQuery || searchHaystack.includes(normalizedQuery);
+    const matchesReleaseStatus = showWorkingVersions
+      ? true
+      : getReleaseStatus(post) !== "working";
 
     return matchesCollection && matchesQuery && matchesReleaseStatus;
   });
-  const { primaryCollections, internalCollections } = partitionCollectionsForExplore(collections);
+  const { primaryCollections, internalCollections } =
+    partitionCollectionsForExplore(collections);
 
   return (
     <>
@@ -35,8 +50,9 @@ export default function ExplorePage({ onPlayTrack }) {
             <p className="eyebrow">Explore</p>
             <h1>Search the archive by title, release notes, and collection.</h1>
             <p className="hero-copy">
-              Explore is the utility layer of the site: search by phrase, switch lanes with collection filters, and
-              move from loose memory to the exact release page you wanted.
+              Explore is the utility layer of the site: search by phrase, switch
+              lanes with collection filters, and move from loose memory to the
+              exact release page you wanted.
             </p>
           </div>
           <div className="hero-note-card explore-summary-card">
@@ -52,11 +68,15 @@ export default function ExplorePage({ onPlayTrack }) {
               />
             </label>
             <div className="collection-meta-row">
-              <span className="meta-badge">{loading ? "..." : `${filteredPosts.length} matches`}</span>
+              <span className="meta-badge">
+                {loading ? "..." : `${filteredPosts.length} matches`}
+              </span>
               <span className="meta-badge subtle-badge">
                 {selectedCollection === "all"
                   ? "All collections"
-                  : collections.find((collection) => collection.slug === selectedCollection)?.title || "Filtered"}
+                  : collections.find(
+                      (collection) => collection.slug === selectedCollection
+                    )?.title || "Filtered"}
               </span>
             </div>
           </div>
@@ -87,7 +107,10 @@ export default function ExplorePage({ onPlayTrack }) {
               ))}
             </div>
             {internalCollections.length ? (
-              <details className="archive-link-picker" open={showInternalCollections}>
+              <details
+                className="archive-link-picker"
+                open={showInternalCollections}
+              >
                 <summary
                   onClick={(event) => {
                     event.preventDefault();
@@ -115,7 +138,9 @@ export default function ExplorePage({ onPlayTrack }) {
             <label className="checkbox-field">
               <input
                 checked={showWorkingVersions}
-                onChange={(event) => setShowWorkingVersions(event.target.checked)}
+                onChange={(event) =>
+                  setShowWorkingVersions(event.target.checked)
+                }
                 type="checkbox"
               />
               <span>Include working versions</span>
@@ -126,19 +151,29 @@ export default function ExplorePage({ onPlayTrack }) {
         <section>
           <div className="section-head">
             <h2>Results</h2>
-            <span>{loading ? "Loading..." : `${filteredPosts.length} matches`}</span>
+            <span>
+              {loading ? "Loading..." : `${filteredPosts.length} matches`}
+            </span>
           </div>
 
           {!loading && filteredPosts.length === 0 ? (
             <section className="intro-card homepage-panel empty-state-card">
               <p className="eyebrow">No Matches</p>
               <h3>Nothing lines up with that search yet.</h3>
-              <p>Try a broader phrase or switch the collection filter back to all collections.</p>
+              <p>
+                Try a broader phrase or switch the collection filter back to all
+                collections.
+              </p>
             </section>
           ) : (
             <div className="results-grid">
               {filteredPosts.map((post) => (
-                <ReleaseCard key={post.id} layout="horizontal" onPlayTrack={onPlayTrack} post={post} />
+                <ReleaseCard
+                  key={post.id}
+                  layout="horizontal"
+                  onPlayTrack={onPlayTrack}
+                  post={post}
+                />
               ))}
             </div>
           )}

@@ -1,9 +1,13 @@
 import { CollectionCard } from "../../components/cards";
 import { usePublicCollections } from "../../hooks/usePublicApi";
-import useDocumentTitle from "../../hooks/useDocumentTitle";
+import usePageMetadata from "../../hooks/usePageMetadata";
 
 export default function CollectionsIndexPage() {
-  useDocumentTitle("Collections");
+  usePageMetadata({
+    description:
+      "Browse the archive by collection, world, and curated entry point.",
+    title: "Collections"
+  });
   const { collections, isLoading: loading } = usePublicCollections();
 
   return (
@@ -12,8 +16,9 @@ export default function CollectionsIndexPage() {
         <p className="eyebrow">Collections</p>
         <h1>Curated entry points into the archive.</h1>
         <p className="hero-copy">
-          The public collection layer stays focused on the main paths through the catalog while the deeper taxonomy
-          remains available behind the scenes.
+          The public collection layer stays focused on the main paths through
+          the catalog while the deeper taxonomy remains available behind the
+          scenes.
         </p>
       </header>
 
@@ -21,7 +26,9 @@ export default function CollectionsIndexPage() {
         <section>
           <div className="section-head">
             <h2>Public Collections</h2>
-            <span>{loading ? "Loading..." : `${collections.length} collections`}</span>
+            <span>
+              {loading ? "Loading..." : `${collections.length} collections`}
+            </span>
           </div>
           {collections.length === 0 && !loading ? (
             <section className="intro-card homepage-panel empty-state-card">
@@ -32,7 +39,11 @@ export default function CollectionsIndexPage() {
           ) : (
             <div className="collection-grid collection-index-grid">
               {collections.map((collection) => (
-                <CollectionCard key={collection.id} collection={collection} showFeatured />
+                <CollectionCard
+                  key={collection.id}
+                  collection={collection}
+                  showFeatured
+                />
               ))}
             </div>
           )}

@@ -3,8 +3,11 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import CommentsSection from "../../components/CommentsSection";
 import EldoriaSigil from "../../components/EldoriaSigil";
 import ReleaseMedia from "../../components/ReleaseMedia";
-import { usePublicCollection, usePublicRelease } from "../../hooks/usePublicApi";
-import useDocumentTitle from "../../hooks/useDocumentTitle";
+import {
+  usePublicCollection,
+  usePublicRelease
+} from "../../hooks/usePublicApi";
+import usePageMetadata from "../../hooks/usePageMetadata";
 import { formatPostDate } from "../../lib/formatters";
 import {
   getCanonicalCollectionSurfacePosts,
@@ -45,9 +48,17 @@ export default function PublicReleasePage({
     isLoading: postLoading
   } = usePublicRelease(slug);
   const [showLyrics, setShowLyrics] = useState(false);
-  const [eldoriaMousePosition, setEldoriaMousePosition] = useState({ x: 52, y: 30 });
+  const [eldoriaMousePosition, setEldoriaMousePosition] = useState({
+    x: 52,
+    y: 30
+  });
   const [eldoriaScrollDepth, setEldoriaScrollDepth] = useState(0);
-  useDocumentTitle(post?.title || "Release");
+  usePageMetadata({
+    description:
+      post?.excerpt || "Listen to the release and read the note behind it.",
+    title: post?.title || "Release",
+    type: "article"
+  });
 
   const primaryTheme = getPrimaryThemeForPost(post);
   const labels = getThemeConfig(primaryTheme, siteContent);
@@ -57,13 +68,17 @@ export default function PublicReleasePage({
     error: sequenceError,
     isLoading: sequenceLoading
   } = usePublicCollection(primaryCollection?.slug);
-  const loading = postLoading || (Boolean(primaryCollection?.slug) && sequenceLoading);
+  const loading =
+    postLoading || (Boolean(primaryCollection?.slug) && sequenceLoading);
   const error = postError?.message || sequenceError?.message || "";
   const visibleCollections = getVisibleCollectionsForPost(post);
   const isFractureverse = primaryTheme === "fractureverse";
   const isEldoria = primaryTheme === "eldoria";
   const isThemedSequence = isFractureverse || isEldoria;
-  const fractureMeta = getFractureverseMeta(post, sequencePosts.length ? sequencePosts : post ? [post] : []);
+  const fractureMeta = getFractureverseMeta(
+    post,
+    sequencePosts.length ? sequencePosts : post ? [post] : []
+  );
   const eldoriaMeta = getEldoriaMeta(post);
   const getSequenceMeta = (entry) => {
     if (isFractureverse) {
@@ -77,36 +92,65 @@ export default function PublicReleasePage({
     return null;
   };
   const surfaceSequencePosts = isFractureverse
-    ? getCanonicalCollectionSurfacePosts(sequencePosts, { collection: primaryCollection, surface: "release" })
-    : getPrimaryCollectionSurfacePosts(sequencePosts, { collection: primaryCollection, surface: "release" });
+    ? getCanonicalCollectionSurfacePosts(sequencePosts, {
+        collection: primaryCollection,
+        surface: "release"
+      })
+    : getPrimaryCollectionSurfacePosts(sequencePosts, {
+        collection: primaryCollection,
+        surface: "release"
+      });
   const fractureverseSequencePosts = isFractureverse
-    ? sortFractureversePosts(surfaceSequencePosts).filter((entry) => getFractureverseMeta(entry, surfaceSequencePosts))
+    ? sortFractureversePosts(surfaceSequencePosts).filter((entry) =>
+        getFractureverseMeta(entry, surfaceSequencePosts)
+      )
     : [];
-  const orderedSequence = (isFractureverse
-    ? fractureverseSequencePosts
-    : isEldoria
-      ? sortEldoriaPosts(surfaceSequencePosts)
-      : surfaceSequencePosts)
+  const orderedSequence = (
+    isFractureverse
+      ? fractureverseSequencePosts
+      : isEldoria
+        ? sortEldoriaPosts(surfaceSequencePosts)
+        : surfaceSequencePosts
+  )
     .map((entry) => ({
       post: entry,
       meta: getSequenceMeta(entry)
     }))
     .filter((entry) => entry.post && (!isFractureverse || entry.meta));
-  const currentFragmentIndex = orderedSequence.findIndex((entry) => entry.post.slug === post?.slug);
-  const previousFragment = currentFragmentIndex > 0 ? orderedSequence[currentFragmentIndex - 1] : null;
+  const currentFragmentIndex = orderedSequence.findIndex(
+    (entry) => entry.post.slug === post?.slug
+  );
+  const previousFragment =
+    currentFragmentIndex > 0 ? orderedSequence[currentFragmentIndex - 1] : null;
   const nextFragment =
-    currentFragmentIndex >= 0 && currentFragmentIndex < orderedSequence.length - 1 ? orderedSequence[currentFragmentIndex + 1] : null;
+    currentFragmentIndex >= 0 &&
+    currentFragmentIndex < orderedSequence.length - 1
+      ? orderedSequence[currentFragmentIndex + 1]
+      : null;
   const linkedFragments = fractureMeta?.linkedPosts || [];
-  const companionBallads = orderedSequence.filter((entry) => entry.post.slug !== post?.slug);
-  const derivedContent = getCollectionDerivedContent(primaryCollection, orderedSequence.map((entry) => entry.post), siteContent);
-  const siblingVersions = getSiblingVersionPosts(sequencePosts.length ? sequencePosts : [post].filter(Boolean), post, {
-    collection: primaryCollection,
-    surface: "release"
-  });
-  const versionFamilyEntries = sortCollectionPostsForDisplay([post, ...siblingVersions], {
-    collection: primaryCollection,
-    surface: "release"
-  });
+  const companionBallads = orderedSequence.filter(
+    (entry) => entry.post.slug !== post?.slug
+  );
+  const derivedContent = getCollectionDerivedContent(
+    primaryCollection,
+    orderedSequence.map((entry) => entry.post),
+    siteContent
+  );
+  const siblingVersions = getSiblingVersionPosts(
+    sequencePosts.length ? sequencePosts : [post].filter(Boolean),
+    post,
+    {
+      collection: primaryCollection,
+      surface: "release"
+    }
+  );
+  const versionFamilyEntries = sortCollectionPostsForDisplay(
+    [post, ...siblingVersions],
+    {
+      collection: primaryCollection,
+      surface: "release"
+    }
+  );
   const primaryFamilyEntry =
     versionFamilyEntries.find((entry) => entry.isPrimaryVersion) ||
     versionFamilyEntries.find((entry) => getReleaseStatus(entry) === "canon") ||
@@ -131,21 +175,24 @@ export default function PublicReleasePage({
     (primaryTheme !== "default" ? primaryTheme : "");
   const eldoriaAudioActive = Boolean(
     isEldoria &&
-      isPlayerActive &&
-      currentTrack?.collections?.some((entry) => entry.slug === primaryCollection?.slug)
+    isPlayerActive &&
+    currentTrack?.collections?.some(
+      (entry) => entry.slug === primaryCollection?.slug
+    )
   );
   const playbackContext = primaryCollection
     ? {
         collectionId: primaryCollection.id || primaryCollection.slug,
         collectionName: primaryCollection.title,
         collectionSlug: primaryCollection.slug,
-        queue: isThemedSequence && orderedSequence.length
-          ? orderedSequence.map((entry) => entry.post)
-          : surfaceSequencePosts.length
-            ? surfaceSequencePosts
-            : sequencePosts.length
-              ? sequencePosts
-            : [post].filter(Boolean)
+        queue:
+          isThemedSequence && orderedSequence.length
+            ? orderedSequence.map((entry) => entry.post)
+            : surfaceSequencePosts.length
+              ? surfaceSequencePosts
+              : sequencePosts.length
+                ? sequencePosts
+                : [post].filter(Boolean)
       }
     : null;
 
@@ -248,7 +295,9 @@ export default function PublicReleasePage({
         {error ? <p className="error-text">{error}</p> : null}
         {post ? (
           <div className="release-hero-layout">
-            <div className={`release-hero-media${isEldoria ? " eldoria-release-media" : ""}`}>
+            <div
+              className={`release-hero-media${isEldoria ? " eldoria-release-media" : ""}`}
+            >
               <ReleaseMedia
                 className="release-video"
                 controls
@@ -266,38 +315,68 @@ export default function PublicReleasePage({
                 text={
                   isFractureverse
                     ? hasVideo(post.videoUrl)
-                      ? fractureMeta?.systemNote || "Observation log updated. Fragment playback available."
+                      ? fractureMeta?.systemNote ||
+                        "Observation log updated. Fragment playback available."
                       : "Signal trace detected. Playback unavailable. Emotional imprint preserved."
                     : isEldoria
                       ? hasVideo(post.videoUrl)
                         ? "This entry is part of the living chronicle. Playback is available whenever you want to step back into the tale."
                         : "This ballad already belongs to the chronicle in written form. Its visual telling can be added later without losing the page."
-                    : "This release has been published before the final video upload. The written entry is live now, and the visual can be added later."
+                      : "This release has been published before the final video upload. The written entry is live now, and the visual can be added later."
                 }
                 title={post.title}
                 videoUrl={post.videoUrl}
               />
               {isEldoria ? (
-                <div aria-hidden="true" className="eldoria-release-media-ornament">
-                  <EldoriaSigil awake={eldoriaAudioActive} className="eldoria-release-sigil" compact />
+                <div
+                  aria-hidden="true"
+                  className="eldoria-release-media-ornament"
+                >
+                  <EldoriaSigil
+                    awake={eldoriaAudioActive}
+                    className="eldoria-release-sigil"
+                    compact
+                  />
                 </div>
               ) : null}
             </div>
-            <div className={`release-hero-copy${isEldoria ? " eldoria-release-copy" : ""}`}>
-              <p className="eyebrow">{isFractureverse ? "Timeline Record" : isEldoria ? "Chronicle Entry" : labels.releaseNote}</p>
-              {isEldoria && eldoriaMeta?.identityLine ? <p className="fracture-fragment-meta eldoria-entry-meta">{eldoriaMeta.identityLine}</p> : null}
+            <div
+              className={`release-hero-copy${isEldoria ? " eldoria-release-copy" : ""}`}
+            >
+              <p className="eyebrow">
+                {isFractureverse
+                  ? "Timeline Record"
+                  : isEldoria
+                    ? "Chronicle Entry"
+                    : labels.releaseNote}
+              </p>
+              {isEldoria && eldoriaMeta?.identityLine ? (
+                <p className="fracture-fragment-meta eldoria-entry-meta">
+                  {eldoriaMeta.identityLine}
+                </p>
+              ) : null}
               <h1>{post.title}</h1>
-              {isEldoria ? <p className="eldoria-whisper-line eldoria-release-whisper">The chronicle never mistook her for a stranger.</p> : null}
-              {isEldoria && eldoriaMeta?.subtitle ? <p className="release-panel-intro eldoria-subtitle">{eldoriaMeta.subtitle}</p> : null}
+              {isEldoria ? (
+                <p className="eldoria-whisper-line eldoria-release-whisper">
+                  The chronicle never mistook her for a stranger.
+                </p>
+              ) : null}
+              {isEldoria && eldoriaMeta?.subtitle ? (
+                <p className="release-panel-intro eldoria-subtitle">
+                  {eldoriaMeta.subtitle}
+                </p>
+              ) : null}
               {isThemedSequence ? (
-                <p className="world-mode-lock-note">This world is experienced in Midnight Mode.</p>
+                <p className="world-mode-lock-note">
+                  This world is experienced in Midnight Mode.
+                </p>
               ) : null}
               <p className="release-hero-intro">
                 {isFractureverse
                   ? "An in-world fragment view: playback, record, linked echoes, and the position this entry holds inside the larger fracture."
                   : isEldoria
                     ? "A story-forward view for the ballad, its place inside the chronicle, and the verses that keep the world feeling lived in."
-                  : "A focused listening view for the video, the note behind it, and the words that shaped the release."}
+                    : "A focused listening view for the video, the note behind it, and the words that shaped the release."}
               </p>
               <p className="hero-copy">{post.excerpt}</p>
               <p className="meta">{formatPostDate(post.createdAt)}</p>
@@ -328,7 +407,12 @@ export default function PublicReleasePage({
                   </div>
                   <div className="world-status-item">
                     <span className="world-status-label">Chapter</span>
-                    <strong>{eldoriaMeta?.chapterLabel || (currentFragmentIndex >= 0 ? `${currentFragmentIndex + 1} / ${orderedSequence.length || 1}` : "Opening")}</strong>
+                    <strong>
+                      {eldoriaMeta?.chapterLabel ||
+                        (currentFragmentIndex >= 0
+                          ? `${currentFragmentIndex + 1} / ${orderedSequence.length || 1}`
+                          : "Opening")}
+                    </strong>
                   </div>
                   <div className="world-status-item">
                     <span className="world-status-label">Type</span>
@@ -336,13 +420,21 @@ export default function PublicReleasePage({
                   </div>
                   <div className="world-status-item">
                     <span className="world-status-label">Season</span>
-                    <strong>{orderedSequence.length > 1 ? "Chronicle in motion" : "First telling"}</strong>
+                    <strong>
+                      {orderedSequence.length > 1
+                        ? "Chronicle in motion"
+                        : "First telling"}
+                    </strong>
                   </div>
                 </div>
               ) : null}
               <div className="tag-row">
                 {visibleCollections.map((collection) => (
-                  <Link className="collection-chip" key={collection.slug} to={`/collections/${collection.slug}`}>
+                  <Link
+                    className="collection-chip"
+                    key={collection.slug}
+                    to={`/collections/${collection.slug}`}
+                  >
                     {collection.title}
                   </Link>
                 ))}
@@ -354,9 +446,9 @@ export default function PublicReleasePage({
                   onClick={() => onPlayTrack(post, playbackContext)}
                   type="button"
                 >
-                    {hasVideo(post.videoUrl)
-                      ? isFractureverse
-                        ? "Begin Playback"
+                  {hasVideo(post.videoUrl)
+                    ? isFractureverse
+                      ? "Begin Playback"
                       : primaryTheme === "eldoria"
                         ? "Listen to Ballad"
                         : "Play in Mini Player"
@@ -365,13 +457,29 @@ export default function PublicReleasePage({
                       : "Video Pending"}
                 </button>
                 {primaryCollection ? (
-                  <Link className="hero-link secondary-link" to={`/collections/${primaryCollection.slug}`}>
-                    {isFractureverse ? "Return to Sequence" : isEldoria ? "Return to Chronicle" : "Back to Collection"}
+                  <Link
+                    className="hero-link secondary-link"
+                    to={`/collections/${primaryCollection.slug}`}
+                  >
+                    {isFractureverse
+                      ? "Return to Sequence"
+                      : isEldoria
+                        ? "Return to Chronicle"
+                        : "Back to Collection"}
                   </Link>
                 ) : null}
               </div>
-              {isFractureverse ? <p className="fracture-system-voice">Observation log updated. Fragment link stability fluctuating.</p> : null}
-              {isEldoria ? <p className="eldoria-system-voice">This page is kept as part of the wider chronicle, not as a standalone upload.</p> : null}
+              {isFractureverse ? (
+                <p className="fracture-system-voice">
+                  Observation log updated. Fragment link stability fluctuating.
+                </p>
+              ) : null}
+              {isEldoria ? (
+                <p className="eldoria-system-voice">
+                  This page is kept as part of the wider chronicle, not as a
+                  standalone upload.
+                </p>
+              ) : null}
             </div>
           </div>
         ) : null}
@@ -399,7 +507,13 @@ export default function PublicReleasePage({
               </div>
               <div className="journey-rail-grid">
                 <article className="journey-summary-card">
-                  <p className="eyebrow">{isFractureverse ? "World Guide" : isEldoria ? "Chronicle Guide" : "Collection Guide"}</p>
+                  <p className="eyebrow">
+                    {isFractureverse
+                      ? "World Guide"
+                      : isEldoria
+                        ? "Chronicle Guide"
+                        : "Collection Guide"}
+                  </p>
                   <h3>{primaryCollection.title}</h3>
                   <p>
                     {isFractureverse
@@ -408,38 +522,85 @@ export default function PublicReleasePage({
                         ? "Treat this release as one chapter inside a larger telling. Follow the previous and next ballads to keep the world coherent."
                         : "Use the collection as the main thread, not just the single page, so each release keeps its context."}
                   </p>
-                  <Link className="card-link" to={`/collections/${primaryCollection.slug}`}>
-                    Return To {isFractureverse ? "Sequence" : isEldoria ? "Chronicle" : "Collection"}
+                  <Link
+                    className="card-link"
+                    to={`/collections/${primaryCollection.slug}`}
+                  >
+                    Return To{" "}
+                    {isFractureverse
+                      ? "Sequence"
+                      : isEldoria
+                        ? "Chronicle"
+                        : "Collection"}
                   </Link>
                 </article>
 
                 {previousFragment ? (
-                  <Link className="linked-echo-card journey-rail-link" to={`/release/${previousFragment.post.slug}`}>
-                    <span className="fracture-sequence-state">{isFractureverse ? "Previous Fragment" : isEldoria ? "Previous Ballad" : "Previous Release"}</span>
+                  <Link
+                    className="linked-echo-card journey-rail-link"
+                    to={`/release/${previousFragment.post.slug}`}
+                  >
+                    <span className="fracture-sequence-state">
+                      {isFractureverse
+                        ? "Previous Fragment"
+                        : isEldoria
+                          ? "Previous Ballad"
+                          : "Previous Release"}
+                    </span>
                     <strong>{previousFragment.post.title}</strong>
                     <p>
                       {isFractureverse
-                        ? [previousFragment.meta?.fragmentId, previousFragment.meta?.state, previousFragment.meta?.signalType].filter(Boolean).join(" / ")
+                        ? [
+                            previousFragment.meta?.fragmentId,
+                            previousFragment.meta?.state,
+                            previousFragment.meta?.signalType
+                          ]
+                            .filter(Boolean)
+                            .join(" / ")
                         : isEldoria
-                          ? previousFragment.meta?.chapterLabel || "Earlier chapter"
+                          ? previousFragment.meta?.chapterLabel ||
+                            "Earlier chapter"
                           : previousFragment.post.excerpt}
                     </p>
                   </Link>
                 ) : (
                   <div className="linked-echo-card journey-rail-link static-card">
-                    <span className="fracture-sequence-state">Start Of Path</span>
+                    <span className="fracture-sequence-state">
+                      Start Of Path
+                    </span>
                     <strong>This release currently opens the sequence.</strong>
-                    <p>{isFractureverse ? "There is no earlier observed fragment." : isEldoria ? "There is no earlier recorded ballad." : "There is no earlier collection release in the current surface order."}</p>
+                    <p>
+                      {isFractureverse
+                        ? "There is no earlier observed fragment."
+                        : isEldoria
+                          ? "There is no earlier recorded ballad."
+                          : "There is no earlier collection release in the current surface order."}
+                    </p>
                   </div>
                 )}
 
                 {nextFragment ? (
-                  <Link className="linked-echo-card journey-rail-link" to={`/release/${nextFragment.post.slug}`}>
-                    <span className="fracture-sequence-state">{isFractureverse ? "Next Fragment" : isEldoria ? "Next Ballad" : "Next Release"}</span>
+                  <Link
+                    className="linked-echo-card journey-rail-link"
+                    to={`/release/${nextFragment.post.slug}`}
+                  >
+                    <span className="fracture-sequence-state">
+                      {isFractureverse
+                        ? "Next Fragment"
+                        : isEldoria
+                          ? "Next Ballad"
+                          : "Next Release"}
+                    </span>
                     <strong>{nextFragment.post.title}</strong>
                     <p>
                       {isFractureverse
-                        ? [nextFragment.meta?.fragmentId, nextFragment.meta?.state, nextFragment.meta?.signalType].filter(Boolean).join(" / ")
+                        ? [
+                            nextFragment.meta?.fragmentId,
+                            nextFragment.meta?.state,
+                            nextFragment.meta?.signalType
+                          ]
+                            .filter(Boolean)
+                            .join(" / ")
                         : isEldoria
                           ? nextFragment.meta?.chapterLabel || "Later chapter"
                           : nextFragment.post.excerpt}
@@ -447,30 +608,59 @@ export default function PublicReleasePage({
                   </Link>
                 ) : (
                   <div className="linked-echo-card journey-rail-link static-card">
-                    <span className="fracture-sequence-state">Current Edge</span>
+                    <span className="fracture-sequence-state">
+                      Current Edge
+                    </span>
                     <strong>This release currently ends the path.</strong>
-                    <p>{isFractureverse ? "No later fragment has been mapped in the main sequence yet." : isEldoria ? "No later ballad has been recorded in this chronicle yet." : "No later collection release appears after this one in the current surface order."}</p>
+                    <p>
+                      {isFractureverse
+                        ? "No later fragment has been mapped in the main sequence yet."
+                        : isEldoria
+                          ? "No later ballad has been recorded in this chronicle yet."
+                          : "No later collection release appears after this one in the current surface order."}
+                    </p>
                   </div>
                 )}
               </div>
             </section>
           ) : null}
 
-          <section className={`intro-card homepage-panel release-copy-panel${isEldoria ? " eldoria-royal-record" : ""}`}>
-            <p className="eyebrow">{isEldoria ? "Royal Record" : labels.releaseNote}</p>
+          <section
+            className={`intro-card homepage-panel release-copy-panel${isEldoria ? " eldoria-royal-record" : ""}`}
+          >
+            <p className="eyebrow">
+              {isEldoria ? "Royal Record" : labels.releaseNote}
+            </p>
             {isFractureverse && fractureMeta ? (
               <>
                 <h2 className="release-panel-title">
-                  {fractureMeta.fragmentId} / {fractureMeta.state} / {fractureMeta.signalType}
+                  {fractureMeta.fragmentId} / {fractureMeta.state} /{" "}
+                  {fractureMeta.signalType}
                 </h2>
-                <p className="release-panel-intro">{fractureMeta.description}</p>
+                <p className="release-panel-intro">
+                  {fractureMeta.description}
+                </p>
               </>
             ) : isEldoria ? (
               <>
-                <h2 className="release-panel-title">{eldoriaMeta?.subtitle || "Ballad Notes"}</h2>
-                {eldoriaMeta?.openingPassage ? <p className="release-panel-intro eldoria-opening-passage">{eldoriaMeta.openingPassage}</p> : null}
-                {eldoriaMeta?.coreSituation ? <p className="release-panel-intro">{eldoriaMeta.coreSituation}</p> : null}
-                {eldoriaMeta?.coreTension ? <p className="release-panel-intro">{eldoriaMeta.coreTension}</p> : null}
+                <h2 className="release-panel-title">
+                  {eldoriaMeta?.subtitle || "Ballad Notes"}
+                </h2>
+                {eldoriaMeta?.openingPassage ? (
+                  <p className="release-panel-intro eldoria-opening-passage">
+                    {eldoriaMeta.openingPassage}
+                  </p>
+                ) : null}
+                {eldoriaMeta?.coreSituation ? (
+                  <p className="release-panel-intro">
+                    {eldoriaMeta.coreSituation}
+                  </p>
+                ) : null}
+                {eldoriaMeta?.coreTension ? (
+                  <p className="release-panel-intro">
+                    {eldoriaMeta.coreTension}
+                  </p>
+                ) : null}
               </>
             ) : null}
             <div className="release-prose">
@@ -480,25 +670,32 @@ export default function PublicReleasePage({
                     <section className="eldoria-entry-block">
                       <p className="eyebrow">Chronicle Layer</p>
                       <p>{eldoriaMeta.chronicleObservation}</p>
-                      {eldoriaMeta.chronicleContradiction ? <p>{eldoriaMeta.chronicleContradiction}</p> : null}
+                      {eldoriaMeta.chronicleContradiction ? (
+                        <p>{eldoriaMeta.chronicleContradiction}</p>
+                      ) : null}
                       {eldoriaMeta.chronicleConclusion ? (
                         <p className="eldoria-conclusion-line">
-                          <strong>Conclusion:</strong> {eldoriaMeta.chronicleConclusion}
+                          <strong>Conclusion:</strong>{" "}
+                          {eldoriaMeta.chronicleConclusion}
                         </p>
                       ) : null}
                     </section>
                   ) : null}
-                  {eldoriaMeta.emotionalState || eldoriaMeta.coreConflict || eldoriaMeta.risk ? (
+                  {eldoriaMeta.emotionalState ||
+                  eldoriaMeta.coreConflict ||
+                  eldoriaMeta.risk ? (
                     <section className="eldoria-entry-block">
                       <p className="eyebrow">Emotional Annotation</p>
                       {eldoriaMeta.emotionalState ? (
                         <p>
-                          <strong>Emotional State:</strong> {eldoriaMeta.emotionalState}
+                          <strong>Emotional State:</strong>{" "}
+                          {eldoriaMeta.emotionalState}
                         </p>
                       ) : null}
                       {eldoriaMeta.coreConflict ? (
                         <p>
-                          <strong>Core Conflict:</strong> {eldoriaMeta.coreConflict}
+                          <strong>Core Conflict:</strong>{" "}
+                          {eldoriaMeta.coreConflict}
                         </p>
                       ) : null}
                       {eldoriaMeta.risk ? (
@@ -508,7 +705,11 @@ export default function PublicReleasePage({
                       ) : null}
                     </section>
                   ) : null}
-                  {eldoriaMeta.anchorQuote ? <blockquote className="eldoria-anchor-quote">{eldoriaMeta.anchorQuote}</blockquote> : null}
+                  {eldoriaMeta.anchorQuote ? (
+                    <blockquote className="eldoria-anchor-quote">
+                      {eldoriaMeta.anchorQuote}
+                    </blockquote>
+                  ) : null}
                   {eldoriaMeta.resolution ? (
                     <section className="eldoria-entry-block">
                       <p className="eyebrow">Where It Lands</p>
@@ -520,7 +721,8 @@ export default function PublicReleasePage({
                       <p className="eyebrow">Classification</p>
                       {eldoriaMeta.entryType ? (
                         <p>
-                          <strong>Entry Classification:</strong> {eldoriaMeta.entryType}
+                          <strong>Entry Classification:</strong>{" "}
+                          {eldoriaMeta.entryType}
                         </p>
                       ) : null}
                       {eldoriaMeta.entryStatus ? (
@@ -533,9 +735,12 @@ export default function PublicReleasePage({
                   ) : null}
                 </>
               ) : (
-                post.content.split("\n").filter(Boolean).map((paragraph, index) => (
-                  <p key={`${post.id}-content-${index}`}>{paragraph}</p>
-                ))
+                post.content
+                  .split("\n")
+                  .filter(Boolean)
+                  .map((paragraph, index) => (
+                    <p key={`${post.id}-content-${index}`}>{paragraph}</p>
+                  ))
               )}
             </div>
           </section>
@@ -553,8 +758,12 @@ export default function PublicReleasePage({
                     key={entry.post.id}
                     to={`/release/${entry.post.slug}`}
                   >
-                    <span className="fracture-sequence-id">{entry.meta.fragmentId}</span>
-                    <span className="fracture-sequence-state">{entry.meta.state}</span>
+                    <span className="fracture-sequence-id">
+                      {entry.meta.fragmentId}
+                    </span>
+                    <span className="fracture-sequence-state">
+                      {entry.meta.state}
+                    </span>
                     <strong>{entry.meta.title}</strong>
                   </Link>
                 ))}
@@ -563,10 +772,14 @@ export default function PublicReleasePage({
           ) : null}
 
           {isEldoria ? (
-              <section className="intro-card homepage-panel eldoria-release-panel">
-                <div className="section-head eldoria-chronicle-head">
-                  <h2>Song Cycle</h2>
-                <span>{orderedSequence.length ? derivedContent.releaseSequenceLabel : "Chronicle context"}</span>
+            <section className="intro-card homepage-panel eldoria-release-panel">
+              <div className="section-head eldoria-chronicle-head">
+                <h2>Song Cycle</h2>
+                <span>
+                  {orderedSequence.length
+                    ? derivedContent.releaseSequenceLabel
+                    : "Chronicle context"}
+                </span>
               </div>
               {orderedSequence.length ? (
                 <div className="eldoria-song-cycle">
@@ -576,14 +789,23 @@ export default function PublicReleasePage({
                       key={entry.post.id}
                       to={`/release/${entry.post.slug}`}
                     >
-                      <span className="fracture-sequence-id">{getEldoriaMeta(entry.post)?.chapterLabel || `Chapter ${String(index + 1).padStart(2, "0")}`}</span>
+                      <span className="fracture-sequence-id">
+                        {getEldoriaMeta(entry.post)?.chapterLabel ||
+                          `Chapter ${String(index + 1).padStart(2, "0")}`}
+                      </span>
                       <strong>{entry.post.title}</strong>
-                      <p>{getEldoriaMeta(entry.post)?.openingPassage || entry.post.excerpt}</p>
+                      <p>
+                        {getEldoriaMeta(entry.post)?.openingPassage ||
+                          entry.post.excerpt}
+                      </p>
                     </Link>
                   ))}
                 </div>
               ) : (
-                <p className="lyrics-placeholder">This ballad is currently the only recorded chapter in the chronicle.</p>
+                <p className="lyrics-placeholder">
+                  This ballad is currently the only recorded chapter in the
+                  chronicle.
+                </p>
               )}
             </section>
           ) : null}
@@ -601,8 +823,14 @@ export default function PublicReleasePage({
                       const meta = getFractureverseMeta(entry, sequencePosts);
 
                       return (
-                        <Link className="linked-echo-card" key={entry.id} to={`/release/${entry.slug}`}>
-                          <span className="fracture-sequence-id">{meta?.fragmentId || "F-00"}</span>
+                        <Link
+                          className="linked-echo-card"
+                          key={entry.id}
+                          to={`/release/${entry.slug}`}
+                        >
+                          <span className="fracture-sequence-id">
+                            {meta?.fragmentId || "F-00"}
+                          </span>
                           <strong>{meta?.title || entry.title}</strong>
                           <p>{meta?.description || entry.excerpt}</p>
                         </Link>
@@ -610,7 +838,9 @@ export default function PublicReleasePage({
                     })}
                   </div>
                 ) : (
-                  <p className="lyrics-placeholder">No linked echoes have been mapped for this fragment yet.</p>
+                  <p className="lyrics-placeholder">
+                    No linked echoes have been mapped for this fragment yet.
+                  </p>
                 )}
               </section>
             </section>
@@ -626,15 +856,28 @@ export default function PublicReleasePage({
                 {companionBallads.length ? (
                   <div className="linked-echo-grid">
                     {companionBallads.map((entry, index) => (
-                      <Link className="linked-echo-card eldoria-linked-card" key={entry.post.id} to={`/release/${entry.post.slug}`}>
-                        <span className="fracture-sequence-id">{getEldoriaMeta(entry.post)?.chapterLabel || `Chapter ${String(index + 1).padStart(2, "0")}`}</span>
+                      <Link
+                        className="linked-echo-card eldoria-linked-card"
+                        key={entry.post.id}
+                        to={`/release/${entry.post.slug}`}
+                      >
+                        <span className="fracture-sequence-id">
+                          {getEldoriaMeta(entry.post)?.chapterLabel ||
+                            `Chapter ${String(index + 1).padStart(2, "0")}`}
+                        </span>
                         <strong>{entry.post.title}</strong>
-                        <p>{getEldoriaMeta(entry.post)?.coreSituation || entry.post.excerpt}</p>
+                        <p>
+                          {getEldoriaMeta(entry.post)?.coreSituation ||
+                            entry.post.excerpt}
+                        </p>
                       </Link>
                     ))}
                   </div>
                 ) : (
-                  <p className="lyrics-placeholder">No companion ballads have been gathered into this part of the chronicle yet.</p>
+                  <p className="lyrics-placeholder">
+                    No companion ballads have been gathered into this part of
+                    the chronicle yet.
+                  </p>
                 )}
               </section>
             </section>
@@ -644,7 +887,10 @@ export default function PublicReleasePage({
             <section className="intro-card homepage-panel version-family-panel">
               <div className="section-head">
                 <h2>Version Family</h2>
-                <span>{versionFamilyEntries.length} public version{versionFamilyEntries.length === 1 ? "" : "s"}</span>
+                <span>
+                  {versionFamilyEntries.length} public version
+                  {versionFamilyEntries.length === 1 ? "" : "s"}
+                </span>
               </div>
               <div className="version-family-summary">
                 <div className="journey-summary-card">
@@ -656,13 +902,25 @@ export default function PublicReleasePage({
                       : "This release branches from a larger version family and sits beside the main surface lead."}
                   </p>
                   <div className="tag-row">
-                    <span className="meta-badge">{String(getReleaseStatus(post)).replace(/^\w/, (character) => character.toUpperCase())}</span>
-                    {post.isPrimaryVersion ? <span className="meta-badge subtle-badge">Primary</span> : null}
+                    <span className="meta-badge">
+                      {String(getReleaseStatus(post)).replace(
+                        /^\w/,
+                        (character) => character.toUpperCase()
+                      )}
+                    </span>
+                    {post.isPrimaryVersion ? (
+                      <span className="meta-badge subtle-badge">Primary</span>
+                    ) : null}
                   </div>
                 </div>
                 {primaryFamilyEntry && primaryFamilyEntry.slug !== post.slug ? (
-                  <Link className="linked-echo-card version-family-lead-card" to={`/release/${primaryFamilyEntry.slug}`}>
-                    <span className="fracture-sequence-state">Surface Lead</span>
+                  <Link
+                    className="linked-echo-card version-family-lead-card"
+                    to={`/release/${primaryFamilyEntry.slug}`}
+                  >
+                    <span className="fracture-sequence-state">
+                      Surface Lead
+                    </span>
                     <strong>{primaryFamilyEntry.title}</strong>
                     <p>{primaryFamilyEntry.excerpt}</p>
                   </Link>
@@ -676,13 +934,20 @@ export default function PublicReleasePage({
                     to={`/release/${entry.slug}`}
                   >
                     <span className="fracture-sequence-state">
-                      {String(getReleaseStatus(entry)).replace(/^\w/, (character) => character.toUpperCase())}
+                      {String(getReleaseStatus(entry)).replace(
+                        /^\w/,
+                        (character) => character.toUpperCase()
+                      )}
                     </span>
                     <strong>{entry.title}</strong>
                     <p>{entry.excerpt}</p>
                     <div className="tag-row compact-tag-row">
-                      {entry.slug === primaryFamilyEntry?.slug ? <span className="meta-badge">Surface Lead</span> : null}
-                      {entry.slug === post.slug ? <span className="meta-badge subtle-badge">Current</span> : null}
+                      {entry.slug === primaryFamilyEntry?.slug ? (
+                        <span className="meta-badge">Surface Lead</span>
+                      ) : null}
+                      {entry.slug === post.slug ? (
+                        <span className="meta-badge subtle-badge">Current</span>
+                      ) : null}
                     </div>
                   </Link>
                 ))}
@@ -697,8 +962,14 @@ export default function PublicReleasePage({
                   <p className="eyebrow">{labels.lyrics}</p>
                   <h2>{labels.lyrics}</h2>
                 </div>
-                <button className="secondary-button lyrics-toggle" onClick={() => setShowLyrics((current) => !current)} type="button">
-                  {showLyrics ? `Hide ${labels.lyrics}` : `Show ${labels.lyrics}`}
+                <button
+                  className="secondary-button lyrics-toggle"
+                  onClick={() => setShowLyrics((current) => !current)}
+                  type="button"
+                >
+                  {showLyrics
+                    ? `Hide ${labels.lyrics}`
+                    : `Show ${labels.lyrics}`}
                 </button>
               </div>
               {showLyrics ? (
@@ -720,18 +991,29 @@ export default function PublicReleasePage({
               <p className="eyebrow">Residual Echo</p>
               <h2 className="release-panel-title">{fractureMeta.systemNote}</h2>
               <p className="release-panel-intro">
-                Primary subject integrity remains unstable. Continue through linked echoes or return to the observed sequence.
+                Primary subject integrity remains unstable. Continue through
+                linked echoes or return to the observed sequence.
               </p>
             </section>
           ) : isEldoria ? (
             <section className="intro-card homepage-panel eldoria-release-panel eldoria-residual-panel">
               <p className="eyebrow">Closing Benediction</p>
-              <h2 className="release-panel-title">{eldoriaMeta?.chronicleConclusion || "Every ballad leaves a mark on the chronicle that carries it."}</h2>
-              <p className="release-panel-intro">{eldoriaMeta?.resolution || "Some entries feel like beginnings, some like old promises returning. Either way, they belong to the same world once they are written here."}</p>
+              <h2 className="release-panel-title">
+                {eldoriaMeta?.chronicleConclusion ||
+                  "Every ballad leaves a mark on the chronicle that carries it."}
+              </h2>
+              <p className="release-panel-intro">
+                {eldoriaMeta?.resolution ||
+                  "Some entries feel like beginnings, some like old promises returning. Either way, they belong to the same world once they are written here."}
+              </p>
             </section>
           ) : null}
 
-          <CommentsSection currentUser={currentUser} onUserLogout={onUserLogout} postSlug={post.slug} />
+          <CommentsSection
+            currentUser={currentUser}
+            onUserLogout={onUserLogout}
+            postSlug={post.slug}
+          />
         </main>
       ) : null}
     </>
