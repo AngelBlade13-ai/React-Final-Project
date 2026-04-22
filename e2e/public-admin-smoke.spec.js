@@ -9,6 +9,11 @@ test("public account and admin smoke paths work against the test stack", async (
     page.getByRole("heading", { name: /soft archive/i })
   ).toBeVisible();
 
+  await page.goto("/release/this-is-my-light");
+  await expect(
+    page.getByRole("heading", { name: "This Is My Light" })
+  ).toBeVisible();
+
   await page.goto("/account");
   await page.getByRole("button", { name: "Create Account" }).click();
   await page.getByLabel("Display Name").fill("Quality Gate User");

@@ -145,7 +145,7 @@ export default function PublicReleasePage({
     }
   );
   const versionFamilyEntries = sortCollectionPostsForDisplay(
-    [post, ...siblingVersions],
+    [post, ...siblingVersions].filter(Boolean),
     {
       collection: primaryCollection,
       surface: "release"
