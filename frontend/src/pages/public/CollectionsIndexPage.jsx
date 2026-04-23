@@ -16,6 +16,9 @@ export default function CollectionsIndexPage() {
   const archiveCollections = collections.filter(
     (collection) => !worldCollections.some((entry) => entry.id === collection.id)
   );
+  const atlasSummary = loading
+    ? "Reading atlas..."
+    : `${worldCollections.length} worlds / ${archiveCollections.length} shelves / ${collections.length} total collections`;
 
   return (
     <>
@@ -46,6 +49,7 @@ export default function CollectionsIndexPage() {
                 {loading ? "..." : `${archiveCollections.length} archive shelves`}
               </span>
             </div>
+            <p className="collection-index-summary">{atlasSummary}</p>
           </div>
         </div>
       </header>

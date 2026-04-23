@@ -37,6 +37,7 @@ Refine the site and importer from a rich shared texture system into a clearer hi
 - Started the collections atlas pass by separating world thresholds from other collections in `frontend/src/pages/public/CollectionsIndexPage.jsx`
 - Expanded the collections atlas pass with a dedicated atlas note card and clearer world-vs-shelf framing in `frontend/src/pages/public/CollectionsIndexPage.jsx`
 - Added distinct visual treatments for world-threshold collections versus archive shelves in `frontend/src/styles/public-shell.css`
+- Added a clearer atlas summary line to the collections landing hero in `frontend/src/pages/public/CollectionsIndexPage.jsx`
 - Expanded the Explore pass with stronger utility framing and filter guidance copy in `frontend/src/pages/public/ExplorePage.jsx`
 - Added a clearer results lane summary to the Explore results surface in `frontend/src/pages/public/ExplorePage.jsx`
 - Started the admin mode pass by adding a distinct admin shell treatment in `frontend/src/layouts/AdminLayout.jsx` and `frontend/src/pages/admin/AdminLogin.jsx`
