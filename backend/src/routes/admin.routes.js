@@ -19,6 +19,10 @@ const {
 const { buildArchiveInsights } = require("../services/archiveInsights");
 const { attachCommentDetails } = require("../services/authUserService");
 const {
+  applyLiveStoreSync,
+  previewLiveStoreSync
+} = require("../services/liveStoreSync");
+const {
   appendSlugHistory,
   applyBulkPostUpdates,
   attachCollectionDetails,
@@ -784,6 +788,46 @@ router.get("/insights", async (req, res, next) => {
   try {
     const store = await readStore();
     return res.json({ insights: buildArchiveInsights(store) });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/live-store-sync", async (req, res, next) => {
+  try {
+    const preview = await previewLiveStoreSync();
+    return res.json({
+      preview: {
+        generatedAt: preview.report.generatedAt,
+        postsFile: preview.report.postsFile,
+        report: preview.report,
+        artifactPaths: {
+          liveSnapshotPath: preview.liveSnapshotPath,
+          reportPath: preview.reportPath
+        }
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/live-store-sync", async (req, res, next) => {
+  try {
+    const result = await applyLiveStoreSync();
+    return res.json({
+      message: "Live admin data was written back into posts.json.",
+      sync: {
+        generatedAt: result.report.generatedAt,
+        postsFile: result.report.postsFile,
+        report: result.report,
+        artifactPaths: {
+          liveSnapshotPath: result.liveSnapshotPath,
+          reportPath: result.reportPath,
+          backupPath: result.backupPath
+        }
+      }
+    });
   } catch (error) {
     next(error);
   }

@@ -100,6 +100,11 @@ export default function AdminInsightsPage() {
   const [error, setError] = useState("");
   const [auditError, setAuditError] = useState("");
   const [healthError, setHealthError] = useState("");
+  const [syncPreview, setSyncPreview] = useState(null);
+  const [syncLoading, setSyncLoading] = useState(false);
+  const [syncWriting, setSyncWriting] = useState(false);
+  const [syncError, setSyncError] = useState("");
+  const [syncMessage, setSyncMessage] = useState("");
 
   useEffect(() => {
     let isCancelled = false;
@@ -170,11 +175,82 @@ export default function AdminInsightsPage() {
     };
   }, []);
 
+  async function handlePreviewLiveSync() {
+    try {
+      setSyncLoading(true);
+      setSyncError("");
+      setSyncMessage("");
+
+      const data = await readJson(
+        adminFetch(`${apiBaseUrl}/admin/live-store-sync`),
+        "Failed to preview live admin drift."
+      );
+
+      setSyncPreview(data.preview || null);
+    } catch (apiError) {
+      setSyncError(apiError.message);
+    } finally {
+      setSyncLoading(false);
+    }
+  }
+
+  async function handleApplyLiveSync() {
+    const confirmed = window.confirm(
+      "This will overwrite backend/data/posts.json from the current live admin-backed store. Continue?"
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setSyncWriting(true);
+      setSyncError("");
+      setSyncMessage("");
+
+      const data = await readJson(
+        adminFetch(`${apiBaseUrl}/admin/live-store-sync`, {
+          method: "POST"
+        }),
+        "Failed to write live admin data back into posts.json."
+      );
+
+      setSyncPreview({
+        generatedAt: data.sync?.generatedAt,
+        postsFile: data.sync?.postsFile,
+        report: data.sync?.report,
+        artifactPaths: data.sync?.artifactPaths
+      });
+      setSyncMessage(
+        data.message || "Live admin data was written back into posts.json."
+      );
+    } catch (apiError) {
+      setSyncError(apiError.message);
+    } finally {
+      setSyncWriting(false);
+    }
+  }
+
   const summary = insights?.summary || {};
   const readinessEntries = insights
     ? Object.values(insights.readiness || {})
     : [];
   const scoreTone = getScoreTone(summary.archiveHealthScore || 0);
+  const syncReport = syncPreview?.report || null;
+  const syncPostSummary = syncReport?.posts || null;
+  const syncCollectionSummary = syncReport?.collections || null;
+  const syncPostSamples = [
+    ...(syncPostSummary?.onlyInLive || []).slice(0, 4).map((entry) => ({
+      label: "Live only",
+      title: entry.title || entry.key,
+      note: entry.key
+    })),
+    ...(syncPostSummary?.changed || []).slice(0, 4).map((entry) => ({
+      label: "Changed",
+      title: entry.title || entry.key,
+      note: entry.changedFields.join(", ")
+    }))
+  ].slice(0, 6);
 
   return (
     <main className="admin-grid admin-insights-grid">
@@ -328,6 +404,108 @@ export default function AdminInsightsPage() {
             </span>
           </article>
         </div>
+      </section>
+
+      <section className="intro-card homepage-panel full-span">
+        <div className="section-head">
+          <h2>Source Of Truth Sync</h2>
+          <span>{syncPreview ? "Preview ready" : "Run a preview before writing"}</span>
+        </div>
+        <p className="meta">
+          This pulls the live admin-backed Mongo store back into{" "}
+          <code>backend/data/posts.json</code>. Use it before any reseed if you
+          have been editing posts in the admin and do not want those changes
+          overwritten by stale file data.
+        </p>
+        <div className="archive-intelligence-actions">
+          <button
+            className="hero-link"
+            disabled={syncLoading || syncWriting}
+            onClick={handlePreviewLiveSync}
+            type="button"
+          >
+            {syncLoading ? "Scanning Live Drift..." : "Preview Live Drift"}
+          </button>
+          <button
+            className="secondary-button"
+            disabled={!syncPreview || syncLoading || syncWriting}
+            onClick={handleApplyLiveSync}
+            type="button"
+          >
+            {syncWriting
+              ? "Writing posts.json..."
+              : "Write Live Store To posts.json"}
+          </button>
+        </div>
+        {syncError ? <p className="error-text">{syncError}</p> : null}
+        {syncMessage ? <p className="meta">{syncMessage}</p> : null}
+        {syncReport ? (
+          <div className="insight-issue-grid" style={{ marginTop: "1rem" }}>
+            <article className="insight-issue-card severity-info">
+              <div className="insight-issue-head">
+                <div>
+                  <p className="eyebrow">Posts</p>
+                  <h3>Live vs File Drift</h3>
+                </div>
+                <span className="issue-count-pill">
+                  {syncPostSummary?.changed?.length || 0}
+                </span>
+              </div>
+              <p>
+                {`${syncPostSummary?.liveCount || 0} live / ${syncPostSummary?.fileCount || 0} file | `}
+                {`${syncPostSummary?.onlyInLive?.length || 0} live-only | `}
+                {`${syncPostSummary?.onlyInFile?.length || 0} file-only`}
+              </p>
+              {syncPostSamples.length ? (
+                <div className="insight-sample-list">
+                  {syncPostSamples.map((sample, index) => (
+                    <article
+                      className="insight-sample-link"
+                      key={`${sample.label}-${sample.title}-${index}`}
+                    >
+                      <strong>{sample.title}</strong>
+                      <span>{sample.label}</span>
+                      <small>{sample.note}</small>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <p className="meta">
+                  No post drift was detected between the live store and
+                  posts.json.
+                </p>
+              )}
+            </article>
+            <article className="insight-issue-card severity-info">
+              <div className="insight-issue-head">
+                <div>
+                  <p className="eyebrow">Collections</p>
+                  <h3>Collection Drift</h3>
+                </div>
+                <span className="issue-count-pill">
+                  {syncCollectionSummary?.changed?.length || 0}
+                </span>
+              </div>
+              <p>
+                {`${syncCollectionSummary?.liveCount || 0} live / ${syncCollectionSummary?.fileCount || 0} file | `}
+                {`${syncCollectionSummary?.onlyInLive?.length || 0} live-only | `}
+                {`${syncCollectionSummary?.onlyInFile?.length || 0} file-only`}
+              </p>
+              <p className="meta">
+                {`Reports: ${syncPreview?.artifactPaths?.reportPath || "n/a"} | Snapshot: ${syncPreview?.artifactPaths?.liveSnapshotPath || "n/a"}`}
+              </p>
+              {syncPreview?.artifactPaths?.backupPath ? (
+                <p className="meta">
+                  {`Backup written: ${syncPreview.artifactPaths.backupPath}`}
+                </p>
+              ) : (
+                <p className="meta">
+                  No file write has happened yet. Preview mode is read-only.
+                </p>
+              )}
+            </article>
+          </div>
+        ) : null}
       </section>
 
       <section className="intro-card homepage-panel">
