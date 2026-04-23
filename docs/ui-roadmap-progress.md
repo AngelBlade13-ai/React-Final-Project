@@ -53,6 +53,7 @@ Refine the site and importer from a rich shared texture system into a clearer hi
 - Added stronger atlas guidance copy in `frontend/src/pages/public/CollectionsIndexPage.jsx`
 - Added an admin workspace board to the posts editor surface in `frontend/src/pages/admin/AdminPostsPage.jsx`
 - Added an admin operational summary board to the insights surface in `frontend/src/pages/admin/AdminInsightsPage.jsx`
+- Tightened the post editor status, tab, and section hierarchy in `frontend/src/styles/admin-mode.css`
 - Started the importer workstation pass by restructuring `D:\Projects\PythonProject\templates\import_window.html` into clearer stages with advanced settings tucked behind a details panel
 - Verified:
   - `frontend/npm run verify`

@@ -173,6 +173,47 @@
   color: color-mix(in srgb, var(--background) 48%, black 52%);
 }
 
+.post-editor-tab-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.65rem;
+}
+
+.post-editor-layout {
+  gap: 1.1rem;
+}
+
+.editor-status-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  align-items: center;
+}
+
+.editor-status-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0.55rem 0.78rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border) 76%, transparent);
+  background: color-mix(in srgb, var(--surface-raised) 82%, var(--surface) 18%);
+  color: var(--muted-text);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.editor-status-pill.is-dirty {
+  background: color-mix(in srgb, var(--primary) 24%, var(--surface-raised) 76%);
+  color: color-mix(in srgb, var(--text) 84%, var(--primary-strong) 16%);
+  border-color: color-mix(in srgb, var(--primary) 30%, var(--border) 70%);
+}
+
+.editor-section-body {
+  display: grid;
+  gap: 1rem;
+}
+
 .post-editor-shell-card {
   border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
   box-shadow:
