@@ -36,6 +36,7 @@ Refine the site and importer from a rich shared texture system into a clearer hi
 - Redesigned the theme toggle in `frontend/src/components/ThemeToggle.jsx`
 - Started the collections atlas pass by separating world thresholds from other collections in `frontend/src/pages/public/CollectionsIndexPage.jsx`
 - Expanded the collections atlas pass with a dedicated atlas note card and clearer world-vs-shelf framing in `frontend/src/pages/public/CollectionsIndexPage.jsx`
+- Added distinct visual treatments for world-threshold collections versus archive shelves in `frontend/src/styles/public-shell.css`
 - Expanded the Explore pass with stronger utility framing and filter guidance copy in `frontend/src/pages/public/ExplorePage.jsx`
 - Started the admin mode pass by adding a distinct admin shell treatment in `frontend/src/layouts/AdminLayout.jsx` and `frontend/src/pages/admin/AdminLogin.jsx`
 - Extended the public shell pass with stronger homepage role contrast and more utility-weighted Explore/result styling in `frontend/src/styles/public-shell.css`
@@ -49,6 +50,7 @@ Refine the site and importer from a rich shared texture system into a clearer hi
 - Added explicit Explore utility context cards and results guidance in `frontend/src/pages/public/ExplorePage.jsx`
 - Added stronger atlas guidance copy in `frontend/src/pages/public/CollectionsIndexPage.jsx`
 - Added an admin workspace board to the posts editor surface in `frontend/src/pages/admin/AdminPostsPage.jsx`
+- Added an admin operational summary board to the insights surface in `frontend/src/pages/admin/AdminInsightsPage.jsx`
 - Started the importer workstation pass by restructuring `D:\Projects\PythonProject\templates\import_window.html` into clearer stages with advanced settings tucked behind a details panel
 - Verified:
   - `frontend/npm run verify`

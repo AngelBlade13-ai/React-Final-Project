@@ -227,6 +227,34 @@
   gap: 1rem;
 }
 
+.collection-index-section:first-of-type .section-head {
+  border-bottom-color: color-mix(in srgb, var(--primary) 28%, var(--border) 72%);
+}
+
+.collection-index-section:first-of-type .collection-card {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--editorial-surface) 86%, var(--primary) 14%),
+      color-mix(in srgb, var(--shell-surface) 94%, var(--surface-alt) 6%)
+    ),
+    var(--utility-surface);
+}
+
+.collection-index-section:last-of-type .section-head {
+  border-bottom-color: color-mix(in srgb, var(--secondary) 28%, var(--border) 72%);
+}
+
+.collection-index-section:last-of-type .collection-card {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--utility-surface) 86%, white 14%),
+      color-mix(in srgb, var(--shell-surface) 94%, var(--surface-alt) 6%)
+    ),
+    var(--utility-surface);
+}
+
 .featured-release-card {
   border-radius: 34px;
   background:

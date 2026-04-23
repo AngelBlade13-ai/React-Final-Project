@@ -251,6 +251,30 @@ export default function AdminInsightsPage() {
       note: entry.changedFields.join(", ")
     }))
   ].slice(0, 6);
+  const opsHighlights = [
+    {
+      label: "Archive Health",
+      value: loading ? "--" : summary.archiveHealthScore || 0,
+      note: scoreTone === "stable" ? "Stable" : scoreTone === "watch" ? "Watch" : "Attention"
+    },
+    {
+      label: "Live Sync",
+      value: syncPreview
+        ? `${syncPostSummary?.changed?.length || 0} drift`
+        : "Preview not run",
+      note: syncPreview ? "Preview ready" : "Run drift preview"
+    },
+    {
+      label: "Audit Trail",
+      value: loading ? "--" : auditLogs.length,
+      note: "Recent actions"
+    },
+    {
+      label: "Runtime",
+      value: loading ? "--" : opsHealth?.status || "Unknown",
+      note: opsHealth?.database?.connected ? "DB connected" : "DB state pending"
+    }
+  ];
 
   return (
     <main className="admin-grid admin-insights-grid">
@@ -289,6 +313,16 @@ export default function AdminInsightsPage() {
                   : "There are enough content gaps right now that the site could drift without a cleanup pass."}
           </p>
         </div>
+      </section>
+
+      <section className="admin-ops-board full-span">
+        {opsHighlights.map((item) => (
+          <article className="admin-ops-card" key={item.label}>
+            <p className="eyebrow">{item.label}</p>
+            <strong>{item.value}</strong>
+            <span>{item.note}</span>
+          </article>
+        ))}
       </section>
 
       {error ? (

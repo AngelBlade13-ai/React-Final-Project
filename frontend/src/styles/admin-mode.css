@@ -81,6 +81,88 @@
   border-top: 1px solid color-mix(in srgb, var(--border) 76%, transparent);
 }
 
+.admin-workspace-board {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.95rem;
+}
+
+.admin-workspace-card {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1rem 1.05rem;
+  border-radius: 22px;
+  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--admin-surface) 90%, white 10%),
+      color-mix(in srgb, var(--admin-surface) 97%, var(--surface-alt) 3%)
+    ),
+    var(--admin-surface);
+  box-shadow:
+    0 14px 28px color-mix(in srgb, black 10%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 4%, transparent);
+}
+
+.admin-workspace-card .eyebrow {
+  color: color-mix(in srgb, var(--muted-text) 88%, var(--secondary-strong) 12%);
+}
+
+.admin-workspace-card strong {
+  font-size: 1.18rem;
+  letter-spacing: -0.02em;
+  color: color-mix(in srgb, var(--text) 90%, var(--primary-strong) 10%);
+}
+
+.admin-workspace-card span {
+  color: var(--muted-text);
+  font-size: 0.86rem;
+}
+
+.admin-insights-grid .full-span {
+  grid-column: 1 / -1;
+}
+
+.admin-ops-board {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.95rem;
+}
+
+.admin-ops-card {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1rem 1.05rem;
+  border-radius: 22px;
+  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--admin-surface) 88%, white 12%),
+      color-mix(in srgb, var(--admin-surface) 96%, var(--surface-alt) 4%)
+    ),
+    var(--admin-surface);
+  box-shadow:
+    0 14px 28px color-mix(in srgb, black 10%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 4%, transparent);
+}
+
+.admin-ops-card .eyebrow {
+  color: color-mix(in srgb, var(--muted-text) 88%, var(--secondary-strong) 12%);
+}
+
+.admin-ops-card strong {
+  font-size: 1.16rem;
+  letter-spacing: -0.02em;
+  color: color-mix(in srgb, var(--text) 90%, var(--primary-strong) 10%);
+}
+
+.admin-ops-card span {
+  color: var(--muted-text);
+  font-size: 0.86rem;
+}
+
 .post-editor-tab {
   background: color-mix(in srgb, var(--surface-raised) 78%, var(--surface) 22%);
   border-color: color-mix(in srgb, var(--border) 76%, transparent);
