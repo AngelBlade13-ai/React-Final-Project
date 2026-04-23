@@ -20,13 +20,34 @@ export default function CollectionsIndexPage() {
   return (
     <>
       <header className="hero homepage-hero section-hero">
-        <p className="eyebrow">Collections</p>
-        <h1>Curated entry points into the archive.</h1>
-        <p className="hero-copy">
-          The public collection layer stays focused on the main paths through
-          the catalog while the deeper taxonomy remains available behind the
-          scenes.
-        </p>
+        <div className="collection-index-hero-grid">
+          <div>
+            <p className="eyebrow">Collections</p>
+            <h1>Curated entry points into the archive.</h1>
+            <p className="hero-copy">
+              The public collection layer stays focused on the main paths
+              through the catalog while the deeper taxonomy remains available
+              behind the scenes.
+            </p>
+          </div>
+          <div className="hero-note-card collection-index-note-card">
+            <p className="note-label">Atlas View</p>
+            <h2>Worlds first, shelves second.</h2>
+            <p>
+              Start with the major worlds if you want atmosphere and authored
+              progression, or move into the library collections if you want to
+              browse by shelf.
+            </p>
+            <div className="collection-meta-row">
+              <span className="meta-badge">
+                {loading ? "..." : `${worldCollections.length} world thresholds`}
+              </span>
+              <span className="meta-badge subtle-badge">
+                {loading ? "..." : `${archiveCollections.length} archive shelves`}
+              </span>
+            </div>
+          </div>
+        </div>
       </header>
 
       <main className="content-grid">

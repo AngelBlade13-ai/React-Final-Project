@@ -136,6 +136,12 @@ export default function ExplorePage({ onPlayTrack }) {
           </div>
           <div className="hero-note-card explore-summary-card">
             <p className="note-label">Search Surface</p>
+            <h2>Use phrase first, filters second.</h2>
+            <p>
+              Explore works best when you begin with a lyric fragment, title
+              memory, or release note phrase, then narrow the archive only if
+              the first pass is too wide.
+            </p>
             <label className="search-field">
               Find a release
               <input
@@ -190,6 +196,10 @@ export default function ExplorePage({ onPlayTrack }) {
           </div>
           <div className="filter-field">
             <p className="eyebrow">Filter By Collection</p>
+            <p className="filter-field-copy">
+              Keep the search wide, or step into a specific world or shelf once
+              you know the lane you want.
+            </p>
             <div className="filter-chip-row">
               <button
                 className={`filter-chip${selectedCollection === DEFAULT_COLLECTION_FILTER ? " active" : ""}`}
@@ -247,6 +257,10 @@ export default function ExplorePage({ onPlayTrack }) {
           </div>
           <div className="filter-field">
             <p className="eyebrow">Filter By Release Status</p>
+            <p className="filter-field-copy">
+              Public surface keeps the main browsing layer clean while still
+              letting you open alternates or working versions when needed.
+            </p>
             <div className="filter-chip-row">
               {STATUS_FILTERS.map((option) => (
                 <button
