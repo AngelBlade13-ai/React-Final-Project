@@ -163,14 +163,36 @@
 
 .home-doorway-featured {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--editorial-surface) 84%, white 16%), color-mix(in srgb, var(--editorial-surface) 94%, var(--surface) 6%)),
+    radial-gradient(circle at top right, color-mix(in srgb, var(--primary) 18%, transparent), transparent 34%),
+    linear-gradient(180deg, color-mix(in srgb, var(--editorial-surface) 80%, white 20%), color-mix(in srgb, var(--editorial-surface) 94%, var(--surface) 6%)),
     var(--editorial-surface);
 }
 
 .home-doorway-utility {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--utility-surface) 82%, white 18%), color-mix(in srgb, var(--utility-surface) 96%, var(--surface-alt) 4%)),
+    linear-gradient(180deg, color-mix(in srgb, var(--utility-surface) 80%, white 20%), color-mix(in srgb, var(--utility-surface) 96%, var(--surface-alt) 4%)),
     var(--utility-surface);
+}
+
+.home-identity-panel {
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--editorial-surface) 82%, var(--primary) 18%),
+      color-mix(in srgb, var(--shell-surface) 92%, var(--surface-alt) 8%)
+    ),
+    var(--editorial-surface);
+}
+
+.latest-release-grid .release-feed-card:first-child,
+.latest-release-grid .release-feed-card:nth-child(2) {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--editorial-surface) 82%, white 18%),
+      color-mix(in srgb, var(--shell-surface) 94%, var(--surface-alt) 6%)
+    ),
+    var(--editorial-surface);
 }
 
 .featured-release-card {
@@ -236,7 +258,7 @@
 
 .explore-toolbar {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--utility-surface) 84%, white 16%), color-mix(in srgb, var(--utility-surface) 96%, var(--surface-alt) 4%)),
+    linear-gradient(180deg, color-mix(in srgb, var(--utility-surface) 82%, white 18%), color-mix(in srgb, var(--utility-surface) 96%, var(--surface-alt) 4%)),
     var(--utility-surface);
 }
 
@@ -257,7 +279,13 @@
 .filter-field {
   padding: 1rem 1.05rem;
   border: 1px solid color-mix(in srgb, var(--border) 76%, transparent);
-  background: color-mix(in srgb, var(--surface-raised) 78%, var(--surface) 22%);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--surface-raised) 76%, white 24%),
+      color-mix(in srgb, var(--surface-raised) 94%, var(--surface) 6%)
+    ),
+    color-mix(in srgb, var(--surface-raised) 78%, var(--surface) 22%);
 }
 
 .filter-chip-row {
@@ -276,6 +304,16 @@
   background: color-mix(in srgb, var(--primary) 78%, var(--secondary) 22%);
   color: color-mix(in srgb, var(--background) 48%, black 52%);
   border-color: color-mix(in srgb, var(--primary-strong) 72%, var(--border) 28%);
+}
+
+.results-grid .result-card {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--utility-surface) 82%, white 18%),
+      color-mix(in srgb, var(--shell-surface) 95%, var(--surface-alt) 5%)
+    ),
+    var(--utility-surface);
 }
 
 .archive-link-picker {
