@@ -64,19 +64,21 @@ export default function PublicLayout({
     <div className="page-shell">
       <div aria-hidden="true" className="threshold-overlay" />
       <header className="public-site-header">
-        <Link
-          className="site-mark"
-          onClick={() => {
-            if (!hasAdminSession) {
-              setSiteMarkPressCount((current) => current + 1);
-            }
-          }}
-          to="/"
-        >
-          <span className="eyebrow">{branding.siteName}</span>
-          <strong>{branding.siteTagline}</strong>
-        </Link>
-        <div className="public-site-actions">
+        <div className="public-header-brand">
+          <Link
+            className="site-mark"
+            onClick={() => {
+              if (!hasAdminSession) {
+                setSiteMarkPressCount((current) => current + 1);
+              }
+            }}
+            to="/"
+          >
+            <span className="eyebrow">{branding.siteName}</span>
+            <strong>{branding.siteTagline}</strong>
+          </Link>
+        </div>
+        <div className="public-header-nav">
           <nav className="site-nav" aria-label="Primary">
             <NavLink className={({ isActive }) => `site-nav-link${isActive ? " active" : ""}`} to="/">
               Home
@@ -99,6 +101,8 @@ export default function PublicLayout({
               </NavLink>
             ) : null}
           </nav>
+        </div>
+        <div className="public-header-utility">
           {!isThemeLocked ? <ThemeToggle setTheme={setTheme} theme={theme} /> : null}
           {currentUser ? (
             <div className="site-user-controls">
@@ -112,6 +116,11 @@ export default function PublicLayout({
           ) : isUserSessionReady && !hasAdminSession ? (
             <Link className="site-account-link" to="/account">
               Sign In
+            </Link>
+          ) : null}
+          {!hasAdminSession ? (
+            <Link className="site-utility-link quiet" to="/admin/login">
+              Admin
             </Link>
           ) : null}
           {showAdminAccess ? (

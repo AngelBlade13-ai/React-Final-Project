@@ -1,22 +1,22 @@
 :root {
   font-family: Georgia, "Times New Roman", serif;
-  --background: #120d14;
-  --surface: #1b1320;
-  --surface-alt: #241826;
-  --text: #f8eaf1;
-  --muted-text: #c9b2bf;
-  --border: #3a2735;
-  --primary: #f0a6ca;
-  --primary-strong: #ffb7d5;
-  --secondary: #cba6f7;
+  --background: #161614;
+  --surface: #20201d;
+  --surface-alt: #292923;
+  --text: #f2ece2;
+  --muted-text: #bbb3a6;
+  --border: #3b3932;
+  --primary: #b59672;
+  --primary-strong: #dcc09a;
+  --secondary: #7f9aa2;
   --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.28);
   --shadow-md: 0 10px 28px rgba(0, 0, 0, 0.18);
-  --player-progress-start: rgba(255, 126, 182, 0.92);
-  --player-progress-mid: rgba(255, 90, 150, 0.98);
-  --player-progress-end: rgba(255, 61, 127, 0.98);
-  --player-progress-glow: rgba(255, 80, 140, 0.28);
-  --player-progress-glow-strong: rgba(255, 80, 140, 0.44);
-  --player-thumb: #ff5c98;
+  --player-progress-start: rgba(196, 164, 119, 0.92);
+  --player-progress-mid: rgba(186, 144, 93, 0.96);
+  --player-progress-end: rgba(116, 146, 154, 0.96);
+  --player-progress-glow: rgba(181, 150, 114, 0.24);
+  --player-progress-glow-strong: rgba(181, 150, 114, 0.36);
+  --player-thumb: #d0af84;
   --player-track: color-mix(in srgb, var(--surface-alt) 88%, rgba(255, 255, 255, 0.03));
   --player-progress-size: 100% 100%;
   --player-progress-animation: none;
@@ -24,7 +24,7 @@
   --player-progress-filter-hover: saturate(1.06);
   --player-volume-track: color-mix(in srgb, var(--surface-alt) 84%, rgba(255, 255, 255, 0.04));
   --player-volume-fill-start: color-mix(in srgb, var(--primary) 88%, white 12%);
-  --player-volume-fill-end: color-mix(in srgb, var(--primary-strong) 86%, white 14%);
+  --player-volume-fill-end: color-mix(in srgb, var(--secondary) 82%, white 18%);
   --player-volume-thumb: color-mix(in srgb, var(--primary-strong) 84%, white 16%);
   --player-volume-thumb-glow: color-mix(in srgb, var(--primary) 22%, transparent);
   --player-volume-thumb-border: color-mix(in srgb, var(--surface) 42%, white 58%);
@@ -32,51 +32,72 @@
     0 0 0 1px color-mix(in srgb, var(--surface) 32%, transparent),
     0 4px 10px color-mix(in srgb, black 14%, transparent),
     0 0 10px var(--player-volume-thumb-glow);
+  --shell-surface: color-mix(in srgb, var(--surface) 88%, var(--background) 12%);
+  --editorial-surface: color-mix(in srgb, var(--surface) 84%, var(--primary) 16%);
+  --utility-surface: color-mix(in srgb, var(--surface) 88%, var(--secondary) 12%);
+  --admin-surface: color-mix(in srgb, var(--surface) 92%, black 8%);
+  --surface-raised: color-mix(in srgb, var(--surface-alt) 78%, var(--surface) 22%);
+  --quiet-accent: color-mix(in srgb, var(--secondary) 68%, var(--primary) 32%);
+  --header-shadow: 0 18px 44px color-mix(in srgb, black 14%, transparent);
 }
 
 :root[data-theme="light"] {
-  --background: #f3d7d1;
-  --surface: #f8e4df;
-  --surface-alt: #f2d2cc;
-  --text: #3a2327;
-  --muted-text: #7a5158;
-  --border: #e8bdb7;
-  --primary: #df8f8a;
-  --primary-strong: #cb726e;
-  --secondary: #f4c9c2;
-  --shadow-lg: 0 18px 48px rgba(126, 76, 82, 0.16);
-  --shadow-md: 0 8px 22px rgba(126, 76, 82, 0.12);
-  --player-progress-start: rgba(221, 142, 136, 0.92);
-  --player-progress-mid: rgba(210, 118, 113, 0.96);
-  --player-progress-end: rgba(178, 89, 95, 0.94);
-  --player-progress-glow: rgba(203, 114, 110, 0.18);
-  --player-progress-glow-strong: rgba(203, 114, 110, 0.28);
-  --player-thumb: #c16f6d;
-  --player-track: color-mix(in srgb, #e6c5be 80%, rgba(255, 255, 255, 0.28));
-  --player-volume-track: color-mix(in srgb, #e6c5be 82%, rgba(255, 255, 255, 0.22));
-  --player-volume-fill-start: #d88a86;
-  --player-volume-fill-end: #b9666b;
-  --player-volume-thumb: #c5706e;
-  --player-volume-thumb-glow: rgba(201, 114, 110, 0.2);
+  --background: #e8e2d8;
+  --surface: #f5efe5;
+  --surface-alt: #ece4d7;
+  --text: #2f2b25;
+  --muted-text: #6c655a;
+  --border: #d1c7b8;
+  --primary: #9f7d57;
+  --primary-strong: #785d3f;
+  --secondary: #8ea2a7;
+  --shadow-lg: 0 18px 48px rgba(92, 78, 55, 0.14);
+  --shadow-md: 0 8px 22px rgba(92, 78, 55, 0.1);
+  --player-progress-start: rgba(178, 142, 95, 0.92);
+  --player-progress-mid: rgba(156, 120, 77, 0.96);
+  --player-progress-end: rgba(120, 146, 152, 0.92);
+  --player-progress-glow: rgba(159, 125, 87, 0.16);
+  --player-progress-glow-strong: rgba(120, 93, 63, 0.24);
+  --player-thumb: #8f704e;
+  --player-track: color-mix(in srgb, #dcd3c6 80%, rgba(255, 255, 255, 0.28));
+  --player-volume-track: color-mix(in srgb, #dcd3c6 82%, rgba(255, 255, 255, 0.22));
+  --player-volume-fill-start: #aa8458;
+  --player-volume-fill-end: #708e94;
+  --player-volume-thumb: #8f704e;
+  --player-volume-thumb-glow: rgba(159, 125, 87, 0.16);
+  --shell-surface: color-mix(in srgb, var(--surface) 92%, white 8%);
+  --editorial-surface: color-mix(in srgb, var(--surface) 82%, var(--primary) 18%);
+  --utility-surface: color-mix(in srgb, var(--surface) 86%, var(--secondary) 14%);
+  --admin-surface: color-mix(in srgb, var(--surface) 96%, #e3dbcf 4%);
+  --surface-raised: color-mix(in srgb, white 44%, var(--surface-alt) 56%);
+  --quiet-accent: color-mix(in srgb, var(--secondary) 58%, var(--primary) 42%);
+  --header-shadow: 0 18px 38px rgba(92, 78, 55, 0.12);
 }
 
 :root[data-theme="dark"] {
-  --background: #120d14;
-  --surface: #1b1320;
-  --surface-alt: #241826;
-  --text: #f8eaf1;
-  --muted-text: #c9b2bf;
-  --border: #3a2735;
-  --primary: #f0a6ca;
-  --primary-strong: #ffb7d5;
-  --secondary: #cba6f7;
+  --background: #161614;
+  --surface: #20201d;
+  --surface-alt: #292923;
+  --text: #f2ece2;
+  --muted-text: #bbb3a6;
+  --border: #3b3932;
+  --primary: #b59672;
+  --primary-strong: #dcc09a;
+  --secondary: #7f9aa2;
   --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.28);
   --shadow-md: 0 10px 28px rgba(0, 0, 0, 0.18);
   --player-volume-track: color-mix(in srgb, var(--surface-alt) 84%, rgba(255, 255, 255, 0.04));
   --player-volume-fill-start: color-mix(in srgb, var(--primary) 88%, white 12%);
-  --player-volume-fill-end: color-mix(in srgb, var(--primary-strong) 86%, white 14%);
+  --player-volume-fill-end: color-mix(in srgb, var(--secondary) 82%, white 18%);
   --player-volume-thumb: color-mix(in srgb, var(--primary-strong) 84%, white 16%);
   --player-volume-thumb-glow: color-mix(in srgb, var(--primary) 22%, transparent);
+  --shell-surface: color-mix(in srgb, var(--surface) 88%, var(--background) 12%);
+  --editorial-surface: color-mix(in srgb, var(--surface) 84%, var(--primary) 16%);
+  --utility-surface: color-mix(in srgb, var(--surface) 88%, var(--secondary) 12%);
+  --admin-surface: color-mix(in srgb, var(--surface) 92%, black 8%);
+  --surface-raised: color-mix(in srgb, var(--surface-alt) 78%, var(--surface) 22%);
+  --quiet-accent: color-mix(in srgb, var(--secondary) 68%, var(--primary) 32%);
+  --header-shadow: 0 18px 44px color-mix(in srgb, black 14%, transparent);
 }
 
 :root[data-theme="light"][data-collection-theme="fractureverse"] {

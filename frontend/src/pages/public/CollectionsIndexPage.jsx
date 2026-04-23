@@ -9,6 +9,13 @@ export default function CollectionsIndexPage() {
     title: "Collections"
   });
   const { collections, isLoading: loading } = usePublicCollections();
+  const worldCollections = collections.filter(
+    (collection) =>
+      collection.theme === "fractureverse" || collection.theme === "eldoria"
+  );
+  const archiveCollections = collections.filter(
+    (collection) => !worldCollections.some((entry) => entry.id === collection.id)
+  );
 
   return (
     <>
@@ -23,9 +30,9 @@ export default function CollectionsIndexPage() {
       </header>
 
       <main className="content-grid">
-        <section>
+        <section className="collection-index-section">
           <div className="section-head">
-            <h2>Public Collections</h2>
+            <h2>World Thresholds</h2>
             <span>
               {loading ? "Loading..." : `${collections.length} collections`}
             </span>
@@ -38,7 +45,7 @@ export default function CollectionsIndexPage() {
             </section>
           ) : (
             <div className="collection-grid collection-index-grid">
-              {collections.map((collection) => (
+              {worldCollections.map((collection) => (
                 <CollectionCard
                   key={collection.id}
                   collection={collection}
@@ -48,6 +55,24 @@ export default function CollectionsIndexPage() {
             </div>
           )}
         </section>
+
+        {archiveCollections.length ? (
+          <section className="collection-index-section">
+            <div className="section-head">
+              <h2>Libraries And Paths</h2>
+              <span>Browse by shelf</span>
+            </div>
+            <div className="collection-grid collection-index-grid">
+              {archiveCollections.map((collection) => (
+                <CollectionCard
+                  key={collection.id}
+                  collection={collection}
+                  showFeatured
+                />
+              ))}
+            </div>
+          </section>
+        ) : null}
       </main>
     </>
   );

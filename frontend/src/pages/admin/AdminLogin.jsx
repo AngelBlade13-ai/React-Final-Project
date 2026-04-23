@@ -43,7 +43,7 @@ export default function AdminLogin({ onAdminAuthSuccess, theme, setTheme }) {
   }
 
   return (
-    <div className="page-shell auth-shell">
+    <div className="page-shell auth-shell admin-login-shell">
       <div className="auth-page-grid">
         <section className="hero homepage-hero auth-intro-panel">
           <div className="hero-header-row auth-header-row">

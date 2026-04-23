@@ -559,7 +559,7 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
   }
 
   return (
-    <div className="page-shell">
+    <div className="page-shell admin-shell">
       <header className="hero compact-hero admin-hero">
         <div className="admin-hero-copy">
           <p className="eyebrow">Admin Dashboard</p>
