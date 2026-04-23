@@ -45,6 +45,7 @@ Refine the site and importer from a rich shared texture system into a clearer hi
 - Reduced the visual weight of the mini player and trimmed some decorative density on world/release surfaces through `frontend/src/styles/world-restraint.css`
 - Tightened the admin posts/insights hierarchy further in `frontend/src/styles/admin-mode.css`
 - Pushed homepage role contrast a bit further in `frontend/src/styles/public-shell.css`
+- Added stronger differentiation between the featured release, Fractureverse, Eldoria, and utility doorway cards in `frontend/src/styles/public-shell.css`
 - Fixed the dev-server stylesheet loading issue by importing `frontend/src/styles/world-restraint.css` from `frontend/src/main.jsx` instead of chaining it through `frontend/src/styles.css`
 - Added one more CSS-only pass for admin metrics/action hierarchy and homepage doorway contrast in `frontend/src/styles/admin-mode.css` and `frontend/src/styles/public-shell.css`
 - Added explicit Explore utility context cards and results guidance in `frontend/src/pages/public/ExplorePage.jsx`
