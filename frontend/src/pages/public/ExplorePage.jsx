@@ -134,6 +134,9 @@ export default function ExplorePage({ onPlayTrack }) {
       value: query.trim() || "Browsing broadly"
     }
   ];
+  const resultsLaneSummary = hasActiveFilters
+    ? `${selectedCollectionTitle} / ${selectedStatusLabel} / ${filteredPosts.length} matches`
+    : `${filteredPosts.length} releases across the broad archive`;
 
   return (
     <>
@@ -306,6 +309,7 @@ export default function ExplorePage({ onPlayTrack }) {
               {loading ? "Loading..." : `${filteredPosts.length} matches`}
             </span>
           </div>
+          <p className="results-lane-summary">{resultsLaneSummary}</p>
           <p className="results-context-copy">
             {hasActiveFilters
               ? "This result set is already narrowed. Clear filters if you want to move back to a wider discovery view."

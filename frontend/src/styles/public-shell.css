@@ -431,6 +431,13 @@
   letter-spacing: -0.02em;
 }
 
+.results-lane-summary {
+  margin: 0.85rem 0 0;
+  color: color-mix(in srgb, var(--text) 80%, var(--secondary-strong) 20%);
+  font-size: 0.94rem;
+  font-weight: 700;
+}
+
 .search-field {
   display: grid;
   gap: 0.55rem;

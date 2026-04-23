@@ -38,6 +38,7 @@ Refine the site and importer from a rich shared texture system into a clearer hi
 - Expanded the collections atlas pass with a dedicated atlas note card and clearer world-vs-shelf framing in `frontend/src/pages/public/CollectionsIndexPage.jsx`
 - Added distinct visual treatments for world-threshold collections versus archive shelves in `frontend/src/styles/public-shell.css`
 - Expanded the Explore pass with stronger utility framing and filter guidance copy in `frontend/src/pages/public/ExplorePage.jsx`
+- Added a clearer results lane summary to the Explore results surface in `frontend/src/pages/public/ExplorePage.jsx`
 - Started the admin mode pass by adding a distinct admin shell treatment in `frontend/src/layouts/AdminLayout.jsx` and `frontend/src/pages/admin/AdminLogin.jsx`
 - Extended the public shell pass with stronger homepage role contrast and more utility-weighted Explore/result styling in `frontend/src/styles/public-shell.css`
 - Extended the admin mode pass with sharper console-style cards, panels, and editor/catalog surfaces in `frontend/src/styles/admin-mode.css`
