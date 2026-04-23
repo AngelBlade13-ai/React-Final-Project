@@ -182,6 +182,7 @@
       color-mix(in srgb, var(--shell-surface) 92%, var(--surface-alt) 8%)
     ),
     var(--editorial-surface);
+  padding-block: 1.45rem;
 }
 
 .latest-release-grid .release-feed-card:first-child,
@@ -193,6 +194,26 @@
       color-mix(in srgb, var(--shell-surface) 94%, var(--surface-alt) 6%)
     ),
     var(--editorial-surface);
+}
+
+.featured-release-section .section-head,
+#latest-releases .section-head {
+  border-bottom-color: color-mix(in srgb, var(--border) 76%, var(--primary) 24%);
+}
+
+.latest-release-grid .release-feed-card:first-child .post-body h3,
+.latest-release-grid .release-feed-card:nth-child(2) .post-body h3 {
+  font-size: 1.42rem;
+}
+
+.latest-release-grid .release-feed-card:first-child .release-card-media,
+.latest-release-grid .release-feed-card:nth-child(2) .release-card-media {
+  aspect-ratio: 4 / 4.25;
+}
+
+.collection-index-section {
+  display: grid;
+  gap: 1rem;
 }
 
 .featured-release-card {
