@@ -1,4 +1,5 @@
-import { useDeferredValue, useState } from "react";
+import { startTransition, useDeferredValue, useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { ReleaseCard } from "../../components/cards";
 import { usePublicCollections, usePublicPosts } from "../../hooks/usePublicApi";
 import usePageMetadata from "../../hooks/usePageMetadata";
@@ -6,6 +7,17 @@ import {
   getReleaseStatus,
   partitionCollectionsForExplore
 } from "../../lib/site";
+
+const DEFAULT_COLLECTION_FILTER = "all";
+const DEFAULT_STATUS_FILTER = "public";
+const STATUS_FILTERS = [
+  { key: "public", label: "Public surface" },
+  { key: "canon", label: "Canon only" },
+  { key: "alternate", label: "Alternates" },
+  { key: "working", label: "Working versions" },
+  { key: "all", label: "All statuses" }
+];
+const VALID_STATUS_FILTERS = new Set(STATUS_FILTERS.map((option) => option.key));
 
 export default function ExplorePage({ onPlayTrack }) {
   usePageMetadata({
@@ -16,31 +28,98 @@ export default function ExplorePage({ onPlayTrack }) {
   const { posts, isLoading: postsLoading } = usePublicPosts();
   const { collections, isLoading: collectionsLoading } =
     usePublicCollections("all");
+  const [searchParams, setSearchParams] = useSearchParams();
   const [query, setQuery] = useState("");
-  const [selectedCollection, setSelectedCollection] = useState("all");
   const [showInternalCollections, setShowInternalCollections] = useState(false);
-  const [showWorkingVersions, setShowWorkingVersions] = useState(false);
   const loading = postsLoading || collectionsLoading;
   const deferredQuery = useDeferredValue(query);
   const normalizedQuery = deferredQuery.trim().toLowerCase();
+  const queryParam = searchParams.get("q") || "";
+  const requestedCollection =
+    searchParams.get("collection") || DEFAULT_COLLECTION_FILTER;
+  const requestedStatus =
+    searchParams.get("status") || DEFAULT_STATUS_FILTER;
+  const selectedCollection =
+    requestedCollection === DEFAULT_COLLECTION_FILTER ||
+    collections.some((collection) => collection.slug === requestedCollection)
+      ? requestedCollection
+      : DEFAULT_COLLECTION_FILTER;
+  const selectedStatus = VALID_STATUS_FILTERS.has(requestedStatus)
+    ? requestedStatus
+    : DEFAULT_STATUS_FILTER;
+
+  useEffect(() => {
+    setQuery(queryParam);
+  }, [queryParam]);
+
+  function updateSearchState(nextState) {
+    const nextQuery = Object.prototype.hasOwnProperty.call(nextState, "query")
+      ? nextState.query
+      : query;
+    const nextCollection =
+      nextState.collection || selectedCollection;
+    const nextStatus = nextState.status || selectedStatus;
+    const nextParams = new URLSearchParams();
+    const trimmedQuery = String(nextQuery || "").trim();
+
+    if (trimmedQuery) {
+      nextParams.set("q", trimmedQuery);
+    }
+
+    if (nextCollection !== DEFAULT_COLLECTION_FILTER) {
+      nextParams.set("collection", nextCollection);
+    }
+
+    if (nextStatus !== DEFAULT_STATUS_FILTER) {
+      nextParams.set("status", nextStatus);
+    }
+
+    startTransition(() => {
+      setSearchParams(nextParams, { replace: true });
+    });
+  }
 
   const filteredPosts = posts.filter((post) => {
     const matchesCollection =
-      selectedCollection === "all" ||
+      selectedCollection === DEFAULT_COLLECTION_FILTER ||
       (post.collectionSlugs || []).includes(selectedCollection);
     const searchHaystack = [post.title, post.excerpt, post.content, post.lyrics]
       .join(" ")
       .toLowerCase();
     const matchesQuery =
       !normalizedQuery || searchHaystack.includes(normalizedQuery);
-    const matchesReleaseStatus = showWorkingVersions
-      ? true
-      : getReleaseStatus(post) !== "working";
+    const releaseStatus = getReleaseStatus(post);
+    const matchesReleaseStatus =
+      selectedStatus === "all"
+        ? true
+        : selectedStatus === DEFAULT_STATUS_FILTER
+          ? releaseStatus !== "working"
+          : releaseStatus === selectedStatus;
 
     return matchesCollection && matchesQuery && matchesReleaseStatus;
   });
   const { primaryCollections, internalCollections } =
     partitionCollectionsForExplore(collections);
+  const selectedCollectionTitle =
+    selectedCollection === DEFAULT_COLLECTION_FILTER
+      ? "All collections"
+      : collections.find(
+          (collection) => collection.slug === selectedCollection
+        )?.title || "Filtered";
+  const selectedStatusLabel =
+    STATUS_FILTERS.find((option) => option.key === selectedStatus)?.label ||
+    "Public surface";
+  const statusCounts = {
+    public: posts.filter((post) => getReleaseStatus(post) !== "working").length,
+    canon: posts.filter((post) => getReleaseStatus(post) === "canon").length,
+    alternate: posts.filter((post) => getReleaseStatus(post) === "alternate").length,
+    working: posts.filter((post) => getReleaseStatus(post) === "working").length,
+    all: posts.length
+  };
+  const hasActiveFilters =
+    Boolean(query.trim()) ||
+    selectedCollection !== DEFAULT_COLLECTION_FILTER ||
+    selectedStatus !== DEFAULT_STATUS_FILTER;
 
   return (
     <>
@@ -61,7 +140,11 @@ export default function ExplorePage({ onPlayTrack }) {
               Find a release
               <input
                 className="explore-search-input"
-                onChange={(event) => setQuery(event.target.value)}
+                onChange={(event) => {
+                  const nextQuery = event.target.value;
+                  setQuery(nextQuery);
+                  updateSearchState({ query: nextQuery });
+                }}
                 placeholder="Search titles, notes, lyrics, and excerpts"
                 type="search"
                 value={query}
@@ -72,11 +155,10 @@ export default function ExplorePage({ onPlayTrack }) {
                 {loading ? "..." : `${filteredPosts.length} matches`}
               </span>
               <span className="meta-badge subtle-badge">
-                {selectedCollection === "all"
-                  ? "All collections"
-                  : collections.find(
-                      (collection) => collection.slug === selectedCollection
-                    )?.title || "Filtered"}
+                {selectedCollectionTitle}
+              </span>
+              <span className="meta-badge subtle-badge">
+                {selectedStatusLabel}
               </span>
             </div>
           </div>
@@ -85,12 +167,35 @@ export default function ExplorePage({ onPlayTrack }) {
 
       <main className="content-grid">
         <section className="intro-card homepage-panel explore-toolbar">
+          <div className="section-head">
+            <h2>Refine Results</h2>
+            {hasActiveFilters ? (
+              <button
+                className="secondary-button"
+                onClick={() => {
+                  setQuery("");
+                  updateSearchState({
+                    query: "",
+                    collection: DEFAULT_COLLECTION_FILTER,
+                    status: DEFAULT_STATUS_FILTER
+                  });
+                }}
+                type="button"
+              >
+                Clear filters
+              </button>
+            ) : (
+              <span>Shareable URL state</span>
+            )}
+          </div>
           <div className="filter-field">
             <p className="eyebrow">Filter By Collection</p>
             <div className="filter-chip-row">
               <button
-                className={`filter-chip${selectedCollection === "all" ? " active" : ""}`}
-                onClick={() => setSelectedCollection("all")}
+                className={`filter-chip${selectedCollection === DEFAULT_COLLECTION_FILTER ? " active" : ""}`}
+                onClick={() =>
+                  updateSearchState({ collection: DEFAULT_COLLECTION_FILTER })
+                }
                 type="button"
               >
                 All collections
@@ -99,7 +204,9 @@ export default function ExplorePage({ onPlayTrack }) {
                 <button
                   className={`filter-chip${selectedCollection === collection.slug ? " active" : ""}`}
                   key={collection.id}
-                  onClick={() => setSelectedCollection(collection.slug)}
+                  onClick={() =>
+                    updateSearchState({ collection: collection.slug })
+                  }
                   type="button"
                 >
                   {collection.title}
@@ -125,7 +232,9 @@ export default function ExplorePage({ onPlayTrack }) {
                       <button
                         className={`filter-chip${selectedCollection === collection.slug ? " active" : ""}`}
                         key={collection.id}
-                        onClick={() => setSelectedCollection(collection.slug)}
+                        onClick={() =>
+                          updateSearchState({ collection: collection.slug })
+                        }
                         type="button"
                       >
                         {collection.title}
@@ -135,16 +244,21 @@ export default function ExplorePage({ onPlayTrack }) {
                 ) : null}
               </details>
             ) : null}
-            <label className="checkbox-field">
-              <input
-                checked={showWorkingVersions}
-                onChange={(event) =>
-                  setShowWorkingVersions(event.target.checked)
-                }
-                type="checkbox"
-              />
-              <span>Include working versions</span>
-            </label>
+          </div>
+          <div className="filter-field">
+            <p className="eyebrow">Filter By Release Status</p>
+            <div className="filter-chip-row">
+              {STATUS_FILTERS.map((option) => (
+                <button
+                  className={`filter-chip${selectedStatus === option.key ? " active" : ""}`}
+                  key={option.key}
+                  onClick={() => updateSearchState({ status: option.key })}
+                  type="button"
+                >
+                  {option.label} ({statusCounts[option.key]})
+                </button>
+              ))}
+            </div>
           </div>
         </section>
 
