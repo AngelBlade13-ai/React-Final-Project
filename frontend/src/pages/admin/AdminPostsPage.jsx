@@ -438,6 +438,16 @@ export default function AdminPostsPage() {
   const activeSectionMeta = POST_EDITOR_SECTIONS.find((section) => section.id === activeSection) || POST_EDITOR_SECTIONS[0];
   const selectedPostIdSet = useMemo(() => new Set(selectedPostIds), [selectedPostIds]);
   const allFilteredSelected = Boolean(filteredPosts.length) && filteredPosts.every((post) => selectedPostIdSet.has(post.id));
+  const publishedCount = useMemo(
+    () => posts.filter((post) => post.published).length,
+    [posts]
+  );
+  const visibleCount = useMemo(
+    () => posts.filter((post) => post.isPubliclyVisible !== false).length,
+    [posts]
+  );
+  const blockingCount = validation.blocking.length;
+  const advisoryCount = validation.advisory.length;
 
   useEffect(() => {
     if (!metadataThemes.length) {
@@ -668,6 +678,24 @@ export default function AdminPostsPage() {
           The editor is now split into deliberate sections, keeps a local draft as you work, and flags the issues that
           matter before you save.
         </p>
+      </section>
+
+      <section className="admin-workspace-board">
+        <article className="admin-workspace-card">
+          <p className="eyebrow">Catalog</p>
+          <strong>{loading ? "--" : posts.length}</strong>
+          <span>{loading ? "Loading..." : `${publishedCount} published / ${visibleCount} public`}</span>
+        </article>
+        <article className="admin-workspace-card">
+          <p className="eyebrow">Current View</p>
+          <strong>{loading ? "--" : filteredPosts.length}</strong>
+          <span>{loading ? "Loading..." : `${selectedPostIds.length} selected for bulk actions`}</span>
+        </article>
+        <article className="admin-workspace-card">
+          <p className="eyebrow">Editor Notes</p>
+          <strong>{blockingCount + advisoryCount}</strong>
+          <span>{`${blockingCount} blocking / ${advisoryCount} advisory`}</span>
+        </article>
       </section>
 
       <section className="intro-card post-editor-shell-card">

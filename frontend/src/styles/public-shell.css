@@ -294,6 +294,35 @@
     var(--utility-surface);
 }
 
+.explore-utility-board {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.95rem;
+}
+
+.explore-utility-card {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1rem 1.05rem;
+  border-radius: 22px;
+  border: 1px solid color-mix(in srgb, var(--border) 76%, transparent);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--utility-surface) 80%, white 20%),
+      color-mix(in srgb, var(--shell-surface) 95%, var(--surface-alt) 5%)
+    ),
+    var(--utility-surface);
+  box-shadow:
+    0 14px 28px color-mix(in srgb, black 9%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 5%, transparent);
+}
+
+.explore-utility-card strong {
+  font-size: 1.08rem;
+  letter-spacing: -0.02em;
+}
+
 .search-field {
   display: grid;
   gap: 0.55rem;
@@ -346,6 +375,13 @@
       color-mix(in srgb, var(--shell-surface) 95%, var(--surface-alt) 5%)
     ),
     var(--utility-surface);
+}
+
+.results-context-copy {
+  margin: 0.9rem 0 0;
+  color: var(--muted-text);
+  max-width: 60ch;
+  line-height: 1.6;
 }
 
 .archive-link-picker {
@@ -402,6 +438,10 @@
 
 @media (max-width: 760px) {
   .collection-index-hero-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .explore-utility-board {
     grid-template-columns: 1fr;
   }
 

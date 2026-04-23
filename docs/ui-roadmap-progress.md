@@ -46,6 +46,9 @@ Refine the site and importer from a rich shared texture system into a clearer hi
 - Pushed homepage role contrast a bit further in `frontend/src/styles/public-shell.css`
 - Fixed the dev-server stylesheet loading issue by importing `frontend/src/styles/world-restraint.css` from `frontend/src/main.jsx` instead of chaining it through `frontend/src/styles.css`
 - Added one more CSS-only pass for admin metrics/action hierarchy and homepage doorway contrast in `frontend/src/styles/admin-mode.css` and `frontend/src/styles/public-shell.css`
+- Added explicit Explore utility context cards and results guidance in `frontend/src/pages/public/ExplorePage.jsx`
+- Added stronger atlas guidance copy in `frontend/src/pages/public/CollectionsIndexPage.jsx`
+- Added an admin workspace board to the posts editor surface in `frontend/src/pages/admin/AdminPostsPage.jsx`
 - Started the importer workstation pass by restructuring `D:\Projects\PythonProject\templates\import_window.html` into clearer stages with advanced settings tucked behind a details panel
 - Verified:
   - `frontend/npm run verify`
@@ -61,7 +64,8 @@ Refine the site and importer from a rich shared texture system into a clearer hi
 
 - Homepage role-contrast pass is partially implemented
 - Explore discoverability polish
-- Full collections atlas treatment
+- Explore discoverability polish is partially implemented
+- Full collections atlas treatment is partially implemented
 - Admin posts/editor hierarchy pass is partially implemented
 - Admin insights/dashboard hierarchy pass is partially implemented
 - Release/world restraint pass is partially implemented

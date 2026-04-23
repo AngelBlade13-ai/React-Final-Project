@@ -120,6 +120,20 @@ export default function ExplorePage({ onPlayTrack }) {
     Boolean(query.trim()) ||
     selectedCollection !== DEFAULT_COLLECTION_FILTER ||
     selectedStatus !== DEFAULT_STATUS_FILTER;
+  const utilitySignals = [
+    {
+      label: "Current lane",
+      value: selectedCollectionTitle
+    },
+    {
+      label: "Surface",
+      value: selectedStatusLabel
+    },
+    {
+      label: "Search phrase",
+      value: query.trim() || "Browsing broadly"
+    }
+  ];
 
   return (
     <>
@@ -276,6 +290,15 @@ export default function ExplorePage({ onPlayTrack }) {
           </div>
         </section>
 
+        <section className="explore-utility-board">
+          {utilitySignals.map((signal) => (
+            <article className="explore-utility-card" key={signal.label}>
+              <p className="eyebrow">{signal.label}</p>
+              <strong>{signal.value}</strong>
+            </article>
+          ))}
+        </section>
+
         <section>
           <div className="section-head">
             <h2>Results</h2>
@@ -283,6 +306,11 @@ export default function ExplorePage({ onPlayTrack }) {
               {loading ? "Loading..." : `${filteredPosts.length} matches`}
             </span>
           </div>
+          <p className="results-context-copy">
+            {hasActiveFilters
+              ? "This result set is already narrowed. Clear filters if you want to move back to a wider discovery view."
+              : "This is the broad discovery surface. Start with a phrase, then narrow only when the archive gets too wide."}
+          </p>
 
           {!loading && filteredPosts.length === 0 ? (
             <section className="intro-card homepage-panel empty-state-card">

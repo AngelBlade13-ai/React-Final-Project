@@ -58,6 +58,10 @@ export default function CollectionsIndexPage() {
               {loading ? "Loading..." : `${collections.length} collections`}
             </span>
           </div>
+          <p className="results-context-copy">
+            These are the strongest authored entry points. Start here if you
+            want progression, atmosphere, and a more guided sense of arrival.
+          </p>
           {collections.length === 0 && !loading ? (
             <section className="intro-card homepage-panel empty-state-card">
               <p className="eyebrow">No Collections Yet</p>
@@ -83,6 +87,10 @@ export default function CollectionsIndexPage() {
               <h2>Libraries And Paths</h2>
               <span>Browse by shelf</span>
             </div>
+            <p className="results-context-copy">
+              These collections are better for catalog browsing once you already
+              know the mood, subject, or archive lane you want.
+            </p>
             <div className="collection-grid collection-index-grid">
               {archiveCollections.map((collection) => (
                 <CollectionCard
