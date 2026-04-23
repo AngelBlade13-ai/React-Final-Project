@@ -71,6 +71,16 @@
     inset 0 1px 0 color-mix(in srgb, white 5%, transparent);
 }
 
+.archive-intelligence-copy {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.archive-intelligence-actions {
+  padding-top: 0.9rem;
+  border-top: 1px solid color-mix(in srgb, var(--border) 76%, transparent);
+}
+
 .post-editor-tab {
   background: color-mix(in srgb, var(--surface-raised) 78%, var(--surface) 22%);
   border-color: color-mix(in srgb, var(--border) 76%, transparent);
@@ -168,6 +178,11 @@
     inset 0 1px 0 color-mix(in srgb, white 4%, transparent);
 }
 
+.metric-summary-grid,
+.status-breakdown-grid {
+  gap: 1.1rem;
+}
+
 .archive-score-shell {
   padding: 1.15rem;
   border-radius: 24px;
@@ -178,6 +193,39 @@
 .archive-score-ring {
   width: 11.5rem;
   box-shadow: 0 14px 30px color-mix(in srgb, black 12%, transparent);
+}
+
+.metric-summary-card {
+  padding-block: 1.3rem;
+}
+
+.metric-summary-card strong,
+.status-breakdown-card strong {
+  color: color-mix(in srgb, var(--text) 88%, var(--primary-strong) 12%);
+}
+
+.readiness-card,
+.theme-coverage-card,
+.collection-health-card,
+.activity-card,
+.insight-issue-card {
+  gap: 0.95rem;
+}
+
+.insight-sample-link {
+  box-shadow:
+    0 8px 16px color-mix(in srgb, black 7%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 3%, transparent);
+}
+
+.collection-health-issues,
+.theme-coverage-list,
+.conversation-grid {
+  gap: 1rem;
+}
+
+.top-commented-list {
+  padding: 1.05rem 1.1rem;
 }
 
 .metric-summary-card span,
