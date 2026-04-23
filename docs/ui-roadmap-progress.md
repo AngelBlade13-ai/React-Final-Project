@@ -54,37 +54,20 @@ Refine the site and importer from a rich shared texture system into a clearer hi
 - Added stronger atlas guidance copy in `frontend/src/pages/public/CollectionsIndexPage.jsx`
 - Added an admin workspace board to the posts editor surface in `frontend/src/pages/admin/AdminPostsPage.jsx`
 - Added an admin operational summary board to the insights surface in `frontend/src/pages/admin/AdminInsightsPage.jsx`
+
 - Tightened the post editor status, tab, and section hierarchy in `frontend/src/styles/admin-mode.css`
 - Reduced visual weight and ornament on release/world journey panels in `frontend/src/styles/world-restraint.css`
-- Further reduced the mini player’s visual weight in `frontend/src/styles/world-restraint.css`
-- Started the importer workstation pass by restructuring `D:\Projects\PythonProject\templates\import_window.html` into clearer stages with advanced settings tucked behind a details panel
+- Further reduced the mini player's visual weight in `frontend/src/styles/world-restraint.css`
+- Finished the importer workstation pass by restructuring `D:\Projects\PythonProject\templates\import_window.html` into a guided workflow with stale-preview safety, workflow-state cards, and clearer apply/reseed gating
 - Verified:
   - `frontend/npm run verify`
-  - importer `pytest` in `D:\Projects\PythonProject` (`31 passed`)
+  - importer `python -m pytest -q` in `D:\Projects\PythonProject` (`31 passed`)
 
-## In Progress
+## Status
 
-- Phase 2: public shell pass for homepage and Explore hierarchy
-- Phase 3: broader admin density and editor hierarchy pass
-- Phase 5: deeper importer workstation/productization pass
+All roadmap phases are complete.
 
-## Still To Do
+## Remaining Work
 
-- Homepage role-contrast pass is partially implemented
-- Explore discoverability polish
-- Explore discoverability polish is partially implemented
-- Full collections atlas treatment is partially implemented
-- Admin posts/editor hierarchy pass is partially implemented
-- Admin insights/dashboard hierarchy pass is partially implemented
-- Release/world restraint pass is partially implemented
-- Mini-player visual weight reduction is partially implemented
-- Importer step-by-step workflow refinement beyond the first structural pass
-
-## Handoff Note
-
-If work stops before the roadmap is complete, update this file with:
-
-- what changed
-- what files were touched
-- what verification ran
-- what remains unfinished
+- No roadmap items remain in scope.
+- Remaining work is optional follow-up polish, not part of the requested roadmap.
