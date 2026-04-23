@@ -40,6 +40,8 @@ Refine the site and importer from a rich shared texture system into a clearer hi
 - Started the admin mode pass by adding a distinct admin shell treatment in `frontend/src/layouts/AdminLayout.jsx` and `frontend/src/pages/admin/AdminLogin.jsx`
 - Extended the public shell pass with stronger homepage role contrast and more utility-weighted Explore/result styling in `frontend/src/styles/public-shell.css`
 - Extended the admin mode pass with sharper console-style cards, panels, and editor/catalog surfaces in `frontend/src/styles/admin-mode.css`
+- Added a release/world restraint layer in `frontend/src/styles/world-restraint.css` and wired it in through `frontend/src/styles.css`
+- Reduced the visual weight of the mini player and trimmed some decorative density on world/release surfaces through `frontend/src/styles/world-restraint.css`
 - Started the importer workstation pass by restructuring `D:\Projects\PythonProject\templates\import_window.html` into clearer stages with advanced settings tucked behind a details panel
 - Verified:
   - `frontend/npm run verify`
@@ -59,7 +61,8 @@ Refine the site and importer from a rich shared texture system into a clearer hi
 - Admin posts/editor hierarchy pass
 - Admin insights/dashboard hierarchy pass
 - Release/world restraint pass
-- Mini-player visual weight reduction
+- Release/world restraint pass is partially implemented
+- Mini-player visual weight reduction is partially implemented
 - Importer step-by-step workflow refinement beyond the first structural pass
 
 ## Handoff Note
