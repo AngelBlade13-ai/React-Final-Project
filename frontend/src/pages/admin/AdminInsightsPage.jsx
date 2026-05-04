@@ -177,7 +177,7 @@ export default function AdminInsightsPage() {
     return () => {
       isCancelled = true;
     };
-  }, []);
+  }, [adminFetch]);
 
   async function handlePreviewLiveSync() {
     try {

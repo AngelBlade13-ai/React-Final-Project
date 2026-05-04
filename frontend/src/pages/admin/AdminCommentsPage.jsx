@@ -53,7 +53,7 @@ export default function AdminCommentsPage() {
     return () => {
       isCancelled = true;
     };
-  }, []);
+  }, [adminFetch]);
 
   async function updateCommentStatus(commentId, nextStatus) {
     try {

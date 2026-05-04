@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, NavLink, Navigate, Outlet, useNavigate, useOutletContext } from "react-router-dom";
 import ThemeToggle from "../components/ThemeToggle";
 import { withMutationIntent } from "../lib/api";
@@ -67,12 +67,12 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
   const [savingSiteSettings, setSavingSiteSettings] = useState(false);
   const [importerLaunching, setImporterLaunching] = useState(false);
 
-  async function handleSessionExpired() {
+  const handleSessionExpired = useCallback(async () => {
     await Promise.resolve(onAdminLogout?.());
     navigate("/admin/login");
-  }
+  }, [navigate, onAdminLogout]);
 
-  async function adminFetch(url, options = {}) {
+  const adminFetch = useCallback(async (url, options = {}) => {
     const headers = { ...(options.headers || {}) };
     const hasBody = Object.prototype.hasOwnProperty.call(options, "body");
     const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
@@ -96,9 +96,9 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
     }
 
     return response;
-  }
+  }, [handleSessionExpired]);
 
-  async function loadAdminData() {
+  const loadAdminData = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
@@ -136,11 +136,11 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
     } finally {
       setLoading(false);
     }
-  }
+  }, [adminFetch]);
 
   useEffect(() => {
     loadAdminData();
-  }, []);
+  }, [loadAdminData]);
 
   function updateField(key, value) {
     setForm((current) => ({ ...current, [key]: value }));
