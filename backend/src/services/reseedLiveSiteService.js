@@ -122,7 +122,8 @@ function resolveReseedCommand() {
         overrideArgs = parsedArgs.map((arg) => String(arg));
       } catch (error) {
         throw new Error(
-          `Failed to parse RESEED_LIVE_SITE_ARGS_JSON: ${error.message}`
+          `Failed to parse RESEED_LIVE_SITE_ARGS_JSON: ${error.message}`,
+          { cause: error }
         );
       }
     }

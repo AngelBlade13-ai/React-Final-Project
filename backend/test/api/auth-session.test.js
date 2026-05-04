@@ -8,11 +8,14 @@ test("user registration sets a cookie-backed session that auth/me can restore", 
     await context.close();
   });
 
-  const registerResponse = await context.agent.post("/api/auth/register").send({
-    displayName: "Quality Gate User",
-    email: "quality@example.com",
-    password: "Password123!"
-  }).set(context.mutationHeaders);
+  const registerResponse = await context.agent
+    .post("/api/auth/register")
+    .send({
+      displayName: "Quality Gate User",
+      email: "quality@example.com",
+      password: "Password123!"
+    })
+    .set(context.mutationHeaders);
 
   assert.equal(registerResponse.status, 201);
   assert.match(

@@ -10,6 +10,7 @@ This branch reduces the initial frontend bundle by lazy-loading page-level route
 
 - Converted page route imports in `frontend/src/App.jsx` to `React.lazy`.
 - Wrapped the route tree in `Suspense` with a lightweight archive-themed fallback.
+- Added a route-level error boundary so failed lazy chunk loads show a recovery surface instead of blanking the app.
 - Kept core app shell code eager:
   - public and admin layouts
   - site metadata provider
@@ -29,5 +30,4 @@ This branch reduces the initial frontend bundle by lazy-loading page-level route
 
 ### Follow-up
 
-- Add an error boundary around lazy route chunks so a failed dynamic import can show a route-level recovery message.
 - Consider splitting heavy admin editor subpanels inside `AdminPostsPage.jsx` after the page-level split is stable.

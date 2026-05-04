@@ -115,7 +115,9 @@ test("admin reseed endpoint rewrites the live database from posts.json", async (
   assert.ok(reseedResponse.body.reseed.output);
   assert.match(reseedResponse.body.reseed.output, /reseed ok/);
 
-  const auditResponse = await context.agent.get("/api/admin/audit-logs?limit=5");
+  const auditResponse = await context.agent.get(
+    "/api/admin/audit-logs?limit=5"
+  );
 
   assert.equal(auditResponse.status, 200);
   const reseedAuditEntry = auditResponse.body.auditLogs.find(
@@ -159,7 +161,9 @@ test("admin importer launcher starts the local importer behind admin auth", asyn
   assert.equal(launchResponse.body.importer.alreadyRunning, false);
   assert.match(launchResponse.body.importer.url, /^http/);
 
-  const auditResponse = await context.agent.get("/api/admin/audit-logs?limit=5");
+  const auditResponse = await context.agent.get(
+    "/api/admin/audit-logs?limit=5"
+  );
   const importerAuditEntry = auditResponse.body.auditLogs.find(
     (entry) => entry.action === "importer.launched"
   );

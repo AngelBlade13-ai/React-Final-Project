@@ -1,4 +1,4 @@
-  ## Backend Route Service Split
+## Backend Route Service Split
 
 Branch: `refactor/backend-route-service-split`
 
