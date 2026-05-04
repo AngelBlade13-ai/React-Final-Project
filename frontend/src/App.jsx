@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import MiniPlayer from "./components/MiniPlayer";
 import {
@@ -15,22 +15,42 @@ import {
   hasVideo,
   themeKey
 } from "./lib/site";
-import AdminAboutPage from "./pages/admin/AdminAboutPage";
-import AdminCommentsPage from "./pages/admin/AdminCommentsPage";
-import AdminCollectionsPage from "./pages/admin/AdminCollectionsPage";
-import AdminInsightsPage from "./pages/admin/AdminInsightsPage";
-import AdminLogin from "./pages/admin/AdminLogin";
-import AdminPostsPage from "./pages/admin/AdminPostsPage";
-import AdminSitePage from "./pages/admin/AdminSitePage";
-import AboutPage from "./pages/public/AboutPage";
-import AccountPage from "./pages/public/AccountPage";
-import CollectionDetailPage from "./pages/public/CollectionDetailPage";
-import CollectionsIndexPage from "./pages/public/CollectionsIndexPage";
-import ExplorePage from "./pages/public/ExplorePage";
-import GuidedPathPage from "./pages/public/GuidedPathPage";
-import GuidedPathsIndexPage from "./pages/public/GuidedPathsIndexPage";
-import PublicHome from "./pages/public/PublicHome";
-import PublicReleasePage from "./pages/public/PublicReleasePage";
+
+const AdminAboutPage = lazy(() => import("./pages/admin/AdminAboutPage"));
+const AdminCommentsPage = lazy(() => import("./pages/admin/AdminCommentsPage"));
+const AdminCollectionsPage = lazy(
+  () => import("./pages/admin/AdminCollectionsPage")
+);
+const AdminInsightsPage = lazy(() => import("./pages/admin/AdminInsightsPage"));
+const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
+const AdminPostsPage = lazy(() => import("./pages/admin/AdminPostsPage"));
+const AdminSitePage = lazy(() => import("./pages/admin/AdminSitePage"));
+const AboutPage = lazy(() => import("./pages/public/AboutPage"));
+const AccountPage = lazy(() => import("./pages/public/AccountPage"));
+const CollectionDetailPage = lazy(
+  () => import("./pages/public/CollectionDetailPage")
+);
+const CollectionsIndexPage = lazy(
+  () => import("./pages/public/CollectionsIndexPage")
+);
+const ExplorePage = lazy(() => import("./pages/public/ExplorePage"));
+const GuidedPathPage = lazy(() => import("./pages/public/GuidedPathPage"));
+const GuidedPathsIndexPage = lazy(
+  () => import("./pages/public/GuidedPathsIndexPage")
+);
+const PublicHome = lazy(() => import("./pages/public/PublicHome"));
+const PublicReleasePage = lazy(() => import("./pages/public/PublicReleasePage"));
+
+function RouteFallback() {
+  return (
+    <main className="content-grid route-loading-shell" aria-live="polite">
+      <section className="intro-card homepage-panel">
+        <p className="eyebrow">Loading</p>
+        <h2>Opening the next archive surface.</h2>
+      </section>
+    </main>
+  );
+}
 
 function App() {
   const [theme, setTheme] = useState(() => {
@@ -531,124 +551,126 @@ function App() {
     <SiteMetadataProvider siteDescription={siteDescription} siteName={siteName}>
       <BrowserRouter>
         <audio ref={audioRef} preload="metadata" />
-        <Routes>
-          <Route
-            element={
-              <PublicLayout
-                currentUser={currentUser}
-                hasAdminSession={hasAdminSession}
-                isThemeLocked={Boolean(forcedTheme)}
-                isUserSessionReady={isUserSessionReady}
-                onUserLogout={handleUserLogout}
-                siteContent={siteContent}
-                theme={theme}
-                setTheme={setTheme}
-              />
-            }
-          >
+        <Suspense fallback={<RouteFallback />}>
+          <Routes>
             <Route
-              index
               element={
-                <PublicHome
-                  hasAdminSession={hasAdminSession}
-                  onPlayTrack={playTrack}
-                  siteContent={siteContent}
-                />
-              }
-            />
-            <Route path="/collections" element={<CollectionsIndexPage />} />
-            <Route
-              path="/collections/:slug"
-              element={
-                <CollectionDetailPage
-                  currentTrack={currentTrack}
-                  isPlayerActive={isMiniPlayerPlaying}
-                  onPlayTrack={playTrack}
-                  setActiveCollectionTheme={setActiveCollectionTheme}
-                  setForcedTheme={setForcedTheme}
-                  siteContent={siteContent}
-                />
-              }
-            />
-            <Route
-              path="/explore"
-              element={<ExplorePage onPlayTrack={playTrack} />}
-            />
-            <Route path="/paths" element={<GuidedPathsIndexPage />} />
-            <Route
-              path="/paths/:slug"
-              element={
-                <GuidedPathPage
-                  onPlayTrack={playTrack}
-                  setActiveCollectionTheme={setActiveCollectionTheme}
-                  setForcedTheme={setForcedTheme}
-                />
-              }
-            />
-            <Route
-              path="/account"
-              element={
-                <AccountPage
+                <PublicLayout
                   currentUser={currentUser}
                   hasAdminSession={hasAdminSession}
+                  isThemeLocked={Boolean(forcedTheme)}
                   isUserSessionReady={isUserSessionReady}
-                  onUserAuthSuccess={handleUserAuthSuccess}
                   onUserLogout={handleUserLogout}
-                />
-              }
-            />
-            <Route path="/about" element={<AboutPage />} />
-            <Route
-              path="/release/:slug"
-              element={
-                <PublicReleasePage
-                  currentUser={currentUser}
-                  currentTrack={currentTrack}
-                  hasAdminSession={hasAdminSession}
-                  isPlayerActive={isMiniPlayerPlaying}
-                  onPlayTrack={playTrack}
-                  onUserLogout={handleUserLogout}
-                  setActiveCollectionTheme={setActiveCollectionTheme}
-                  setForcedTheme={setForcedTheme}
                   siteContent={siteContent}
-                />
-              }
-            />
-          </Route>
-          <Route
-            path="/admin/login"
-            element={
-              <AdminLogin
-                onAdminAuthSuccess={handleAdminAuthSuccess}
-                theme={theme}
-                setTheme={setTheme}
-              />
-            }
-          />
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute
-                hasAdminSession={hasAdminSession}
-                isAdminSessionReady={isAdminSessionReady}
-              >
-                <AdminLayout
-                  onAdminLogout={handleAdminLogout}
                   theme={theme}
                   setTheme={setTheme}
                 />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<Navigate replace to="/admin/insights" />} />
-            <Route path="insights" element={<AdminInsightsPage />} />
-            <Route path="posts" element={<AdminPostsPage />} />
-            <Route path="comments" element={<AdminCommentsPage />} />
-            <Route path="collections" element={<AdminCollectionsPage />} />
-            <Route path="about" element={<AdminAboutPage />} />
-            <Route path="site" element={<AdminSitePage />} />
-          </Route>
-        </Routes>
+              }
+            >
+              <Route
+                index
+                element={
+                  <PublicHome
+                    hasAdminSession={hasAdminSession}
+                    onPlayTrack={playTrack}
+                    siteContent={siteContent}
+                  />
+                }
+              />
+              <Route path="/collections" element={<CollectionsIndexPage />} />
+              <Route
+                path="/collections/:slug"
+                element={
+                  <CollectionDetailPage
+                    currentTrack={currentTrack}
+                    isPlayerActive={isMiniPlayerPlaying}
+                    onPlayTrack={playTrack}
+                    setActiveCollectionTheme={setActiveCollectionTheme}
+                    setForcedTheme={setForcedTheme}
+                    siteContent={siteContent}
+                  />
+                }
+              />
+              <Route
+                path="/explore"
+                element={<ExplorePage onPlayTrack={playTrack} />}
+              />
+              <Route path="/paths" element={<GuidedPathsIndexPage />} />
+              <Route
+                path="/paths/:slug"
+                element={
+                  <GuidedPathPage
+                    onPlayTrack={playTrack}
+                    setActiveCollectionTheme={setActiveCollectionTheme}
+                    setForcedTheme={setForcedTheme}
+                  />
+                }
+              />
+              <Route
+                path="/account"
+                element={
+                  <AccountPage
+                    currentUser={currentUser}
+                    hasAdminSession={hasAdminSession}
+                    isUserSessionReady={isUserSessionReady}
+                    onUserAuthSuccess={handleUserAuthSuccess}
+                    onUserLogout={handleUserLogout}
+                  />
+                }
+              />
+              <Route path="/about" element={<AboutPage />} />
+              <Route
+                path="/release/:slug"
+                element={
+                  <PublicReleasePage
+                    currentUser={currentUser}
+                    currentTrack={currentTrack}
+                    hasAdminSession={hasAdminSession}
+                    isPlayerActive={isMiniPlayerPlaying}
+                    onPlayTrack={playTrack}
+                    onUserLogout={handleUserLogout}
+                    setActiveCollectionTheme={setActiveCollectionTheme}
+                    setForcedTheme={setForcedTheme}
+                    siteContent={siteContent}
+                  />
+                }
+              />
+            </Route>
+            <Route
+              path="/admin/login"
+              element={
+                <AdminLogin
+                  onAdminAuthSuccess={handleAdminAuthSuccess}
+                  theme={theme}
+                  setTheme={setTheme}
+                />
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute
+                  hasAdminSession={hasAdminSession}
+                  isAdminSessionReady={isAdminSessionReady}
+                >
+                  <AdminLayout
+                    onAdminLogout={handleAdminLogout}
+                    theme={theme}
+                    setTheme={setTheme}
+                  />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<Navigate replace to="/admin/insights" />} />
+              <Route path="insights" element={<AdminInsightsPage />} />
+              <Route path="posts" element={<AdminPostsPage />} />
+              <Route path="comments" element={<AdminCommentsPage />} />
+              <Route path="collections" element={<AdminCollectionsPage />} />
+              <Route path="about" element={<AdminAboutPage />} />
+              <Route path="site" element={<AdminSitePage />} />
+            </Route>
+          </Routes>
+        </Suspense>
         <MiniPlayer
           currentTrack={currentTrack}
           collectionId={playerCollectionId}

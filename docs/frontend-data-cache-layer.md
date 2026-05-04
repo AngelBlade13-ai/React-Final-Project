@@ -39,7 +39,7 @@ This branch replaces repeated public-page `fetch` + `useEffect` patterns with sh
 - `frontend`: `npm run verify`
 - `backend`: `npm run verify`
 
-### Remaining follow-up
+### Later follow-up
 
-- This branch does not reduce the initial JS bundle size; that remains the job of route-level code splitting.
+- Initial route-level JS splitting was added later in `docs/route-level-code-splitting.md`.
 - Auth/session fetches and comment mutations were left out on purpose because they need different invalidation and security handling than the public read surface.
