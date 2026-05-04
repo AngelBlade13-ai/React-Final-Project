@@ -62,10 +62,14 @@ Optional backend operations values:
 - `ENABLE_ADMIN_AUDIT_LOGGING`
 - `SLOW_REQUEST_THRESHOLD_MS`
 - `MONITORING_WEBHOOK_URL`
+- `IMPORTER_ROOT`
+- `IMPORTER_URL`
+- `IMPORTER_PYTHON_PATH`
 
 Frontend API base URL:
 
 - `VITE_API_URL`
+- `VITE_IMPORTER_URL`
 
 ### 3. Start MongoDB
 
@@ -124,6 +128,7 @@ On first backend startup, the API seeds MongoDB from the legacy JSON source if t
 5. Update About page content
 6. Open `/admin/insights` for archive health, runtime status, and the admin audit trail
 7. Open `/admin/comments` for moderation
+8. Use `Open Importer` to launch the local Python importer from the admin shell
 
 ### Hidden admin access
 

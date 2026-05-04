@@ -3,6 +3,9 @@ const request = require("supertest");
 const { MongoMemoryServer } = require("mongodb-memory-server");
 
 const backendSrcRoot = path.resolve(__dirname, "../../src");
+const mutationHeaders = {
+  "x-suno-intent": "ui"
+};
 
 function clearBackendModuleCache() {
   Object.keys(require.cache).forEach((cacheKey) => {
@@ -43,6 +46,7 @@ async function createApiTestContext(overrides = {}) {
   return {
     agent: request.agent(app),
     client: request(app),
+    mutationHeaders,
     async close() {
       await closeDatabase();
       clearBackendModuleCache();

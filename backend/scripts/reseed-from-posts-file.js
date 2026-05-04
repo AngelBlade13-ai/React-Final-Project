@@ -1,6 +1,6 @@
 require("dotenv").config({ quiet: true });
 const config = require("../src/config");
-const { connectToDatabase } = require("../src/lib/mongo");
+const { closeDatabase, connectToDatabase } = require("../src/lib/mongo");
 const { readLegacySeed, readStore, writeStore } = require("../src/data/store");
 
 async function reseedFromPostsFile() {
@@ -20,7 +20,15 @@ async function reseedFromPostsFile() {
   );
 }
 
-reseedFromPostsFile().catch((error) => {
-  console.error("Failed to reseed from posts file", error);
-  process.exit(1);
-});
+async function main() {
+  try {
+    await reseedFromPostsFile();
+  } catch (error) {
+    console.error("Failed to reseed from posts file", error);
+    process.exitCode = 1;
+  } finally {
+    await closeDatabase();
+  }
+}
+
+main();

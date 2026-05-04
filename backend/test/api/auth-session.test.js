@@ -12,7 +12,7 @@ test("user registration sets a cookie-backed session that auth/me can restore", 
     displayName: "Quality Gate User",
     email: "quality@example.com",
     password: "Password123!"
-  });
+  }).set(context.mutationHeaders);
 
   assert.equal(registerResponse.status, 201);
   assert.match(
@@ -25,7 +25,9 @@ test("user registration sets a cookie-backed session that auth/me can restore", 
   assert.equal(meResponse.status, 200);
   assert.equal(meResponse.body.user.displayName, "Quality Gate User");
 
-  const logoutResponse = await context.agent.post("/api/auth/logout");
+  const logoutResponse = await context.agent
+    .post("/api/auth/logout")
+    .set(context.mutationHeaders);
   assert.equal(logoutResponse.status, 200);
 
   const afterLogoutResponse = await context.agent.get("/api/auth/me");
@@ -38,10 +40,13 @@ test("admin login sets a cookie-backed session that the admin shell endpoint val
     await context.close();
   });
 
-  const loginResponse = await context.agent.post("/api/admin/login").send({
-    email: "admin@example.com",
-    password: "Admin123!"
-  });
+  const loginResponse = await context.agent
+    .post("/api/admin/login")
+    .set(context.mutationHeaders)
+    .send({
+      email: "admin@example.com",
+      password: "Admin123!"
+    });
 
   assert.equal(loginResponse.status, 200);
   assert.match(
@@ -55,7 +60,9 @@ test("admin login sets a cookie-backed session that the admin shell endpoint val
   assert.equal(sessionResponse.body.admin.role, "admin");
   assert.equal(sessionResponse.body.admin.email, "admin@example.com");
 
-  const logoutResponse = await context.agent.post("/api/admin/logout");
+  const logoutResponse = await context.agent
+    .post("/api/admin/logout")
+    .set(context.mutationHeaders);
   assert.equal(logoutResponse.status, 200);
 
   const afterLogoutResponse = await context.agent.get("/api/admin/session");

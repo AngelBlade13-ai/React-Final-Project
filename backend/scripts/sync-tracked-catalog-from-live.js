@@ -293,7 +293,6 @@ function buildCatalogFromStore(store) {
   return {
     posts: sortPosts((Array.isArray(store.posts) ? store.posts : []).map(normalizePostForCatalog)),
     collections: sortCollections((Array.isArray(store.collections) ? store.collections : []).map(normalizeCollectionForCatalog)),
-    comments: [],
     siteContent: normalizeSiteContent(store.siteContent || {})
   };
 }
@@ -305,7 +304,6 @@ async function readTrackedCatalog(catalogPath) {
     return {
       posts: Array.isArray(parsed.posts) ? parsed.posts.map(normalizePostForCatalog) : [],
       collections: Array.isArray(parsed.collections) ? parsed.collections.map(normalizeCollectionForCatalog) : [],
-      comments: Array.isArray(parsed.comments) ? parsed.comments : [],
       siteContent: normalizeSiteContent(parsed.siteContent || {})
     };
   } catch (error) {
@@ -313,7 +311,6 @@ async function readTrackedCatalog(catalogPath) {
       return {
         posts: [],
         collections: [],
-        comments: [],
         siteContent: normalizeSiteContent({})
       };
     }

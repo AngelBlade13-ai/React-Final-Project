@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { withMutationIntent } from "../../lib/api";
 import usePageMetadata from "../../hooks/usePageMetadata";
 import { apiBaseUrl } from "../../lib/site";
 
@@ -73,9 +74,9 @@ export default function AccountPage({
         {
           method: "POST",
           credentials: "include",
-          headers: {
+          headers: withMutationIntent({
             "Content-Type": "application/json"
-          },
+          }),
           body: JSON.stringify({
             displayName,
             email,
@@ -124,9 +125,9 @@ export default function AccountPage({
       const response = await fetch(`${apiBaseUrl}/auth/me`, {
         method: "PUT",
         credentials: "include",
-        headers: {
+        headers: withMutationIntent({
           "Content-Type": "application/json"
-        },
+        }),
         body: JSON.stringify({
           displayName: profileName,
           password: profilePassword

@@ -1,7 +1,17 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, Navigate, Outlet, useNavigate, useOutletContext } from "react-router-dom";
 import ThemeToggle from "../components/ThemeToggle";
-import { apiBaseUrl, DEFAULT_COLLECTION_THEME_PROFILES, emptyAbout, emptyCollection, emptyPost, emptySiteSettings, emptyThemeProfile } from "../lib/site";
+import { withMutationIntent } from "../lib/api";
+import {
+  apiBaseUrl,
+  DEFAULT_COLLECTION_THEME_PROFILES,
+  emptyAbout,
+  emptyCollection,
+  emptyPost,
+  emptySiteSettings,
+  emptyThemeProfile,
+  importerBaseUrl
+} from "../lib/site";
 
 export function ProtectedRoute({ children, hasAdminSession, isAdminSessionReady }) {
   if (!isAdminSessionReady) {
@@ -55,6 +65,7 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
   const [savingCollection, setSavingCollection] = useState(false);
   const [savingAbout, setSavingAbout] = useState(false);
   const [savingSiteSettings, setSavingSiteSettings] = useState(false);
+  const [importerLaunching, setImporterLaunching] = useState(false);
 
   async function handleSessionExpired() {
     await Promise.resolve(onAdminLogout?.());
@@ -68,6 +79,10 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
 
     if (hasBody && !isFormData && !headers["Content-Type"]) {
       headers["Content-Type"] = "application/json";
+    }
+
+    if (["POST", "PUT", "PATCH", "DELETE"].includes(String(options.method || "GET").toUpperCase())) {
+      Object.assign(headers, withMutationIntent(headers));
     }
 
     const response = await fetch(url, {
@@ -558,6 +573,37 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
     navigate("/admin/login");
   }
 
+  async function handleOpenImporter() {
+    const importerWindow = window.open("about:blank", "song-importer");
+
+    try {
+      setImporterLaunching(true);
+      setError("");
+      const response = await adminFetch(`${apiBaseUrl}/admin/importer/launch`, {
+        method: "POST"
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to launch the importer.");
+      }
+
+      const url = data.importer?.url || importerBaseUrl;
+      if (importerWindow) {
+        importerWindow.location.href = url;
+      } else {
+        window.open(url, "_blank", "noreferrer");
+      }
+    } catch (apiError) {
+      if (importerWindow) {
+        importerWindow.close();
+      }
+      setError(apiError.message || "Failed to launch the importer.");
+    } finally {
+      setImporterLaunching(false);
+    }
+  }
+
   return (
     <div className="page-shell admin-shell">
       <header className="hero compact-hero admin-hero">
@@ -568,6 +614,15 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
         </div>
         <div className="hero-actions-row admin-hero-actions">
           <ThemeToggle setTheme={setTheme} theme={theme} />
+          <button
+            className="hero-link"
+            disabled={importerLaunching}
+            onClick={handleOpenImporter}
+            title="Launch the local importer and open it in a new tab"
+            type="button"
+          >
+            {importerLaunching ? "Opening Importer" : "Open Importer"}
+          </button>
           <Link className="hero-link secondary-link" to="/">
             View Site
           </Link>

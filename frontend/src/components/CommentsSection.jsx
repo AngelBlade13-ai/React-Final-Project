@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { withMutationIntent } from "../lib/api";
 import { apiBaseUrl } from "../lib/site";
 
 export default function CommentsSection({ currentUser, onUserLogout, postSlug }) {
@@ -58,9 +59,9 @@ export default function CommentsSection({ currentUser, onUserLogout, postSlug })
       const response = await fetch(`${apiBaseUrl}/posts/${postSlug}/comments`, {
         method: "POST",
         credentials: "include",
-        headers: {
+        headers: withMutationIntent({
           "Content-Type": "application/json"
-        },
+        }),
         body: JSON.stringify({ body: draft })
       });
       const data = await response.json();
@@ -92,9 +93,9 @@ export default function CommentsSection({ currentUser, onUserLogout, postSlug })
       const response = await fetch(`${apiBaseUrl}/comments/${commentId}`, {
         method: "PUT",
         credentials: "include",
-        headers: {
+        headers: withMutationIntent({
           "Content-Type": "application/json"
-        },
+        }),
         body: JSON.stringify({ body: editingBody })
       });
       const data = await response.json();
@@ -132,7 +133,8 @@ export default function CommentsSection({ currentUser, onUserLogout, postSlug })
     try {
       const response = await fetch(`${apiBaseUrl}/comments/${commentId}`, {
         method: "DELETE",
-        credentials: "include"
+        credentials: "include",
+        headers: withMutationIntent()
       });
       const data = await response.json();
 

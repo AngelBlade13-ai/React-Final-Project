@@ -13,11 +13,13 @@ function buildLiveStoreSyncReport(liveStore, fileStore) {
     collections: compareEntityList(liveStore.collections, fileStore.collections, ["title", "featuredReleaseSlug"]),
     users: {
       liveCount: liveStore.users.length,
-      fileCount: fileStore.users.length
+      seedCount: fileStore.users.length,
+      storage: "operational-seed.local.json or live database"
     },
     comments: {
       liveCount: liveStore.comments.length,
-      fileCount: fileStore.comments.length
+      seedCount: fileStore.comments.length,
+      storage: "operational-seed.local.json or live database"
     }
   };
 }
@@ -25,12 +27,18 @@ function buildLiveStoreSyncReport(liveStore, fileStore) {
 async function previewLiveStoreSync(options = {}) {
   const outputDir = path.resolve(options.outputDir || DEFAULT_REPORTS_DIR);
   const [liveStore, fileStore] = await Promise.all([readStore(), readLegacySeed()]);
+  const authoredCatalog = buildAuthoredCatalog(liveStore);
   const report = buildLiveStoreSyncReport(liveStore, fileStore);
-  const artifacts = await writeLiveStoreSyncArtifacts({ liveStore, report, outputDir });
+  const artifacts = await writeLiveStoreSyncArtifacts({
+    authoredCatalog,
+    report,
+    outputDir
+  });
 
   return {
     liveStore,
     fileStore,
+    authoredCatalog,
     report,
     outputDir,
     ...artifacts
@@ -43,7 +51,7 @@ async function applyLiveStoreSync(options = {}) {
   const backupPath = `${config.postsFile}.backup.${timestamp}.json`;
 
   await fs.copyFile(config.postsFile, backupPath);
-  await writeJson(config.postsFile, preview.liveStore);
+  await writeJson(config.postsFile, preview.authoredCatalog);
 
   return {
     ...preview,
@@ -51,18 +59,26 @@ async function applyLiveStoreSync(options = {}) {
   };
 }
 
-async function writeLiveStoreSyncArtifacts({ liveStore, report, outputDir }) {
+async function writeLiveStoreSyncArtifacts({ authoredCatalog, report, outputDir }) {
   await fs.mkdir(outputDir, { recursive: true });
   const timestamp = createTimestamp();
-  const liveSnapshotPath = path.join(outputDir, `live-store-snapshot.${timestamp}.json`);
+  const liveSnapshotPath = path.join(outputDir, `authored-catalog-snapshot.${timestamp}.json`);
   const reportPath = path.join(outputDir, `live-store-sync-report.${timestamp}.json`);
 
-  await writeJson(liveSnapshotPath, liveStore);
+  await writeJson(liveSnapshotPath, authoredCatalog);
   await writeJson(reportPath, report);
 
   return {
     liveSnapshotPath,
     reportPath
+  };
+}
+
+function buildAuthoredCatalog(store) {
+  return {
+    posts: Array.isArray(store.posts) ? store.posts : [],
+    collections: Array.isArray(store.collections) ? store.collections : [],
+    siteContent: store.siteContent || {}
   };
 }
 

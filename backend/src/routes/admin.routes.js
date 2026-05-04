@@ -2,6 +2,9 @@ const express = require("express");
 const crypto = require("crypto");
 const { requireAdmin } = require("../middleware/auth");
 const {
+  requireCatalogFileMutationsEnabled
+} = require("../middleware/mutationProtection");
+const {
   deleteCollectionById,
   deleteCommentsByPostSlug,
   deletePostById,
@@ -22,6 +25,8 @@ const {
   applyLiveStoreSync,
   previewLiveStoreSync
 } = require("../services/liveStoreSync");
+const { launchImporter } = require("../services/importerLauncherService");
+const { runPostFileReseed } = require("../services/reseedLiveSiteService");
 const {
   appendSlugHistory,
   applyBulkPostUpdates,
@@ -793,6 +798,32 @@ router.get("/insights", async (req, res, next) => {
   }
 });
 
+router.post("/importer/launch", async (req, res, next) => {
+  try {
+    const result = await launchImporter();
+    await recordAdminAuditEvent(req, {
+      action: result.alreadyRunning ? "importer.opened" : "importer.launched",
+      entityType: "tool",
+      entityId: "song-importer",
+      entityLabel: "Song importer",
+      details: {
+        alreadyRunning: result.alreadyRunning,
+        started: result.started,
+        url: result.url
+      }
+    });
+
+    return res.json({
+      message: result.alreadyRunning
+        ? "Importer is already running."
+        : "Importer launched.",
+      importer: result
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.get("/live-store-sync", async (req, res, next) => {
   try {
     const preview = await previewLiveStoreSync();
@@ -812,9 +843,23 @@ router.get("/live-store-sync", async (req, res, next) => {
   }
 });
 
-router.post("/live-store-sync", async (req, res, next) => {
+router.post(
+  "/live-store-sync",
+  requireCatalogFileMutationsEnabled,
+  async (req, res, next) => {
   try {
     const result = await applyLiveStoreSync();
+    await recordAdminAuditEvent(req, {
+      action: "catalog.live_store_synced_to_file",
+      entityType: "catalog",
+      entityId: "posts.json",
+      entityLabel: "Tracked catalog sync",
+      details: {
+        backupPath: result.backupPath,
+        postsFile: result.report.postsFile,
+        reportPath: result.reportPath
+      }
+    });
     return res.json({
       message: "Live admin data was written back into posts.json.",
       sync: {
@@ -826,6 +871,36 @@ router.post("/live-store-sync", async (req, res, next) => {
           reportPath: result.reportPath,
           backupPath: result.backupPath
         }
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post(
+  "/reseed-live-site",
+  requireCatalogFileMutationsEnabled,
+  async (req, res, next) => {
+  try {
+    const result = await runPostFileReseed();
+    await recordAdminAuditEvent(req, {
+      action: "site.reseeded",
+      entityType: "site",
+      entityId: "posts.json",
+      entityLabel: "Live site reseed",
+      details: {
+        postsFile: result.postsFile || "",
+        logPath: result.logPath
+      }
+    });
+
+    return res.json({
+      message: "Live site reseeded from backend/data/posts.json.",
+      reseed: {
+        generatedAt: result.generatedAt,
+        logPath: result.logPath,
+        output: result.output
       }
     });
   } catch (error) {

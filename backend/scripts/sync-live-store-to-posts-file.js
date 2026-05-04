@@ -1,7 +1,7 @@
 require("dotenv").config({ quiet: true });
 
 const config = require("../src/config");
-const { connectToDatabase } = require("../src/lib/mongo");
+const { closeDatabase, connectToDatabase } = require("../src/lib/mongo");
 const { applyLiveStoreSync, previewLiveStoreSync } = require("../src/services/liveStoreSync");
 
 async function main() {
@@ -79,5 +79,7 @@ function printHelp() {
 
 main().catch((error) => {
   console.error("Failed to reconcile live store back into posts file.", error);
-  process.exit(1);
+  process.exitCode = 1;
+}).finally(async () => {
+  await closeDatabase();
 });

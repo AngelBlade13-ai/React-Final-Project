@@ -11,5 +11,8 @@ yarn-debug.log*
 yarn-error.log*
 backend/backups/
 backend/reports/
+backend/data/operational-seed.local.json
+backend/data/posts.json.backup.*.json
+backend/output/
 __pycache__/
 *.py[cod]

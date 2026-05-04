@@ -743,36 +743,67 @@ function sanitizeDoc(doc) {
 }
 
 async function readLegacySeed() {
+  let data;
+
   try {
     const file = await fs.readFile(config.postsFile, "utf8");
+    data = JSON.parse(file);
+  } catch (error) {
+    if (error && error.code === "ENOENT") {
+      return buildDefaultSeed();
+    }
+
+    throw error;
+  }
+
+  const operationalSeed = await readOperationalSeed();
+
+  return {
+    posts: Array.isArray(data.posts)
+      ? normalizeImportedPosts(data.posts).map(normalizePost).filter(Boolean)
+      : seedPosts.map(normalizePost),
+    collections: Array.isArray(data.collections)
+      ? normalizeImportedCollections(data.collections)
+          .map(normalizeCollection)
+          .filter(Boolean)
+      : seedCollections.map(normalizeCollection),
+    users: Array.isArray(operationalSeed.users)
+      ? operationalSeed.users.map(normalizeUser).filter(Boolean)
+      : seedUsers.map(normalizeUser),
+    comments: Array.isArray(operationalSeed.comments)
+      ? operationalSeed.comments.map(normalizeComment).filter(Boolean)
+      : seedComments.map(normalizeComment),
+    siteContent: normalizeSiteContent(data.siteContent)
+  };
+}
+
+async function readOperationalSeed() {
+  if (!config.operationalSeedFile) {
+    return {};
+  }
+
+  try {
+    const file = await fs.readFile(config.operationalSeedFile, "utf8");
     const data = JSON.parse(file);
 
-    return {
-      posts: Array.isArray(data.posts)
-        ? normalizeImportedPosts(data.posts).map(normalizePost).filter(Boolean)
-        : seedPosts.map(normalizePost),
-      collections: Array.isArray(data.collections)
-        ? normalizeImportedCollections(data.collections)
-            .map(normalizeCollection)
-            .filter(Boolean)
-        : seedCollections.map(normalizeCollection),
-      users: Array.isArray(data.users)
-        ? data.users.map(normalizeUser).filter(Boolean)
-        : seedUsers.map(normalizeUser),
-      comments: Array.isArray(data.comments)
-        ? data.comments.map(normalizeComment).filter(Boolean)
-        : seedComments.map(normalizeComment),
-      siteContent: normalizeSiteContent(data.siteContent)
-    };
-  } catch {
-    return {
-      posts: seedPosts.map(normalizePost),
-      collections: seedCollections.map(normalizeCollection),
-      users: seedUsers.map(normalizeUser),
-      comments: seedComments.map(normalizeComment),
-      siteContent: normalizeSiteContent(seedSiteContent)
-    };
+    return data && typeof data === "object" ? data : {};
+  } catch (error) {
+    if (error && error.code === "ENOENT") {
+      return {};
+    }
+
+    throw error;
   }
+}
+
+function buildDefaultSeed() {
+  return {
+    posts: seedPosts.map(normalizePost),
+    collections: seedCollections.map(normalizeCollection),
+    users: seedUsers.map(normalizeUser),
+    comments: seedComments.map(normalizeComment),
+    siteContent: normalizeSiteContent(seedSiteContent)
+  };
 }
 
 async function ensureStore() {

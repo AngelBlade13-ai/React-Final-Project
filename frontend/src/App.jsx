@@ -15,6 +15,7 @@ import {
   hasVideo,
   themeKey
 } from "./lib/site";
+import { withMutationIntent } from "./lib/api";
 
 const AdminAboutPage = lazy(() => import("./pages/admin/AdminAboutPage"));
 const AdminCommentsPage = lazy(() => import("./pages/admin/AdminCommentsPage"));
@@ -503,7 +504,8 @@ function App() {
     try {
       await fetch(`${apiBaseUrl}/auth/logout`, {
         method: "POST",
-        credentials: "include"
+        credentials: "include",
+        headers: withMutationIntent()
       });
     } catch {
       // Ignore logout transport failures and still clear local session state.
@@ -524,7 +526,8 @@ function App() {
     try {
       await fetch(`${apiBaseUrl}/admin/logout`, {
         method: "POST",
-        credentials: "include"
+        credentials: "include",
+        headers: withMutationIntent()
       });
     } catch {
       // Ignore logout transport failures and still clear local session state.

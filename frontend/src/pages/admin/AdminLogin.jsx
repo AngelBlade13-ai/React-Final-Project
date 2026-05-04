@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import ThemeToggle from "../../components/ThemeToggle";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
+import { withMutationIntent } from "../../lib/api";
 import { apiBaseUrl } from "../../lib/site";
 
 export default function AdminLogin({ onAdminAuthSuccess, theme, setTheme }) {
@@ -21,9 +22,9 @@ export default function AdminLogin({ onAdminAuthSuccess, theme, setTheme }) {
       const response = await fetch(`${apiBaseUrl}/admin/login`, {
         method: "POST",
         credentials: "include",
-        headers: {
+        headers: withMutationIntent({
           "Content-Type": "application/json"
-        },
+        }),
         body: JSON.stringify({ email, password })
       });
 

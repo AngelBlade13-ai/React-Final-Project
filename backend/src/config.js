@@ -10,6 +10,9 @@ const config = {
       ? process.env.NODE_ENV !== "test"
       : process.env.ENABLE_REQUEST_LOGGING !== "false",
   enableAdminAuditLogging: process.env.ENABLE_ADMIN_AUDIT_LOGGING !== "false",
+  enableCatalogFileMutations:
+    process.env.ENABLE_CATALOG_FILE_MUTATIONS === "true" ||
+    process.env.NODE_ENV !== "production",
   slowRequestThresholdMs: Number(process.env.SLOW_REQUEST_THRESHOLD_MS) || 1200,
   monitoringWebhookUrl: process.env.MONITORING_WEBHOOK_URL || "",
   jwtSecret: process.env.JWT_SECRET || "change-me",
@@ -21,6 +24,17 @@ const config = {
   mongoDbName: process.env.MONGODB_DB_NAME || "suno_blog",
   postsFile:
     process.env.POSTS_FILE || path.join(__dirname, "..", "data", "posts.json"),
+  websiteRoot: path.resolve(__dirname, "..", ".."),
+  importerRoot:
+    process.env.IMPORTER_ROOT ||
+    (process.platform === "win32"
+      ? "D:\\Projects\\PythonProject"
+      : path.resolve(__dirname, "..", "..", "..", "PythonProject")),
+  importerUrl: process.env.IMPORTER_URL || "http://127.0.0.1:8765",
+  importerPythonPath: process.env.IMPORTER_PYTHON_PATH || "",
+  operationalSeedFile:
+    process.env.OPERATIONAL_SEED_FILE ||
+    path.join(__dirname, "..", "data", "operational-seed.local.json"),
   cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME || "",
   cloudinaryApiKey: process.env.CLOUDINARY_API_KEY || "",
   cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET || "",

@@ -105,6 +105,10 @@ export default function AdminInsightsPage() {
   const [syncWriting, setSyncWriting] = useState(false);
   const [syncError, setSyncError] = useState("");
   const [syncMessage, setSyncMessage] = useState("");
+  const [reseedLoading, setReseedLoading] = useState(false);
+  const [reseedError, setReseedError] = useState("");
+  const [reseedMessage, setReseedMessage] = useState("");
+  const [reseedResult, setReseedResult] = useState(null);
 
   useEffect(() => {
     let isCancelled = false;
@@ -228,6 +232,39 @@ export default function AdminInsightsPage() {
       setSyncError(apiError.message);
     } finally {
       setSyncWriting(false);
+    }
+  }
+
+  async function handleReseedLiveSite() {
+    const confirmed = window.confirm(
+      "This will reseed the live database from backend/data/posts.json. Continue?"
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setReseedLoading(true);
+      setReseedError("");
+      setReseedMessage("");
+      setReseedResult(null);
+
+      const data = await readJson(
+        adminFetch(`${apiBaseUrl}/admin/reseed-live-site`, {
+          method: "POST"
+        }),
+        "Failed to reseed the live website from posts.json."
+      );
+
+      setReseedResult(data.reseed || null);
+      setReseedMessage(
+        data.message || "Live site reseeded from backend/data/posts.json."
+      );
+    } catch (apiError) {
+      setReseedError(apiError.message);
+    } finally {
+      setReseedLoading(false);
     }
   }
 
@@ -470,9 +507,34 @@ export default function AdminInsightsPage() {
               ? "Writing posts.json..."
               : "Write Live Store To posts.json"}
           </button>
+          <button
+            className="secondary-button"
+            disabled={reseedLoading || syncLoading || syncWriting}
+            onClick={handleReseedLiveSite}
+            type="button"
+          >
+            {reseedLoading ? "Reseeding Live DB..." : "Reseed Live Site"}
+          </button>
         </div>
         {syncError ? <p className="error-text">{syncError}</p> : null}
         {syncMessage ? <p className="meta">{syncMessage}</p> : null}
+        {reseedError ? <p className="error-text">{reseedError}</p> : null}
+        {reseedMessage ? <p className="meta">{reseedMessage}</p> : null}
+        {reseedResult ? (
+          <div className="insight-issue-card severity-info" style={{ marginTop: "1rem" }}>
+            <div className="insight-issue-head">
+              <div>
+                <p className="eyebrow">Reseed</p>
+                <h3>Live database reseed complete</h3>
+              </div>
+            </div>
+            <p>
+              {`Generated at ${formatRelativeTime(reseedResult.generatedAt)} | `}
+              {`Log: ${reseedResult.logPath || "n/a"}`}
+            </p>
+            {reseedResult.output ? <pre>{reseedResult.output}</pre> : null}
+          </div>
+        ) : null}
         {syncReport ? (
           <div className="insight-issue-grid" style={{ marginTop: "1rem" }}>
             <article className="insight-issue-card severity-info">
