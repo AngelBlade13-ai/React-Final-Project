@@ -427,16 +427,22 @@ function remapPostSlugReferences(posts, collections, siteContent, previousSlug, 
         }
       : collection
   );
-  const nextSiteContent =
-    siteContent?.home?.featuredReleaseSlug === previousSlug
-      ? {
-          ...siteContent,
-          home: {
+  const nextSiteContent = {
+    ...siteContent,
+    home:
+      siteContent?.home?.featuredReleaseSlug === previousSlug
+        ? {
             ...siteContent.home,
             featuredReleaseSlug: nextSlug
           }
-        }
-      : siteContent;
+        : siteContent?.home,
+    guidedPaths: Array.isArray(siteContent?.guidedPaths)
+      ? siteContent.guidedPaths.map((path) => ({
+          ...path,
+          postSlugs: remapSlugList(path.postSlugs, previousSlug, nextSlug)
+        }))
+      : siteContent?.guidedPaths
+  };
 
   return {
     posts: nextPosts,

@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { usePublicCollections, usePublicPosts } from "../../hooks/usePublicApi";
+import {
+  usePublicCollections,
+  usePublicPosts,
+  useSiteContent
+} from "../../hooks/usePublicApi";
 import usePageMetadata from "../../hooks/usePageMetadata";
 import { formatPostDate } from "../../lib/formatters";
 import { resolveGuidedListeningPath } from "../../lib/listeningPaths";
@@ -24,10 +28,19 @@ export default function GuidedPathPage({
     error: collectionsError,
     isLoading: collectionsLoading
   } = usePublicCollections("all");
-  const loading = postsLoading || collectionsLoading;
-  const error = postsError?.message || collectionsError?.message || "";
+  const {
+    siteContent,
+    error: siteContentError,
+    isLoading: siteContentLoading
+  } = useSiteContent();
+  const loading = postsLoading || collectionsLoading || siteContentLoading;
+  const error =
+    postsError?.message ||
+    collectionsError?.message ||
+    siteContentError?.message ||
+    "";
 
-  const path = resolveGuidedListeningPath(slug, posts, collections);
+  const path = resolveGuidedListeningPath(slug, posts, collections, siteContent);
   const activePost = path?.posts?.[activeIndex] || null;
   const activeCollections = getVisibleCollectionsForPost(activePost);
   const playbackContext = path

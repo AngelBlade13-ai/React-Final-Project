@@ -1,5 +1,9 @@
 import { Link } from "react-router-dom";
-import { usePublicCollections, usePublicPosts } from "../../hooks/usePublicApi";
+import {
+  usePublicCollections,
+  usePublicPosts,
+  useSiteContent
+} from "../../hooks/usePublicApi";
 import usePageMetadata from "../../hooks/usePageMetadata";
 import { resolveGuidedListeningPaths } from "../../lib/listeningPaths";
 
@@ -19,10 +23,19 @@ export default function GuidedPathsIndexPage() {
     error: collectionsError,
     isLoading: collectionsLoading
   } = usePublicCollections("all");
-  const loading = postsLoading || collectionsLoading;
-  const error = postsError?.message || collectionsError?.message || "";
+  const {
+    siteContent,
+    error: siteContentError,
+    isLoading: siteContentLoading
+  } = useSiteContent();
+  const loading = postsLoading || collectionsLoading || siteContentLoading;
+  const error =
+    postsError?.message ||
+    collectionsError?.message ||
+    siteContentError?.message ||
+    "";
 
-  const paths = resolveGuidedListeningPaths(posts, collections);
+  const paths = resolveGuidedListeningPaths(posts, collections, siteContent);
 
   return (
     <>

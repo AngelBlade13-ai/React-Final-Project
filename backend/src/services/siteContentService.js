@@ -94,9 +94,100 @@ function normalizeThemeProfileInput(input = {}, existingTheme = {}) {
   };
 }
 
+function normalizeStringList(value) {
+  return Array.isArray(value)
+    ? [
+        ...new Set(
+          value
+            .map((entry) => String(entry || "").trim())
+            .filter(Boolean)
+        )
+      ]
+    : [];
+}
+
+function normalizeGuidedPathAlgorithm(input = {}, existingAlgorithm = {}) {
+  const algorithm =
+    input && typeof input === "object" && !Array.isArray(input) ? input : {};
+  const existing =
+    existingAlgorithm &&
+    typeof existingAlgorithm === "object" &&
+    !Array.isArray(existingAlgorithm)
+      ? existingAlgorithm
+      : {};
+
+  return {
+    preset: String(algorithm.preset || existing.preset || "").trim(),
+    collectionSlug: slugify(
+      algorithm.collectionSlug || existing.collectionSlug || ""
+    ),
+    collectionSlugs: normalizeStringList(
+      algorithm.collectionSlugs || existing.collectionSlugs
+    ).map(slugify),
+    sectionKeys: normalizeStringList(
+      algorithm.sectionKeys || existing.sectionKeys
+    ),
+    themeTags: normalizeStringList(algorithm.themeTags || existing.themeTags),
+    worldLayers: normalizeStringList(
+      algorithm.worldLayers || existing.worldLayers
+    ),
+    releaseStatuses: normalizeStringList(
+      algorithm.releaseStatuses || existing.releaseStatuses
+    ),
+    match: ["all", "any"].includes(String(algorithm.match || existing.match))
+      ? String(algorithm.match || existing.match)
+      : "all",
+    maxItems: Math.max(
+      0,
+      Number.parseInt(String(algorithm.maxItems || existing.maxItems || 0), 10)
+    ),
+    sort: String(algorithm.sort || existing.sort || "curated").trim() || "curated"
+  };
+}
+
+function normalizeGuidedPathInput(input = {}, existingPath = {}) {
+  const slug = slugify(input.slug || existingPath.slug || input.title || "");
+
+  return {
+    slug,
+    title: String(input.title || existingPath.title || "").trim(),
+    eyebrow: String(input.eyebrow || existingPath.eyebrow || "Guided Path").trim(),
+    intro: String(input.intro || existingPath.intro || "").trim(),
+    moodNote: String(input.moodNote || existingPath.moodNote || "").trim(),
+    themeHint: slugify(input.themeHint || existingPath.themeHint || ""),
+    postSlugs: normalizeStringList(input.postSlugs || existingPath.postSlugs).map(
+      slugify
+    ),
+    algorithm: normalizeGuidedPathAlgorithm(
+      input.algorithm,
+      existingPath.algorithm
+    )
+  };
+}
+
+function normalizeGuidedPathsInput(input = [], existingPaths = []) {
+  if (!Array.isArray(input)) {
+    return Array.isArray(existingPaths) ? existingPaths : [];
+  }
+
+  const existingBySlug = new Map(
+    (Array.isArray(existingPaths) ? existingPaths : []).map((path) => [
+      path.slug,
+      path
+    ])
+  );
+
+  return input
+    .map((path) =>
+      normalizeGuidedPathInput(path, existingBySlug.get(slugify(path?.slug)))
+    )
+    .filter((path) => path.slug && path.title);
+}
+
 module.exports = {
   normalizeAboutContent,
   normalizeBrandingContent,
+  normalizeGuidedPathsInput,
   normalizeHomeContent,
   normalizeThemeProfileInput
 };

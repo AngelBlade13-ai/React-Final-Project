@@ -103,6 +103,7 @@ const seedSiteContent = {
       "Each page still keeps the music close, but now the archive has a stronger structure: releases can live in more than one collection, search can surface them by title or text, and the site has space to explain the artist voice behind the catalog.",
     identityLine: "A collection of songs, stories, and moments in motion."
   },
+  guidedPaths: [],
   collectionThemes: [
     {
       key: "default",
@@ -659,6 +660,40 @@ function normalizeSiteContent(siteContent = {}) {
           }))
           .filter((theme) => theme.key)
       : seedSiteContent.collectionThemes.map((theme) => ({ ...theme })),
+    guidedPaths: Array.isArray(siteContent.guidedPaths)
+      ? siteContent.guidedPaths
+          .map((path) => ({
+            slug: slugify(path?.slug || path?.title || ""),
+            title: String(path?.title || "").trim(),
+            eyebrow: String(path?.eyebrow || "Guided Path").trim(),
+            intro: String(path?.intro || "").trim(),
+            moodNote: String(path?.moodNote || "").trim(),
+            themeHint: slugify(path?.themeHint || ""),
+            postSlugs: Array.isArray(path?.postSlugs)
+              ? [
+                  ...new Set(
+                    path.postSlugs
+                      .map((slug) => slugify(slug))
+                      .filter(Boolean)
+                  )
+                ]
+              : [],
+            algorithm:
+              path?.algorithm &&
+              typeof path.algorithm === "object" &&
+              !Array.isArray(path.algorithm)
+                ? {
+                    ...path.algorithm,
+                    preset: String(path.algorithm.preset || "").trim(),
+                    collectionSlug: slugify(path.algorithm.collectionSlug || ""),
+                    sort:
+                      String(path.algorithm.sort || "curated").trim() ||
+                      "curated"
+                  }
+                : {}
+          }))
+          .filter((path) => path.slug && path.title)
+      : seedSiteContent.guidedPaths.map((path) => ({ ...path })),
     about: {
       ...seedSiteContent.about,
       ...(siteContent.about || {})

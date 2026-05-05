@@ -819,6 +819,7 @@ export const emptySiteSettings = {
       "Each page still keeps the music close, but now the archive has a stronger structure: releases can live in more than one collection, search can surface them by title or text, and the site has space to explain the artist voice behind the catalog.",
     identityLine: "A collection of songs, stories, and moments in motion."
   },
+  guidedPaths: [],
   collectionThemes: DEFAULT_COLLECTION_THEME_PROFILES.map((profile) => JSON.parse(JSON.stringify(profile)))
 };
 

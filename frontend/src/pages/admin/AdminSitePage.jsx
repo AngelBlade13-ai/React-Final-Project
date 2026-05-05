@@ -1,8 +1,11 @@
+import { useEffect, useState } from "react";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { useAdminContext } from "../../layouts/AdminLayout";
 
 export default function AdminSitePage() {
   useDocumentTitle("Admin Site");
+  const [guidedPathsDraft, setGuidedPathsDraft] = useState("[]");
+  const [guidedPathsError, setGuidedPathsError] = useState("");
   const {
     handleSiteSettingsSubmit,
     handleThemeProfileDelete,
@@ -16,9 +19,30 @@ export default function AdminSitePage() {
     startThemeProfileEdit,
     themeProfileForm,
     updateSiteSettingsForm,
+    updateSiteSettingsRoot,
     updateThemeProfileField,
     updateThemeProfilePalette
   } = useAdminContext();
+
+  useEffect(() => {
+    setGuidedPathsDraft(JSON.stringify(siteSettingsForm.guidedPaths || [], null, 2));
+    setGuidedPathsError("");
+  }, [siteSettingsForm.guidedPaths]);
+
+  function handleGuidedPathsApply() {
+    try {
+      const parsedPaths = JSON.parse(guidedPathsDraft);
+
+      if (!Array.isArray(parsedPaths)) {
+        throw new Error("Guided paths must be a JSON array.");
+      }
+
+      updateSiteSettingsRoot("guidedPaths", parsedPaths);
+      setGuidedPathsError("");
+    } catch (error) {
+      setGuidedPathsError(error.message || "Guided paths JSON is invalid.");
+    }
+  }
 
   return (
     <main className="admin-grid">
@@ -237,6 +261,39 @@ export default function AdminSitePage() {
           </div>
           {siteSettingsMessage ? <p className="success-text full-span">{siteSettingsMessage}</p> : null}
         </form>
+      </section>
+
+      <section className="intro-card">
+        <div className="section-head">
+          <div>
+            <p className="eyebrow">Guided Paths</p>
+            <h2>Edit path definitions and algorithm rules.</h2>
+          </div>
+          <span>{`${siteSettingsForm.guidedPaths?.length || 0} paths`}</span>
+        </div>
+        <div className="admin-form">
+          <label className="full-span">
+            Paths JSON
+            <textarea
+              onChange={(event) => setGuidedPathsDraft(event.target.value)}
+              rows="16"
+              spellCheck="false"
+              value={guidedPathsDraft}
+            />
+          </label>
+          <p className="full-span meta">
+            Use <code>postSlugs</code> for an exact manual order, or <code>algorithm</code> with fields like{" "}
+            <code>collectionSlug</code>, <code>sectionKeys</code>, <code>themeTags</code>, <code>worldLayers</code>,{" "}
+            <code>releaseStatuses</code>, <code>maxItems</code>, and <code>sort</code>. Apply the JSON here, then save
+            site settings.
+          </p>
+          <div className="full-span admin-form-actions">
+            <button className="secondary-button" onClick={handleGuidedPathsApply} type="button">
+              Apply Paths JSON
+            </button>
+          </div>
+          {guidedPathsError ? <p className="error-text full-span">{guidedPathsError}</p> : null}
+        </div>
       </section>
 
       <section className="intro-card">

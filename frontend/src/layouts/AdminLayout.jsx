@@ -129,7 +129,10 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
         },
         collectionThemes: Array.isArray(siteContentData.siteContent?.collectionThemes)
           ? siteContentData.siteContent.collectionThemes
-          : emptySiteSettings.collectionThemes
+          : emptySiteSettings.collectionThemes,
+        guidedPaths: Array.isArray(siteContentData.siteContent?.guidedPaths)
+          ? siteContentData.siteContent.guidedPaths
+          : emptySiteSettings.guidedPaths
       });
     } catch {
       setError("Failed to load admin data.");
@@ -182,6 +185,13 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
         ...current[section],
         [key]: value
       }
+    }));
+  }
+
+  function updateSiteSettingsRoot(key, value) {
+    setSiteSettingsForm((current) => ({
+      ...current,
+      [key]: value
     }));
   }
 
@@ -516,7 +526,10 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
         },
         collectionThemes: Array.isArray(data.siteContent?.collectionThemes)
           ? data.siteContent.collectionThemes
-          : emptySiteSettings.collectionThemes
+          : emptySiteSettings.collectionThemes,
+        guidedPaths: Array.isArray(data.siteContent?.guidedPaths)
+          ? data.siteContent.guidedPaths
+          : emptySiteSettings.guidedPaths
       });
       setSiteSettingsMessage("Site settings saved successfully.");
     } catch (apiError) {
@@ -687,6 +700,7 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
           updateCollectionForm,
           updateAboutForm,
           updateSiteSettingsForm,
+          updateSiteSettingsRoot,
           updateThemeProfileField,
           updateThemeProfilePalette,
           togglePostCollection,

@@ -18,6 +18,11 @@ Branch: `feat/guided-listening-paths`
   - `Paths` in the site nav
   - a homepage doorway link into guided paths
 - Added styling in `frontend/src/styles/app.css` for the new guided path surfaces.
+- Moved guided path definitions into admin-managed site content via `siteContent.guidedPaths`.
+- Added a compact admin JSON editor under `/admin/site` for updating path copy, manual post order, and algorithm rules.
+- Supported two path assembly modes:
+  - `postSlugs` for exact manual sequencing.
+  - `algorithm` for catalog-derived paths using collection, section, theme tag, world layer, release status, max item, match mode, and sort filters.
 
 ### Initial paths included
 
@@ -32,6 +37,7 @@ Branch: `feat/guided-listening-paths`
 
 - This is the clearest move yet toward the site behaving like a narrative listening platform rather than only a release archive.
 - Visitors now have explicit authored routes into the catalog instead of needing to infer the best starting point from collections or search.
+- Admins can now adjust path membership without editing frontend code, while still using algorithmic rules for paths that should follow catalog metadata over time.
 
 ### Verification
 

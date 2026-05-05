@@ -1512,6 +1512,117 @@
       "identityText": "Each page still keeps the music close, but now the archive has a stronger structure: releases can live in more than one collection, search can surface them by title or text, and the site has space to explain the artist voice behind the catalog.",
       "identityLine": "A collection of songs, stories, and moments in motion."
     },
+    "guidedPaths": [
+      {
+        "slug": "start-here",
+        "title": "Start Here",
+        "eyebrow": "Guided Path",
+        "intro": "A concise first route through the clearest public entry points before the archive starts branching into deeper worlds and alternates.",
+        "moodNote": "Best for first contact with the site.",
+        "themeHint": "",
+        "postSlugs": [],
+        "algorithm": {
+          "preset": "homepage",
+          "maxItems": 5,
+          "sort": "curated"
+        }
+      },
+      {
+        "slug": "fractureverse",
+        "title": "Fractureverse",
+        "eyebrow": "World Path",
+        "intro": "Follow the fracture from its first stable anchor through collapse, divergence, and the edges where love and consequence stop agreeing with each other.",
+        "moodNote": "Best for sequence-first listening.",
+        "themeHint": "fractureverse",
+        "postSlugs": [],
+        "algorithm": {
+          "collectionSlug": "fractureverse",
+          "releaseStatuses": [
+            "canon"
+          ],
+          "sort": "fractureverse"
+        }
+      },
+      {
+        "slug": "eldoria",
+        "title": "Eldoria",
+        "eyebrow": "World Path",
+        "intro": "Enter the chronicle in order, starting with awakening and moving deeper into role, memory, pressure, and the burden of belonging to a world that should not know you.",
+        "moodNote": "Best for story-first listening.",
+        "themeHint": "eldoria",
+        "postSlugs": [],
+        "algorithm": {
+          "collectionSlug": "eldoria",
+          "sort": "eldoria"
+        }
+      },
+      {
+        "slug": "identity-becoming",
+        "title": "Identity / Becoming",
+        "eyebrow": "Authored Path",
+        "intro": "A route through the songs that feel most tied to emergence, self-recognition, and the slow process of becoming legible to yourself.",
+        "moodNote": "Best for personal / reflective listening.",
+        "themeHint": "",
+        "postSlugs": [],
+        "algorithm": {
+          "sectionKeys": [
+            "identity"
+          ],
+          "maxItems": 7,
+          "sort": "curated"
+        }
+      },
+      {
+        "slug": "princess-anime",
+        "title": "Princess / Anime",
+        "eyebrow": "Authored Path",
+        "intro": "A brighter route through princess-symbolic, kawaii, and high-expression tracks where fantasy becomes a way of saying something real.",
+        "moodNote": "Best for vivid, stylized listening.",
+        "themeHint": "",
+        "postSlugs": [],
+        "algorithm": {
+          "collectionSlugs": [
+            "kawaii-adventure",
+            "kawaii-magical"
+          ],
+          "match": "any",
+          "sectionKeys": [
+            "princess-motif"
+          ],
+          "maxItems": 7,
+          "sort": "curated"
+        }
+      },
+      {
+        "slug": "villain-catastrophe",
+        "title": "Villain / Catastrophe",
+        "eyebrow": "Authored Path",
+        "intro": "A harsher route through villain voices, necessary monsters, and the songs where damage, power, or collapse take center stage.",
+        "moodNote": "Best for darker, confrontational listening.",
+        "themeHint": "",
+        "postSlugs": [],
+        "algorithm": {
+          "collectionSlugs": [
+            "villain-anthology",
+            "villain-monologues",
+            "villain-monologues-necessary-monsters",
+            "necessary-monsters"
+          ],
+          "match": "any",
+          "sectionKeys": [
+            "villain"
+          ],
+          "themeTags": [
+            "villain"
+          ],
+          "worldLayers": [
+            "villain"
+          ],
+          "maxItems": 7,
+          "sort": "curated"
+        }
+      }
+    ],
     "collectionThemes": [
       {
         "key": "default",

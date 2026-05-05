@@ -43,7 +43,7 @@ test("appendSlugHistory preserves prior slugs without duplicating the current on
   assert.deepEqual(history, ["old-title", "first-name", "middle-name"]);
 });
 
-test("remapPostSlugReferences updates linked post, collection, and homepage references", () => {
+test("remapPostSlugReferences updates linked post, collection, homepage, and guided path references", () => {
   const rewritten = remapPostSlugReferences(
     [
       {
@@ -70,7 +70,13 @@ test("remapPostSlugReferences updates linked post, collection, and homepage refe
     {
       home: {
         featuredReleaseSlug: "old-slug"
-      }
+      },
+      guidedPaths: [
+        {
+          slug: "manual-path",
+          postSlugs: ["old-slug", "other-slug"]
+        }
+      ]
     },
     "old-slug",
     "new-slug",
@@ -81,6 +87,10 @@ test("remapPostSlugReferences updates linked post, collection, and homepage refe
   assert.equal(rewritten.posts[1].supersededBySlug, "new-slug");
   assert.equal(rewritten.collections[0].featuredReleaseSlug, "new-slug");
   assert.equal(rewritten.siteContent.home.featuredReleaseSlug, "new-slug");
+  assert.deepEqual(rewritten.siteContent.guidedPaths[0].postSlugs, [
+    "new-slug",
+    "other-slug"
+  ]);
 });
 
 test("listPublicCollections keeps primary public ordering ahead of other public collections", () => {

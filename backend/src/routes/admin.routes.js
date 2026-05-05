@@ -44,6 +44,7 @@ const {
 const {
   normalizeAboutContent,
   normalizeBrandingContent,
+  normalizeGuidedPathsInput,
   normalizeHomeContent,
   normalizeThemeProfileInput
 } = require("../services/siteContentService");
@@ -735,6 +736,9 @@ router.put("/site-content/site", async (req, res, next) => {
     const existingThemes = Array.isArray(store.siteContent.collectionThemes)
       ? store.siteContent.collectionThemes
       : [];
+    const existingGuidedPaths = Array.isArray(store.siteContent.guidedPaths)
+      ? store.siteContent.guidedPaths
+      : [];
     const collectionThemes = Array.isArray(req.body.collectionThemes)
       ? req.body.collectionThemes
           .map((theme) =>
@@ -745,6 +749,10 @@ router.put("/site-content/site", async (req, res, next) => {
           )
           .filter((theme) => theme.key)
       : existingThemes;
+    const guidedPaths = normalizeGuidedPathsInput(
+      req.body.guidedPaths,
+      existingGuidedPaths
+    );
     const validationMessage = validateSiteContent(branding, home);
 
     if (validationMessage) {
@@ -755,7 +763,8 @@ router.put("/site-content/site", async (req, res, next) => {
       ...store.siteContent,
       branding,
       home,
-      collectionThemes
+      collectionThemes,
+      guidedPaths
     };
 
     await writeSiteContent(nextSiteContent);
@@ -775,9 +784,13 @@ router.put("/site-content/site", async (req, res, next) => {
             : "",
           JSON.stringify(existingThemes) !== JSON.stringify(collectionThemes)
             ? "collectionThemes"
+            : "",
+          JSON.stringify(existingGuidedPaths) !== JSON.stringify(guidedPaths)
+            ? "guidedPaths"
             : ""
         ].filter(Boolean),
         featuredReleaseSlug: home.featuredReleaseSlug,
+        guidedPathCount: guidedPaths.length,
         siteName: branding.siteName,
         themeCount: collectionThemes.length
       }

@@ -4,110 +4,136 @@ import {
   getOriginalPersonalSection,
   getPrimaryCollectionSurfacePosts,
   getPublicCollectionPosts,
+  getReleaseStatus,
   sortCuratedPosts,
   sortEldoriaPosts,
   sortFractureversePosts
 } from "./site";
 
-const PATH_DEFINITIONS = [
+const VILLAIN_COLLECTION_SLUGS = [
+  "villain-anthology",
+  "villain-monologues",
+  "villain-monologues-necessary-monsters",
+  "necessary-monsters"
+];
+
+export const DEFAULT_GUIDED_PATHS = [
   {
     slug: "start-here",
     title: "Start Here",
     eyebrow: "Guided Path",
-    intro: "A concise first route through the clearest public entry points before the archive starts branching into deeper worlds and alternates.",
+    intro:
+      "A concise first route through the clearest public entry points before the archive starts branching into deeper worlds and alternates.",
     moodNote: "Best for first contact with the site.",
     themeHint: "",
-    resolve({ posts }) {
-      return getHomepageCuratedPosts(posts).slice(0, 5);
+    algorithm: {
+      preset: "homepage",
+      maxItems: 5
     }
   },
   {
     slug: "fractureverse",
     title: "Fractureverse",
     eyebrow: "World Path",
-    intro: "Follow the fracture from its first stable anchor through collapse, divergence, and the edges where love and consequence stop agreeing with each other.",
+    intro:
+      "Follow the fracture from its first stable anchor through collapse, divergence, and the edges where love and consequence stop agreeing with each other.",
     moodNote: "Best for sequence-first listening.",
     themeHint: "fractureverse",
-    resolve({ posts, collectionsBySlug }) {
-      const collection = collectionsBySlug.get("fractureverse");
-      const scopedPosts = getPublicCollectionPosts(posts).filter((post) => (post.collectionSlugs || []).includes("fractureverse"));
-
-      return collection ? sortFractureversePosts(getCanonicalCollectionSurfacePosts(scopedPosts, { collection, surface: "path" })) : [];
+    algorithm: {
+      collectionSlug: "fractureverse",
+      releaseStatuses: ["canon"],
+      sort: "fractureverse"
     }
   },
   {
     slug: "eldoria",
     title: "Eldoria",
     eyebrow: "World Path",
-    intro: "Enter the chronicle in order, starting with awakening and moving deeper into role, memory, pressure, and the burden of belonging to a world that should not know you.",
+    intro:
+      "Enter the chronicle in order, starting with awakening and moving deeper into role, memory, pressure, and the burden of belonging to a world that should not know you.",
     moodNote: "Best for story-first listening.",
     themeHint: "eldoria",
-    resolve({ posts, collectionsBySlug }) {
-      const collection = collectionsBySlug.get("eldoria");
-      const scopedPosts = getPublicCollectionPosts(posts).filter((post) => (post.collectionSlugs || []).includes("eldoria"));
-
-      return collection ? sortEldoriaPosts(getPrimaryCollectionSurfacePosts(scopedPosts, { collection, surface: "path" })) : [];
+    algorithm: {
+      collectionSlug: "eldoria",
+      sort: "eldoria"
     }
   },
   {
     slug: "identity-becoming",
     title: "Identity / Becoming",
     eyebrow: "Authored Path",
-    intro: "A route through the songs that feel most tied to emergence, self-recognition, and the slow process of becoming legible to yourself.",
+    intro:
+      "A route through the songs that feel most tied to emergence, self-recognition, and the slow process of becoming legible to yourself.",
     moodNote: "Best for personal / reflective listening.",
     themeHint: "",
-    resolve({ posts }) {
-      return sortCuratedPosts(
-        getPublicCollectionPosts(posts).filter((post) => getOriginalPersonalSection(post)?.key === "identity"),
-        { surface: "path" }
-      ).slice(0, 7);
+    algorithm: {
+      sectionKeys: ["identity"],
+      maxItems: 7,
+      sort: "curated"
     }
   },
   {
     slug: "princess-anime",
     title: "Princess / Anime",
     eyebrow: "Authored Path",
-    intro: "A brighter route through princess-symbolic, kawaii, and high-expression tracks where fantasy becomes a way of saying something real.",
+    intro:
+      "A brighter route through princess-symbolic, kawaii, and high-expression tracks where fantasy becomes a way of saying something real.",
     moodNote: "Best for vivid, stylized listening.",
     themeHint: "",
-    resolve({ posts }) {
-      return sortCuratedPosts(
-        getPublicCollectionPosts(posts).filter((post) => {
-          const sectionKey = getOriginalPersonalSection(post)?.key;
-          return (
-            sectionKey === "princess-motif" ||
-            (post.collectionSlugs || []).some((slug) => ["kawaii-adventure", "kawaii-magical"].includes(slug))
-          );
-        }),
-        { surface: "path" }
-      ).slice(0, 7);
+    algorithm: {
+      collectionSlugs: ["kawaii-adventure", "kawaii-magical"],
+      match: "any",
+      maxItems: 7,
+      sectionKeys: ["princess-motif"],
+      sort: "curated"
     }
   },
   {
     slug: "villain-catastrophe",
     title: "Villain / Catastrophe",
     eyebrow: "Authored Path",
-    intro: "A harsher route through villain voices, necessary monsters, and the songs where damage, power, or collapse take center stage.",
+    intro:
+      "A harsher route through villain voices, necessary monsters, and the songs where damage, power, or collapse take center stage.",
     moodNote: "Best for darker, confrontational listening.",
     themeHint: "",
-    resolve({ posts }) {
-      return sortCuratedPosts(
-        getPublicCollectionPosts(posts).filter((post) => {
-          const sectionKey = getOriginalPersonalSection(post)?.key;
-          return (
-            sectionKey === "villain" ||
-            String(post.worldLayer || "") === "villain" ||
-            (post.themeTags || []).includes("villain") ||
-            (post.collectionSlugs || []).some((slug) =>
-              ["villain-anthology", "villain-monologues", "villain-monologues-necessary-monsters", "necessary-monsters"].includes(slug)
-            )
-          );
-        }),
-        { surface: "path" }
-      ).slice(0, 7);
+    algorithm: {
+      collectionSlugs: VILLAIN_COLLECTION_SLUGS,
+      match: "any",
+      maxItems: 7,
+      sectionKeys: ["villain"],
+      sort: "curated",
+      themeTags: ["villain"],
+      worldLayers: ["villain"]
     }
   }
 ];
+
+function normalizeList(value) {
+  const values = Array.isArray(value) ? value : [value];
+
+  return values.map((entry) => String(entry || "").trim()).filter(Boolean);
+}
+
+function normalizePathConfig(path = {}) {
+  return {
+    slug: String(path.slug || "").trim(),
+    title: String(path.title || "").trim(),
+    eyebrow: String(path.eyebrow || "Guided Path").trim(),
+    intro: String(path.intro || "").trim(),
+    moodNote: String(path.moodNote || "").trim(),
+    themeHint: String(path.themeHint || "").trim(),
+    postSlugs: normalizeList(path.postSlugs),
+    algorithm: path.algorithm && typeof path.algorithm === "object" ? path.algorithm : {}
+  };
+}
+
+function getConfiguredPaths(siteContent = {}) {
+  const configuredPaths = Array.isArray(siteContent?.guidedPaths)
+    ? siteContent.guidedPaths.map(normalizePathConfig).filter((path) => path.slug && path.title)
+    : [];
+
+  return configuredPaths.length ? configuredPaths : DEFAULT_GUIDED_PATHS;
+}
 
 function dedupeBySlug(posts = []) {
   const seen = new Set();
@@ -128,20 +154,131 @@ function buildCollectionMap(collections = []) {
   return new Map(collections.map((collection) => [collection.slug, collection]));
 }
 
-export function resolveGuidedListeningPaths(posts = [], collections = []) {
-  const collectionsBySlug = buildCollectionMap(collections);
-
-  return PATH_DEFINITIONS.map((definition) => {
-    const resolvedPosts = dedupeBySlug(definition.resolve({ posts, collectionsBySlug }));
-
-    return {
-      ...definition,
-      posts: resolvedPosts,
-      count: resolvedPosts.length
-    };
-  }).filter((path) => path.posts.length > 0);
+function getPostsBySlug(posts = []) {
+  return new Map(posts.map((post) => [post.slug, post]));
 }
 
-export function resolveGuidedListeningPath(pathSlug, posts = [], collections = []) {
-  return resolveGuidedListeningPaths(posts, collections).find((path) => path.slug === pathSlug) || null;
+function hasAnyMatch(postValues = [], configuredValues = []) {
+  if (!configuredValues.length) {
+    return false;
+  }
+
+  return normalizeList(postValues).some((entry) => configuredValues.includes(entry));
+}
+
+function filterCollectionPosts(posts, collectionSlug, collectionsBySlug) {
+  const collection = collectionsBySlug.get(collectionSlug);
+  const scopedPosts = posts.filter((post) => (post.collectionSlugs || []).includes(collectionSlug));
+
+  if (!collection) {
+    return scopedPosts;
+  }
+
+  if (collectionSlug === "fractureverse") {
+    return getCanonicalCollectionSurfacePosts(scopedPosts, { collection, surface: "path" });
+  }
+
+  return getPrimaryCollectionSurfacePosts(scopedPosts, { collection, surface: "path" });
+}
+
+function postMatchesAlgorithm(post, algorithm = {}) {
+  const sectionKeys = normalizeList(algorithm.sectionKeys || algorithm.sectionKey);
+  const collectionSlugs = normalizeList(algorithm.collectionSlugs);
+  const themeTags = normalizeList(algorithm.themeTags);
+  const worldLayers = normalizeList(algorithm.worldLayers || algorithm.worldLayer);
+  const releaseStatuses = normalizeList(algorithm.releaseStatuses || algorithm.releaseStatus);
+  const criteria = [];
+
+  if (sectionKeys.length) {
+    criteria.push(sectionKeys.includes(getOriginalPersonalSection(post)?.key));
+  }
+
+  if (collectionSlugs.length) {
+    criteria.push(hasAnyMatch(post.collectionSlugs, collectionSlugs));
+  }
+
+  if (themeTags.length) {
+    criteria.push(hasAnyMatch(post.themeTags, themeTags));
+  }
+
+  if (worldLayers.length) {
+    criteria.push(worldLayers.includes(String(post.worldLayer || "").trim()));
+  }
+
+  if (releaseStatuses.length) {
+    criteria.push(releaseStatuses.includes(getReleaseStatus(post)));
+  }
+
+  if (!criteria.length) {
+    return true;
+  }
+
+  return algorithm.match === "all" ? criteria.every(Boolean) : criteria.some(Boolean);
+}
+
+function sortPathPosts(posts, algorithm = {}) {
+  if (algorithm.sort === "fractureverse") {
+    return sortFractureversePosts(posts);
+  }
+
+  if (algorithm.sort === "eldoria") {
+    return sortEldoriaPosts(posts);
+  }
+
+  return sortCuratedPosts(posts, { surface: "path" });
+}
+
+function resolveAlgorithmPath(path, posts, collectionsBySlug) {
+  const algorithm = path.algorithm || {};
+
+  if (algorithm.preset === "homepage") {
+    return getHomepageCuratedPosts(posts).slice(0, Number(algorithm.maxItems) || 5);
+  }
+
+  const publicPosts = getPublicCollectionPosts(posts);
+  const collectionSlug = String(algorithm.collectionSlug || "").trim();
+  const basePosts = collectionSlug ? filterCollectionPosts(publicPosts, collectionSlug, collectionsBySlug) : publicPosts;
+  const releaseStatuses = normalizeList(algorithm.releaseStatuses || algorithm.releaseStatus);
+  const matchingPosts = basePosts.filter((post) => {
+    const matchesAlgorithm = postMatchesAlgorithm(post, algorithm);
+    const matchesStatus = releaseStatuses.length ? releaseStatuses.includes(getReleaseStatus(post)) : true;
+
+    return matchesAlgorithm && matchesStatus;
+  });
+  const maxItems = Number(algorithm.maxItems) || 0;
+  const sortedPosts = sortPathPosts(matchingPosts, algorithm);
+
+  return maxItems > 0 ? sortedPosts.slice(0, maxItems) : sortedPosts;
+}
+
+function resolvePathPosts(path, posts, collectionsBySlug) {
+  const postSlugs = normalizeList(path.postSlugs);
+
+  if (postSlugs.length) {
+    const postsBySlug = getPostsBySlug(getPublicCollectionPosts(posts));
+    return postSlugs.map((slug) => postsBySlug.get(slug)).filter(Boolean);
+  }
+
+  return resolveAlgorithmPath(path, posts, collectionsBySlug);
+}
+
+export function resolveGuidedListeningPaths(posts = [], collections = [], siteContent = {}) {
+  const collectionsBySlug = buildCollectionMap(collections);
+
+  return getConfiguredPaths(siteContent)
+    .map(normalizePathConfig)
+    .map((path) => {
+      const resolvedPosts = dedupeBySlug(resolvePathPosts(path, posts, collectionsBySlug));
+
+      return {
+        ...path,
+        posts: resolvedPosts,
+        count: resolvedPosts.length
+      };
+    })
+    .filter((path) => path.posts.length > 0);
+}
+
+export function resolveGuidedListeningPath(pathSlug, posts = [], collections = [], siteContent = {}) {
+  return resolveGuidedListeningPaths(posts, collections, siteContent).find((path) => path.slug === pathSlug) || null;
 }

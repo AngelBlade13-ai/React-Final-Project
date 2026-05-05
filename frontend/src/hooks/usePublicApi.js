@@ -29,7 +29,10 @@ export function useSiteContent() {
       },
       collectionThemes: Array.isArray(data?.siteContent?.collectionThemes)
         ? data.siteContent.collectionThemes
-        : emptySiteSettings.collectionThemes
+        : emptySiteSettings.collectionThemes,
+      guidedPaths: Array.isArray(data?.siteContent?.guidedPaths)
+        ? data.siteContent.guidedPaths
+        : emptySiteSettings.guidedPaths
     },
     error,
     isLoading

@@ -90,4 +90,29 @@ describe("resolveGuidedListeningPath", () => {
     expect(slugs).toContain("the-hands-that-shield");
     expect(slugs).toContain("you-wanted-a-hero");
   });
+
+  it("lets admin-managed guided paths use explicit slug ordering", () => {
+    const path = resolveGuidedListeningPath(
+      "manual-test",
+      catalogData.posts,
+      catalogData.collections,
+      {
+        guidedPaths: [
+          {
+            slug: "manual-test",
+            title: "Manual Test",
+            eyebrow: "Admin Path",
+            intro: "An exact path order.",
+            moodNote: "Manual sequence.",
+            postSlugs: ["you-wanted-a-hero", "the-hands-that-shield"]
+          }
+        ]
+      }
+    );
+
+    expect(path.posts.map((post) => post.slug)).toEqual([
+      "you-wanted-a-hero",
+      "the-hands-that-shield"
+    ]);
+  });
 });
