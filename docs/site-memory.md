@@ -38,8 +38,13 @@
   - `Princess Motif`
   - `Empowerment`
   - `Community`
+  - `Quiet Survivor`
+  - `Kawaii / Playful`
+  - `Villain`
+  - `D&D / Campaign`
   - `Archive / Early Works`
   - `Other`
+- `Standalone` is for one-off records, prototype/inspired pieces, and anthology-style songs that should remain public without becoming top-level worlds.
 
 ## Release Classification
 
@@ -50,6 +55,7 @@
 - Public presentation uses `releaseStatus` as the main pruning signal.
 - Homepage shows only `canon`.
 - Public collection pages show `canon` first, `alternate` lower, `working` hidden by default.
+- Public collection counts follow the visible collection surface, so `working` releases do not inflate top-level collection cards or headers.
 - Explore shows `canon` and `alternate` by default, with optional inclusion of `working`.
 - Supporting release metadata retained in the model:
   - `versionFamily`

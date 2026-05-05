@@ -127,6 +127,43 @@ test("listPublicCollections keeps primary public ordering ahead of other public 
   );
 });
 
+test("listPublicCollections counts only releases shown on public collection surfaces", () => {
+  const store = {
+    posts: [
+      {
+        id: "post-1",
+        slug: "visible-release",
+        published: true,
+        isPubliclyVisible: true,
+        releaseStatus: "canon",
+        collectionSlugs: ["original-personal"]
+      },
+      {
+        id: "post-2",
+        slug: "working-release",
+        published: true,
+        isPubliclyVisible: true,
+        releaseStatus: "working",
+        collectionSlugs: ["original-personal"]
+      }
+    ],
+    collections: [
+      {
+        id: "collection-1",
+        slug: "original-personal",
+        title: "Original / Personal",
+        isPublicPrimary: true,
+        featuredReleaseSlug: "working-release"
+      }
+    ]
+  };
+
+  const [collection] = listPublicCollections(store);
+
+  assert.equal(collection.releaseCount, 1);
+  assert.equal(collection.featuredRelease, null);
+});
+
 test("tracked Fractureverse collection only contains the main public sequence", () => {
   const fractureverseCollection = catalogData.collections.find(
     (collection) => collection.slug === "fractureverse"

@@ -288,14 +288,15 @@ function attachCollectionDetails(post, collections) {
 
 function buildCollectionSummary(collection, posts) {
   const releases = posts.filter((post) => post.collectionSlugs.includes(collection.slug));
+  const publicSurfaceReleases = releases.filter(isPostPublicCollectionSurfaceVisible);
   const featuredRelease = collection.featuredReleaseSlug
-    ? releases.find((post) => post.slug === collection.featuredReleaseSlug) || null
+    ? publicSurfaceReleases.find((post) => post.slug === collection.featuredReleaseSlug) || null
     : null;
 
   return {
     ...collection,
     featuredRelease,
-    releaseCount: releases.length
+    releaseCount: publicSurfaceReleases.length
   };
 }
 
@@ -464,6 +465,10 @@ function isPostPubliclyVisible(post) {
   return post?.published === true && post?.isPubliclyVisible !== false;
 }
 
+function isPostPublicCollectionSurfaceVisible(post) {
+  return isPostPubliclyVisible(post) && post.releaseStatus !== "working";
+}
+
 function resolvePublishedPost(store, slug) {
   return findEntryBySlugOrHistory(store.posts, slug, isPostPubliclyVisible);
 }
@@ -499,6 +504,7 @@ module.exports = {
   collectChangedEntries,
   hasBulkPostUpdates,
   isFeaturedReleaseValidForCollection,
+  isPostPublicCollectionSurfaceVisible,
   isPostPubliclyVisible,
   listPublicCollections,
   normalizeBulkPostUpdateInput,
