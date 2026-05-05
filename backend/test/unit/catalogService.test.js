@@ -6,6 +6,15 @@ const {
   normalizePostInput,
   remapPostSlugReferences
 } = require("../../src/services/catalogService");
+const catalogData = require("../../data/posts.json");
+
+const FRACTUREVERSE_SEQUENCE_SLUGS = [
+  "the-one-you-used-to-be-reimagined",
+  "still-breathing-in-a-dying-world-reimagined",
+  "shattered-trust-reimagined",
+  "you-were-better-before-you-saved-the-world-reimagined",
+  "we-were-never-meant-to-survive-reimagined-duet"
+];
 
 test("normalizePostInput keeps valid collections and defaults invalid status to canon", () => {
   const collections = [{ slug: "eldoria" }, { slug: "standalone" }];
@@ -115,5 +124,24 @@ test("listPublicCollections keeps primary public ordering ahead of other public 
   assert.deepEqual(
     collections.map((collection) => collection.slug),
     ["fractureverse", "eldoria", "side-notes"]
+  );
+});
+
+test("tracked Fractureverse collection only contains the main public sequence", () => {
+  const fractureverseCollection = catalogData.collections.find(
+    (collection) => collection.slug === "fractureverse"
+  );
+  const fractureversePostSlugs = catalogData.posts
+    .filter((post) => post.collectionSlugs.includes("fractureverse"))
+    .map((post) => post.slug)
+    .sort();
+
+  assert.equal(
+    fractureverseCollection.featuredReleaseSlug,
+    "shattered-trust-reimagined"
+  );
+  assert.deepEqual(
+    fractureversePostSlugs,
+    [...FRACTUREVERSE_SEQUENCE_SLUGS].sort()
   );
 });

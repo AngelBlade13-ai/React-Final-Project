@@ -206,6 +206,8 @@
   - `shattered-trust-reimagined`
   - `you-were-better-before-you-saved-the-world-reimagined`
   - `we-were-never-meant-to-survive-reimagined-duet`
+- Public Fractureverse collection membership is limited to the five main sequence fragments above.
+- Proto-Fractureverse, villain-origin, and inspired-by records can keep `worldLayer` or `themeTags` context, but they should live outside the Fractureverse collection unless promoted into the main sequence.
 - Fractureverse collection page structure:
   - timeline analysis panel
   - observed sequence strip

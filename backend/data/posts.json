@@ -587,7 +587,7 @@
       "createdAt": "2026-03-29T00:18:14.149781Z",
       "published": true,
       "collectionSlugs": [
-        "fractureverse"
+        "standalone"
       ],
       "isPrimaryVersion": true,
       "isArchive": false,
@@ -624,7 +624,7 @@
       "createdAt": "2026-03-29T00:18:14.149755Z",
       "published": true,
       "collectionSlugs": [
-        "fractureverse"
+        "standalone"
       ],
       "isPrimaryVersion": true,
       "isArchive": false,
@@ -684,7 +684,7 @@
       "createdAt": "2026-03-29T00:18:14.149602Z",
       "published": true,
       "collectionSlugs": [
-        "fractureverse"
+        "standalone"
       ],
       "isPrimaryVersion": false,
       "isArchive": false,
@@ -836,7 +836,7 @@
       "createdAt": "2026-03-29T00:18:14.149442Z",
       "published": true,
       "collectionSlugs": [
-        "fractureverse"
+        "standalone"
       ],
       "isPrimaryVersion": true,
       "isArchive": false,
@@ -1459,7 +1459,7 @@
       "slugHistory": [],
       "title": "Fractureverse",
       "description": "Core Fractureverse releases exploring Angel, Grissom, sacrifice, collapse, and impossible moral calculus.",
-      "featuredReleaseSlug": "what-the-world-made-of-me",
+      "featuredReleaseSlug": "shattered-trust-reimagined",
       "theme": "fractureverse",
       "isPublicPrimary": true
     },
