@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import catalogData from "../../../backend/data/posts.json";
+import { resolveGuidedListeningPath } from "./listeningPaths";
 import {
   getPrimaryCollectionSurfacePosts,
   getReleaseStatus,
@@ -57,5 +59,35 @@ describe("getPrimaryCollectionSurfacePosts", () => {
     expect(
       getPrimaryCollectionSurfacePosts(posts).map((post) => post.slug)
     ).toEqual(["signal-bloom"]);
+  });
+});
+
+describe("resolveGuidedListeningPath", () => {
+  it("keeps the Fractureverse path scoped to the five main fragments", () => {
+    const path = resolveGuidedListeningPath(
+      "fractureverse",
+      catalogData.posts,
+      catalogData.collections
+    );
+
+    expect(path.posts.map((post) => post.slug)).toEqual([
+      "the-one-you-used-to-be-reimagined",
+      "still-breathing-in-a-dying-world-reimagined",
+      "shattered-trust-reimagined",
+      "you-were-better-before-you-saved-the-world-reimagined",
+      "we-were-never-meant-to-survive-reimagined-duet"
+    ]);
+  });
+
+  it("includes villain-tagged standalone records in the Villain / Catastrophe path", () => {
+    const path = resolveGuidedListeningPath(
+      "villain-catastrophe",
+      catalogData.posts,
+      catalogData.collections
+    );
+    const slugs = path.posts.map((post) => post.slug);
+
+    expect(slugs).toContain("the-hands-that-shield");
+    expect(slugs).toContain("you-wanted-a-hero");
   });
 });

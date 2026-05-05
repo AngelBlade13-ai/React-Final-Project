@@ -97,6 +97,7 @@ const PATH_DEFINITIONS = [
           return (
             sectionKey === "villain" ||
             String(post.worldLayer || "") === "villain" ||
+            (post.themeTags || []).includes("villain") ||
             (post.collectionSlugs || []).some((slug) =>
               ["villain-anthology", "villain-monologues", "villain-monologues-necessary-monsters", "necessary-monsters"].includes(slug)
             )
