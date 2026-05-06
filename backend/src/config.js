@@ -36,6 +36,10 @@ const config = {
   localAiBaseUrl: process.env.LOCAL_AI_BASE_URL || "http://127.0.0.1:11434",
   localAiModel: process.env.LOCAL_AI_MODEL || "qwen2.5:7b",
   localAiTimeoutMs: Number(process.env.LOCAL_AI_TIMEOUT_MS) || 120000,
+  runpodApiKey: process.env.RUNPOD_API_KEY || "",
+  runpodPodId: process.env.RUNPOD_POD_ID || "",
+  runpodApiBaseUrl:
+    process.env.RUNPOD_API_BASE_URL || "https://rest.runpod.io/v1",
   operationalSeedFile:
     process.env.OPERATIONAL_SEED_FILE ||
     path.join(__dirname, "..", "data", "operational-seed.local.json"),

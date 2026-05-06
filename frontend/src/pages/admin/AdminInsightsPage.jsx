@@ -110,10 +110,13 @@ export default function AdminInsightsPage() {
   const [reseedMessage, setReseedMessage] = useState("");
   const [reseedResult, setReseedResult] = useState(null);
   const [localAiStatus, setLocalAiStatus] = useState(null);
+  const [remotePodStatus, setRemotePodStatus] = useState(null);
   const [localAiError, setLocalAiError] = useState("");
   const [localAiReview, setLocalAiReview] = useState(null);
   const [localAiReviewLoading, setLocalAiReviewLoading] = useState(false);
   const [localAiReviewError, setLocalAiReviewError] = useState("");
+  const [remotePodActionLoading, setRemotePodActionLoading] = useState("");
+  const [remotePodActionError, setRemotePodActionError] = useState("");
 
   useEffect(() => {
     let isCancelled = false;
@@ -176,9 +179,11 @@ export default function AdminInsightsPage() {
 
           if (localAiResult.status === "fulfilled") {
             setLocalAiStatus(localAiResult.value.localAi || null);
+            setRemotePodStatus(localAiResult.value.remotePod || null);
             setLocalAiError("");
           } else {
             setLocalAiStatus(null);
+            setRemotePodStatus(null);
             setLocalAiError(
               localAiResult.reason?.message ||
                 "Failed to load local assistant status."
@@ -291,15 +296,39 @@ export default function AdminInsightsPage() {
   async function handleRefreshLocalAiStatus() {
     try {
       setLocalAiError("");
+      setRemotePodActionError("");
       const data = await readJson(
         adminFetch(`${apiBaseUrl}/admin/assistant/status`),
         "Failed to load local assistant status."
       );
 
       setLocalAiStatus(data.localAi || null);
+      setRemotePodStatus(data.remotePod || null);
     } catch (apiError) {
       setLocalAiStatus(null);
+      setRemotePodStatus(null);
       setLocalAiError(apiError.message);
+    }
+  }
+
+  async function handleRemotePodAction(action) {
+    try {
+      setRemotePodActionLoading(action);
+      setRemotePodActionError("");
+
+      const data = await readJson(
+        adminFetch(`${apiBaseUrl}/admin/assistant/remote-pod/${action}`, {
+          method: "POST"
+        }),
+        `Failed to ${action} the remote AI pod.`
+      );
+
+      setRemotePodStatus(data.remotePod || null);
+      await handleRefreshLocalAiStatus();
+    } catch (apiError) {
+      setRemotePodActionError(apiError.message);
+    } finally {
+      setRemotePodActionLoading("");
     }
   }
 
@@ -349,7 +378,12 @@ export default function AdminInsightsPage() {
     {
       label: "Archive Health",
       value: loading ? "--" : summary.archiveHealthScore || 0,
-      note: scoreTone === "stable" ? "Stable" : scoreTone === "watch" ? "Watch" : "Attention"
+      note:
+        scoreTone === "stable"
+          ? "Stable"
+          : scoreTone === "watch"
+            ? "Watch"
+            : "Attention"
     },
     {
       label: "Live Sync",
@@ -370,8 +404,19 @@ export default function AdminInsightsPage() {
     },
     {
       label: "Local AI",
-      value: loading ? "--" : localAiStatus?.available ? "Available" : "Offline",
+      value: loading
+        ? "--"
+        : localAiStatus?.available
+          ? "Available"
+          : "Offline",
       note: localAiStatus?.model || "Ollama optional"
+    },
+    {
+      label: "Remote Pod",
+      value: loading ? "--" : remotePodStatus?.runtimeStatus || "Unavailable",
+      note: remotePodStatus?.configured
+        ? "RunPod control ready"
+        : "Not configured"
     }
   ];
 
@@ -542,7 +587,9 @@ export default function AdminInsightsPage() {
       <section className="intro-card homepage-panel full-span">
         <div className="section-head">
           <h2>Source Of Truth Sync</h2>
-          <span>{syncPreview ? "Preview ready" : "Run a preview before writing"}</span>
+          <span>
+            {syncPreview ? "Preview ready" : "Run a preview before writing"}
+          </span>
         </div>
         <p className="meta">
           This pulls the live admin-backed Mongo store back into{" "}
@@ -583,7 +630,10 @@ export default function AdminInsightsPage() {
         {reseedError ? <p className="error-text">{reseedError}</p> : null}
         {reseedMessage ? <p className="meta">{reseedMessage}</p> : null}
         {reseedResult ? (
-          <div className="insight-issue-card severity-info" style={{ marginTop: "1rem" }}>
+          <div
+            className="insight-issue-card severity-info"
+            style={{ marginTop: "1rem" }}
+          >
             <div className="insight-issue-head">
               <div>
                 <p className="eyebrow">Reseed</p>
@@ -716,6 +766,14 @@ export default function AdminInsightsPage() {
                 "No models detected"}
             </span>
           </article>
+          <article className="metric-summary-card">
+            <p className="note-label">Remote Pod</p>
+            <strong>{remotePodStatus?.runtimeStatus || "unconfigured"}</strong>
+            <span>
+              {remotePodStatus?.message ||
+                "Configure RunPod env vars to control a remote GPU pod."}
+            </span>
+          </article>
         </div>
         <div className="archive-intelligence-actions">
           <button
@@ -724,6 +782,30 @@ export default function AdminInsightsPage() {
             type="button"
           >
             Refresh Assistant Status
+          </button>
+          <button
+            className="secondary-button"
+            disabled={
+              remotePodActionLoading === "start" || !remotePodStatus?.configured
+            }
+            onClick={() => handleRemotePodAction("start")}
+            type="button"
+          >
+            {remotePodActionLoading === "start"
+              ? "Starting Remote Pod..."
+              : "Start Remote AI"}
+          </button>
+          <button
+            className="secondary-button"
+            disabled={
+              remotePodActionLoading === "stop" || !remotePodStatus?.configured
+            }
+            onClick={() => handleRemotePodAction("stop")}
+            type="button"
+          >
+            {remotePodActionLoading === "stop"
+              ? "Stopping Remote Pod..."
+              : "Stop Remote AI"}
           </button>
           <button
             className="hero-link"
@@ -740,11 +822,25 @@ export default function AdminInsightsPage() {
               : "Run Catalog Review"}
           </button>
         </div>
+        {remotePodStatus?.configured ? (
+          <p className="meta">
+            {`RunPod pod ${remotePodStatus.podId || "unknown"} is ${remotePodStatus.runtimeStatus}. `}
+            Starting and stopping the pod does not create an SSH tunnel. If your{" "}
+            <code>LOCAL_AI_BASE_URL</code> points at a local tunnel, keep that
+            tunnel open separately.
+          </p>
+        ) : null}
+        {remotePodActionError ? (
+          <p className="error-text">{remotePodActionError}</p>
+        ) : null}
         {localAiReviewError ? (
           <p className="error-text">{localAiReviewError}</p>
         ) : null}
         {localAiReview ? (
-          <div className="insight-issue-card severity-info" style={{ marginTop: "1rem" }}>
+          <div
+            className="insight-issue-card severity-info"
+            style={{ marginTop: "1rem" }}
+          >
             <div className="insight-issue-head">
               <div>
                 <p className="eyebrow">{localAiReview.model}</p>

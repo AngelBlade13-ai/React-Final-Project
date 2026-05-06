@@ -152,6 +152,7 @@ test("local assistant endpoints fail safely when local AI is disabled", async (t
   assert.equal(statusResponse.status, 200);
   assert.equal(statusResponse.body.localAi.available, false);
   assert.equal(statusResponse.body.localAi.enabled, false);
+  assert.equal(statusResponse.body.remotePod.configured, false);
 
   const reviewResponse = await context.agent
     .post("/api/admin/assistant/catalog-review")
@@ -200,6 +201,135 @@ test("local assistant endpoints fail safely when local AI is disabled", async (t
 
   assert.equal(newPathSuggestionResponse.status, 503);
   assert.match(newPathSuggestionResponse.body.message, /disabled/i);
+
+  const remoteStartResponse = await context.agent
+    .post("/api/admin/assistant/remote-pod/start")
+    .set(context.mutationHeaders);
+
+  assert.equal(remoteStartResponse.status, 503);
+  assert.match(
+    remoteStartResponse.body.message,
+    /runpod_api_key|runpod_pod_id/i
+  );
+
+  const remoteStopResponse = await context.agent
+    .post("/api/admin/assistant/remote-pod/stop")
+    .set(context.mutationHeaders);
+
+  assert.equal(remoteStopResponse.status, 503);
+  assert.match(
+    remoteStopResponse.body.message,
+    /runpod_api_key|runpod_pod_id/i
+  );
+});
+
+test("remote AI pod controls proxy runpod start stop and status safely", async (t) => {
+  const originalFetch = global.fetch;
+  const fetchCalls = [];
+  let desiredStatus = "RUNNING";
+
+  global.fetch = async (url, options = {}) => {
+    const normalizedUrl = String(url);
+    fetchCalls.push({ url: normalizedUrl, method: options.method || "GET" });
+
+    if (normalizedUrl === "https://rest.runpod.io/v1/pods/pod_test_123") {
+      return {
+        ok: true,
+        json: async () => ({
+          id: "pod_test_123",
+          name: "Remote AI",
+          desiredStatus,
+          costPerHr: "0.46",
+          publicIp: "127.0.0.1",
+          lastStartedAt: "2026-05-06T19:00:00.000Z",
+          lastStatusChange: "started"
+        })
+      };
+    }
+
+    if (normalizedUrl === "https://rest.runpod.io/v1/pods/pod_test_123/start") {
+      desiredStatus = "RUNNING";
+      return {
+        ok: true,
+        json: async () => ({})
+      };
+    }
+
+    if (normalizedUrl === "https://rest.runpod.io/v1/pods/pod_test_123/stop") {
+      desiredStatus = "EXITED";
+      return {
+        ok: true,
+        json: async () => ({})
+      };
+    }
+
+    if (normalizedUrl.endsWith("/api/tags")) {
+      return {
+        ok: true,
+        json: async () => ({
+          models: [{ name: "qwen2.5:7b" }]
+        })
+      };
+    }
+
+    throw new Error(`Unexpected fetch URL: ${normalizedUrl}`);
+  };
+
+  const context = await createApiTestContext({
+    RUNPOD_API_KEY: "test-runpod-key",
+    RUNPOD_POD_ID: "pod_test_123"
+  });
+
+  t.after(async () => {
+    global.fetch = originalFetch;
+    await context.close();
+  });
+
+  const loginResponse = await context.agent
+    .post("/api/admin/login")
+    .set(context.mutationHeaders)
+    .send({
+      email: "admin@example.com",
+      password: "Admin123!"
+    });
+
+  assert.equal(loginResponse.status, 200);
+
+  const statusResponse = await context.agent.get("/api/admin/assistant/status");
+
+  assert.equal(statusResponse.status, 200);
+  assert.equal(statusResponse.body.remotePod.configured, true);
+  assert.equal(statusResponse.body.remotePod.runtimeStatus, "running");
+  assert.equal(statusResponse.body.remotePod.podId, "pod_test_123");
+
+  const startResponse = await context.agent
+    .post("/api/admin/assistant/remote-pod/start")
+    .set(context.mutationHeaders);
+
+  assert.equal(startResponse.status, 200);
+  assert.equal(startResponse.body.remotePod.runtimeStatus, "running");
+
+  const stopResponse = await context.agent
+    .post("/api/admin/assistant/remote-pod/stop")
+    .set(context.mutationHeaders);
+
+  assert.equal(stopResponse.status, 200);
+  assert.equal(stopResponse.body.remotePod.runtimeStatus, "stopped");
+
+  assert.ok(
+    fetchCalls.some(
+      (call) =>
+        call.url === "https://rest.runpod.io/v1/pods/pod_test_123/start" &&
+        call.method === "POST"
+    )
+  );
+  assert.ok(
+    fetchCalls.some(
+      (call) =>
+        call.url === "https://rest.runpod.io/v1/pods/pod_test_123/stop" &&
+        call.method === "POST"
+    )
+  );
 });
 
 test("admin importer launcher starts the local importer behind admin auth", async (t) => {

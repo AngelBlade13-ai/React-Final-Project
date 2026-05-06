@@ -33,6 +33,11 @@ const {
   suggestNewGuidedPathWithLocalAi,
   suggestPostDraftWithLocalAi
 } = require("../services/localAiService");
+const {
+  getRunpodPodStatus,
+  startRunpodPod,
+  stopRunpodPod
+} = require("../services/runpodPodService");
 const { runPostFileReseed } = require("../services/reseedLiveSiteService");
 const {
   appendSlugHistory,
@@ -811,10 +816,59 @@ router.get("/insights", async (req, res, next) => {
 
 router.get("/assistant/status", async (req, res, next) => {
   try {
-    const status = await getLocalAiStatus();
-    return res.json({ localAi: status });
+    const [status, remotePod] = await Promise.all([
+      getLocalAiStatus(),
+      getRunpodPodStatus()
+    ]);
+    return res.json({ localAi: status, remotePod });
   } catch (error) {
     next(error);
+  }
+});
+
+router.post("/assistant/remote-pod/start", async (req, res) => {
+  try {
+    const remotePod = await startRunpodPod();
+
+    await recordAdminAuditEvent(req, {
+      action: "assistant.remote_pod_started",
+      entityType: "assistant",
+      entityId: remotePod.podId || "runpod",
+      entityLabel: remotePod.name || "Remote AI pod",
+      details: {
+        desiredStatus: remotePod.desiredStatus,
+        provider: remotePod.provider
+      }
+    });
+
+    return res.json({ remotePod });
+  } catch (error) {
+    return res
+      .status(error.statusCode || 500)
+      .json({ message: error.message || "Failed to start the remote AI pod." });
+  }
+});
+
+router.post("/assistant/remote-pod/stop", async (req, res) => {
+  try {
+    const remotePod = await stopRunpodPod();
+
+    await recordAdminAuditEvent(req, {
+      action: "assistant.remote_pod_stopped",
+      entityType: "assistant",
+      entityId: remotePod.podId || "runpod",
+      entityLabel: remotePod.name || "Remote AI pod",
+      details: {
+        desiredStatus: remotePod.desiredStatus,
+        provider: remotePod.provider
+      }
+    });
+
+    return res.json({ remotePod });
+  } catch (error) {
+    return res
+      .status(error.statusCode || 500)
+      .json({ message: error.message || "Failed to stop the remote AI pod." });
   }
 });
 

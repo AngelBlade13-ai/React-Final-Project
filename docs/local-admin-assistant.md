@@ -39,6 +39,13 @@ If the live database still has an empty guided path list from an older seed, the
 backend hydrates the admin draft from the legacy guided path defaults so the
 previous hardcoded paths are still editable.
 
+The Insights page also supports optional RunPod lifecycle controls for a remote
+GPU pod. When `RUNPOD_API_KEY` and `RUNPOD_POD_ID` are configured, the admin UI
+can start or stop that pod without exposing provider credentials to the browser.
+This only controls the RunPod pod itself. If `LOCAL_AI_BASE_URL` points to an
+SSH tunnel such as `http://127.0.0.1:11434`, that tunnel still has to be opened
+separately on the machine running the backend.
+
 The Paths tab can also ask for one new guided path concept. The backend prompts
 the model to find a real catalog gap, rejects duplicate slugs, filters suggested
 post slugs against public catalog posts, and warns when the model does not
@@ -87,6 +94,9 @@ LOCAL_AI_ENABLED=true
 LOCAL_AI_BASE_URL=http://127.0.0.1:11434
 LOCAL_AI_MODEL=qwen2.5:7b
 LOCAL_AI_TIMEOUT_MS=120000
+RUNPOD_API_KEY=
+RUNPOD_POD_ID=
+RUNPOD_API_BASE_URL=https://rest.runpod.io/v1
 ```
 
 Set `LOCAL_AI_ENABLED=false` to keep the endpoints visible but unavailable in a
