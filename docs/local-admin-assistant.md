@@ -23,6 +23,9 @@ bounded fields: `excerpt`, `content`, `subCategory`, `worldLayer`, `themeTags`,
 local form state; the normal post save button is still required to persist it.
 The post assistant prioritizes excerpt/content rewrites and filters out
 metadata suggestions that simply repeat the current draft values.
+It also returns `fieldAssessments` so the UI can show whether each supported
+field was kept, improved, missing, or uncertain. The backend enforces those
+assessments by accepting patches only for fields marked `improve` or `missing`.
 
 ### Local Setup
 

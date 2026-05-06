@@ -308,6 +308,12 @@ function formatAssistantPatchValue(value) {
   return String(value || "Clear field");
 }
 
+function formatAssessmentStatus(status) {
+  return String(status || "uncertain")
+    .replace("-", " ")
+    .replace(/\b([a-z])/g, (match) => match.toUpperCase());
+}
+
 export default function AdminPostsPage() {
   useDocumentTitle("Admin Posts");
   const {
@@ -1374,6 +1380,21 @@ export default function AdminPostsPage() {
                   <div className="editor-validation-group">
                     <p className="meta">{assistantSuggestion.model || "Local assistant"}</p>
                     {assistantSuggestion.summary ? <p className="upload-status">{assistantSuggestion.summary}</p> : null}
+                    {assistantSuggestion.fieldAssessments?.length ? (
+                      <>
+                        <p className="meta">Field Assessment</p>
+                        <div className="editor-issue-list">
+                          {assistantSuggestion.fieldAssessments.map((item) => (
+                            <article className="editor-issue-link advisory" key={`${item.field}-${item.status}`}>
+                              <strong>
+                                {item.field} / {formatAssessmentStatus(item.status)}
+                              </strong>
+                              <span>{item.reason || "No rationale provided."}</span>
+                            </article>
+                          ))}
+                        </div>
+                      </>
+                    ) : null}
                     {Object.keys(assistantSuggestion.suggestedPatch || {}).length ? (
                       <div className="editor-issue-list">
                         {Object.entries(assistantSuggestion.suggestedPatch || {}).map(([key, value]) => (

@@ -6,6 +6,21 @@ const DEFAULT_REVIEW_RESULT = {
   suggestedActions: []
 };
 const VALID_RELEASE_STATUSES = new Set(["canon", "alternate", "working"]);
+const ASSISTANT_PATCH_FIELDS = [
+  "excerpt",
+  "content",
+  "subCategory",
+  "worldLayer",
+  "themeTags",
+  "releaseStatus",
+  "collectionSlugs"
+];
+const FIELD_ASSESSMENT_STATUSES = new Set([
+  "keep",
+  "improve",
+  "missing",
+  "uncertain"
+]);
 
 function buildUnavailableStatus(reason) {
   return {
@@ -151,7 +166,45 @@ function valuesAreEquivalent(left, right) {
   return String(left || "").trim() === String(right || "").trim();
 }
 
-function normalizeSuggestionPatch(value = {}, collections = [], currentDraft = {}) {
+function normalizeFieldAssessments(value = []) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((entry) => {
+      const field = String(entry?.field || "").trim();
+      const status = String(entry?.status || "").trim().toLowerCase();
+
+      if (!ASSISTANT_PATCH_FIELDS.includes(field)) {
+        return null;
+      }
+
+      return {
+        field,
+        status: FIELD_ASSESSMENT_STATUSES.has(status) ? status : "uncertain",
+        reason: String(entry?.reason || "").trim()
+      };
+    })
+    .filter(Boolean);
+}
+
+function getAllowedPatchFields(fieldAssessments = []) {
+  const assessedFields = new Set(fieldAssessments.map((entry) => entry.field));
+  const allowedByStatus = new Set(
+    fieldAssessments
+      .filter((entry) => entry.status === "improve" || entry.status === "missing")
+      .map((entry) => entry.field)
+  );
+
+  if (!assessedFields.size) {
+    return new Set(ASSISTANT_PATCH_FIELDS);
+  }
+
+  return allowedByStatus;
+}
+
+function normalizeSuggestionPatch(value = {}, collections = [], currentDraft = {}, allowedFields = new Set(ASSISTANT_PATCH_FIELDS)) {
   const collectionSlugSet = new Set(collections.map((collection) => collection.slug));
   const releaseStatus = String(value.releaseStatus || "").trim().toLowerCase();
   const collectionSlugs = Array.isArray(value.collectionSlugs)
@@ -165,23 +218,23 @@ function normalizeSuggestionPatch(value = {}, collections = [], currentDraft = {
     : [];
   const patch = {};
 
-  if (typeof value.excerpt === "string" && value.excerpt.trim()) {
+  if (allowedFields.has("excerpt") && typeof value.excerpt === "string" && value.excerpt.trim()) {
     patch.excerpt = value.excerpt.trim();
   }
 
-  if (typeof value.content === "string" && value.content.trim()) {
+  if (allowedFields.has("content") && typeof value.content === "string" && value.content.trim()) {
     patch.content = value.content.trim();
   }
 
-  if (typeof value.subCategory === "string") {
+  if (allowedFields.has("subCategory") && typeof value.subCategory === "string") {
     patch.subCategory = value.subCategory.trim();
   }
 
-  if (typeof value.worldLayer === "string") {
+  if (allowedFields.has("worldLayer") && typeof value.worldLayer === "string") {
     patch.worldLayer = value.worldLayer.trim();
   }
 
-  if (Array.isArray(value.themeTags)) {
+  if (allowedFields.has("themeTags") && Array.isArray(value.themeTags)) {
     patch.themeTags = [
       ...new Set(
         value.themeTags
@@ -191,11 +244,11 @@ function normalizeSuggestionPatch(value = {}, collections = [], currentDraft = {
     ].slice(0, 8);
   }
 
-  if (VALID_RELEASE_STATUSES.has(releaseStatus)) {
+  if (allowedFields.has("releaseStatus") && VALID_RELEASE_STATUSES.has(releaseStatus)) {
     patch.releaseStatus = releaseStatus;
   }
 
-  if (collectionSlugs.length) {
+  if (allowedFields.has("collectionSlugs") && collectionSlugs.length) {
     patch.collectionSlugs = collectionSlugs;
   }
 
@@ -209,11 +262,15 @@ function normalizeSuggestionPatch(value = {}, collections = [], currentDraft = {
 }
 
 function normalizePostSuggestionResult(value = {}, collections = [], currentDraft = {}) {
+  const fieldAssessments = normalizeFieldAssessments(value.fieldAssessments);
+  const allowedFields = getAllowedPatchFields(fieldAssessments);
+
   return {
     summary: String(value.summary || "").trim(),
+    fieldAssessments,
     rationale: normalizeTextList(value.rationale, 5),
     warnings: normalizeTextList(value.warnings, 5),
-    suggestedPatch: normalizeSuggestionPatch(value.suggestedPatch, collections, currentDraft)
+    suggestedPatch: normalizeSuggestionPatch(value.suggestedPatch, collections, currentDraft, allowedFields)
   };
 }
 
@@ -427,12 +484,14 @@ async function suggestPostDraftWithLocalAi(store, postDraft = {}) {
   };
   const prompt = [
     "Return only compact JSON for one music archive post draft.",
-    "Your main job is to improve the authoring fields: excerpt and content.",
-    "Rewrite excerpt as sharper public card copy when useful.",
-    "Rewrite content as a stronger release note when useful while preserving the draft's meaning.",
+    "First assess each field as keep, improve, missing, or uncertain.",
+    "Only patch fields marked improve or missing.",
+    "Your main job is to improve authoring fields when needed: excerpt and content.",
+    "Rewrite excerpt as sharper public card copy only when it needs improvement.",
+    "Rewrite content as a stronger release note only when it needs improvement, preserving the draft's meaning.",
     "Do not invent collection slugs. Use only provided collection slugs.",
     "For metadata fields, suggest a field only if it improves or changes the current value. Do not repeat existing values.",
-    "Shape: {\"summary\":\"one sentence\",\"suggestedPatch\":{\"excerpt\":\"\",\"content\":\"\",\"subCategory\":\"\",\"worldLayer\":\"\",\"themeTags\":[\"\"],\"releaseStatus\":\"canon\",\"collectionSlugs\":[\"\"]},\"rationale\":[\"reason\"],\"warnings\":[\"warning\"]}.",
+    "Shape: {\"summary\":\"one sentence\",\"fieldAssessments\":[{\"field\":\"excerpt\",\"status\":\"keep\",\"reason\":\"why\"}],\"suggestedPatch\":{\"excerpt\":\"\",\"content\":\"\",\"subCategory\":\"\",\"worldLayer\":\"\",\"themeTags\":[\"\"],\"releaseStatus\":\"canon\",\"collectionSlugs\":[\"\"]},\"rationale\":[\"reason\"],\"warnings\":[\"warning\"]}.",
     "Omit fields that should not change. Use at most 5 themeTags, 4 rationale items, and 3 warnings. Keep content under 140 words.",
     "",
     JSON.stringify(context)
