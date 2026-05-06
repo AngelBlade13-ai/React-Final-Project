@@ -189,6 +189,44 @@ function normalizeFieldAssessments(value = []) {
     .filter(Boolean);
 }
 
+function isAcceptableExcerpt(value) {
+  const excerpt = String(value || "").trim();
+
+  return excerpt.length >= 80 && excerpt.length <= 320 && /[.!?]$/.test(excerpt);
+}
+
+function hasStructuredReleaseNote(value) {
+  const content = String(value || "").trim();
+
+  return (
+    content.length >= 120 &&
+    (/\*\*(Universe|Characters|POV|Version|Theme|Mood|Source|Notes):\*\*/i.test(content) ||
+      /(Universe|Characters|POV|Version|Theme|Mood|Source|Notes):/i.test(content))
+  );
+}
+
+function applyDeterministicAssessmentGuards(fieldAssessments = [], currentDraft = {}) {
+  return fieldAssessments.map((entry) => {
+    if (entry.field === "excerpt" && isAcceptableExcerpt(currentDraft.excerpt)) {
+      return {
+        ...entry,
+        status: "keep",
+        reason: "Excerpt already meets the public-card quality threshold."
+      };
+    }
+
+    if (entry.field === "content" && hasStructuredReleaseNote(currentDraft.content)) {
+      return {
+        ...entry,
+        status: "keep",
+        reason: "Content already uses a structured release-note format."
+      };
+    }
+
+    return entry;
+  });
+}
+
 function getAllowedPatchFields(fieldAssessments = []) {
   const assessedFields = new Set(fieldAssessments.map((entry) => entry.field));
   const allowedByStatus = new Set(
@@ -262,7 +300,10 @@ function normalizeSuggestionPatch(value = {}, collections = [], currentDraft = {
 }
 
 function normalizePostSuggestionResult(value = {}, collections = [], currentDraft = {}) {
-  const fieldAssessments = normalizeFieldAssessments(value.fieldAssessments);
+  const fieldAssessments = applyDeterministicAssessmentGuards(
+    normalizeFieldAssessments(value.fieldAssessments),
+    currentDraft
+  );
   const allowedFields = getAllowedPatchFields(fieldAssessments);
 
   return {
@@ -288,11 +329,19 @@ function summarizePostForAssistant(post = {}) {
 }
 
 function summarizePostDraftForAssistant(post = {}) {
+  const content = String(post.content || "").trim();
+  const excerpt = String(post.excerpt || "").trim();
+
   return {
     title: String(post.title || "").trim(),
     slug: String(post.slug || "").trim(),
-    excerpt: String(post.excerpt || "").trim(),
-    content: String(post.content || "").trim().slice(0, 1400),
+    excerpt,
+    excerptLength: excerpt.length,
+    content: content.slice(0, 1400),
+    contentLength: content.length,
+    hasStructuredContent:
+      /\*\*(Universe|Characters|POV|Version|Theme|Mood|Source|Notes):\*\*/i.test(content) ||
+      /(Universe|Characters|POV|Version|Theme|Mood|Source|Notes):/i.test(content),
     lyrics: String(post.lyrics || "").trim().slice(0, 1400),
     published: Boolean(post.published),
     releaseStatus: post.releaseStatus || "canon",
@@ -486,6 +535,10 @@ async function suggestPostDraftWithLocalAi(store, postDraft = {}) {
     "Return only compact JSON for one music archive post draft.",
     "First assess each field as keep, improve, missing, or uncertain.",
     "Only patch fields marked improve or missing.",
+    "Be decisive and avoid churn: if a field is already clear, coherent, and publication-ready, mark it keep.",
+    "If content already uses a structured release-note format with fields like Universe, Characters, POV, Version, Theme, Mood, Source, or Notes, mark content keep unless it is inaccurate or broken.",
+    "If excerpt is already specific, public-facing, and under 280 characters, mark excerpt keep.",
+    "Do not rewrite a field just to change wording or style. Patch only when the new value is materially better.",
     "Your main job is to improve authoring fields when needed: excerpt and content.",
     "Rewrite excerpt as sharper public card copy only when it needs improvement.",
     "Rewrite content as a stronger release note only when it needs improvement, preserving the draft's meaning.",
