@@ -89,18 +89,35 @@ function extractJsonObject(value) {
     throw new Error("The local model returned an empty response.");
   }
 
-  try {
-    return JSON.parse(text);
-  } catch {
-    const startIndex = text.indexOf("{");
-    const endIndex = text.lastIndexOf("}");
+  const candidates = [text];
+  const fencedJsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
 
-    if (startIndex === -1 || endIndex === -1 || endIndex <= startIndex) {
-      throw new Error("The local model did not return valid JSON.");
-    }
-
-    return JSON.parse(text.slice(startIndex, endIndex + 1));
+  if (fencedJsonMatch?.[1]) {
+    candidates.push(fencedJsonMatch[1].trim());
   }
+
+  const startIndex = text.indexOf("{");
+  const endIndex = text.lastIndexOf("}");
+
+  if (startIndex !== -1 && endIndex !== -1 && endIndex > startIndex) {
+    candidates.push(text.slice(startIndex, endIndex + 1));
+  }
+
+  let lastError = null;
+
+  for (const candidate of candidates) {
+    try {
+      return JSON.parse(candidate);
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  const error = new Error(
+    `The local model did not return valid JSON. ${lastError?.message || ""}`.trim()
+  );
+  error.modelResponsePreview = text.slice(0, 1200);
+  throw error;
 }
 
 function normalizeTextList(value, limit = 8) {
@@ -283,7 +300,12 @@ function buildCatalogContext(store = {}) {
   };
 }
 
-async function generateJson(prompt) {
+async function generateJson(prompt, options = {}) {
+  const generationOptions = {
+    temperature: options.temperature ?? 0.2,
+    num_ctx: options.num_ctx || 4096,
+    num_predict: options.num_predict || 320
+  };
   const response = await fetchOllama("/api/generate", {
     method: "POST",
     headers: {
@@ -294,11 +316,7 @@ async function generateJson(prompt) {
       prompt,
       stream: false,
       format: "json",
-      options: {
-        temperature: 0.2,
-        num_ctx: 4096,
-        num_predict: 320
-      }
+      options: generationOptions
     })
   });
   const data = await response.json().catch(() => ({}));
@@ -307,7 +325,45 @@ async function generateJson(prompt) {
     throw new Error(data.error || "The local model request failed.");
   }
 
-  return extractJsonObject(data.response);
+  try {
+    return extractJsonObject(data.response);
+  } catch (error) {
+    const repairPrompt = [
+      "Repair this into valid compact JSON only.",
+      "Do not add markdown or commentary.",
+      "Keep the same meaning and return one JSON object.",
+      "",
+      String(data.response || "")
+    ].join("\n");
+    const repairResponse = await fetchOllama("/api/generate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: config.localAiModel,
+        prompt: repairPrompt,
+        stream: false,
+        format: "json",
+        options: {
+          temperature: 0,
+          num_ctx: Math.max(2048, generationOptions.num_ctx),
+          num_predict: Math.max(500, generationOptions.num_predict)
+        }
+      })
+    });
+    const repairData = await repairResponse.json().catch(() => ({}));
+
+    if (!repairResponse.ok) {
+      throw error;
+    }
+
+    try {
+      return extractJsonObject(repairData.response);
+    } catch {
+      throw error;
+    }
+  }
 }
 
 async function reviewCatalogWithLocalAi(store) {
@@ -382,7 +438,10 @@ async function suggestPostDraftWithLocalAi(store, postDraft = {}) {
     JSON.stringify(context)
   ].join("\n");
   const result = normalizePostSuggestionResult(
-    await generateJson(prompt),
+    await generateJson(prompt, {
+      num_ctx: 4096,
+      num_predict: 900
+    }),
     collections,
     postDraft
   );
