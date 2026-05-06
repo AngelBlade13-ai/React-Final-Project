@@ -1,4 +1,5 @@
 const config = require("../config");
+const { slugify } = require("../utils/slugify");
 
 const DEFAULT_REVIEW_RESULT = {
   summary: "",
@@ -41,7 +42,10 @@ function buildUnavailableStatus(reason) {
 
 function withTimeout() {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), config.localAiTimeoutMs);
+  const timeoutId = setTimeout(
+    () => controller.abort(),
+    config.localAiTimeoutMs
+  );
 
   return {
     signal: controller.signal,
@@ -68,7 +72,9 @@ async function fetchOllama(path, options = {}) {
 
 async function getLocalAiStatus() {
   if (!config.localAiEnabled) {
-    return buildUnavailableStatus("Local AI is disabled by LOCAL_AI_ENABLED=false.");
+    return buildUnavailableStatus(
+      "Local AI is disabled by LOCAL_AI_ENABLED=false."
+    );
   }
 
   try {
@@ -76,7 +82,9 @@ async function getLocalAiStatus() {
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      return buildUnavailableStatus(data.error || "Ollama did not return a healthy status.");
+      return buildUnavailableStatus(
+        data.error || "Ollama did not return a healthy status."
+      );
     }
 
     const models = Array.isArray(data.models)
@@ -180,7 +188,9 @@ function normalizeFieldAssessments(value = []) {
   return value
     .map((entry) => {
       const field = String(entry?.field || "").trim();
-      const status = String(entry?.status || "").trim().toLowerCase();
+      const status = String(entry?.status || "")
+        .trim()
+        .toLowerCase();
 
       if (!ASSISTANT_PATCH_FIELDS.includes(field)) {
         return null;
@@ -198,7 +208,9 @@ function normalizeFieldAssessments(value = []) {
 function isAcceptableExcerpt(value) {
   const excerpt = String(value || "").trim();
 
-  return excerpt.length >= 80 && excerpt.length <= 320 && /[.!?]$/.test(excerpt);
+  return (
+    excerpt.length >= 80 && excerpt.length <= 320 && /[.!?]$/.test(excerpt)
+  );
 }
 
 function hasStructuredReleaseNote(value) {
@@ -206,14 +218,24 @@ function hasStructuredReleaseNote(value) {
 
   return (
     content.length >= 120 &&
-    (/\*\*(Universe|Characters|POV|Version|Theme|Mood|Source|Notes):\*\*/i.test(content) ||
-      /(Universe|Characters|POV|Version|Theme|Mood|Source|Notes):/i.test(content))
+    (/\*\*(Universe|Characters|POV|Version|Theme|Mood|Source|Notes):\*\*/i.test(
+      content
+    ) ||
+      /(Universe|Characters|POV|Version|Theme|Mood|Source|Notes):/i.test(
+        content
+      ))
   );
 }
 
-function applyDeterministicAssessmentGuards(fieldAssessments = [], currentDraft = {}) {
+function applyDeterministicAssessmentGuards(
+  fieldAssessments = [],
+  currentDraft = {}
+) {
   return fieldAssessments.map((entry) => {
-    if (entry.field === "excerpt" && isAcceptableExcerpt(currentDraft.excerpt)) {
+    if (
+      entry.field === "excerpt" &&
+      isAcceptableExcerpt(currentDraft.excerpt)
+    ) {
       return {
         ...entry,
         status: "keep",
@@ -221,7 +243,10 @@ function applyDeterministicAssessmentGuards(fieldAssessments = [], currentDraft 
       };
     }
 
-    if (entry.field === "content" && hasStructuredReleaseNote(currentDraft.content)) {
+    if (
+      entry.field === "content" &&
+      hasStructuredReleaseNote(currentDraft.content)
+    ) {
       return {
         ...entry,
         status: "keep",
@@ -237,7 +262,9 @@ function getAllowedPatchFields(fieldAssessments = []) {
   const assessedFields = new Set(fieldAssessments.map((entry) => entry.field));
   const allowedByStatus = new Set(
     fieldAssessments
-      .filter((entry) => entry.status === "improve" || entry.status === "missing")
+      .filter(
+        (entry) => entry.status === "improve" || entry.status === "missing"
+      )
       .map((entry) => entry.field)
   );
 
@@ -248,9 +275,18 @@ function getAllowedPatchFields(fieldAssessments = []) {
   return allowedByStatus;
 }
 
-function normalizeSuggestionPatch(value = {}, collections = [], currentDraft = {}, allowedFields = new Set(ASSISTANT_PATCH_FIELDS)) {
-  const collectionSlugSet = new Set(collections.map((collection) => collection.slug));
-  const releaseStatus = String(value.releaseStatus || "").trim().toLowerCase();
+function normalizeSuggestionPatch(
+  value = {},
+  collections = [],
+  currentDraft = {},
+  allowedFields = new Set(ASSISTANT_PATCH_FIELDS)
+) {
+  const collectionSlugSet = new Set(
+    collections.map((collection) => collection.slug)
+  );
+  const releaseStatus = String(value.releaseStatus || "")
+    .trim()
+    .toLowerCase();
   const collectionSlugs = Array.isArray(value.collectionSlugs)
     ? [
         ...new Set(
@@ -262,15 +298,26 @@ function normalizeSuggestionPatch(value = {}, collections = [], currentDraft = {
     : [];
   const patch = {};
 
-  if (allowedFields.has("excerpt") && typeof value.excerpt === "string" && value.excerpt.trim()) {
+  if (
+    allowedFields.has("excerpt") &&
+    typeof value.excerpt === "string" &&
+    value.excerpt.trim()
+  ) {
     patch.excerpt = value.excerpt.trim();
   }
 
-  if (allowedFields.has("content") && typeof value.content === "string" && value.content.trim()) {
+  if (
+    allowedFields.has("content") &&
+    typeof value.content === "string" &&
+    value.content.trim()
+  ) {
     patch.content = value.content.trim();
   }
 
-  if (allowedFields.has("subCategory") && typeof value.subCategory === "string") {
+  if (
+    allowedFields.has("subCategory") &&
+    typeof value.subCategory === "string"
+  ) {
     patch.subCategory = value.subCategory.trim();
   }
 
@@ -281,14 +328,15 @@ function normalizeSuggestionPatch(value = {}, collections = [], currentDraft = {
   if (allowedFields.has("themeTags") && Array.isArray(value.themeTags)) {
     patch.themeTags = [
       ...new Set(
-        value.themeTags
-          .map((tag) => String(tag || "").trim())
-          .filter(Boolean)
+        value.themeTags.map((tag) => String(tag || "").trim()).filter(Boolean)
       )
     ].slice(0, 8);
   }
 
-  if (allowedFields.has("releaseStatus") && VALID_RELEASE_STATUSES.has(releaseStatus)) {
+  if (
+    allowedFields.has("releaseStatus") &&
+    VALID_RELEASE_STATUSES.has(releaseStatus)
+  ) {
     patch.releaseStatus = releaseStatus;
   }
 
@@ -305,7 +353,11 @@ function normalizeSuggestionPatch(value = {}, collections = [], currentDraft = {
   }, {});
 }
 
-function normalizePostSuggestionResult(value = {}, collections = [], currentDraft = {}) {
+function normalizePostSuggestionResult(
+  value = {},
+  collections = [],
+  currentDraft = {}
+) {
   const fieldAssessments = applyDeterministicAssessmentGuards(
     normalizeFieldAssessments(value.fieldAssessments),
     currentDraft
@@ -317,7 +369,12 @@ function normalizePostSuggestionResult(value = {}, collections = [], currentDraf
     fieldAssessments,
     rationale: normalizeTextList(value.rationale, 5),
     warnings: normalizeTextList(value.warnings, 5),
-    suggestedPatch: normalizeSuggestionPatch(value.suggestedPatch, collections, currentDraft, allowedFields)
+    suggestedPatch: normalizeSuggestionPatch(
+      value.suggestedPatch,
+      collections,
+      currentDraft,
+      allowedFields
+    )
   };
 }
 
@@ -327,7 +384,9 @@ function summarizePostForAssistant(post = {}) {
     title: post.title,
     published: Boolean(post.published),
     releaseStatus: post.releaseStatus || "canon",
-    collections: Array.isArray(post.collectionSlugs) ? post.collectionSlugs : [],
+    collections: Array.isArray(post.collectionSlugs)
+      ? post.collectionSlugs
+      : [],
     subCategory: post.subCategory || "",
     worldLayer: post.worldLayer || "",
     themeTags: Array.isArray(post.themeTags) ? post.themeTags : []
@@ -346,12 +405,20 @@ function summarizePostDraftForAssistant(post = {}) {
     content: content.slice(0, 1400),
     contentLength: content.length,
     hasStructuredContent:
-      /\*\*(Universe|Characters|POV|Version|Theme|Mood|Source|Notes):\*\*/i.test(content) ||
-      /(Universe|Characters|POV|Version|Theme|Mood|Source|Notes):/i.test(content),
-    lyrics: String(post.lyrics || "").trim().slice(0, 1400),
+      /\*\*(Universe|Characters|POV|Version|Theme|Mood|Source|Notes):\*\*/i.test(
+        content
+      ) ||
+      /(Universe|Characters|POV|Version|Theme|Mood|Source|Notes):/i.test(
+        content
+      ),
+    lyrics: String(post.lyrics || "")
+      .trim()
+      .slice(0, 1400),
     published: Boolean(post.published),
     releaseStatus: post.releaseStatus || "canon",
-    collections: Array.isArray(post.collectionSlugs) ? post.collectionSlugs : [],
+    collections: Array.isArray(post.collectionSlugs)
+      ? post.collectionSlugs
+      : [],
     subCategory: String(post.subCategory || "").trim(),
     sourceTag: String(post.sourceTag || "").trim(),
     worldLayer: String(post.worldLayer || "").trim(),
@@ -381,11 +448,15 @@ function summarizePathPostForAssistant(post = {}) {
     published: Boolean(post.published),
     isPubliclyVisible: post.isPubliclyVisible !== false,
     releaseStatus: post.releaseStatus || "canon",
-    collections: Array.isArray(post.collectionSlugs) ? post.collectionSlugs : [],
+    collections: Array.isArray(post.collectionSlugs)
+      ? post.collectionSlugs
+      : [],
     subCategory: String(post.subCategory || "").trim(),
     worldLayer: String(post.worldLayer || "").trim(),
     themeTags: Array.isArray(post.themeTags) ? post.themeTags : [],
-    excerpt: String(post.excerpt || "").trim().slice(0, 180)
+    excerpt: String(post.excerpt || "")
+      .trim()
+      .slice(0, 180)
   };
 }
 
@@ -398,25 +469,41 @@ function summarizeGuidedPathForAssistant(path = {}) {
     moodNote: String(path.moodNote || "").trim(),
     themeHint: String(path.themeHint || "").trim(),
     postSlugs: Array.isArray(path.postSlugs) ? path.postSlugs : [],
-    algorithm: path.algorithm && typeof path.algorithm === "object" ? path.algorithm : {}
+    algorithm:
+      path.algorithm && typeof path.algorithm === "object" ? path.algorithm : {}
   };
 }
 
+function getPublicPathPosts(posts = []) {
+  return posts.filter(
+    (post) => post.published && post.isPubliclyVisible !== false
+  );
+}
+
 function getGuidedPathCandidatePosts(posts = [], guidedPath = {}) {
-  const algorithm = guidedPath?.algorithm && typeof guidedPath.algorithm === "object" ? guidedPath.algorithm : {};
+  const algorithm =
+    guidedPath?.algorithm && typeof guidedPath.algorithm === "object"
+      ? guidedPath.algorithm
+      : {};
   const collectionSlug = String(algorithm.collectionSlug || "").trim();
   const collectionSlugs = Array.isArray(algorithm.collectionSlugs)
-    ? algorithm.collectionSlugs.map((slug) => String(slug || "").trim()).filter(Boolean)
+    ? algorithm.collectionSlugs
+        .map((slug) => String(slug || "").trim())
+        .filter(Boolean)
     : [];
   const themeHint = String(guidedPath?.themeHint || "").trim();
   const sectionKeys = Array.isArray(algorithm.sectionKeys)
-    ? algorithm.sectionKeys.map((key) => String(key || "").trim()).filter(Boolean)
+    ? algorithm.sectionKeys
+        .map((key) => String(key || "").trim())
+        .filter(Boolean)
     : [];
   const themeTags = Array.isArray(algorithm.themeTags)
     ? algorithm.themeTags.map((tag) => String(tag || "").trim()).filter(Boolean)
     : [];
   const worldLayers = Array.isArray(algorithm.worldLayers)
-    ? algorithm.worldLayers.map((layer) => String(layer || "").trim()).filter(Boolean)
+    ? algorithm.worldLayers
+        .map((layer) => String(layer || "").trim())
+        .filter(Boolean)
     : [];
   const hasExplicitScope =
     collectionSlug ||
@@ -425,34 +512,47 @@ function getGuidedPathCandidatePosts(posts = [], guidedPath = {}) {
     sectionKeys.length ||
     themeTags.length ||
     worldLayers.length;
-  const publicPosts = posts.filter((post) => post.published && post.isPubliclyVisible !== false);
+  const publicPosts = getPublicPathPosts(posts);
 
   if (!hasExplicitScope) {
     return publicPosts;
   }
 
   return publicPosts.filter((post) => {
-    const postCollections = Array.isArray(post.collectionSlugs) ? post.collectionSlugs : [];
+    const postCollections = Array.isArray(post.collectionSlugs)
+      ? post.collectionSlugs
+      : [];
 
     return (
       (collectionSlug && postCollections.includes(collectionSlug)) ||
-      (collectionSlugs.length && postCollections.some((slug) => collectionSlugs.includes(slug))) ||
+      (collectionSlugs.length &&
+        postCollections.some((slug) => collectionSlugs.includes(slug))) ||
       (themeHint && postCollections.includes(themeHint)) ||
-      (sectionKeys.length && sectionKeys.includes(String(post.subCategory || "").trim())) ||
-      (themeTags.length && (post.themeTags || []).some((tag) => themeTags.includes(tag))) ||
-      (worldLayers.length && worldLayers.includes(String(post.worldLayer || "").trim()))
+      (sectionKeys.length &&
+        sectionKeys.includes(String(post.subCategory || "").trim())) ||
+      (themeTags.length &&
+        (post.themeTags || []).some((tag) => themeTags.includes(tag))) ||
+      (worldLayers.length &&
+        worldLayers.includes(String(post.worldLayer || "").trim()))
     );
   });
 }
 
 function normalizeGuidedPathAlgorithmPatch(value = {}, collections = []) {
-  const collectionSlugSet = new Set(collections.map((collection) => collection.slug));
-  const algorithm = value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  const collectionSlugSet = new Set(
+    collections.map((collection) => collection.slug)
+  );
+  const algorithm =
+    value && typeof value === "object" && !Array.isArray(value) ? value : {};
   const releaseStatuses = Array.isArray(algorithm.releaseStatuses)
     ? [
         ...new Set(
           algorithm.releaseStatuses
-            .map((status) => String(status || "").trim().toLowerCase())
+            .map((status) =>
+              String(status || "")
+                .trim()
+                .toLowerCase()
+            )
             .filter((status) => VALID_RELEASE_STATUSES.has(status))
         )
       ]
@@ -533,13 +633,20 @@ function normalizeGuidedPathAlgorithmPatch(value = {}, collections = []) {
   return patch;
 }
 
-function normalizeGuidedPathSuggestionResult(value = {}, store = {}, guidedPath = {}) {
+function normalizeGuidedPathSuggestionResult(
+  value = {},
+  store = {},
+  guidedPath = {}
+) {
   const posts = Array.isArray(store.posts) ? store.posts : [];
   const collections = Array.isArray(store.collections) ? store.collections : [];
   const postSlugSet = new Set(
     getGuidedPathCandidatePosts(posts, guidedPath).map((post) => post.slug)
   );
-  const rawPatch = value.suggestedPatch && typeof value.suggestedPatch === "object" ? value.suggestedPatch : {};
+  const rawPatch =
+    value.suggestedPatch && typeof value.suggestedPatch === "object"
+      ? value.suggestedPatch
+      : {};
   const suggestedPatch = {};
   const currentAlgorithm =
     guidedPath?.algorithm && typeof guidedPath.algorithm === "object"
@@ -580,10 +687,14 @@ function normalizeGuidedPathSuggestionResult(value = {}, store = {}, guidedPath 
   }
 
   if (rawPatch.algorithm && typeof rawPatch.algorithm === "object") {
-    suggestedPatch.algorithm = normalizeGuidedPathAlgorithmPatch(
+    const algorithmPatch = normalizeGuidedPathAlgorithmPatch(
       rawPatch.algorithm,
       collections
     );
+
+    if (Object.keys(algorithmPatch).length) {
+      suggestedPatch.algorithm = algorithmPatch;
+    }
   }
 
   return {
@@ -597,20 +708,128 @@ function normalizeGuidedPathSuggestionResult(value = {}, store = {}, guidedPath 
   };
 }
 
+function normalizeNewGuidedPathSuggestionResult(
+  value = {},
+  store = {},
+  existingPaths = []
+) {
+  const posts = Array.isArray(store.posts) ? store.posts : [];
+  const collections = Array.isArray(store.collections) ? store.collections : [];
+  const publicPostSlugSet = new Set(
+    getPublicPathPosts(posts).map((post) => post.slug)
+  );
+  const existingSlugSet = new Set(
+    existingPaths.map((path) => String(path?.slug || "").trim()).filter(Boolean)
+  );
+  const rawPatch =
+    value.suggestedPatch && typeof value.suggestedPatch === "object"
+      ? value.suggestedPatch
+      : {};
+  const suggestedPatch = {};
+  const rawSlug = String(
+    rawPatch.slug || value.slug || rawPatch.title || ""
+  ).trim();
+  const nextSlug = slugify(rawSlug);
+
+  if (nextSlug && !existingSlugSet.has(nextSlug)) {
+    suggestedPatch.slug = nextSlug;
+  }
+
+  if (typeof rawPatch.title === "string" && rawPatch.title.trim()) {
+    suggestedPatch.title = rawPatch.title.trim();
+  }
+
+  if (typeof rawPatch.eyebrow === "string" && rawPatch.eyebrow.trim()) {
+    suggestedPatch.eyebrow = rawPatch.eyebrow.trim();
+  }
+
+  if (typeof rawPatch.intro === "string" && rawPatch.intro.trim()) {
+    suggestedPatch.intro = rawPatch.intro.trim();
+  }
+
+  if (typeof rawPatch.moodNote === "string" && rawPatch.moodNote.trim()) {
+    suggestedPatch.moodNote = rawPatch.moodNote.trim();
+  }
+
+  if (typeof rawPatch.themeHint === "string" && rawPatch.themeHint.trim()) {
+    suggestedPatch.themeHint = rawPatch.themeHint.trim();
+  }
+
+  if (Array.isArray(rawPatch.postSlugs)) {
+    suggestedPatch.postSlugs = [
+      ...new Set(
+        rawPatch.postSlugs
+          .map((entry) => String(entry || "").trim())
+          .filter((slug) => publicPostSlugSet.has(slug))
+      )
+    ].slice(0, 12);
+  }
+
+  if (rawPatch.algorithm && typeof rawPatch.algorithm === "object") {
+    const algorithmPatch = normalizeGuidedPathAlgorithmPatch(
+      rawPatch.algorithm,
+      collections
+    );
+
+    if (Object.keys(algorithmPatch).length) {
+      suggestedPatch.algorithm = algorithmPatch;
+    }
+  }
+
+  const warnings = normalizeTextList(value.warnings, 5);
+
+  if (!suggestedPatch.slug) {
+    warnings.push("The assistant did not provide a unique usable slug.");
+  }
+
+  if (!suggestedPatch.title) {
+    warnings.push("The assistant did not provide a title.");
+  }
+
+  if (
+    !suggestedPatch.postSlugs?.length &&
+    !Object.keys(suggestedPatch.algorithm || {}).length
+  ) {
+    warnings.push("The assistant did not provide usable path membership.");
+  }
+
+  return {
+    summary: String(value.summary || "").trim(),
+    mode: ["manual", "algorithm", "hybrid"].includes(String(value.mode || ""))
+      ? String(value.mode)
+      : "manual",
+    isNewPath: true,
+    rationale: normalizeTextList(value.rationale, 6),
+    warnings: [...new Set(warnings)].slice(0, 6),
+    suggestedPatch
+  };
+}
+
 function buildCatalogContext(store = {}) {
   const posts = Array.isArray(store.posts) ? store.posts : [];
   const collections = Array.isArray(store.collections) ? store.collections : [];
-  const guidedPaths = Array.isArray(store.siteContent?.guidedPaths) ? store.siteContent.guidedPaths : [];
+  const guidedPaths = Array.isArray(store.siteContent?.guidedPaths)
+    ? store.siteContent.guidedPaths
+    : [];
   const postsNeedingReview = posts
     .filter((post) => {
-      const hasCollection = Array.isArray(post.collectionSlugs) && post.collectionSlugs.length > 0;
-      const hasTags = Array.isArray(post.themeTags) && post.themeTags.length > 0;
+      const hasCollection =
+        Array.isArray(post.collectionSlugs) && post.collectionSlugs.length > 0;
+      const hasTags =
+        Array.isArray(post.themeTags) && post.themeTags.length > 0;
       const isImmersive =
         (post.collectionSlugs || []).includes("fractureverse") ||
         (post.collectionSlugs || []).includes("eldoria") ||
-        ["fractureverse", "eldoria", "villain"].includes(String(post.worldLayer || ""));
+        ["fractureverse", "eldoria", "villain"].includes(
+          String(post.worldLayer || "")
+        );
 
-      return !hasCollection || !hasTags || isImmersive || post.isPubliclyVisible === false;
+      return (
+        !hasCollection ||
+        !hasTags ||
+        isImmersive ||
+        post.isPubliclyVisible === false
+      );
     })
     .slice(0, 8);
 
@@ -722,7 +941,7 @@ async function reviewCatalogWithLocalAi(store) {
   const prompt = [
     "Return only compact JSON for this music archive admin review.",
     "Do not invent slugs. No code advice.",
-    "Shape: {\"summary\":\"one sentence\",\"risks\":[\"risk\"],\"suggestedActions\":[\"action\"]}.",
+    'Shape: {"summary":"one sentence","risks":["risk"],"suggestedActions":["action"]}.',
     "Use at most 3 risks and 3 actions.",
     "",
     JSON.stringify(context)
@@ -773,7 +992,7 @@ async function suggestPostDraftWithLocalAi(store, postDraft = {}) {
     "Rewrite content as a stronger release note only when it needs improvement, preserving the draft's meaning.",
     "Do not invent collection slugs. Use only provided collection slugs.",
     "For metadata fields, suggest a field only if it improves or changes the current value. Do not repeat existing values.",
-    "Shape: {\"summary\":\"one sentence\",\"fieldAssessments\":[{\"field\":\"excerpt\",\"status\":\"keep\",\"reason\":\"why\"}],\"suggestedPatch\":{\"excerpt\":\"\",\"content\":\"\",\"subCategory\":\"\",\"worldLayer\":\"\",\"themeTags\":[\"\"],\"releaseStatus\":\"canon\",\"collectionSlugs\":[\"\"]},\"rationale\":[\"reason\"],\"warnings\":[\"warning\"]}.",
+    'Shape: {"summary":"one sentence","fieldAssessments":[{"field":"excerpt","status":"keep","reason":"why"}],"suggestedPatch":{"excerpt":"","content":"","subCategory":"","worldLayer":"","themeTags":[""],"releaseStatus":"canon","collectionSlugs":[""]},"rationale":["reason"],"warnings":["warning"]}.',
     "Omit fields that should not change. Use at most 5 themeTags, 4 rationale items, and 3 warnings. Keep content under 140 words.",
     "",
     JSON.stringify(context)
@@ -813,7 +1032,9 @@ async function suggestGuidedPathWithLocalAi(store, guidedPath = {}) {
 
   const posts = Array.isArray(store.posts) ? store.posts : [];
   const collections = Array.isArray(store.collections) ? store.collections : [];
-  const publicPosts = getGuidedPathCandidatePosts(posts, guidedPath).map(summarizePathPostForAssistant);
+  const publicPosts = getGuidedPathCandidatePosts(posts, guidedPath).map(
+    summarizePathPostForAssistant
+  );
   const context = {
     allowedReleaseStatuses: Array.from(VALID_RELEASE_STATUSES),
     allowedSorts: Array.from(ALLOWED_PATH_ALGORITHM_SORTS),
@@ -829,7 +1050,7 @@ async function suggestGuidedPathWithLocalAi(store, guidedPath = {}) {
     "If the path should stay dynamic, use suggestedPatch.algorithm with only provided collection slugs, release statuses, and sort values.",
     "If currentPath already has algorithm.collectionSlug and no postSlugs, preserve the algorithm approach and do not return postSlugs.",
     "Do not include unrelated or merely adjacent songs. Prefer precision over count.",
-    "Shape: {\"summary\":\"one sentence\",\"mode\":\"manual|algorithm|hybrid\",\"suggestedPatch\":{\"title\":\"\",\"eyebrow\":\"\",\"intro\":\"\",\"moodNote\":\"\",\"themeHint\":\"\",\"postSlugs\":[\"\"],\"algorithm\":{}},\"rationale\":[\"reason\"],\"warnings\":[\"warning\"]}.",
+    'Shape: {"summary":"one sentence","mode":"manual|algorithm|hybrid","suggestedPatch":{"title":"","eyebrow":"","intro":"","moodNote":"","themeHint":"","postSlugs":[""],"algorithm":{}},"rationale":["reason"],"warnings":["warning"]}.',
     "Omit patch fields that should not change. Use at most 12 postSlugs, 5 rationale items, and 3 warnings.",
     "",
     JSON.stringify(context)
@@ -850,9 +1071,69 @@ async function suggestGuidedPathWithLocalAi(store, guidedPath = {}) {
   };
 }
 
+async function suggestNewGuidedPathWithLocalAi(store, existingPaths = []) {
+  const status = await getLocalAiStatus();
+
+  if (!status.available) {
+    const error = new Error(status.message);
+    error.statusCode = 503;
+    error.localAiStatus = status;
+    throw error;
+  }
+
+  if (!status.modelInstalled) {
+    const error = new Error(status.message);
+    error.statusCode = 503;
+    error.localAiStatus = status;
+    throw error;
+  }
+
+  const posts = Array.isArray(store.posts) ? store.posts : [];
+  const collections = Array.isArray(store.collections) ? store.collections : [];
+  const paths = Array.isArray(existingPaths)
+    ? existingPaths
+    : Array.isArray(store.siteContent?.guidedPaths)
+      ? store.siteContent.guidedPaths
+      : [];
+  const context = {
+    allowedReleaseStatuses: Array.from(VALID_RELEASE_STATUSES),
+    allowedSorts: Array.from(ALLOWED_PATH_ALGORITHM_SORTS),
+    collections: collections.map(summarizeCollectionForAssistant),
+    existingPaths: paths.map(summarizeGuidedPathForAssistant),
+    publicPosts: getPublicPathPosts(posts).map(summarizePathPostForAssistant)
+  };
+  const prompt = [
+    "Return only compact JSON for one NEW guided listening path in a music archive.",
+    "Find a meaningful catalog gap using publicPosts and collections.",
+    "The new path must be clearly distinct from existingPaths. Do not make a minor rename, mood variant, or near-duplicate sequence.",
+    "Use exact post slugs only from publicPosts. Do not invent slugs.",
+    "Prefer 4 to 10 postSlugs for a manual curated sequence unless a validated algorithm is clearly better.",
+    "Use suggestedPatch.slug as a short unique lowercase kebab-case slug not present in existingPaths.",
+    'Shape: {"summary":"one sentence","mode":"manual|algorithm|hybrid","isNewPath":true,"suggestedPatch":{"slug":"","title":"","eyebrow":"","intro":"","moodNote":"","themeHint":"","postSlugs":[""],"algorithm":{}},"rationale":["reason"],"warnings":["warning"]}.',
+    "Omit algorithm if using manual postSlugs. Use at most 6 rationale items and 3 warnings.",
+    "",
+    JSON.stringify(context)
+  ].join("\n");
+  const result = normalizeNewGuidedPathSuggestionResult(
+    await generateJson(prompt, {
+      num_ctx: 8192,
+      num_predict: 1200
+    }),
+    store,
+    paths
+  );
+
+  return {
+    ...result,
+    generatedAt: new Date().toISOString(),
+    model: config.localAiModel
+  };
+}
+
 module.exports = {
   getLocalAiStatus,
   reviewCatalogWithLocalAi,
   suggestGuidedPathWithLocalAi,
+  suggestNewGuidedPathWithLocalAi,
   suggestPostDraftWithLocalAi
 };

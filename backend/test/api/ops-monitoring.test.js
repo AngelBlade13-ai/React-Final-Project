@@ -185,6 +185,21 @@ test("local assistant endpoints fail safely when local AI is disabled", async (t
 
   assert.equal(pathSuggestionResponse.status, 503);
   assert.match(pathSuggestionResponse.body.message, /disabled/i);
+
+  const newPathSuggestionResponse = await context.agent
+    .post("/api/admin/assistant/guided-path-new-suggestion")
+    .set(context.mutationHeaders)
+    .send({
+      guidedPaths: [
+        {
+          slug: "test-path",
+          title: "Test Path"
+        }
+      ]
+    });
+
+  assert.equal(newPathSuggestionResponse.status, 503);
+  assert.match(newPathSuggestionResponse.body.message, /disabled/i);
 });
 
 test("admin importer launcher starts the local importer behind admin auth", async (t) => {

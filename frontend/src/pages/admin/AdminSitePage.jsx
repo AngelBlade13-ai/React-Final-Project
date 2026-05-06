@@ -1,41 +1,9 @@
-import { useEffect, useState } from "react";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { useAdminContext } from "../../layouts/AdminLayout";
-import { apiBaseUrl } from "../../lib/site";
-
-function parseGuidedPathDraft(value) {
-  const parsedPaths = JSON.parse(value);
-
-  if (!Array.isArray(parsedPaths)) {
-    throw new Error("Guided paths must be a JSON array.");
-  }
-
-  return parsedPaths;
-}
-
-function formatPatchValue(value) {
-  if (Array.isArray(value)) {
-    return value.length ? value.join(", ") : "None";
-  }
-
-  if (value && typeof value === "object") {
-    return JSON.stringify(value, null, 2);
-  }
-
-  return String(value || "Clear field");
-}
 
 export default function AdminSitePage() {
   useDocumentTitle("Admin Site");
-  const [guidedPathsDraft, setGuidedPathsDraft] = useState("[]");
-  const [guidedPathsError, setGuidedPathsError] = useState("");
-  const [selectedGuidedPathSlug, setSelectedGuidedPathSlug] = useState("");
-  const [guidedPathSuggestion, setGuidedPathSuggestion] = useState(null);
-  const [guidedPathAssistantLoading, setGuidedPathAssistantLoading] = useState(false);
-  const [guidedPathAssistantError, setGuidedPathAssistantError] = useState("");
-  const [guidedPathAssistantMessage, setGuidedPathAssistantMessage] = useState("");
   const {
-    adminFetch,
     handleSiteSettingsSubmit,
     handleThemeProfileDelete,
     handleThemeProfileSave,
@@ -48,111 +16,9 @@ export default function AdminSitePage() {
     startThemeProfileEdit,
     themeProfileForm,
     updateSiteSettingsForm,
-    updateSiteSettingsRoot,
     updateThemeProfileField,
     updateThemeProfilePalette
   } = useAdminContext();
-
-  useEffect(() => {
-    setGuidedPathsDraft(JSON.stringify(siteSettingsForm.guidedPaths || [], null, 2));
-    setGuidedPathsError("");
-  }, [siteSettingsForm.guidedPaths]);
-
-  useEffect(() => {
-    const paths = siteSettingsForm.guidedPaths || [];
-
-    if (!paths.length) {
-      setSelectedGuidedPathSlug("");
-      return;
-    }
-
-    if (!paths.some((path) => path.slug === selectedGuidedPathSlug)) {
-      setSelectedGuidedPathSlug(paths[0].slug);
-    }
-  }, [selectedGuidedPathSlug, siteSettingsForm.guidedPaths]);
-
-  function handleGuidedPathsApply() {
-    try {
-      const parsedPaths = parseGuidedPathDraft(guidedPathsDraft);
-
-      updateSiteSettingsRoot("guidedPaths", parsedPaths);
-      setGuidedPathsError("");
-    } catch (error) {
-      setGuidedPathsError(error.message || "Guided paths JSON is invalid.");
-    }
-  }
-
-  async function handleGuidedPathAssistantSuggest() {
-    setGuidedPathAssistantLoading(true);
-    setGuidedPathAssistantError("");
-    setGuidedPathAssistantMessage("");
-    setGuidedPathSuggestion(null);
-
-    try {
-      const paths = parseGuidedPathDraft(guidedPathsDraft);
-      const selectedPath =
-        paths.find((path) => path.slug === selectedGuidedPathSlug) || paths[0];
-
-      if (!selectedPath) {
-        throw new Error("Add or select a guided path before asking the assistant.");
-      }
-
-      const response = await adminFetch(`${apiBaseUrl}/admin/assistant/guided-path-suggestions`, {
-        method: "POST",
-        body: JSON.stringify({
-          guidedPath: selectedPath
-        })
-      });
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Guided path assistant suggestion failed.");
-      }
-
-      setSelectedGuidedPathSlug(selectedPath.slug);
-      setGuidedPathSuggestion(data.suggestion || null);
-    } catch (error) {
-      setGuidedPathAssistantError(error.message || "Guided path assistant suggestion failed.");
-    } finally {
-      setGuidedPathAssistantLoading(false);
-    }
-  }
-
-  function handleApplyGuidedPathSuggestion() {
-    const patch = guidedPathSuggestion?.suggestedPatch || {};
-    const patchKeys = Object.keys(patch);
-
-    if (!patchKeys.length) {
-      setGuidedPathAssistantError("The assistant did not return any guided path fields to apply.");
-      return;
-    }
-
-    try {
-      const paths = parseGuidedPathDraft(guidedPathsDraft);
-      const selectedIndex = paths.findIndex((path) => path.slug === selectedGuidedPathSlug);
-
-      if (selectedIndex === -1) {
-        throw new Error("Selected guided path no longer exists in the draft JSON.");
-      }
-
-      const nextPaths = paths.map((path, index) =>
-        index === selectedIndex
-          ? {
-              ...path,
-              ...patch
-            }
-          : path
-      );
-
-      setGuidedPathsDraft(JSON.stringify(nextPaths, null, 2));
-      updateSiteSettingsRoot("guidedPaths", nextPaths);
-      setGuidedPathAssistantMessage(`Applied ${patchKeys.length} guided path suggestion${patchKeys.length === 1 ? "" : "s"} to the draft.`);
-      setGuidedPathSuggestion(null);
-      setGuidedPathAssistantError("");
-    } catch (error) {
-      setGuidedPathAssistantError(error.message || "Failed to apply guided path suggestion.");
-    }
-  }
 
   return (
     <main className="admin-grid">
@@ -160,8 +26,9 @@ export default function AdminSitePage() {
         <p className="eyebrow">Site Settings</p>
         <h2>Edit the branding and homepage copy without touching code.</h2>
         <p>
-          This is the beginning of a broader site-editor system. It covers the public header identity and the major
-          homepage sections that were still hardcoded before.
+          This is the beginning of a broader site-editor system. It covers the
+          public header identity and the major homepage sections that were still
+          hardcoded before.
         </p>
       </section>
 
@@ -171,7 +38,13 @@ export default function AdminSitePage() {
           <label>
             Site Name
             <input
-              onChange={(event) => updateSiteSettingsForm("branding", "siteName", event.target.value)}
+              onChange={(event) =>
+                updateSiteSettingsForm(
+                  "branding",
+                  "siteName",
+                  event.target.value
+                )
+              }
               required
               value={siteSettingsForm.branding.siteName}
             />
@@ -179,7 +52,13 @@ export default function AdminSitePage() {
           <label className="full-span">
             Site Tagline
             <input
-              onChange={(event) => updateSiteSettingsForm("branding", "siteTagline", event.target.value)}
+              onChange={(event) =>
+                updateSiteSettingsForm(
+                  "branding",
+                  "siteTagline",
+                  event.target.value
+                )
+              }
               required
               value={siteSettingsForm.branding.siteTagline}
             />
@@ -188,14 +67,26 @@ export default function AdminSitePage() {
           <label>
             Home Hero Eyebrow
             <input
-              onChange={(event) => updateSiteSettingsForm("home", "heroEyebrow", event.target.value)}
+              onChange={(event) =>
+                updateSiteSettingsForm(
+                  "home",
+                  "heroEyebrow",
+                  event.target.value
+                )
+              }
               value={siteSettingsForm.home.heroEyebrow}
             />
           </label>
           <label>
             Featured Homepage Release
             <select
-              onChange={(event) => updateSiteSettingsForm("home", "featuredReleaseSlug", event.target.value)}
+              onChange={(event) =>
+                updateSiteSettingsForm(
+                  "home",
+                  "featuredReleaseSlug",
+                  event.target.value
+                )
+              }
               value={siteSettingsForm.home.featuredReleaseSlug || ""}
             >
               <option value="">Auto / top curated release</option>
@@ -211,21 +102,35 @@ export default function AdminSitePage() {
           <label>
             Featured Button Label
             <input
-              onChange={(event) => updateSiteSettingsForm("home", "featuredCtaLabel", event.target.value)}
+              onChange={(event) =>
+                updateSiteSettingsForm(
+                  "home",
+                  "featuredCtaLabel",
+                  event.target.value
+                )
+              }
               value={siteSettingsForm.home.featuredCtaLabel}
             />
           </label>
           <label>
             Jump Button Label
             <input
-              onChange={(event) => updateSiteSettingsForm("home", "jumpCtaLabel", event.target.value)}
+              onChange={(event) =>
+                updateSiteSettingsForm(
+                  "home",
+                  "jumpCtaLabel",
+                  event.target.value
+                )
+              }
               value={siteSettingsForm.home.jumpCtaLabel}
             />
           </label>
           <label className="full-span">
             Home Hero Title
             <textarea
-              onChange={(event) => updateSiteSettingsForm("home", "heroTitle", event.target.value)}
+              onChange={(event) =>
+                updateSiteSettingsForm("home", "heroTitle", event.target.value)
+              }
               required
               rows="3"
               value={siteSettingsForm.home.heroTitle}
@@ -234,7 +139,9 @@ export default function AdminSitePage() {
           <label className="full-span">
             Home Hero Text
             <textarea
-              onChange={(event) => updateSiteSettingsForm("home", "heroText", event.target.value)}
+              onChange={(event) =>
+                updateSiteSettingsForm("home", "heroText", event.target.value)
+              }
               required
               rows="4"
               value={siteSettingsForm.home.heroText}
@@ -244,14 +151,22 @@ export default function AdminSitePage() {
           <label>
             Note Eyebrow
             <input
-              onChange={(event) => updateSiteSettingsForm("home", "noteEyebrow", event.target.value)}
+              onChange={(event) =>
+                updateSiteSettingsForm(
+                  "home",
+                  "noteEyebrow",
+                  event.target.value
+                )
+              }
               value={siteSettingsForm.home.noteEyebrow}
             />
           </label>
           <label className="full-span">
             Note Title
             <textarea
-              onChange={(event) => updateSiteSettingsForm("home", "noteTitle", event.target.value)}
+              onChange={(event) =>
+                updateSiteSettingsForm("home", "noteTitle", event.target.value)
+              }
               required
               rows="2"
               value={siteSettingsForm.home.noteTitle}
@@ -260,7 +175,9 @@ export default function AdminSitePage() {
           <label className="full-span">
             Note Text
             <textarea
-              onChange={(event) => updateSiteSettingsForm("home", "noteText", event.target.value)}
+              onChange={(event) =>
+                updateSiteSettingsForm("home", "noteText", event.target.value)
+              }
               required
               rows="4"
               value={siteSettingsForm.home.noteText}
@@ -270,14 +187,26 @@ export default function AdminSitePage() {
           <label>
             Browse Eyebrow
             <input
-              onChange={(event) => updateSiteSettingsForm("home", "browseEyebrow", event.target.value)}
+              onChange={(event) =>
+                updateSiteSettingsForm(
+                  "home",
+                  "browseEyebrow",
+                  event.target.value
+                )
+              }
               value={siteSettingsForm.home.browseEyebrow}
             />
           </label>
           <label className="full-span">
             Browse Title
             <textarea
-              onChange={(event) => updateSiteSettingsForm("home", "browseTitle", event.target.value)}
+              onChange={(event) =>
+                updateSiteSettingsForm(
+                  "home",
+                  "browseTitle",
+                  event.target.value
+                )
+              }
               required
               rows="2"
               value={siteSettingsForm.home.browseTitle}
@@ -286,7 +215,9 @@ export default function AdminSitePage() {
           <label className="full-span">
             Browse Text
             <textarea
-              onChange={(event) => updateSiteSettingsForm("home", "browseText", event.target.value)}
+              onChange={(event) =>
+                updateSiteSettingsForm("home", "browseText", event.target.value)
+              }
               required
               rows="3"
               value={siteSettingsForm.home.browseText}
@@ -295,7 +226,13 @@ export default function AdminSitePage() {
           <label>
             Browse Link Label
             <input
-              onChange={(event) => updateSiteSettingsForm("home", "browseLinkLabel", event.target.value)}
+              onChange={(event) =>
+                updateSiteSettingsForm(
+                  "home",
+                  "browseLinkLabel",
+                  event.target.value
+                )
+              }
               value={siteSettingsForm.home.browseLinkLabel}
             />
           </label>
@@ -303,14 +240,26 @@ export default function AdminSitePage() {
           <label>
             Explore Eyebrow
             <input
-              onChange={(event) => updateSiteSettingsForm("home", "exploreEyebrow", event.target.value)}
+              onChange={(event) =>
+                updateSiteSettingsForm(
+                  "home",
+                  "exploreEyebrow",
+                  event.target.value
+                )
+              }
               value={siteSettingsForm.home.exploreEyebrow}
             />
           </label>
           <label className="full-span">
             Explore Title
             <textarea
-              onChange={(event) => updateSiteSettingsForm("home", "exploreTitle", event.target.value)}
+              onChange={(event) =>
+                updateSiteSettingsForm(
+                  "home",
+                  "exploreTitle",
+                  event.target.value
+                )
+              }
               required
               rows="2"
               value={siteSettingsForm.home.exploreTitle}
@@ -319,7 +268,13 @@ export default function AdminSitePage() {
           <label className="full-span">
             Explore Text
             <textarea
-              onChange={(event) => updateSiteSettingsForm("home", "exploreText", event.target.value)}
+              onChange={(event) =>
+                updateSiteSettingsForm(
+                  "home",
+                  "exploreText",
+                  event.target.value
+                )
+              }
               required
               rows="3"
               value={siteSettingsForm.home.exploreText}
@@ -328,7 +283,13 @@ export default function AdminSitePage() {
           <label>
             Explore Link Label
             <input
-              onChange={(event) => updateSiteSettingsForm("home", "exploreLinkLabel", event.target.value)}
+              onChange={(event) =>
+                updateSiteSettingsForm(
+                  "home",
+                  "exploreLinkLabel",
+                  event.target.value
+                )
+              }
               value={siteSettingsForm.home.exploreLinkLabel}
             />
           </label>
@@ -336,14 +297,26 @@ export default function AdminSitePage() {
           <label>
             Identity Eyebrow
             <input
-              onChange={(event) => updateSiteSettingsForm("home", "identityEyebrow", event.target.value)}
+              onChange={(event) =>
+                updateSiteSettingsForm(
+                  "home",
+                  "identityEyebrow",
+                  event.target.value
+                )
+              }
               value={siteSettingsForm.home.identityEyebrow}
             />
           </label>
           <label className="full-span">
             Identity Title
             <textarea
-              onChange={(event) => updateSiteSettingsForm("home", "identityTitle", event.target.value)}
+              onChange={(event) =>
+                updateSiteSettingsForm(
+                  "home",
+                  "identityTitle",
+                  event.target.value
+                )
+              }
               required
               rows="2"
               value={siteSettingsForm.home.identityTitle}
@@ -352,7 +325,13 @@ export default function AdminSitePage() {
           <label className="full-span">
             Identity Text
             <textarea
-              onChange={(event) => updateSiteSettingsForm("home", "identityText", event.target.value)}
+              onChange={(event) =>
+                updateSiteSettingsForm(
+                  "home",
+                  "identityText",
+                  event.target.value
+                )
+              }
               required
               rows="4"
               value={siteSettingsForm.home.identityText}
@@ -361,256 +340,377 @@ export default function AdminSitePage() {
           <label className="full-span">
             Identity Line
             <input
-              onChange={(event) => updateSiteSettingsForm("home", "identityLine", event.target.value)}
+              onChange={(event) =>
+                updateSiteSettingsForm(
+                  "home",
+                  "identityLine",
+                  event.target.value
+                )
+              }
               value={siteSettingsForm.home.identityLine}
             />
           </label>
 
           <div className="full-span admin-form-actions">
-            <button type="submit">{savingSiteSettings ? "Saving..." : "Save Site Settings"}</button>
+            <button type="submit">
+              {savingSiteSettings ? "Saving..." : "Save Site Settings"}
+            </button>
           </div>
-          {siteSettingsMessage ? <p className="success-text full-span">{siteSettingsMessage}</p> : null}
+          {siteSettingsMessage ? (
+            <p className="success-text full-span">{siteSettingsMessage}</p>
+          ) : null}
         </form>
       </section>
 
       <section className="intro-card">
-        <div className="section-head">
-          <div>
-            <p className="eyebrow">Guided Paths</p>
-            <h2>Edit path definitions and algorithm rules.</h2>
-          </div>
-          <span>{`${siteSettingsForm.guidedPaths?.length || 0} paths`}</span>
-        </div>
-        <div className="admin-form">
-          <label>
-            Assistant Target
-            <select onChange={(event) => setSelectedGuidedPathSlug(event.target.value)} value={selectedGuidedPathSlug}>
-              {(siteSettingsForm.guidedPaths || []).map((path) => (
-                <option key={path.slug} value={path.slug}>
-                  {path.title || path.slug}
-                </option>
-              ))}
-            </select>
-          </label>
-          <div className="admin-form-actions">
-            <button className="secondary-button" disabled={guidedPathAssistantLoading} onClick={handleGuidedPathAssistantSuggest} type="button">
-              {guidedPathAssistantLoading ? "Asking Path Assistant..." : "Suggest Path Patch"}
-            </button>
-            {guidedPathSuggestion ? (
-              <button className="hero-link" onClick={handleApplyGuidedPathSuggestion} type="button">
-                Apply Path Suggestion
-              </button>
-            ) : null}
-          </div>
-          {guidedPathAssistantError ? <p className="error-text full-span">{guidedPathAssistantError}</p> : null}
-          {guidedPathAssistantMessage ? <p className="success-text full-span">{guidedPathAssistantMessage}</p> : null}
-          {guidedPathSuggestion ? (
-            <div className="full-span editor-validation-group">
-              <p className="meta">{guidedPathSuggestion.model || "Local assistant"} / {guidedPathSuggestion.mode || "manual"}</p>
-              {guidedPathSuggestion.summary ? <p className="upload-status">{guidedPathSuggestion.summary}</p> : null}
-              {Object.keys(guidedPathSuggestion.suggestedPatch || {}).length ? (
-                <div className="editor-issue-list">
-                  {Object.entries(guidedPathSuggestion.suggestedPatch || {}).map(([key, value]) => (
-                    <article className="editor-issue-link advisory" key={key}>
-                      <strong>{key}</strong>
-                      <span>{formatPatchValue(value)}</span>
-                    </article>
-                  ))}
-                </div>
-              ) : (
-                <p className="upload-status">No guided path fields were suggested for this pass.</p>
-              )}
-              {guidedPathSuggestion.rationale?.length ? (
-                <>
-                  <p className="meta">Rationale</p>
-                  <div className="editor-issue-list">
-                    {guidedPathSuggestion.rationale.map((item) => (
-                      <article className="editor-issue-link advisory" key={item}>
-                        <span>{item}</span>
-                      </article>
-                    ))}
-                  </div>
-                </>
-              ) : null}
-              {guidedPathSuggestion.warnings?.length ? (
-                <>
-                  <p className="meta">Warnings</p>
-                  <div className="editor-issue-list">
-                    {guidedPathSuggestion.warnings.map((item) => (
-                      <article className="editor-issue-link" key={item}>
-                        <span>{item}</span>
-                      </article>
-                    ))}
-                  </div>
-                </>
-              ) : null}
-            </div>
-          ) : null}
-          <label className="full-span">
-            Paths JSON
-            <textarea
-              onChange={(event) => setGuidedPathsDraft(event.target.value)}
-              rows="16"
-              spellCheck="false"
-              value={guidedPathsDraft}
-            />
-          </label>
-          <p className="full-span meta">
-            Use <code>postSlugs</code> for an exact manual order, or <code>algorithm</code> with fields like{" "}
-            <code>collectionSlug</code>, <code>sectionKeys</code>, <code>themeTags</code>, <code>worldLayers</code>,{" "}
-            <code>releaseStatuses</code>, <code>maxItems</code>, and <code>sort</code>. Apply the JSON here, then save
-            site settings.
-          </p>
-          <div className="full-span admin-form-actions">
-            <button className="secondary-button" onClick={handleGuidedPathsApply} type="button">
-              Apply Paths JSON
-            </button>
-          </div>
-          {guidedPathsError ? <p className="error-text full-span">{guidedPathsError}</p> : null}
-        </div>
-      </section>
-
-      <section className="intro-card">
-        <h2>{editingThemeKey ? "Edit Theme Profile" : "Create Theme Profile"}</h2>
+        <h2>
+          {editingThemeKey ? "Edit Theme Profile" : "Create Theme Profile"}
+        </h2>
         <div className="admin-form">
           <label>
             Theme Key
             <input
-              onChange={(event) => updateThemeProfileField("key", event.target.value)}
+              onChange={(event) =>
+                updateThemeProfileField("key", event.target.value)
+              }
               placeholder="soft-archive"
               value={themeProfileForm.key}
             />
           </label>
           <label>
             Theme Label
-            <input onChange={(event) => updateThemeProfileField("label", event.target.value)} value={themeProfileForm.label} />
+            <input
+              onChange={(event) =>
+                updateThemeProfileField("label", event.target.value)
+              }
+              value={themeProfileForm.label}
+            />
           </label>
           <label>
             Theme Type
-            <select onChange={(event) => updateThemeProfileField("kind", event.target.value)} value={themeProfileForm.kind}>
+            <select
+              onChange={(event) =>
+                updateThemeProfileField("kind", event.target.value)
+              }
+              value={themeProfileForm.kind}
+            >
               <option value="standard">Standard</option>
               <option value="immersive">Immersive</option>
             </select>
           </label>
           <label>
             World Eyebrow
-            <input onChange={(event) => updateThemeProfileField("worldEyebrow", event.target.value)} value={themeProfileForm.worldEyebrow} />
+            <input
+              onChange={(event) =>
+                updateThemeProfileField("worldEyebrow", event.target.value)
+              }
+              value={themeProfileForm.worldEyebrow}
+            />
           </label>
           <label>
             Featured Label
-            <input onChange={(event) => updateThemeProfileField("featuredLabel", event.target.value)} value={themeProfileForm.featuredLabel} />
+            <input
+              onChange={(event) =>
+                updateThemeProfileField("featuredLabel", event.target.value)
+              }
+              value={themeProfileForm.featuredLabel}
+            />
           </label>
           <label>
             Featured Action
-            <input onChange={(event) => updateThemeProfileField("featuredAction", event.target.value)} value={themeProfileForm.featuredAction} />
+            <input
+              onChange={(event) =>
+                updateThemeProfileField("featuredAction", event.target.value)
+              }
+              value={themeProfileForm.featuredAction}
+            />
           </label>
           <label>
             List Label
-            <input onChange={(event) => updateThemeProfileField("listLabel", event.target.value)} value={themeProfileForm.listLabel} />
+            <input
+              onChange={(event) =>
+                updateThemeProfileField("listLabel", event.target.value)
+              }
+              value={themeProfileForm.listLabel}
+            />
           </label>
           <label>
             World Note Title
-            <input onChange={(event) => updateThemeProfileField("worldNoteTitle", event.target.value)} value={themeProfileForm.worldNoteTitle} />
+            <input
+              onChange={(event) =>
+                updateThemeProfileField("worldNoteTitle", event.target.value)
+              }
+              value={themeProfileForm.worldNoteTitle}
+            />
           </label>
           <label className="full-span">
             World Note Text
-            <textarea onChange={(event) => updateThemeProfileField("worldNoteText", event.target.value)} rows="3" value={themeProfileForm.worldNoteText} />
+            <textarea
+              onChange={(event) =>
+                updateThemeProfileField("worldNoteText", event.target.value)
+              }
+              rows="3"
+              value={themeProfileForm.worldNoteText}
+            />
           </label>
           <label>
             Item Name
-            <input onChange={(event) => updateThemeProfileField("itemName", event.target.value)} value={themeProfileForm.itemName} />
+            <input
+              onChange={(event) =>
+                updateThemeProfileField("itemName", event.target.value)
+              }
+              value={themeProfileForm.itemName}
+            />
           </label>
           <label>
             Item Plural
-            <input onChange={(event) => updateThemeProfileField("itemPlural", event.target.value)} value={themeProfileForm.itemPlural} />
+            <input
+              onChange={(event) =>
+                updateThemeProfileField("itemPlural", event.target.value)
+              }
+              value={themeProfileForm.itemPlural}
+            />
           </label>
           <label>
             Item Action
-            <input onChange={(event) => updateThemeProfileField("itemAction", event.target.value)} value={themeProfileForm.itemAction} />
+            <input
+              onChange={(event) =>
+                updateThemeProfileField("itemAction", event.target.value)
+              }
+              value={themeProfileForm.itemAction}
+            />
           </label>
           <label>
             Player Label
-            <input onChange={(event) => updateThemeProfileField("playerLabel", event.target.value)} value={themeProfileForm.playerLabel} />
+            <input
+              onChange={(event) =>
+                updateThemeProfileField("playerLabel", event.target.value)
+              }
+              value={themeProfileForm.playerLabel}
+            />
           </label>
           <label>
             Player Up Next Label
-            <input onChange={(event) => updateThemeProfileField("playerUpNextLabel", event.target.value)} value={themeProfileForm.playerUpNextLabel} />
+            <input
+              onChange={(event) =>
+                updateThemeProfileField("playerUpNextLabel", event.target.value)
+              }
+              value={themeProfileForm.playerUpNextLabel}
+            />
           </label>
 
           <p className="full-span eyebrow">Light Palette</p>
           <label>
             Background
-            <input onChange={(event) => updateThemeProfilePalette("light", "background", event.target.value)} value={themeProfileForm.palette.light.background} />
+            <input
+              onChange={(event) =>
+                updateThemeProfilePalette(
+                  "light",
+                  "background",
+                  event.target.value
+                )
+              }
+              value={themeProfileForm.palette.light.background}
+            />
           </label>
           <label>
             Surface
-            <input onChange={(event) => updateThemeProfilePalette("light", "surface", event.target.value)} value={themeProfileForm.palette.light.surface} />
+            <input
+              onChange={(event) =>
+                updateThemeProfilePalette(
+                  "light",
+                  "surface",
+                  event.target.value
+                )
+              }
+              value={themeProfileForm.palette.light.surface}
+            />
           </label>
           <label>
             Surface Alt
-            <input onChange={(event) => updateThemeProfilePalette("light", "surfaceAlt", event.target.value)} value={themeProfileForm.palette.light.surfaceAlt} />
+            <input
+              onChange={(event) =>
+                updateThemeProfilePalette(
+                  "light",
+                  "surfaceAlt",
+                  event.target.value
+                )
+              }
+              value={themeProfileForm.palette.light.surfaceAlt}
+            />
           </label>
           <label>
             Text
-            <input onChange={(event) => updateThemeProfilePalette("light", "text", event.target.value)} value={themeProfileForm.palette.light.text} />
+            <input
+              onChange={(event) =>
+                updateThemeProfilePalette("light", "text", event.target.value)
+              }
+              value={themeProfileForm.palette.light.text}
+            />
           </label>
           <label>
             Muted Text
-            <input onChange={(event) => updateThemeProfilePalette("light", "mutedText", event.target.value)} value={themeProfileForm.palette.light.mutedText} />
+            <input
+              onChange={(event) =>
+                updateThemeProfilePalette(
+                  "light",
+                  "mutedText",
+                  event.target.value
+                )
+              }
+              value={themeProfileForm.palette.light.mutedText}
+            />
           </label>
           <label>
             Border
-            <input onChange={(event) => updateThemeProfilePalette("light", "border", event.target.value)} value={themeProfileForm.palette.light.border} />
+            <input
+              onChange={(event) =>
+                updateThemeProfilePalette("light", "border", event.target.value)
+              }
+              value={themeProfileForm.palette.light.border}
+            />
           </label>
           <label>
             Primary
-            <input onChange={(event) => updateThemeProfilePalette("light", "primary", event.target.value)} value={themeProfileForm.palette.light.primary} />
+            <input
+              onChange={(event) =>
+                updateThemeProfilePalette(
+                  "light",
+                  "primary",
+                  event.target.value
+                )
+              }
+              value={themeProfileForm.palette.light.primary}
+            />
           </label>
           <label>
             Primary Strong
-            <input onChange={(event) => updateThemeProfilePalette("light", "primaryStrong", event.target.value)} value={themeProfileForm.palette.light.primaryStrong} />
+            <input
+              onChange={(event) =>
+                updateThemeProfilePalette(
+                  "light",
+                  "primaryStrong",
+                  event.target.value
+                )
+              }
+              value={themeProfileForm.palette.light.primaryStrong}
+            />
           </label>
           <label>
             Secondary
-            <input onChange={(event) => updateThemeProfilePalette("light", "secondary", event.target.value)} value={themeProfileForm.palette.light.secondary} />
+            <input
+              onChange={(event) =>
+                updateThemeProfilePalette(
+                  "light",
+                  "secondary",
+                  event.target.value
+                )
+              }
+              value={themeProfileForm.palette.light.secondary}
+            />
           </label>
 
           <p className="full-span eyebrow">Dark Palette</p>
           <label>
             Background
-            <input onChange={(event) => updateThemeProfilePalette("dark", "background", event.target.value)} value={themeProfileForm.palette.dark.background} />
+            <input
+              onChange={(event) =>
+                updateThemeProfilePalette(
+                  "dark",
+                  "background",
+                  event.target.value
+                )
+              }
+              value={themeProfileForm.palette.dark.background}
+            />
           </label>
           <label>
             Surface
-            <input onChange={(event) => updateThemeProfilePalette("dark", "surface", event.target.value)} value={themeProfileForm.palette.dark.surface} />
+            <input
+              onChange={(event) =>
+                updateThemeProfilePalette("dark", "surface", event.target.value)
+              }
+              value={themeProfileForm.palette.dark.surface}
+            />
           </label>
           <label>
             Surface Alt
-            <input onChange={(event) => updateThemeProfilePalette("dark", "surfaceAlt", event.target.value)} value={themeProfileForm.palette.dark.surfaceAlt} />
+            <input
+              onChange={(event) =>
+                updateThemeProfilePalette(
+                  "dark",
+                  "surfaceAlt",
+                  event.target.value
+                )
+              }
+              value={themeProfileForm.palette.dark.surfaceAlt}
+            />
           </label>
           <label>
             Text
-            <input onChange={(event) => updateThemeProfilePalette("dark", "text", event.target.value)} value={themeProfileForm.palette.dark.text} />
+            <input
+              onChange={(event) =>
+                updateThemeProfilePalette("dark", "text", event.target.value)
+              }
+              value={themeProfileForm.palette.dark.text}
+            />
           </label>
           <label>
             Muted Text
-            <input onChange={(event) => updateThemeProfilePalette("dark", "mutedText", event.target.value)} value={themeProfileForm.palette.dark.mutedText} />
+            <input
+              onChange={(event) =>
+                updateThemeProfilePalette(
+                  "dark",
+                  "mutedText",
+                  event.target.value
+                )
+              }
+              value={themeProfileForm.palette.dark.mutedText}
+            />
           </label>
           <label>
             Border
-            <input onChange={(event) => updateThemeProfilePalette("dark", "border", event.target.value)} value={themeProfileForm.palette.dark.border} />
+            <input
+              onChange={(event) =>
+                updateThemeProfilePalette("dark", "border", event.target.value)
+              }
+              value={themeProfileForm.palette.dark.border}
+            />
           </label>
           <label>
             Primary
-            <input onChange={(event) => updateThemeProfilePalette("dark", "primary", event.target.value)} value={themeProfileForm.palette.dark.primary} />
+            <input
+              onChange={(event) =>
+                updateThemeProfilePalette("dark", "primary", event.target.value)
+              }
+              value={themeProfileForm.palette.dark.primary}
+            />
           </label>
           <label>
             Primary Strong
-            <input onChange={(event) => updateThemeProfilePalette("dark", "primaryStrong", event.target.value)} value={themeProfileForm.palette.dark.primaryStrong} />
+            <input
+              onChange={(event) =>
+                updateThemeProfilePalette(
+                  "dark",
+                  "primaryStrong",
+                  event.target.value
+                )
+              }
+              value={themeProfileForm.palette.dark.primaryStrong}
+            />
           </label>
           <label>
             Secondary
-            <input onChange={(event) => updateThemeProfilePalette("dark", "secondary", event.target.value)} value={themeProfileForm.palette.dark.secondary} />
+            <input
+              onChange={(event) =>
+                updateThemeProfilePalette(
+                  "dark",
+                  "secondary",
+                  event.target.value
+                )
+              }
+              value={themeProfileForm.palette.dark.secondary}
+            />
           </label>
 
           <div className="full-span admin-form-actions">
@@ -618,7 +718,11 @@ export default function AdminSitePage() {
               {editingThemeKey ? "Update Theme Profile" : "Add Theme Profile"}
             </button>
             {editingThemeKey ? (
-              <button className="secondary-button" onClick={resetThemeProfileForm} type="button">
+              <button
+                className="secondary-button"
+                onClick={resetThemeProfileForm}
+                type="button"
+              >
                 Cancel Edit
               </button>
             ) : null}
@@ -633,18 +737,34 @@ export default function AdminSitePage() {
         </div>
         <div className="collection-grid">
           {(siteSettingsForm.collectionThemes || []).map((themeProfile) => (
-            <article className="intro-card homepage-panel collection-card" key={themeProfile.key}>
-              <p className="eyebrow">{themeProfile.kind === "immersive" ? "Immersive Theme" : "Theme Profile"}</p>
+            <article
+              className="intro-card homepage-panel collection-card"
+              key={themeProfile.key}
+            >
+              <p className="eyebrow">
+                {themeProfile.kind === "immersive"
+                  ? "Immersive Theme"
+                  : "Theme Profile"}
+              </p>
               <h3>{themeProfile.label}</h3>
               <p>Key: {themeProfile.key}</p>
               <p className="meta">
-                Light primary {themeProfile.palette?.light?.primary || "n/a"} / Dark primary {themeProfile.palette?.dark?.primary || "n/a"}
+                Light primary {themeProfile.palette?.light?.primary || "n/a"} /
+                Dark primary {themeProfile.palette?.dark?.primary || "n/a"}
               </p>
               <div className="admin-actions">
-                <button className="secondary-button" onClick={() => startThemeProfileEdit(themeProfile)} type="button">
+                <button
+                  className="secondary-button"
+                  onClick={() => startThemeProfileEdit(themeProfile)}
+                  type="button"
+                >
                   Edit
                 </button>
-                <button className="danger-button" onClick={() => handleThemeProfileDelete(themeProfile.key)} type="button">
+                <button
+                  className="danger-button"
+                  onClick={() => handleThemeProfileDelete(themeProfile.key)}
+                  type="button"
+                >
                   Delete
                 </button>
               </div>

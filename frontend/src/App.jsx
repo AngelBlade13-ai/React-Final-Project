@@ -24,6 +24,7 @@ const AdminCollectionsPage = lazy(
 );
 const AdminInsightsPage = lazy(() => import("./pages/admin/AdminInsightsPage"));
 const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
+const AdminPathsPage = lazy(() => import("./pages/admin/AdminPathsPage"));
 const AdminPostsPage = lazy(() => import("./pages/admin/AdminPostsPage"));
 const AdminSitePage = lazy(() => import("./pages/admin/AdminSitePage"));
 const AboutPage = lazy(() => import("./pages/public/AboutPage"));
@@ -40,7 +41,9 @@ const GuidedPathsIndexPage = lazy(
   () => import("./pages/public/GuidedPathsIndexPage")
 );
 const PublicHome = lazy(() => import("./pages/public/PublicHome"));
-const PublicReleasePage = lazy(() => import("./pages/public/PublicReleasePage"));
+const PublicReleasePage = lazy(
+  () => import("./pages/public/PublicReleasePage")
+);
 
 class RouteErrorBoundary extends Component {
   constructor(props) {
@@ -710,6 +713,7 @@ function App() {
                 <Route path="posts" element={<AdminPostsPage />} />
                 <Route path="comments" element={<AdminCommentsPage />} />
                 <Route path="collections" element={<AdminCollectionsPage />} />
+                <Route path="paths" element={<AdminPathsPage />} />
                 <Route path="about" element={<AdminAboutPage />} />
                 <Route path="site" element={<AdminSitePage />} />
               </Route>

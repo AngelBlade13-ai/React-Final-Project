@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, NavLink, Navigate, Outlet, useNavigate, useOutletContext } from "react-router-dom";
+import {
+  Link,
+  NavLink,
+  Navigate,
+  Outlet,
+  useNavigate,
+  useOutletContext
+} from "react-router-dom";
 import ThemeToggle from "../components/ThemeToggle";
 import { withMutationIntent } from "../lib/api";
 import {
@@ -13,14 +20,20 @@ import {
   importerBaseUrl
 } from "../lib/site";
 
-export function ProtectedRoute({ children, hasAdminSession, isAdminSessionReady }) {
+export function ProtectedRoute({
+  children,
+  hasAdminSession,
+  isAdminSessionReady
+}) {
   if (!isAdminSessionReady) {
     return (
       <div className="page-shell">
         <section className="intro-card homepage-panel">
           <p className="eyebrow">Admin Session</p>
           <h2>Checking access.</h2>
-          <p>Validating the current admin session before loading the dashboard.</p>
+          <p>
+            Validating the current admin session before loading the dashboard.
+          </p>
         </section>
       </div>
     );
@@ -72,43 +85,58 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
     navigate("/admin/login");
   }, [navigate, onAdminLogout]);
 
-  const adminFetch = useCallback(async (url, options = {}) => {
-    const headers = { ...(options.headers || {}) };
-    const hasBody = Object.prototype.hasOwnProperty.call(options, "body");
-    const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
+  const adminFetch = useCallback(
+    async (url, options = {}) => {
+      const headers = { ...(options.headers || {}) };
+      const hasBody = Object.prototype.hasOwnProperty.call(options, "body");
+      const isFormData =
+        typeof FormData !== "undefined" && options.body instanceof FormData;
 
-    if (hasBody && !isFormData && !headers["Content-Type"]) {
-      headers["Content-Type"] = "application/json";
-    }
+      if (hasBody && !isFormData && !headers["Content-Type"]) {
+        headers["Content-Type"] = "application/json";
+      }
 
-    if (["POST", "PUT", "PATCH", "DELETE"].includes(String(options.method || "GET").toUpperCase())) {
-      Object.assign(headers, withMutationIntent(headers));
-    }
+      if (
+        ["POST", "PUT", "PATCH", "DELETE"].includes(
+          String(options.method || "GET").toUpperCase()
+        )
+      ) {
+        Object.assign(headers, withMutationIntent(headers));
+      }
 
-    const response = await fetch(url, {
-      credentials: "include",
-      ...options,
-      headers
-    });
+      const response = await fetch(url, {
+        credentials: "include",
+        ...options,
+        headers
+      });
 
-    if (response.status === 401 || response.status === 403) {
-      await handleSessionExpired();
-    }
+      if (response.status === 401 || response.status === 403) {
+        await handleSessionExpired();
+      }
 
-    return response;
-  }, [handleSessionExpired]);
+      return response;
+    },
+    [handleSessionExpired]
+  );
 
   const loadAdminData = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
-      const [postsResponse, collectionsResponse, siteContentResponse] = await Promise.all([
-        adminFetch(`${apiBaseUrl}/admin/posts`),
-        adminFetch(`${apiBaseUrl}/admin/collections`),
-        adminFetch(`${apiBaseUrl}/admin/site-content`)
-      ]);
+      const [postsResponse, collectionsResponse, siteContentResponse] =
+        await Promise.all([
+          adminFetch(`${apiBaseUrl}/admin/posts`),
+          adminFetch(`${apiBaseUrl}/admin/collections`),
+          adminFetch(`${apiBaseUrl}/admin/site-content`)
+        ]);
 
-      if ([postsResponse.status, collectionsResponse.status, siteContentResponse.status].some((status) => status === 401 || status === 403)) {
+      if (
+        [
+          postsResponse.status,
+          collectionsResponse.status,
+          siteContentResponse.status
+        ].some((status) => status === 401 || status === 403)
+      ) {
         return;
       }
 
@@ -117,7 +145,10 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
       const siteContentData = await siteContentResponse.json();
       setPosts(postsData.posts || []);
       setCollections(collectionsData.collections || []);
-      setAboutForm({ ...emptyAbout, ...(siteContentData.siteContent?.about || {}) });
+      setAboutForm({
+        ...emptyAbout,
+        ...(siteContentData.siteContent?.about || {})
+      });
       setSiteSettingsForm({
         branding: {
           ...emptySiteSettings.branding,
@@ -127,7 +158,9 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
           ...emptySiteSettings.home,
           ...(siteContentData.siteContent?.home || {})
         },
-        collectionThemes: Array.isArray(siteContentData.siteContent?.collectionThemes)
+        collectionThemes: Array.isArray(
+          siteContentData.siteContent?.collectionThemes
+        )
           ? siteContentData.siteContent.collectionThemes
           : emptySiteSettings.collectionThemes,
         guidedPaths: Array.isArray(siteContentData.siteContent?.guidedPaths)
@@ -229,7 +262,9 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
         ...current,
         archiveMeta: {
           ...(current.archiveMeta || emptyPost.archiveMeta),
-          linkedSlugs: linkedSlugs.includes(slug) ? linkedSlugs.filter((entry) => entry !== slug) : [...linkedSlugs, slug]
+          linkedSlugs: linkedSlugs.includes(slug)
+            ? linkedSlugs.filter((entry) => entry !== slug)
+            : [...linkedSlugs, slug]
         }
       };
     });
@@ -274,7 +309,9 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
     setCollectionForm({
       title: collection.title,
       slug: collection.slug || "",
-      slugHistory: Array.isArray(collection.slugHistory) ? collection.slugHistory : [],
+      slugHistory: Array.isArray(collection.slugHistory)
+        ? collection.slugHistory
+        : [],
       description: collection.description,
       featuredReleaseSlug: collection.featuredReleaseSlug || "",
       theme: collection.theme || "",
@@ -330,7 +367,10 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
 
     setSiteSettingsForm((current) => {
       const nextThemes = [...(current.collectionThemes || [])];
-      const existingIndex = nextThemes.findIndex((entry) => entry.key === editingThemeKey || entry.key === themeProfileForm.key);
+      const existingIndex = nextThemes.findIndex(
+        (entry) =>
+          entry.key === editingThemeKey || entry.key === themeProfileForm.key
+      );
 
       if (existingIndex >= 0) {
         nextThemes[existingIndex] = themeProfileForm;
@@ -344,13 +384,19 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
       };
     });
 
-    setSiteSettingsMessage("Theme profile staged. Save site settings to publish it.");
+    setSiteSettingsMessage(
+      "Theme profile staged. Save site settings to publish it."
+    );
     resetThemeProfileForm();
   }
 
   function handleThemeProfileDelete(themeKey) {
-    const themeToDelete = (siteSettingsForm.collectionThemes || []).find((entry) => entry.key === themeKey);
-    const isBuiltInTheme = DEFAULT_COLLECTION_THEME_PROFILES.some((entry) => entry.key === themeKey);
+    const themeToDelete = (siteSettingsForm.collectionThemes || []).find(
+      (entry) => entry.key === themeKey
+    );
+    const isBuiltInTheme = DEFAULT_COLLECTION_THEME_PROFILES.some(
+      (entry) => entry.key === themeKey
+    );
 
     if (themeToDelete?.kind === "immersive" || isBuiltInTheme) {
       setError("Built-in theme profiles cannot be deleted.");
@@ -364,14 +410,18 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
 
     setSiteSettingsForm((current) => ({
       ...current,
-      collectionThemes: (current.collectionThemes || []).filter((entry) => entry.key !== themeKey)
+      collectionThemes: (current.collectionThemes || []).filter(
+        (entry) => entry.key !== themeKey
+      )
     }));
 
     if (editingThemeKey === themeKey) {
       resetThemeProfileForm();
     }
 
-    setSiteSettingsMessage("Theme profile removed. Save site settings to publish the change.");
+    setSiteSettingsMessage(
+      "Theme profile removed. Save site settings to publish the change."
+    );
   }
 
   async function handleVideoUpload() {
@@ -422,10 +472,15 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
     setSaveMessage("");
 
     try {
-      const response = await adminFetch(editingId ? `${apiBaseUrl}/admin/posts/${editingId}` : `${apiBaseUrl}/admin/posts`, {
-        method: editingId ? "PUT" : "POST",
-        body: JSON.stringify(form)
-      });
+      const response = await adminFetch(
+        editingId
+          ? `${apiBaseUrl}/admin/posts/${editingId}`
+          : `${apiBaseUrl}/admin/posts`,
+        {
+          method: editingId ? "PUT" : "POST",
+          body: JSON.stringify(form)
+        }
+      );
       const data = await response.json();
 
       if (!response.ok) {
@@ -450,7 +505,9 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
 
     try {
       const response = await adminFetch(
-        editingCollectionId ? `${apiBaseUrl}/admin/collections/${editingCollectionId}` : `${apiBaseUrl}/admin/collections`,
+        editingCollectionId
+          ? `${apiBaseUrl}/admin/collections/${editingCollectionId}`
+          : `${apiBaseUrl}/admin/collections`,
         {
           method: editingCollectionId ? "PUT" : "POST",
           body: JSON.stringify(collectionForm)
@@ -479,10 +536,13 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
     setError("");
 
     try {
-      const response = await adminFetch(`${apiBaseUrl}/admin/site-content/about`, {
-        method: "PUT",
-        body: JSON.stringify(aboutForm)
-      });
+      const response = await adminFetch(
+        `${apiBaseUrl}/admin/site-content/about`,
+        {
+          method: "PUT",
+          body: JSON.stringify(aboutForm)
+        }
+      );
       const data = await response.json();
 
       if (!response.ok) {
@@ -498,17 +558,19 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
     }
   }
 
-  async function handleSiteSettingsSubmit(event) {
-    event.preventDefault();
+  async function saveSiteSettingsDraft(nextSiteSettings = siteSettingsForm) {
     setSavingSiteSettings(true);
     setSiteSettingsMessage("");
     setError("");
 
     try {
-      const response = await adminFetch(`${apiBaseUrl}/admin/site-content/site`, {
-        method: "PUT",
-        body: JSON.stringify(siteSettingsForm)
-      });
+      const response = await adminFetch(
+        `${apiBaseUrl}/admin/site-content/site`,
+        {
+          method: "PUT",
+          body: JSON.stringify(nextSiteSettings)
+        }
+      );
       const data = await response.json();
 
       if (!response.ok) {
@@ -539,6 +601,11 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
     }
   }
 
+  async function handleSiteSettingsSubmit(event) {
+    event.preventDefault();
+    await saveSiteSettingsDraft();
+  }
+
   async function handleDelete(id) {
     const confirmed = window.confirm("Delete this post?");
     if (!confirmed) return;
@@ -565,9 +632,12 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
     if (!confirmed) return;
 
     try {
-      const response = await adminFetch(`${apiBaseUrl}/admin/collections/${id}`, {
-        method: "DELETE"
-      });
+      const response = await adminFetch(
+        `${apiBaseUrl}/admin/collections/${id}`,
+        {
+          method: "DELETE"
+        }
+      );
 
       const data = await response.json();
 
@@ -623,7 +693,9 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
         <div className="admin-hero-copy">
           <p className="eyebrow">Admin Dashboard</p>
           <h1>Manage Site Content</h1>
-          <p className="admin-hero-note">Posts, collections, and about content in one workspace.</p>
+          <p className="admin-hero-note">
+            Posts, collections, and about content in one workspace.
+          </p>
         </div>
         <div className="hero-actions-row admin-hero-actions">
           <ThemeToggle setTheme={setTheme} theme={theme} />
@@ -639,7 +711,11 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
           <Link className="hero-link secondary-link" to="/">
             View Site
           </Link>
-          <button className="secondary-button" onClick={handleLogout} type="button">
+          <button
+            className="secondary-button"
+            onClick={handleLogout}
+            type="button"
+          >
             Logout
           </button>
         </div>
@@ -657,6 +733,9 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
         </NavLink>
         <NavLink className="admin-subnav-link" to="/admin/collections">
           Collections
+        </NavLink>
+        <NavLink className="admin-subnav-link" to="/admin/paths">
+          Paths
         </NavLink>
         <NavLink className="admin-subnav-link" to="/admin/about">
           About
@@ -712,13 +791,13 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
           handleCollectionSubmit,
           handleAboutSubmit,
           handleSiteSettingsSubmit,
+          saveSiteSettingsDraft,
           handleDelete,
           handleCollectionDelete,
           startEdit,
           startCollectionEdit,
           resetPostForm,
-          resetCollectionForm
-          ,
+          resetCollectionForm,
           resetThemeProfileForm,
           startThemeProfileEdit,
           handleThemeProfileSave,

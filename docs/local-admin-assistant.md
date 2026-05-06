@@ -12,6 +12,8 @@ This adds an optional local AI smoke test for the admin dashboard.
 - Admin post suggestion endpoint: `POST /api/admin/assistant/post-suggestions`
 - Admin guided path suggestion endpoint:
   `POST /api/admin/assistant/guided-path-suggestions`
+- Admin new guided path suggestion endpoint:
+  `POST /api/admin/assistant/guided-path-new-suggestion`
 
 The assistant is intentionally non-destructive. It reads the current catalog,
 asks the local model for a JSON-only review, validates the response shape, and
@@ -29,11 +31,16 @@ It also returns `fieldAssessments` so the UI can show whether each supported
 field was kept, improved, missing, or uncertain. The backend enforces those
 assessments by accepting patches only for fields marked `improve` or `missing`.
 
-The site settings page also includes a guided path assistant. It reviews one
-selected path at a time and can suggest path copy, curated `postSlugs`, or a
-validated `algorithm` block. Suggested post and collection slugs are filtered
-against the real catalog before the UI can apply them to the unsaved site
-settings draft.
+The admin dashboard has a dedicated Paths tab for guided path authoring. It
+parses the current JSON draft, so the assistant can detect already-authored
+paths before they are saved. It can review one selected path at a time and
+suggest path copy, curated `postSlugs`, or a validated `algorithm` block.
+
+The Paths tab can also ask for one new guided path concept. The backend prompts
+the model to find a real catalog gap, rejects duplicate slugs, filters suggested
+post slugs against public catalog posts, and warns when the model does not
+return usable membership. Applying a suggestion only stages it in the unsaved
+site settings draft; the normal Save Site Settings action is still required.
 
 ### Local Setup
 

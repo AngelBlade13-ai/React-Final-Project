@@ -30,6 +30,7 @@ const {
   getLocalAiStatus,
   reviewCatalogWithLocalAi,
   suggestGuidedPathWithLocalAi,
+  suggestNewGuidedPathWithLocalAi,
   suggestPostDraftWithLocalAi
 } = require("../services/localAiService");
 const { runPostFileReseed } = require("../services/reseedLiveSiteService");
@@ -170,19 +171,15 @@ router.post("/posts/bulk-update", async (req, res, next) => {
     );
 
     if (!postIds.length) {
-      return res
-        .status(400)
-        .json({
-          message: "Select at least one post before applying a bulk action."
-        });
+      return res.status(400).json({
+        message: "Select at least one post before applying a bulk action."
+      });
     }
 
     if (!hasBulkPostUpdates(updates)) {
-      return res
-        .status(400)
-        .json({
-          message: "Choose at least one bulk change before applying it."
-        });
+      return res.status(400).json({
+        message: "Choose at least one bulk change before applying it."
+      });
     }
 
     const postIdSet = new Set(postIds);
@@ -472,12 +469,9 @@ router.post("/collections", async (req, res, next) => {
         collection.featuredReleaseSlug
       )
     ) {
-      return res
-        .status(400)
-        .json({
-          message:
-            "The featured release must already belong to this collection."
-        });
+      return res.status(400).json({
+        message: "The featured release must already belong to this collection."
+      });
     }
 
     await insertCollection(collection);
@@ -563,11 +557,9 @@ router.put("/collections/:id", async (req, res, next) => {
         updatedCollection.featuredReleaseSlug
       )
     ) {
-      return res
-        .status(400)
-        .json({
-          message: "The featured release must belong to this collection."
-        });
+      return res.status(400).json({
+        message: "The featured release must belong to this collection."
+      });
     }
 
     const changedPosts = collectChangedEntries(store.posts, nextPosts);
@@ -924,6 +916,44 @@ router.post("/assistant/guided-path-suggestions", async (req, res, next) => {
   }
 });
 
+router.post("/assistant/guided-path-new-suggestion", async (req, res, next) => {
+  try {
+    const store = await readStore();
+    const existingPaths = Array.isArray(req.body?.guidedPaths)
+      ? req.body.guidedPaths
+      : store.siteContent?.guidedPaths || [];
+    const suggestion = await suggestNewGuidedPathWithLocalAi(
+      store,
+      existingPaths
+    );
+
+    await recordAdminAuditEvent(req, {
+      action: "assistant.guided_path_new_suggested",
+      entityType: "assistant",
+      entityId: "local-ai",
+      entityLabel:
+        suggestion.suggestedPatch?.title || "New guided path suggestion",
+      details: {
+        mode: suggestion.mode,
+        model: suggestion.model,
+        slug: suggestion.suggestedPatch?.slug || "",
+        warningCount: suggestion.warnings.length
+      }
+    });
+
+    return res.json({ suggestion });
+  } catch (error) {
+    if (error.localAiStatus) {
+      return res.status(error.statusCode || 503).json({
+        message: error.message,
+        localAi: error.localAiStatus
+      });
+    }
+
+    next(error);
+  }
+});
+
 router.post("/importer/launch", async (req, res, next) => {
   try {
     const result = await launchImporter();
@@ -973,66 +1003,68 @@ router.post(
   "/live-store-sync",
   requireCatalogFileMutationsEnabled,
   async (req, res, next) => {
-  try {
-    const result = await applyLiveStoreSync();
-    await recordAdminAuditEvent(req, {
-      action: "catalog.live_store_synced_to_file",
-      entityType: "catalog",
-      entityId: "posts.json",
-      entityLabel: "Tracked catalog sync",
-      details: {
-        backupPath: result.backupPath,
-        postsFile: result.report.postsFile,
-        reportPath: result.reportPath
-      }
-    });
-    return res.json({
-      message: "Live admin data was written back into posts.json.",
-      sync: {
-        generatedAt: result.report.generatedAt,
-        postsFile: result.report.postsFile,
-        report: result.report,
-        artifactPaths: {
-          liveSnapshotPath: result.liveSnapshotPath,
-          reportPath: result.reportPath,
-          backupPath: result.backupPath
+    try {
+      const result = await applyLiveStoreSync();
+      await recordAdminAuditEvent(req, {
+        action: "catalog.live_store_synced_to_file",
+        entityType: "catalog",
+        entityId: "posts.json",
+        entityLabel: "Tracked catalog sync",
+        details: {
+          backupPath: result.backupPath,
+          postsFile: result.report.postsFile,
+          reportPath: result.reportPath
         }
-      }
-    });
-  } catch (error) {
-    next(error);
+      });
+      return res.json({
+        message: "Live admin data was written back into posts.json.",
+        sync: {
+          generatedAt: result.report.generatedAt,
+          postsFile: result.report.postsFile,
+          report: result.report,
+          artifactPaths: {
+            liveSnapshotPath: result.liveSnapshotPath,
+            reportPath: result.reportPath,
+            backupPath: result.backupPath
+          }
+        }
+      });
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
 router.post(
   "/reseed-live-site",
   requireCatalogFileMutationsEnabled,
   async (req, res, next) => {
-  try {
-    const result = await runPostFileReseed();
-    await recordAdminAuditEvent(req, {
-      action: "site.reseeded",
-      entityType: "site",
-      entityId: "posts.json",
-      entityLabel: "Live site reseed",
-      details: {
-        postsFile: result.postsFile || "",
-        logPath: result.logPath
-      }
-    });
+    try {
+      const result = await runPostFileReseed();
+      await recordAdminAuditEvent(req, {
+        action: "site.reseeded",
+        entityType: "site",
+        entityId: "posts.json",
+        entityLabel: "Live site reseed",
+        details: {
+          postsFile: result.postsFile || "",
+          logPath: result.logPath
+        }
+      });
 
-    return res.json({
-      message: "Live site reseeded from backend/data/posts.json.",
-      reseed: {
-        generatedAt: result.generatedAt,
-        logPath: result.logPath,
-        output: result.output
-      }
-    });
-  } catch (error) {
-    next(error);
+      return res.json({
+        message: "Live site reseeded from backend/data/posts.json.",
+        reseed: {
+          generatedAt: result.generatedAt,
+          logPath: result.logPath,
+          output: result.output
+        }
+      });
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
 router.get("/comments", async (req, res, next) => {
   try {
