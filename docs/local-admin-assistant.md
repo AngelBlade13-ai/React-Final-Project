@@ -18,9 +18,11 @@ source files, or source-of-truth sync output.
 
 The post editor also has a targeted assistant panel. It sends the current
 unsaved post draft to the backend and accepts only a validated draft patch for
-bounded fields: `excerpt`, `subCategory`, `worldLayer`, `themeTags`,
+bounded fields: `excerpt`, `content`, `subCategory`, `worldLayer`, `themeTags`,
 `releaseStatus`, and `collectionSlugs`. Applying the suggestion only changes the
 local form state; the normal post save button is still required to persist it.
+The post assistant prioritizes excerpt/content rewrites and filters out
+metadata suggestions that simply repeat the current draft values.
 
 ### Local Setup
 

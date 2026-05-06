@@ -120,7 +120,21 @@ function normalizeReviewResult(value = {}) {
   };
 }
 
-function normalizeSuggestionPatch(value = {}, collections = []) {
+function valuesAreEquivalent(left, right) {
+  if (Array.isArray(left) || Array.isArray(right)) {
+    const leftValues = Array.isArray(left) ? left : [];
+    const rightValues = Array.isArray(right) ? right : [];
+
+    return (
+      leftValues.length === rightValues.length &&
+      leftValues.every((entry, index) => entry === rightValues[index])
+    );
+  }
+
+  return String(left || "").trim() === String(right || "").trim();
+}
+
+function normalizeSuggestionPatch(value = {}, collections = [], currentDraft = {}) {
   const collectionSlugSet = new Set(collections.map((collection) => collection.slug));
   const releaseStatus = String(value.releaseStatus || "").trim().toLowerCase();
   const collectionSlugs = Array.isArray(value.collectionSlugs)
@@ -136,6 +150,10 @@ function normalizeSuggestionPatch(value = {}, collections = []) {
 
   if (typeof value.excerpt === "string" && value.excerpt.trim()) {
     patch.excerpt = value.excerpt.trim();
+  }
+
+  if (typeof value.content === "string" && value.content.trim()) {
+    patch.content = value.content.trim();
   }
 
   if (typeof value.subCategory === "string") {
@@ -164,15 +182,21 @@ function normalizeSuggestionPatch(value = {}, collections = []) {
     patch.collectionSlugs = collectionSlugs;
   }
 
-  return patch;
+  return Object.entries(patch).reduce((result, [key, nextValue]) => {
+    if (!valuesAreEquivalent(nextValue, currentDraft[key])) {
+      result[key] = nextValue;
+    }
+
+    return result;
+  }, {});
 }
 
-function normalizePostSuggestionResult(value = {}, collections = []) {
+function normalizePostSuggestionResult(value = {}, collections = [], currentDraft = {}) {
   return {
     summary: String(value.summary || "").trim(),
     rationale: normalizeTextList(value.rationale, 5),
     warnings: normalizeTextList(value.warnings, 5),
-    suggestedPatch: normalizeSuggestionPatch(value.suggestedPatch, collections)
+    suggestedPatch: normalizeSuggestionPatch(value.suggestedPatch, collections, currentDraft)
   };
 }
 
@@ -347,14 +371,21 @@ async function suggestPostDraftWithLocalAi(store, postDraft = {}) {
   };
   const prompt = [
     "Return only compact JSON for one music archive post draft.",
+    "Your main job is to improve the authoring fields: excerpt and content.",
+    "Rewrite excerpt as sharper public card copy when useful.",
+    "Rewrite content as a stronger release note when useful while preserving the draft's meaning.",
     "Do not invent collection slugs. Use only provided collection slugs.",
-    "Suggest only useful changes for this exact draft.",
-    "Shape: {\"summary\":\"one sentence\",\"suggestedPatch\":{\"excerpt\":\"\",\"subCategory\":\"\",\"worldLayer\":\"\",\"themeTags\":[\"\"],\"releaseStatus\":\"canon\",\"collectionSlugs\":[\"\"]},\"rationale\":[\"reason\"],\"warnings\":[\"warning\"]}.",
-    "Omit fields that should not change. Use at most 5 themeTags, 4 rationale items, and 3 warnings.",
+    "For metadata fields, suggest a field only if it improves or changes the current value. Do not repeat existing values.",
+    "Shape: {\"summary\":\"one sentence\",\"suggestedPatch\":{\"excerpt\":\"\",\"content\":\"\",\"subCategory\":\"\",\"worldLayer\":\"\",\"themeTags\":[\"\"],\"releaseStatus\":\"canon\",\"collectionSlugs\":[\"\"]},\"rationale\":[\"reason\"],\"warnings\":[\"warning\"]}.",
+    "Omit fields that should not change. Use at most 5 themeTags, 4 rationale items, and 3 warnings. Keep content under 140 words.",
     "",
     JSON.stringify(context)
   ].join("\n");
-  const result = normalizePostSuggestionResult(await generateJson(prompt), collections);
+  const result = normalizePostSuggestionResult(
+    await generateJson(prompt),
+    collections,
+    postDraft
+  );
 
   return {
     ...result,
