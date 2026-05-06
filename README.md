@@ -26,6 +26,7 @@ project-root/
 - Admin archive intelligence dashboard with health scoring, readiness signals, and quick-win surfacing
 - Admin comment moderation workspace with search plus hide and restore controls
 - Structured request logging, `x-request-id` tracing, runtime health snapshots, and persisted admin audit logs
+- Optional local Ollama-backed admin assistant test bench for non-destructive catalog review
 - Themed collection and release pages with responsive layout
 - Dynamic page titles and a custom threshold favicon
 

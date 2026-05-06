@@ -109,6 +109,11 @@ export default function AdminInsightsPage() {
   const [reseedError, setReseedError] = useState("");
   const [reseedMessage, setReseedMessage] = useState("");
   const [reseedResult, setReseedResult] = useState(null);
+  const [localAiStatus, setLocalAiStatus] = useState(null);
+  const [localAiError, setLocalAiError] = useState("");
+  const [localAiReview, setLocalAiReview] = useState(null);
+  const [localAiReviewLoading, setLocalAiReviewLoading] = useState(false);
+  const [localAiReviewError, setLocalAiReviewError] = useState("");
 
   useEffect(() => {
     let isCancelled = false;
@@ -120,7 +125,7 @@ export default function AdminInsightsPage() {
         setAuditError("");
         setHealthError("");
 
-        const [insightsResult, auditResult, healthResult] =
+        const [insightsResult, auditResult, healthResult, localAiResult] =
           await Promise.allSettled([
             readJson(
               adminFetch(`${apiBaseUrl}/admin/insights`),
@@ -133,6 +138,10 @@ export default function AdminInsightsPage() {
             readJson(
               fetch(`${apiBaseUrl}/health`, { credentials: "include" }),
               "Failed to load health snapshot."
+            ),
+            readJson(
+              adminFetch(`${apiBaseUrl}/admin/assistant/status`),
+              "Failed to load local assistant status."
             )
           ]);
 
@@ -162,6 +171,17 @@ export default function AdminInsightsPage() {
             setOpsHealth(null);
             setHealthError(
               healthResult.reason?.message || "Failed to load health snapshot."
+            );
+          }
+
+          if (localAiResult.status === "fulfilled") {
+            setLocalAiStatus(localAiResult.value.localAi || null);
+            setLocalAiError("");
+          } else {
+            setLocalAiStatus(null);
+            setLocalAiError(
+              localAiResult.reason?.message ||
+                "Failed to load local assistant status."
             );
           }
         }
@@ -268,6 +288,43 @@ export default function AdminInsightsPage() {
     }
   }
 
+  async function handleRefreshLocalAiStatus() {
+    try {
+      setLocalAiError("");
+      const data = await readJson(
+        adminFetch(`${apiBaseUrl}/admin/assistant/status`),
+        "Failed to load local assistant status."
+      );
+
+      setLocalAiStatus(data.localAi || null);
+    } catch (apiError) {
+      setLocalAiStatus(null);
+      setLocalAiError(apiError.message);
+    }
+  }
+
+  async function handleLocalAiCatalogReview() {
+    try {
+      setLocalAiReviewLoading(true);
+      setLocalAiReviewError("");
+      setLocalAiReview(null);
+
+      const data = await readJson(
+        adminFetch(`${apiBaseUrl}/admin/assistant/catalog-review`, {
+          method: "POST"
+        }),
+        "Failed to run local assistant catalog review."
+      );
+
+      setLocalAiReview(data.review || null);
+      await handleRefreshLocalAiStatus();
+    } catch (apiError) {
+      setLocalAiReviewError(apiError.message);
+    } finally {
+      setLocalAiReviewLoading(false);
+    }
+  }
+
   const summary = insights?.summary || {};
   const readinessEntries = insights
     ? Object.values(insights.readiness || {})
@@ -310,6 +367,11 @@ export default function AdminInsightsPage() {
       label: "Runtime",
       value: loading ? "--" : opsHealth?.status || "Unknown",
       note: opsHealth?.database?.connected ? "DB connected" : "DB state pending"
+    },
+    {
+      label: "Local AI",
+      value: loading ? "--" : localAiStatus?.available ? "Available" : "Offline",
+      note: localAiStatus?.model || "Ollama optional"
     }
   ];
 
@@ -600,6 +662,123 @@ export default function AdminInsightsPage() {
                 </p>
               )}
             </article>
+          </div>
+        ) : null}
+      </section>
+
+      <section className="intro-card homepage-panel full-span">
+        <div className="section-head">
+          <h2>Local Assistant Test Bench</h2>
+          <span>
+            {localAiStatus?.available
+              ? localAiStatus.modelInstalled
+                ? "Ready"
+                : "Model missing"
+              : "Offline"}
+          </span>
+        </div>
+        <p className="meta">
+          This is a non-destructive smoke test for a local Ollama-backed admin
+          helper. It reads the current catalog and returns suggestions only; it
+          does not save posts, edit files, or run source-of-truth sync.
+        </p>
+        <div className="metric-summary-grid">
+          <article className="metric-summary-card">
+            <p className="note-label">Status</p>
+            <strong>
+              {localAiStatus?.available ? "Reachable" : "Unavailable"}
+            </strong>
+            <span>
+              {localAiError ||
+                localAiStatus?.message ||
+                "Install and start Ollama to enable this panel."}
+            </span>
+          </article>
+          <article className="metric-summary-card">
+            <p className="note-label">Model</p>
+            <strong>{localAiStatus?.model || "qwen2.5:7b"}</strong>
+            <span>
+              {localAiStatus?.modelInstalled
+                ? "Installed"
+                : "Run: ollama pull qwen2.5:7b"}
+            </span>
+          </article>
+          <article className="metric-summary-card">
+            <p className="note-label">Endpoint</p>
+            <strong>Ollama</strong>
+            <span>{localAiStatus?.baseUrl || "http://127.0.0.1:11434"}</span>
+          </article>
+          <article className="metric-summary-card">
+            <p className="note-label">Installed Models</p>
+            <strong>{localAiStatus?.models?.length || 0}</strong>
+            <span>
+              {(localAiStatus?.models || []).slice(0, 2).join(", ") ||
+                "No models detected"}
+            </span>
+          </article>
+        </div>
+        <div className="archive-intelligence-actions">
+          <button
+            className="secondary-button"
+            onClick={handleRefreshLocalAiStatus}
+            type="button"
+          >
+            Refresh Assistant Status
+          </button>
+          <button
+            className="hero-link"
+            disabled={
+              localAiReviewLoading ||
+              !localAiStatus?.available ||
+              !localAiStatus?.modelInstalled
+            }
+            onClick={handleLocalAiCatalogReview}
+            type="button"
+          >
+            {localAiReviewLoading
+              ? "Asking Local Assistant..."
+              : "Run Catalog Review"}
+          </button>
+        </div>
+        {localAiReviewError ? (
+          <p className="error-text">{localAiReviewError}</p>
+        ) : null}
+        {localAiReview ? (
+          <div className="insight-issue-card severity-info" style={{ marginTop: "1rem" }}>
+            <div className="insight-issue-head">
+              <div>
+                <p className="eyebrow">{localAiReview.model}</p>
+                <h3>Assistant Review</h3>
+              </div>
+              <span className="issue-count-pill">
+                {localAiReview.risks?.length || 0}
+              </span>
+            </div>
+            <p>{localAiReview.summary}</p>
+            {localAiReview.risks?.length ? (
+              <>
+                <p className="note-label">Risks</p>
+                <div className="insight-sample-list">
+                  {localAiReview.risks.map((risk) => (
+                    <article className="insight-sample-link" key={risk}>
+                      <strong>{risk}</strong>
+                    </article>
+                  ))}
+                </div>
+              </>
+            ) : null}
+            {localAiReview.suggestedActions?.length ? (
+              <>
+                <p className="note-label">Suggested Actions</p>
+                <div className="insight-sample-list">
+                  {localAiReview.suggestedActions.map((action) => (
+                    <article className="insight-sample-link" key={action}>
+                      <strong>{action}</strong>
+                    </article>
+                  ))}
+                </div>
+              </>
+            ) : null}
           </div>
         ) : null}
       </section>

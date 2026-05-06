@@ -32,6 +32,10 @@ const config = {
       : path.resolve(__dirname, "..", "..", "..", "PythonProject")),
   importerUrl: process.env.IMPORTER_URL || "http://127.0.0.1:8765",
   importerPythonPath: process.env.IMPORTER_PYTHON_PATH || "",
+  localAiEnabled: process.env.LOCAL_AI_ENABLED !== "false",
+  localAiBaseUrl: process.env.LOCAL_AI_BASE_URL || "http://127.0.0.1:11434",
+  localAiModel: process.env.LOCAL_AI_MODEL || "qwen2.5:7b",
+  localAiTimeoutMs: Number(process.env.LOCAL_AI_TIMEOUT_MS) || 120000,
   operationalSeedFile:
     process.env.OPERATIONAL_SEED_FILE ||
     path.join(__dirname, "..", "data", "operational-seed.local.json"),

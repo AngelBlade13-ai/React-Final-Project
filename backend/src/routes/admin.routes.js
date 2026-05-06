@@ -26,6 +26,10 @@ const {
   previewLiveStoreSync
 } = require("../services/liveStoreSync");
 const { launchImporter } = require("../services/importerLauncherService");
+const {
+  getLocalAiStatus,
+  reviewCatalogWithLocalAi
+} = require("../services/localAiService");
 const { runPostFileReseed } = require("../services/reseedLiveSiteService");
 const {
   appendSlugHistory,
@@ -807,6 +811,45 @@ router.get("/insights", async (req, res, next) => {
     const store = await readStore();
     return res.json({ insights: buildArchiveInsights(store) });
   } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/assistant/status", async (req, res, next) => {
+  try {
+    const status = await getLocalAiStatus();
+    return res.json({ localAi: status });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/assistant/catalog-review", async (req, res, next) => {
+  try {
+    const store = await readStore();
+    const review = await reviewCatalogWithLocalAi(store);
+
+    await recordAdminAuditEvent(req, {
+      action: "assistant.catalog_reviewed",
+      entityType: "assistant",
+      entityId: "local-ai",
+      entityLabel: "Local AI catalog review",
+      details: {
+        model: review.model,
+        riskCount: review.risks.length,
+        suggestedActionCount: review.suggestedActions.length
+      }
+    });
+
+    return res.json({ review });
+  } catch (error) {
+    if (error.localAiStatus) {
+      return res.status(error.statusCode || 503).json({
+        message: error.message,
+        localAi: error.localAiStatus
+      });
+    }
+
     next(error);
   }
 });

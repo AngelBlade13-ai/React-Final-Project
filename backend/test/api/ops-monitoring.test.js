@@ -129,6 +129,38 @@ test("admin reseed endpoint rewrites the live database from posts.json", async (
   assert.equal(reseedAuditEntry.entityId, "posts.json");
 });
 
+test("local assistant endpoints fail safely when local AI is disabled", async (t) => {
+  const context = await createApiTestContext({
+    LOCAL_AI_ENABLED: "false"
+  });
+  t.after(async () => {
+    await context.close();
+  });
+
+  const loginResponse = await context.agent
+    .post("/api/admin/login")
+    .set(context.mutationHeaders)
+    .send({
+      email: "admin@example.com",
+      password: "Admin123!"
+    });
+
+  assert.equal(loginResponse.status, 200);
+
+  const statusResponse = await context.agent.get("/api/admin/assistant/status");
+
+  assert.equal(statusResponse.status, 200);
+  assert.equal(statusResponse.body.localAi.available, false);
+  assert.equal(statusResponse.body.localAi.enabled, false);
+
+  const reviewResponse = await context.agent
+    .post("/api/admin/assistant/catalog-review")
+    .set(context.mutationHeaders);
+
+  assert.equal(reviewResponse.status, 503);
+  assert.match(reviewResponse.body.message, /disabled/i);
+});
+
 test("admin importer launcher starts the local importer behind admin auth", async (t) => {
   const context = await createApiTestContext({
     IMPORTER_LAUNCH_TEST_RESULT: "started"
