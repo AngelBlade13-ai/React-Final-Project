@@ -5,6 +5,7 @@ const DEFAULT_REVIEW_RESULT = {
   risks: [],
   suggestedActions: []
 };
+const VALID_RELEASE_STATUSES = new Set(["canon", "alternate", "working"]);
 
 function buildUnavailableStatus(reason) {
   return {
@@ -119,6 +120,62 @@ function normalizeReviewResult(value = {}) {
   };
 }
 
+function normalizeSuggestionPatch(value = {}, collections = []) {
+  const collectionSlugSet = new Set(collections.map((collection) => collection.slug));
+  const releaseStatus = String(value.releaseStatus || "").trim().toLowerCase();
+  const collectionSlugs = Array.isArray(value.collectionSlugs)
+    ? [
+        ...new Set(
+          value.collectionSlugs
+            .map((slug) => String(slug || "").trim())
+            .filter((slug) => collectionSlugSet.has(slug))
+        )
+      ]
+    : [];
+  const patch = {};
+
+  if (typeof value.excerpt === "string" && value.excerpt.trim()) {
+    patch.excerpt = value.excerpt.trim();
+  }
+
+  if (typeof value.subCategory === "string") {
+    patch.subCategory = value.subCategory.trim();
+  }
+
+  if (typeof value.worldLayer === "string") {
+    patch.worldLayer = value.worldLayer.trim();
+  }
+
+  if (Array.isArray(value.themeTags)) {
+    patch.themeTags = [
+      ...new Set(
+        value.themeTags
+          .map((tag) => String(tag || "").trim())
+          .filter(Boolean)
+      )
+    ].slice(0, 8);
+  }
+
+  if (VALID_RELEASE_STATUSES.has(releaseStatus)) {
+    patch.releaseStatus = releaseStatus;
+  }
+
+  if (collectionSlugs.length) {
+    patch.collectionSlugs = collectionSlugs;
+  }
+
+  return patch;
+}
+
+function normalizePostSuggestionResult(value = {}, collections = []) {
+  return {
+    summary: String(value.summary || "").trim(),
+    rationale: normalizeTextList(value.rationale, 5),
+    warnings: normalizeTextList(value.warnings, 5),
+    suggestedPatch: normalizeSuggestionPatch(value.suggestedPatch, collections)
+  };
+}
+
 function summarizePostForAssistant(post = {}) {
   return {
     slug: post.slug,
@@ -129,6 +186,28 @@ function summarizePostForAssistant(post = {}) {
     subCategory: post.subCategory || "",
     worldLayer: post.worldLayer || "",
     themeTags: Array.isArray(post.themeTags) ? post.themeTags : []
+  };
+}
+
+function summarizePostDraftForAssistant(post = {}) {
+  return {
+    title: String(post.title || "").trim(),
+    slug: String(post.slug || "").trim(),
+    excerpt: String(post.excerpt || "").trim(),
+    content: String(post.content || "").trim().slice(0, 1400),
+    lyrics: String(post.lyrics || "").trim().slice(0, 1400),
+    published: Boolean(post.published),
+    releaseStatus: post.releaseStatus || "canon",
+    collections: Array.isArray(post.collectionSlugs) ? post.collectionSlugs : [],
+    subCategory: String(post.subCategory || "").trim(),
+    sourceTag: String(post.sourceTag || "").trim(),
+    worldLayer: String(post.worldLayer || "").trim(),
+    themeTags: Array.isArray(post.themeTags) ? post.themeTags : [],
+    versionFamily: String(post.versionFamily || "").trim(),
+    isPrimaryVersion: Boolean(post.isPrimaryVersion),
+    isArchive: Boolean(post.isArchive),
+    isHomepageEligible: Boolean(post.isHomepageEligible),
+    isPubliclyVisible: post.isPubliclyVisible !== false
   };
 }
 
@@ -243,7 +322,49 @@ async function reviewCatalogWithLocalAi(store) {
   };
 }
 
+async function suggestPostDraftWithLocalAi(store, postDraft = {}) {
+  const status = await getLocalAiStatus();
+
+  if (!status.available) {
+    const error = new Error(status.message);
+    error.statusCode = 503;
+    error.localAiStatus = status;
+    throw error;
+  }
+
+  if (!status.modelInstalled) {
+    const error = new Error(status.message);
+    error.statusCode = 503;
+    error.localAiStatus = status;
+    throw error;
+  }
+
+  const collections = Array.isArray(store.collections) ? store.collections : [];
+  const context = {
+    allowedReleaseStatuses: Array.from(VALID_RELEASE_STATUSES),
+    collections: collections.map(summarizeCollectionForAssistant),
+    currentDraft: summarizePostDraftForAssistant(postDraft)
+  };
+  const prompt = [
+    "Return only compact JSON for one music archive post draft.",
+    "Do not invent collection slugs. Use only provided collection slugs.",
+    "Suggest only useful changes for this exact draft.",
+    "Shape: {\"summary\":\"one sentence\",\"suggestedPatch\":{\"excerpt\":\"\",\"subCategory\":\"\",\"worldLayer\":\"\",\"themeTags\":[\"\"],\"releaseStatus\":\"canon\",\"collectionSlugs\":[\"\"]},\"rationale\":[\"reason\"],\"warnings\":[\"warning\"]}.",
+    "Omit fields that should not change. Use at most 5 themeTags, 4 rationale items, and 3 warnings.",
+    "",
+    JSON.stringify(context)
+  ].join("\n");
+  const result = normalizePostSuggestionResult(await generateJson(prompt), collections);
+
+  return {
+    ...result,
+    generatedAt: new Date().toISOString(),
+    model: config.localAiModel
+  };
+}
+
 module.exports = {
   getLocalAiStatus,
-  reviewCatalogWithLocalAi
+  reviewCatalogWithLocalAi,
+  suggestPostDraftWithLocalAi
 };

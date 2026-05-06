@@ -296,6 +296,18 @@ function matchesPostCatalogFilters(post, filters = {}) {
   return true;
 }
 
+function formatAssistantPatchValue(value) {
+  if (Array.isArray(value)) {
+    return value.length ? value.join(", ") : "None";
+  }
+
+  if (typeof value === "boolean") {
+    return value ? "Yes" : "No";
+  }
+
+  return String(value || "Clear field");
+}
+
 export default function AdminPostsPage() {
   useDocumentTitle("Admin Posts");
   const {
@@ -344,6 +356,10 @@ export default function AdminPostsPage() {
   const [bulkSubmitting, setBulkSubmitting] = useState(false);
   const [bulkMessage, setBulkMessage] = useState("");
   const [bulkError, setBulkError] = useState("");
+  const [assistantSuggestion, setAssistantSuggestion] = useState(null);
+  const [assistantLoading, setAssistantLoading] = useState(false);
+  const [assistantError, setAssistantError] = useState("");
+  const [assistantMessage, setAssistantMessage] = useState("");
 
   const fractureverseCollection = collections.find((collection) => collection.theme === "fractureverse");
   const eldoriaCollection = collections.find((collection) => collection.theme === "eldoria");
@@ -667,6 +683,51 @@ export default function AdminPostsPage() {
     } finally {
       setBulkSubmitting(false);
     }
+  }
+
+  async function handlePostAssistantSuggest() {
+    setAssistantLoading(true);
+    setAssistantError("");
+    setAssistantMessage("");
+    setAssistantSuggestion(null);
+
+    try {
+      const response = await adminFetch(`${apiBaseUrl}/admin/assistant/post-suggestions`, {
+        method: "POST",
+        body: JSON.stringify({
+          postDraft: currentSnapshot
+        })
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Post assistant suggestion failed.");
+      }
+
+      setAssistantSuggestion(data.suggestion || null);
+    } catch (apiError) {
+      setAssistantError(apiError.message);
+    } finally {
+      setAssistantLoading(false);
+    }
+  }
+
+  function handleApplyAssistantSuggestion() {
+    const patch = assistantSuggestion?.suggestedPatch || {};
+    const patchKeys = Object.keys(patch);
+
+    if (!patchKeys.length) {
+      setAssistantError("The assistant did not return any draft fields to apply.");
+      return;
+    }
+
+    replacePostForm({
+      ...form,
+      ...patch
+    });
+    setAssistantMessage(`Applied ${patchKeys.length} assistant suggestion${patchKeys.length === 1 ? "" : "s"} to the draft.`);
+    setAssistantSuggestion(null);
+    setAssistantError("");
   }
 
   return (
@@ -1290,6 +1351,67 @@ export default function AdminPostsPage() {
                   <span>Section</span>
                   <strong>{activeSectionMeta.label}</strong>
                 </div>
+              </div>
+
+              <div className="editor-draft-panel">
+                <p className="eyebrow">Post Assistant</p>
+                <p className="upload-status">
+                  Ask the local assistant for safe draft suggestions. Nothing is saved until you apply the patch and submit this form.
+                </p>
+                <div className="admin-form-actions">
+                  <button className="secondary-button" disabled={assistantLoading} onClick={handlePostAssistantSuggest} type="button">
+                    {assistantLoading ? "Asking Assistant..." : "Suggest Draft Patch"}
+                  </button>
+                  {assistantSuggestion ? (
+                    <button className="hero-link" onClick={handleApplyAssistantSuggestion} type="button">
+                      Apply Suggestions
+                    </button>
+                  ) : null}
+                </div>
+                {assistantError ? <p className="error-text">{assistantError}</p> : null}
+                {assistantMessage ? <p className="success-text">{assistantMessage}</p> : null}
+                {assistantSuggestion ? (
+                  <div className="editor-validation-group">
+                    <p className="meta">{assistantSuggestion.model || "Local assistant"}</p>
+                    {assistantSuggestion.summary ? <p className="upload-status">{assistantSuggestion.summary}</p> : null}
+                    {Object.keys(assistantSuggestion.suggestedPatch || {}).length ? (
+                      <div className="editor-issue-list">
+                        {Object.entries(assistantSuggestion.suggestedPatch || {}).map(([key, value]) => (
+                          <article className="editor-issue-link advisory" key={key}>
+                            <strong>{key}</strong>
+                            <span>{formatAssistantPatchValue(value)}</span>
+                          </article>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="upload-status">No draft fields were suggested for this pass.</p>
+                    )}
+                    {assistantSuggestion.rationale?.length ? (
+                      <>
+                        <p className="meta">Rationale</p>
+                        <div className="editor-issue-list">
+                          {assistantSuggestion.rationale.map((item) => (
+                            <article className="editor-issue-link advisory" key={item}>
+                              <span>{item}</span>
+                            </article>
+                          ))}
+                        </div>
+                      </>
+                    ) : null}
+                    {assistantSuggestion.warnings?.length ? (
+                      <>
+                        <p className="meta">Warnings</p>
+                        <div className="editor-issue-list">
+                          {assistantSuggestion.warnings.map((item) => (
+                            <article className="editor-issue-link" key={item}>
+                              <span>{item}</span>
+                            </article>
+                          ))}
+                        </div>
+                      </>
+                    ) : null}
+                  </div>
+                ) : null}
               </div>
 
               {storedDraft?.savedAt ? (

@@ -28,7 +28,8 @@ const {
 const { launchImporter } = require("../services/importerLauncherService");
 const {
   getLocalAiStatus,
-  reviewCatalogWithLocalAi
+  reviewCatalogWithLocalAi,
+  suggestPostDraftWithLocalAi
 } = require("../services/localAiService");
 const { runPostFileReseed } = require("../services/reseedLiveSiteService");
 const {
@@ -842,6 +843,39 @@ router.post("/assistant/catalog-review", async (req, res, next) => {
     });
 
     return res.json({ review });
+  } catch (error) {
+    if (error.localAiStatus) {
+      return res.status(error.statusCode || 503).json({
+        message: error.message,
+        localAi: error.localAiStatus
+      });
+    }
+
+    next(error);
+  }
+});
+
+router.post("/assistant/post-suggestions", async (req, res, next) => {
+  try {
+    const store = await readStore();
+    const suggestion = await suggestPostDraftWithLocalAi(
+      store,
+      req.body?.postDraft || {}
+    );
+
+    await recordAdminAuditEvent(req, {
+      action: "assistant.post_suggested",
+      entityType: "assistant",
+      entityId: "local-ai",
+      entityLabel: req.body?.postDraft?.title || "Post assistant suggestion",
+      details: {
+        changedFields: Object.keys(suggestion.suggestedPatch || {}),
+        model: suggestion.model,
+        warningCount: suggestion.warnings.length
+      }
+    });
+
+    return res.json({ suggestion });
   } catch (error) {
     if (error.localAiStatus) {
       return res.status(error.statusCode || 503).json({

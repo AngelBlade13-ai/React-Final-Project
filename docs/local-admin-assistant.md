@@ -9,11 +9,18 @@ This adds an optional local AI smoke test for the admin dashboard.
 - Default model: `qwen2.5:7b`
 - Admin status endpoint: `GET /api/admin/assistant/status`
 - Admin catalog review endpoint: `POST /api/admin/assistant/catalog-review`
+- Admin post suggestion endpoint: `POST /api/admin/assistant/post-suggestions`
 
 The assistant is intentionally non-destructive. It reads the current catalog,
 asks the local model for a JSON-only review, validates the response shape, and
 returns suggestions to the admin UI. It does not edit posts, collections,
 source files, or source-of-truth sync output.
+
+The post editor also has a targeted assistant panel. It sends the current
+unsaved post draft to the backend and accepts only a validated draft patch for
+bounded fields: `excerpt`, `subCategory`, `worldLayer`, `themeTags`,
+`releaseStatus`, and `collectionSlugs`. Applying the suggestion only changes the
+local form state; the normal post save button is still required to persist it.
 
 ### Local Setup
 
