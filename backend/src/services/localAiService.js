@@ -21,6 +21,12 @@ const FIELD_ASSESSMENT_STATUSES = new Set([
   "missing",
   "uncertain"
 ]);
+const ALLOWED_PATH_ALGORITHM_SORTS = new Set([
+  "curated",
+  "fractureverse",
+  "eldoria"
+]);
+const ALLOWED_PATH_MATCH_MODES = new Set(["any", "all"]);
 
 function buildUnavailableStatus(reason) {
   return {
@@ -368,6 +374,229 @@ function summarizeCollectionForAssistant(collection = {}) {
   };
 }
 
+function summarizePathPostForAssistant(post = {}) {
+  return {
+    slug: post.slug,
+    title: post.title,
+    published: Boolean(post.published),
+    isPubliclyVisible: post.isPubliclyVisible !== false,
+    releaseStatus: post.releaseStatus || "canon",
+    collections: Array.isArray(post.collectionSlugs) ? post.collectionSlugs : [],
+    subCategory: String(post.subCategory || "").trim(),
+    worldLayer: String(post.worldLayer || "").trim(),
+    themeTags: Array.isArray(post.themeTags) ? post.themeTags : [],
+    excerpt: String(post.excerpt || "").trim().slice(0, 180)
+  };
+}
+
+function summarizeGuidedPathForAssistant(path = {}) {
+  return {
+    slug: String(path.slug || "").trim(),
+    title: String(path.title || "").trim(),
+    eyebrow: String(path.eyebrow || "").trim(),
+    intro: String(path.intro || "").trim(),
+    moodNote: String(path.moodNote || "").trim(),
+    themeHint: String(path.themeHint || "").trim(),
+    postSlugs: Array.isArray(path.postSlugs) ? path.postSlugs : [],
+    algorithm: path.algorithm && typeof path.algorithm === "object" ? path.algorithm : {}
+  };
+}
+
+function getGuidedPathCandidatePosts(posts = [], guidedPath = {}) {
+  const algorithm = guidedPath?.algorithm && typeof guidedPath.algorithm === "object" ? guidedPath.algorithm : {};
+  const collectionSlug = String(algorithm.collectionSlug || "").trim();
+  const collectionSlugs = Array.isArray(algorithm.collectionSlugs)
+    ? algorithm.collectionSlugs.map((slug) => String(slug || "").trim()).filter(Boolean)
+    : [];
+  const themeHint = String(guidedPath?.themeHint || "").trim();
+  const sectionKeys = Array.isArray(algorithm.sectionKeys)
+    ? algorithm.sectionKeys.map((key) => String(key || "").trim()).filter(Boolean)
+    : [];
+  const themeTags = Array.isArray(algorithm.themeTags)
+    ? algorithm.themeTags.map((tag) => String(tag || "").trim()).filter(Boolean)
+    : [];
+  const worldLayers = Array.isArray(algorithm.worldLayers)
+    ? algorithm.worldLayers.map((layer) => String(layer || "").trim()).filter(Boolean)
+    : [];
+  const hasExplicitScope =
+    collectionSlug ||
+    collectionSlugs.length ||
+    themeHint ||
+    sectionKeys.length ||
+    themeTags.length ||
+    worldLayers.length;
+  const publicPosts = posts.filter((post) => post.published && post.isPubliclyVisible !== false);
+
+  if (!hasExplicitScope) {
+    return publicPosts;
+  }
+
+  return publicPosts.filter((post) => {
+    const postCollections = Array.isArray(post.collectionSlugs) ? post.collectionSlugs : [];
+
+    return (
+      (collectionSlug && postCollections.includes(collectionSlug)) ||
+      (collectionSlugs.length && postCollections.some((slug) => collectionSlugs.includes(slug))) ||
+      (themeHint && postCollections.includes(themeHint)) ||
+      (sectionKeys.length && sectionKeys.includes(String(post.subCategory || "").trim())) ||
+      (themeTags.length && (post.themeTags || []).some((tag) => themeTags.includes(tag))) ||
+      (worldLayers.length && worldLayers.includes(String(post.worldLayer || "").trim()))
+    );
+  });
+}
+
+function normalizeGuidedPathAlgorithmPatch(value = {}, collections = []) {
+  const collectionSlugSet = new Set(collections.map((collection) => collection.slug));
+  const algorithm = value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  const releaseStatuses = Array.isArray(algorithm.releaseStatuses)
+    ? [
+        ...new Set(
+          algorithm.releaseStatuses
+            .map((status) => String(status || "").trim().toLowerCase())
+            .filter((status) => VALID_RELEASE_STATUSES.has(status))
+        )
+      ]
+    : [];
+  const collectionSlugs = Array.isArray(algorithm.collectionSlugs)
+    ? [
+        ...new Set(
+          algorithm.collectionSlugs
+            .map((slug) => String(slug || "").trim())
+            .filter((slug) => collectionSlugSet.has(slug))
+        )
+      ]
+    : [];
+  const patch = {};
+  const collectionSlug = String(algorithm.collectionSlug || "").trim();
+  const sort = String(algorithm.sort || "").trim();
+  const match = String(algorithm.match || "").trim();
+  const maxItems = Number.parseInt(String(algorithm.maxItems || ""), 10);
+
+  if (String(algorithm.preset || "").trim()) {
+    patch.preset = String(algorithm.preset || "").trim();
+  }
+
+  if (collectionSlugSet.has(collectionSlug)) {
+    patch.collectionSlug = collectionSlug;
+  }
+
+  if (collectionSlugs.length) {
+    patch.collectionSlugs = collectionSlugs;
+  }
+
+  if (Array.isArray(algorithm.sectionKeys)) {
+    patch.sectionKeys = [
+      ...new Set(
+        algorithm.sectionKeys
+          .map((entry) => String(entry || "").trim())
+          .filter(Boolean)
+      )
+    ];
+  }
+
+  if (Array.isArray(algorithm.themeTags)) {
+    patch.themeTags = [
+      ...new Set(
+        algorithm.themeTags
+          .map((entry) => String(entry || "").trim())
+          .filter(Boolean)
+      )
+    ];
+  }
+
+  if (Array.isArray(algorithm.worldLayers)) {
+    patch.worldLayers = [
+      ...new Set(
+        algorithm.worldLayers
+          .map((entry) => String(entry || "").trim())
+          .filter(Boolean)
+      )
+    ];
+  }
+
+  if (releaseStatuses.length) {
+    patch.releaseStatuses = releaseStatuses;
+  }
+
+  if (ALLOWED_PATH_MATCH_MODES.has(match)) {
+    patch.match = match;
+  }
+
+  if (Number.isFinite(maxItems) && maxItems > 0) {
+    patch.maxItems = Math.min(maxItems, 25);
+  }
+
+  if (ALLOWED_PATH_ALGORITHM_SORTS.has(sort)) {
+    patch.sort = sort;
+  }
+
+  return patch;
+}
+
+function normalizeGuidedPathSuggestionResult(value = {}, store = {}, guidedPath = {}) {
+  const posts = Array.isArray(store.posts) ? store.posts : [];
+  const collections = Array.isArray(store.collections) ? store.collections : [];
+  const postSlugSet = new Set(
+    getGuidedPathCandidatePosts(posts, guidedPath).map((post) => post.slug)
+  );
+  const rawPatch = value.suggestedPatch && typeof value.suggestedPatch === "object" ? value.suggestedPatch : {};
+  const suggestedPatch = {};
+  const currentAlgorithm =
+    guidedPath?.algorithm && typeof guidedPath.algorithm === "object"
+      ? guidedPath.algorithm
+      : {};
+  const pathIsAlgorithmBacked =
+    Boolean(String(currentAlgorithm.collectionSlug || "").trim()) &&
+    !(Array.isArray(guidedPath?.postSlugs) && guidedPath.postSlugs.length);
+
+  if (typeof rawPatch.title === "string" && rawPatch.title.trim()) {
+    suggestedPatch.title = rawPatch.title.trim();
+  }
+
+  if (typeof rawPatch.eyebrow === "string" && rawPatch.eyebrow.trim()) {
+    suggestedPatch.eyebrow = rawPatch.eyebrow.trim();
+  }
+
+  if (typeof rawPatch.intro === "string" && rawPatch.intro.trim()) {
+    suggestedPatch.intro = rawPatch.intro.trim();
+  }
+
+  if (typeof rawPatch.moodNote === "string" && rawPatch.moodNote.trim()) {
+    suggestedPatch.moodNote = rawPatch.moodNote.trim();
+  }
+
+  if (typeof rawPatch.themeHint === "string") {
+    suggestedPatch.themeHint = rawPatch.themeHint.trim();
+  }
+
+  if (!pathIsAlgorithmBacked && Array.isArray(rawPatch.postSlugs)) {
+    suggestedPatch.postSlugs = [
+      ...new Set(
+        rawPatch.postSlugs
+          .map((slug) => String(slug || "").trim())
+          .filter((slug) => postSlugSet.has(slug))
+      )
+    ].slice(0, 25);
+  }
+
+  if (rawPatch.algorithm && typeof rawPatch.algorithm === "object") {
+    suggestedPatch.algorithm = normalizeGuidedPathAlgorithmPatch(
+      rawPatch.algorithm,
+      collections
+    );
+  }
+
+  return {
+    summary: String(value.summary || "").trim(),
+    mode: ["manual", "algorithm", "hybrid"].includes(String(value.mode || ""))
+      ? String(value.mode)
+      : "manual",
+    rationale: normalizeTextList(value.rationale, 6),
+    warnings: normalizeTextList(value.warnings, 5),
+    suggestedPatch
+  };
+}
+
 function buildCatalogContext(store = {}) {
   const posts = Array.isArray(store.posts) ? store.posts : [];
   const collections = Array.isArray(store.collections) ? store.collections : [];
@@ -565,8 +794,65 @@ async function suggestPostDraftWithLocalAi(store, postDraft = {}) {
   };
 }
 
+async function suggestGuidedPathWithLocalAi(store, guidedPath = {}) {
+  const status = await getLocalAiStatus();
+
+  if (!status.available) {
+    const error = new Error(status.message);
+    error.statusCode = 503;
+    error.localAiStatus = status;
+    throw error;
+  }
+
+  if (!status.modelInstalled) {
+    const error = new Error(status.message);
+    error.statusCode = 503;
+    error.localAiStatus = status;
+    throw error;
+  }
+
+  const posts = Array.isArray(store.posts) ? store.posts : [];
+  const collections = Array.isArray(store.collections) ? store.collections : [];
+  const publicPosts = getGuidedPathCandidatePosts(posts, guidedPath).map(summarizePathPostForAssistant);
+  const context = {
+    allowedReleaseStatuses: Array.from(VALID_RELEASE_STATUSES),
+    allowedSorts: Array.from(ALLOWED_PATH_ALGORITHM_SORTS),
+    collections: collections.map(summarizeCollectionForAssistant),
+    currentPath: summarizeGuidedPathForAssistant(guidedPath),
+    publicPosts
+  };
+  const prompt = [
+    "Return only compact JSON for one guided listening path in a music archive.",
+    "Improve path membership and rules for the currentPath.",
+    "Use exact post slugs only from publicPosts. Do not invent slugs.",
+    "If the path needs a carefully curated sequence, use suggestedPatch.postSlugs.",
+    "If the path should stay dynamic, use suggestedPatch.algorithm with only provided collection slugs, release statuses, and sort values.",
+    "If currentPath already has algorithm.collectionSlug and no postSlugs, preserve the algorithm approach and do not return postSlugs.",
+    "Do not include unrelated or merely adjacent songs. Prefer precision over count.",
+    "Shape: {\"summary\":\"one sentence\",\"mode\":\"manual|algorithm|hybrid\",\"suggestedPatch\":{\"title\":\"\",\"eyebrow\":\"\",\"intro\":\"\",\"moodNote\":\"\",\"themeHint\":\"\",\"postSlugs\":[\"\"],\"algorithm\":{}},\"rationale\":[\"reason\"],\"warnings\":[\"warning\"]}.",
+    "Omit patch fields that should not change. Use at most 12 postSlugs, 5 rationale items, and 3 warnings.",
+    "",
+    JSON.stringify(context)
+  ].join("\n");
+  const result = normalizeGuidedPathSuggestionResult(
+    await generateJson(prompt, {
+      num_ctx: 8192,
+      num_predict: 1100
+    }),
+    store,
+    guidedPath
+  );
+
+  return {
+    ...result,
+    generatedAt: new Date().toISOString(),
+    model: config.localAiModel
+  };
+}
+
 module.exports = {
   getLocalAiStatus,
   reviewCatalogWithLocalAi,
+  suggestGuidedPathWithLocalAi,
   suggestPostDraftWithLocalAi
 };

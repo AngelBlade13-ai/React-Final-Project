@@ -10,6 +10,8 @@ This adds an optional local AI smoke test for the admin dashboard.
 - Admin status endpoint: `GET /api/admin/assistant/status`
 - Admin catalog review endpoint: `POST /api/admin/assistant/catalog-review`
 - Admin post suggestion endpoint: `POST /api/admin/assistant/post-suggestions`
+- Admin guided path suggestion endpoint:
+  `POST /api/admin/assistant/guided-path-suggestions`
 
 The assistant is intentionally non-destructive. It reads the current catalog,
 asks the local model for a JSON-only review, validates the response shape, and
@@ -26,6 +28,12 @@ metadata suggestions that simply repeat the current draft values.
 It also returns `fieldAssessments` so the UI can show whether each supported
 field was kept, improved, missing, or uncertain. The backend enforces those
 assessments by accepting patches only for fields marked `improve` or `missing`.
+
+The site settings page also includes a guided path assistant. It reviews one
+selected path at a time and can suggest path copy, curated `postSlugs`, or a
+validated `algorithm` block. Suggested post and collection slugs are filtered
+against the real catalog before the UI can apply them to the unsaved site
+settings draft.
 
 ### Local Setup
 

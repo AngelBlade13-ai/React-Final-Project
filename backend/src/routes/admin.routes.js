@@ -29,6 +29,7 @@ const { launchImporter } = require("../services/importerLauncherService");
 const {
   getLocalAiStatus,
   reviewCatalogWithLocalAi,
+  suggestGuidedPathWithLocalAi,
   suggestPostDraftWithLocalAi
 } = require("../services/localAiService");
 const { runPostFileReseed } = require("../services/reseedLiveSiteService");
@@ -870,6 +871,41 @@ router.post("/assistant/post-suggestions", async (req, res, next) => {
       entityLabel: req.body?.postDraft?.title || "Post assistant suggestion",
       details: {
         changedFields: Object.keys(suggestion.suggestedPatch || {}),
+        model: suggestion.model,
+        warningCount: suggestion.warnings.length
+      }
+    });
+
+    return res.json({ suggestion });
+  } catch (error) {
+    if (error.localAiStatus) {
+      return res.status(error.statusCode || 503).json({
+        message: error.message,
+        localAi: error.localAiStatus
+      });
+    }
+
+    next(error);
+  }
+});
+
+router.post("/assistant/guided-path-suggestions", async (req, res, next) => {
+  try {
+    const store = await readStore();
+    const suggestion = await suggestGuidedPathWithLocalAi(
+      store,
+      req.body?.guidedPath || {}
+    );
+
+    await recordAdminAuditEvent(req, {
+      action: "assistant.guided_path_suggested",
+      entityType: "assistant",
+      entityId: "local-ai",
+      entityLabel:
+        req.body?.guidedPath?.title || "Guided path assistant suggestion",
+      details: {
+        changedFields: Object.keys(suggestion.suggestedPatch || {}),
+        mode: suggestion.mode,
         model: suggestion.model,
         warningCount: suggestion.warnings.length
       }
