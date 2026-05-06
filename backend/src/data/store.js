@@ -4,6 +4,108 @@ const { getDb, runWithTransaction } = require("../lib/mongo");
 const config = require("../config");
 const { slugify } = require("../utils/slugify");
 const VALID_RELEASE_STATUSES = new Set(["canon", "alternate", "working"]);
+const DEFAULT_GUIDED_PATHS = [
+  {
+    slug: "start-here",
+    title: "Start Here",
+    eyebrow: "Guided Path",
+    intro:
+      "A concise first route through the clearest public entry points before the archive starts branching into deeper worlds and alternates.",
+    moodNote: "Best for first contact with the site.",
+    themeHint: "",
+    postSlugs: [],
+    algorithm: {
+      preset: "homepage",
+      maxItems: 5,
+      sort: "curated"
+    }
+  },
+  {
+    slug: "fractureverse",
+    title: "Fractureverse",
+    eyebrow: "World Path",
+    intro:
+      "Follow the fracture from its first stable anchor through collapse, divergence, and the edges where love and consequence stop agreeing with each other.",
+    moodNote: "Best for sequence-first listening.",
+    themeHint: "fractureverse",
+    postSlugs: [],
+    algorithm: {
+      collectionSlug: "fractureverse",
+      releaseStatuses: ["canon"],
+      sort: "fractureverse"
+    }
+  },
+  {
+    slug: "eldoria",
+    title: "Eldoria",
+    eyebrow: "World Path",
+    intro:
+      "Enter the chronicle in order, starting with awakening and moving deeper into role, memory, pressure, and the burden of belonging to a world that should not know you.",
+    moodNote: "Best for story-first listening.",
+    themeHint: "eldoria",
+    postSlugs: [],
+    algorithm: {
+      collectionSlug: "eldoria",
+      sort: "eldoria"
+    }
+  },
+  {
+    slug: "identity-becoming",
+    title: "Identity / Becoming",
+    eyebrow: "Authored Path",
+    intro:
+      "A route through the songs that feel most tied to emergence, self-recognition, and the slow process of becoming legible to yourself.",
+    moodNote: "Best for personal / reflective listening.",
+    themeHint: "",
+    postSlugs: [],
+    algorithm: {
+      sectionKeys: ["identity"],
+      maxItems: 7,
+      sort: "curated"
+    }
+  },
+  {
+    slug: "princess-anime",
+    title: "Princess / Anime",
+    eyebrow: "Authored Path",
+    intro:
+      "A brighter route through princess-symbolic, kawaii, and high-expression tracks where fantasy becomes a way of saying something real.",
+    moodNote: "Best for vivid, stylized listening.",
+    themeHint: "",
+    postSlugs: [],
+    algorithm: {
+      collectionSlugs: ["kawaii-adventure", "kawaii-magical"],
+      match: "any",
+      maxItems: 7,
+      sectionKeys: ["princess-motif"],
+      sort: "curated"
+    }
+  },
+  {
+    slug: "villain-catastrophe",
+    title: "Villain / Catastrophe",
+    eyebrow: "Authored Path",
+    intro:
+      "A harsher route through villain voices, necessary monsters, and the songs where damage, power, or collapse take center stage.",
+    moodNote: "Best for darker, confrontational listening.",
+    themeHint: "",
+    postSlugs: [],
+    algorithm: {
+      collectionSlugs: [
+        "villain-anthology",
+        "villain-monologues",
+        "villain-monologues-necessary-monsters",
+        "necessary-monsters"
+      ],
+      match: "any",
+      maxItems: 7,
+      sectionKeys: ["villain"],
+      sort: "curated",
+      themeTags: ["villain"],
+      worldLayers: ["villain"]
+    }
+  }
+];
 
 const seedCollections = [
   {
@@ -103,7 +205,7 @@ const seedSiteContent = {
       "Each page still keeps the music close, but now the archive has a stronger structure: releases can live in more than one collection, search can surface them by title or text, and the site has space to explain the artist voice behind the catalog.",
     identityLine: "A collection of songs, stories, and moments in motion."
   },
-  guidedPaths: [],
+  guidedPaths: DEFAULT_GUIDED_PATHS,
   collectionThemes: [
     {
       key: "default",
@@ -660,40 +762,47 @@ function normalizeSiteContent(siteContent = {}) {
           }))
           .filter((theme) => theme.key)
       : seedSiteContent.collectionThemes.map((theme) => ({ ...theme })),
-    guidedPaths: Array.isArray(siteContent.guidedPaths)
-      ? siteContent.guidedPaths
-          .map((path) => ({
-            slug: slugify(path?.slug || path?.title || ""),
-            title: String(path?.title || "").trim(),
-            eyebrow: String(path?.eyebrow || "Guided Path").trim(),
-            intro: String(path?.intro || "").trim(),
-            moodNote: String(path?.moodNote || "").trim(),
-            themeHint: slugify(path?.themeHint || ""),
-            postSlugs: Array.isArray(path?.postSlugs)
-              ? [
-                  ...new Set(
-                    path.postSlugs
-                      .map((slug) => slugify(slug))
-                      .filter(Boolean)
-                  )
-                ]
-              : [],
-            algorithm:
-              path?.algorithm &&
-              typeof path.algorithm === "object" &&
-              !Array.isArray(path.algorithm)
-                ? {
-                    ...path.algorithm,
-                    preset: String(path.algorithm.preset || "").trim(),
-                    collectionSlug: slugify(path.algorithm.collectionSlug || ""),
-                    sort:
-                      String(path.algorithm.sort || "curated").trim() ||
-                      "curated"
-                  }
-                : {}
-          }))
-          .filter((path) => path.slug && path.title)
-      : seedSiteContent.guidedPaths.map((path) => ({ ...path })),
+    guidedPaths:
+      Array.isArray(siteContent.guidedPaths) && siteContent.guidedPaths.length
+        ? siteContent.guidedPaths
+            .map((path) => ({
+              slug: slugify(path?.slug || path?.title || ""),
+              title: String(path?.title || "").trim(),
+              eyebrow: String(path?.eyebrow || "Guided Path").trim(),
+              intro: String(path?.intro || "").trim(),
+              moodNote: String(path?.moodNote || "").trim(),
+              themeHint: slugify(path?.themeHint || ""),
+              postSlugs: Array.isArray(path?.postSlugs)
+                ? [
+                    ...new Set(
+                      path.postSlugs
+                        .map((slug) => slugify(slug))
+                        .filter(Boolean)
+                    )
+                  ]
+                : [],
+              algorithm:
+                path?.algorithm &&
+                typeof path.algorithm === "object" &&
+                !Array.isArray(path.algorithm)
+                  ? {
+                      ...path.algorithm,
+                      preset: String(path.algorithm.preset || "").trim(),
+                      collectionSlug: slugify(
+                        path.algorithm.collectionSlug || ""
+                      ),
+                      sort:
+                        String(path.algorithm.sort || "curated").trim() ||
+                        "curated"
+                    }
+                  : {}
+            }))
+            .filter((path) => path.slug && path.title)
+        : seedSiteContent.guidedPaths.map((path) => ({
+            ...path,
+            algorithm: { ...(path.algorithm || {}) },
+            postSlugs: [...(path.postSlugs || [])]
+          })),
     about: {
       ...seedSiteContent.about,
       ...(siteContent.about || {})

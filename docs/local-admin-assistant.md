@@ -35,6 +35,9 @@ The admin dashboard has a dedicated Paths tab for guided path authoring. It
 parses the current JSON draft, so the assistant can detect already-authored
 paths before they are saved. It can review one selected path at a time and
 suggest path copy, curated `postSlugs`, or a validated `algorithm` block.
+If the live database still has an empty guided path list from an older seed, the
+backend hydrates the admin draft from the legacy guided path defaults so the
+previous hardcoded paths are still editable.
 
 The Paths tab can also ask for one new guided path concept. The backend prompts
 the model to find a real catalog gap, rejects duplicate slugs, filters suggested
