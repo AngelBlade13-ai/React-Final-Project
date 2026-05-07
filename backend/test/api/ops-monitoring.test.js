@@ -408,6 +408,93 @@ test("remote AI tunnel controls report and toggle tunnel state safely", async (t
   assert.equal(stopResponse.body.remoteTunnel.running, false);
 });
 
+test("remote Ollama wake control starts ollama serve through ssh safely", async (t) => {
+  const originalSpawn = require("node:child_process").spawn;
+  const childProcess = require("node:child_process");
+  const originalFetch = global.fetch;
+
+  global.fetch = async (url) => {
+    const normalizedUrl = String(url);
+
+    if (normalizedUrl === "https://rest.runpod.io/v1/pods/pod_test_123") {
+      return {
+        ok: true,
+        json: async () => ({
+          id: "pod_test_123",
+          desiredStatus: "RUNNING",
+          publicIp: "213.192.2.117",
+          portMappings: {
+            "22": 40179
+          }
+        })
+      };
+    }
+
+    if (normalizedUrl.endsWith("/api/tags")) {
+      return {
+        ok: true,
+        json: async () => ({
+          models: [{ name: "qwen2.5:7b" }]
+        })
+      };
+    }
+
+    throw new Error(`Unexpected fetch URL: ${normalizedUrl}`);
+  };
+
+  const context = await createApiTestContext({
+    RUNPOD_API_KEY: "test-runpod-key",
+    RUNPOD_POD_ID: "pod_test_123",
+    RUNPOD_SSH_KEY_PATH: "~/.ssh/id_ed25519"
+  });
+
+  t.after(async () => {
+    childProcess.spawn = originalSpawn;
+    global.fetch = originalFetch;
+    await context.close();
+  });
+
+  childProcess.spawn = (...args) => {
+    const { EventEmitter } = require("node:events");
+    const child = new EventEmitter();
+    child.stdout = new EventEmitter();
+    child.stderr = new EventEmitter();
+    child.kill = () => {};
+
+    process.nextTick(() => {
+      child.stdout.emit(
+        "data",
+        '__OLLAMA_STARTED__=1\n{"models":[{"name":"qwen2.5:7b"}]}'
+      );
+      child.emit("close", 0);
+    });
+
+    return child;
+  };
+
+  const loginResponse = await context.agent
+    .post("/api/admin/login")
+    .set(context.mutationHeaders)
+    .send({
+      email: "admin@example.com",
+      password: "Admin123!"
+    });
+
+  assert.equal(loginResponse.status, 200);
+
+  const wakeResponse = await context.agent
+    .post("/api/admin/assistant/remote-ollama/wake")
+    .set(context.mutationHeaders);
+
+  assert.equal(wakeResponse.status, 200);
+  assert.equal(wakeResponse.body.remoteOllama.available, true);
+  assert.equal(wakeResponse.body.remoteOllama.running, true);
+  assert.equal(wakeResponse.body.remoteOllama.startedNow, true);
+  assert.equal(wakeResponse.body.remoteOllama.modelInstalled, true);
+  assert.equal(wakeResponse.body.remoteOllama.sshHost, "213.192.2.117");
+  assert.equal(wakeResponse.body.remoteOllama.sshPort, 40179);
+});
+
 test("admin importer launcher starts the local importer behind admin auth", async (t) => {
   const context = await createApiTestContext({
     IMPORTER_LAUNCH_TEST_RESULT: "started"

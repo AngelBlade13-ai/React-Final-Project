@@ -56,6 +56,11 @@ local detached command equivalent to:
 ssh -N -L 11434:127.0.0.1:11434 root@RUNPOD_SSH_HOST -p RUNPOD_SSH_PORT -i ~/.ssh/id_ed25519
 ```
 
+Once the pod and tunnel are ready, the same panel can also wake remote Ollama.
+That action SSHes into the pod, starts `ollama serve` with
+`OLLAMA_KEEP_ALIVE=30m` if it is not already running, and waits for
+`http://127.0.0.1:11434/api/tags` to respond before reporting success.
+
 The Paths tab can also ask for one new guided path concept. The backend prompts
 the model to find a real catalog gap, rejects duplicate slugs, filters suggested
 post slugs against public catalog posts, and warns when the model does not

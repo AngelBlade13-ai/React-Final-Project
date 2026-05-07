@@ -43,6 +43,7 @@ const {
   startRemoteAiTunnel,
   stopRemoteAiTunnel
 } = require("../services/remoteAiTunnelService");
+const { wakeRemoteOllama } = require("../services/remoteOllamaService");
 const { runPostFileReseed } = require("../services/reseedLiveSiteService");
 const {
   appendSlugHistory,
@@ -923,6 +924,32 @@ router.post("/assistant/remote-tunnel/stop", async (req, res) => {
   } catch (error) {
     return res.status(error.statusCode || 500).json({
       message: error.message || "Failed to stop the remote AI SSH tunnel."
+    });
+  }
+});
+
+router.post("/assistant/remote-ollama/wake", async (req, res) => {
+  try {
+    const remoteOllama = await wakeRemoteOllama();
+
+    await recordAdminAuditEvent(req, {
+      action: "assistant.remote_ollama_woken",
+      entityType: "assistant",
+      entityId: "remote-ollama",
+      entityLabel: "Remote Ollama",
+      details: {
+        startedNow: Boolean(remoteOllama.startedNow),
+        alreadyRunning: Boolean(remoteOllama.alreadyRunning),
+        modelInstalled: Boolean(remoteOllama.modelInstalled),
+        sshHost: remoteOllama.sshHost || "",
+        sshPort: remoteOllama.sshPort || 0
+      }
+    });
+
+    return res.json({ remoteOllama });
+  } catch (error) {
+    return res.status(error.statusCode || 500).json({
+      message: error.message || "Failed to wake remote Ollama."
     });
   }
 });

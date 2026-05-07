@@ -121,6 +121,10 @@ export default function AdminInsightsPage() {
   const [remoteTunnelActionLoading, setRemoteTunnelActionLoading] =
     useState("");
   const [remoteTunnelActionError, setRemoteTunnelActionError] = useState("");
+  const [remoteOllamaActionLoading, setRemoteOllamaActionLoading] =
+    useState(false);
+  const [remoteOllamaActionError, setRemoteOllamaActionError] = useState("");
+  const [remoteOllamaMessage, setRemoteOllamaMessage] = useState("");
 
   useEffect(() => {
     let isCancelled = false;
@@ -358,6 +362,30 @@ export default function AdminInsightsPage() {
       setRemoteTunnelActionError(apiError.message);
     } finally {
       setRemoteTunnelActionLoading("");
+    }
+  }
+
+  async function handleRemoteOllamaWake() {
+    try {
+      setRemoteOllamaActionLoading(true);
+      setRemoteOllamaActionError("");
+      setRemoteOllamaMessage("");
+
+      const data = await readJson(
+        adminFetch(`${apiBaseUrl}/admin/assistant/remote-ollama/wake`, {
+          method: "POST"
+        }),
+        "Failed to wake remote Ollama."
+      );
+
+      setRemoteOllamaMessage(
+        data.remoteOllama?.message || "Remote Ollama wake command finished."
+      );
+      await handleRefreshLocalAiStatus();
+    } catch (apiError) {
+      setRemoteOllamaActionError(apiError.message);
+    } finally {
+      setRemoteOllamaActionLoading(false);
     }
   }
 
@@ -888,6 +916,20 @@ export default function AdminInsightsPage() {
               : "Close SSH Tunnel"}
           </button>
           <button
+            className="secondary-button"
+            disabled={
+              remoteOllamaActionLoading ||
+              !remotePodStatus?.configured ||
+              remotePodStatus?.runtimeStatus !== "running"
+            }
+            onClick={handleRemoteOllamaWake}
+            type="button"
+          >
+            {remoteOllamaActionLoading
+              ? "Waking Remote Ollama..."
+              : "Wake Remote Ollama"}
+          </button>
+          <button
             className="hero-link"
             disabled={
               localAiReviewLoading ||
@@ -915,6 +957,10 @@ export default function AdminInsightsPage() {
         {remoteTunnelActionError ? (
           <p className="error-text">{remoteTunnelActionError}</p>
         ) : null}
+        {remoteOllamaActionError ? (
+          <p className="error-text">{remoteOllamaActionError}</p>
+        ) : null}
+        {remoteOllamaMessage ? <p className="meta">{remoteOllamaMessage}</p> : null}
         {localAiReviewError ? (
           <p className="error-text">{localAiReviewError}</p>
         ) : null}
