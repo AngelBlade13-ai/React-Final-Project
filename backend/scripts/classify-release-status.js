@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const dotenv = require("dotenv");
 
-const POSTS_FILE = path.resolve(__dirname, "../data/posts.json");
+const POSTS_FILE = path.resolve(__dirname, "../data/posts.local.json");
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 const { slugify } = require("../src/utils/slugify");
@@ -128,7 +128,10 @@ const MANUAL_FAMILY_RULES = {
   "i-am-more-than-what-they-see": {
     canon: ["i-am-more-than-what-they-see"],
     alternate: ["i-am-more-than-what-they-see-dark-orchestral-rock-version"],
-    working: ["i-am-more-than-what-they-see-darker-version", "i-am-more-than-what-they-see-darker-version-no-fear-revision"],
+    working: [
+      "i-am-more-than-what-they-see-darker-version",
+      "i-am-more-than-what-they-see-darker-version-no-fear-revision"
+    ],
     transferHomepageEligibility: true
   },
   "together-we-rise": {
@@ -136,12 +139,19 @@ const MANUAL_FAMILY_RULES = {
     transferHomepageEligibility: true
   },
   "becoming-angel": {
-    alternate: ["becoming-angel-dark-cinematic-male-female-version", "becoming-angel-dark-cinematic-malefemale-version"],
+    alternate: [
+      "becoming-angel-dark-cinematic-male-female-version",
+      "becoming-angel-dark-cinematic-malefemale-version"
+    ],
     working: ["becoming-angel"]
   },
   "hidden-identity-ballad": {
     alternate: ["hidden-identity-ballad-wounded-hope-version"],
-    working: ["hidden-identity-ballad", "hidden-identity-ballad-extended-heavy-devastating-version", "hidden-identity-ballad-extended-heavydevastating-version"]
+    working: [
+      "hidden-identity-ballad",
+      "hidden-identity-ballad-extended-heavy-devastating-version",
+      "hidden-identity-ballad-extended-heavydevastating-version"
+    ]
   },
   "you-wanted-a-hero": {
     canon: ["you-wanted-a-hero"],
@@ -173,8 +183,14 @@ const MANUAL_SINGLE_OVERRIDES = {
   "where-the-wings-remember": { releaseStatus: "alternate" },
   "what-the-world-made-of-me": { releaseStatus: "alternate" },
   "the-cost-i-couldnt-pay": { releaseStatus: "alternate" },
-  "rise-in-the-radiant-storm": { releaseStatus: "alternate", versionFamily: "rise-in-the-radiant-storm" },
-  "rise-in-the-radiant-storm-": { releaseStatus: "alternate", versionFamily: "rise-in-the-radiant-storm" },
+  "rise-in-the-radiant-storm": {
+    releaseStatus: "alternate",
+    versionFamily: "rise-in-the-radiant-storm"
+  },
+  "rise-in-the-radiant-storm-": {
+    releaseStatus: "alternate",
+    versionFamily: "rise-in-the-radiant-storm"
+  },
   "im-shiny-me": { releaseStatus: "alternate" },
   "-im-shiny-me": { releaseStatus: "alternate" },
   "angel-made-of-quiet-fire": { releaseStatus: "alternate" },
@@ -210,26 +226,71 @@ const MANUAL_SINGLE_OVERRIDES = {
   "stand-up-for-trans-rights": { releaseStatus: "working" },
   "ionas-resolve": { releaseStatus: "working" },
   "stream-of-colors": { releaseStatus: "working" },
-  "will-you-see-me-streamlined": { releaseStatus: "canon", isHomepageEligible: true },
+  "will-you-see-me-streamlined": {
+    releaseStatus: "canon",
+    isHomepageEligible: true
+  },
   "will-you-see-me": { releaseStatus: "alternate", isHomepageEligible: false },
-  "we-were-never-meant-to-survive-reimagined-duet": { releaseStatus: "canon", isHomepageEligible: true },
-  "we-were-never-meant-to-survive": { releaseStatus: "alternate", isHomepageEligible: false },
-  "princess-in-waiting-original-version": { releaseStatus: "canon", isHomepageEligible: true },
-  "crown-of-dreams-original-version": { releaseStatus: "canon", isHomepageEligible: true },
-  "heart-full-of-hope-original-version": { releaseStatus: "canon", isHomepageEligible: true },
-  "the-girl-i-couldnt-kill": { releaseStatus: "canon", isHomepageEligible: true },
-  "the-girl-i-couldnt-kill-dark-cinematic-powerful-version": { releaseStatus: "alternate", isHomepageEligible: false },
+  "we-were-never-meant-to-survive-reimagined-duet": {
+    releaseStatus: "canon",
+    isHomepageEligible: true
+  },
+  "we-were-never-meant-to-survive": {
+    releaseStatus: "alternate",
+    isHomepageEligible: false
+  },
+  "princess-in-waiting-original-version": {
+    releaseStatus: "canon",
+    isHomepageEligible: true
+  },
+  "crown-of-dreams-original-version": {
+    releaseStatus: "canon",
+    isHomepageEligible: true
+  },
+  "heart-full-of-hope-original-version": {
+    releaseStatus: "canon",
+    isHomepageEligible: true
+  },
+  "the-girl-i-couldnt-kill": {
+    releaseStatus: "canon",
+    isHomepageEligible: true
+  },
+  "the-girl-i-couldnt-kill-dark-cinematic-powerful-version": {
+    releaseStatus: "alternate",
+    isHomepageEligible: false
+  },
   "magical-transformation-slow-magical-lullaby-jp-version": {
     releaseStatus: "alternate",
     versionFamily: "magical-transformation"
   },
-  "twinkle-heartdreaming": { releaseStatus: "alternate", versionFamily: "twinkle-heart-dreaming" },
-  "starlightadventure-full-english-version": { releaseStatus: "alternate", versionFamily: "starlight-adventure" },
-  "hopes-song-orchestral-op-version": { releaseStatus: "alternate", versionFamily: "hopes-song" },
-  "untitled-sadness-version": { releaseStatus: "alternate", versionFamily: "untitled-sadness" },
-  "queen-reclaimed-donna-generation": { releaseStatus: "working", versionFamily: "queen-reclaimed" },
-  "queen-reclaimed": { releaseStatus: "working", versionFamily: "queen-reclaimed" },
-  "shadows-of-the-crown-version-1": { releaseStatus: "canon", versionFamily: "shadows-of-the-crown" }
+  "twinkle-heartdreaming": {
+    releaseStatus: "alternate",
+    versionFamily: "twinkle-heart-dreaming"
+  },
+  "starlightadventure-full-english-version": {
+    releaseStatus: "alternate",
+    versionFamily: "starlight-adventure"
+  },
+  "hopes-song-orchestral-op-version": {
+    releaseStatus: "alternate",
+    versionFamily: "hopes-song"
+  },
+  "untitled-sadness-version": {
+    releaseStatus: "alternate",
+    versionFamily: "untitled-sadness"
+  },
+  "queen-reclaimed-donna-generation": {
+    releaseStatus: "working",
+    versionFamily: "queen-reclaimed"
+  },
+  "queen-reclaimed": {
+    releaseStatus: "working",
+    versionFamily: "queen-reclaimed"
+  },
+  "shadows-of-the-crown-version-1": {
+    releaseStatus: "canon",
+    versionFamily: "shadows-of-the-crown"
+  }
 };
 const MANUAL_WORKING_SLUGS = new Set([
   "searching-for-love",
@@ -245,7 +306,10 @@ const MANUAL_WORKING_SLUGS = new Set([
   "finding-love-in-colors",
   "finding-loves-embrace"
 ]);
-const MANUAL_ALTERNATE_SLUGS = new Set(["so-i-chose-the-fire", "so-i-chose-the-fire-stripped-unsettling-version"]);
+const MANUAL_ALTERNATE_SLUGS = new Set([
+  "so-i-chose-the-fire",
+  "so-i-chose-the-fire-stripped-unsettling-version"
+]);
 const PRIORITY_MANUAL_REVIEW_FAMILIES = [
   "we-were-never-meant-to-survive",
   "i-am-more-than-what-they-see",
@@ -257,7 +321,9 @@ const PRIORITY_MANUAL_REVIEW_FAMILIES = [
 ];
 
 function getReleaseStatus(post) {
-  const status = String(post?.releaseStatus || "").trim().toLowerCase();
+  const status = String(post?.releaseStatus || "")
+    .trim()
+    .toLowerCase();
   return VALID_RELEASE_STATUSES.has(status) ? status : "";
 }
 
@@ -272,7 +338,9 @@ function normalizeText(value = "") {
 }
 
 function getVersionValue(post) {
-  const match = String(post.content || "").match(/\*\*Version:\*\*\s*([^\n]+)/i);
+  const match = String(post.content || "").match(
+    /\*\*Version:\*\*\s*([^\n]+)/i
+  );
   return String(match?.[1] || "").trim();
 }
 
@@ -295,7 +363,11 @@ function getFallbackFamilyKey(post) {
     .replace(/\s+/g, " ")
     .trim();
 
-  return slugify(normalized) || slugify(String(post.slug || post.id || "")) || String(post.id || "");
+  return (
+    slugify(normalized) ||
+    slugify(String(post.slug || post.id || "")) ||
+    String(post.id || "")
+  );
 }
 
 function getFamilyKey(post) {
@@ -338,7 +410,9 @@ function applyManualFamilyRule(familyKey, familyPosts) {
   const alternateSlugs = buildSlugSet(rule.alternate);
   const workingSlugs = buildSlugSet(rule.working);
   const transferHomepageEligibility = Boolean(rule.transferHomepageEligibility);
-  const hasCanonTarget = canonSlugs.size > 0 && familyPosts.some((post) => canonSlugs.has(String(post.slug || "").trim()));
+  const hasCanonTarget =
+    canonSlugs.size > 0 &&
+    familyPosts.some((post) => canonSlugs.has(String(post.slug || "").trim()));
 
   return {
     applied: true,
@@ -352,18 +426,30 @@ function applyManualFamilyRule(familyKey, familyPosts) {
         releaseStatus = "alternate";
       } else if (workingSlugs.has(slug)) {
         releaseStatus = "working";
-      } else if (hasCanonTarget && (rule.working?.length || rule.alternate?.length)) {
+      } else if (
+        hasCanonTarget &&
+        (rule.working?.length || rule.alternate?.length)
+      ) {
         releaseStatus = "working";
       }
 
-      const shouldBeHomepageEligible = transferHomepageEligibility && canonSlugs.has(slug);
+      const shouldBeHomepageEligible =
+        transferHomepageEligibility && canonSlugs.has(slug);
       const shouldDisableHomepageEligibility =
-        transferHomepageEligibility && hasCanonTarget && (alternateSlugs.has(slug) || workingSlugs.has(slug) || !canonSlugs.has(slug));
+        transferHomepageEligibility &&
+        hasCanonTarget &&
+        (alternateSlugs.has(slug) ||
+          workingSlugs.has(slug) ||
+          !canonSlugs.has(slug));
 
       return {
         ...post,
         releaseStatus,
-        isHomepageEligible: shouldBeHomepageEligible ? true : shouldDisableHomepageEligibility ? false : post.isHomepageEligible
+        isHomepageEligible: shouldBeHomepageEligible
+          ? true
+          : shouldDisableHomepageEligibility
+            ? false
+            : post.isHomepageEligible
       };
     })
   };
@@ -385,8 +471,12 @@ function buildFamilySummary(posts = []) {
   return [...families.entries()]
     .map(([familyKey, members]) => {
       const canon = members.filter((post) => post.releaseStatus === "canon");
-      const alternate = members.filter((post) => post.releaseStatus === "alternate");
-      const working = members.filter((post) => post.releaseStatus === "working");
+      const alternate = members.filter(
+        (post) => post.releaseStatus === "alternate"
+      );
+      const working = members.filter(
+        (post) => post.releaseStatus === "working"
+      );
       return {
         familyKey,
         canon: canon.map((post) => post.slug),
@@ -408,7 +498,13 @@ function buildFamilySummary(posts = []) {
 }
 
 function isTechnicalWorking(post, familyPosts) {
-  const haystack = [post.title, post.slug, getVersionValue(post), post.excerpt, post.content].join(" ");
+  const haystack = [
+    post.title,
+    post.slug,
+    getVersionValue(post),
+    post.excerpt,
+    post.content
+  ].join(" ");
 
   if (TECHNICAL_PATTERNS.some((pattern) => pattern.test(haystack))) {
     return true;
@@ -422,67 +518,129 @@ function isTechnicalWorking(post, familyPosts) {
 }
 
 function isMeaningfulAlternate(post) {
-  const haystack = [post.title, post.slug, getVersionValue(post), post.excerpt].join(" ");
+  const haystack = [
+    post.title,
+    post.slug,
+    getVersionValue(post),
+    post.excerpt
+  ].join(" ");
   return STYLE_ALT_PATTERNS.some((pattern) => pattern.test(haystack));
 }
 
 function chooseCanonCandidate(familyPosts) {
-  const explicitCanon = familyPosts.filter((post) => getReleaseStatus(post) === "canon");
+  const explicitCanon = familyPosts.filter(
+    (post) => getReleaseStatus(post) === "canon"
+  );
   if (explicitCanon.length === 1) {
-    return { candidate: explicitCanon[0], ambiguous: false, reason: "existing-canon" };
+    return {
+      candidate: explicitCanon[0],
+      ambiguous: false,
+      reason: "existing-canon"
+    };
   }
 
   if (explicitCanon.length > 1) {
     const chosen = explicitCanon
       .slice()
-      .sort((left, right) => String(right.createdAt || "").localeCompare(String(left.createdAt || "")))[0];
-    return { candidate: chosen, ambiguous: true, reason: "multiple-existing-canon" };
+      .sort((left, right) =>
+        String(right.createdAt || "").localeCompare(
+          String(left.createdAt || "")
+        )
+      )[0];
+    return {
+      candidate: chosen,
+      ambiguous: true,
+      reason: "multiple-existing-canon"
+    };
   }
 
   const primaryVersions = familyPosts.filter((post) => post.isPrimaryVersion);
   if (primaryVersions.length === 1) {
-    return { candidate: primaryVersions[0], ambiguous: false, reason: "primary-version" };
+    return {
+      candidate: primaryVersions[0],
+      ambiguous: false,
+      reason: "primary-version"
+    };
   }
 
   if (primaryVersions.length > 1) {
-    const chosen = primaryVersions
-      .slice()
-      .sort((left, right) => {
-        if (Boolean(right.isHomepageEligible) !== Boolean(left.isHomepageEligible)) {
-          return Number(Boolean(right.isHomepageEligible)) - Number(Boolean(left.isHomepageEligible));
-        }
+    const chosen = primaryVersions.slice().sort((left, right) => {
+      if (
+        Boolean(right.isHomepageEligible) !== Boolean(left.isHomepageEligible)
+      ) {
+        return (
+          Number(Boolean(right.isHomepageEligible)) -
+          Number(Boolean(left.isHomepageEligible))
+        );
+      }
 
-        if (Boolean(left.isArchive) !== Boolean(right.isArchive)) {
-          return Number(Boolean(left.isArchive)) - Number(Boolean(right.isArchive));
-        }
+      if (Boolean(left.isArchive) !== Boolean(right.isArchive)) {
+        return (
+          Number(Boolean(left.isArchive)) - Number(Boolean(right.isArchive))
+        );
+      }
 
-        return String(right.createdAt || "").localeCompare(String(left.createdAt || ""));
-      })[0];
-    return { candidate: chosen, ambiguous: true, reason: "multiple-primary-version" };
+      return String(right.createdAt || "").localeCompare(
+        String(left.createdAt || "")
+      );
+    })[0];
+    return {
+      candidate: chosen,
+      ambiguous: true,
+      reason: "multiple-primary-version"
+    };
   }
 
-  const homepageCandidates = familyPosts.filter((post) => post.isHomepageEligible);
+  const homepageCandidates = familyPosts.filter(
+    (post) => post.isHomepageEligible
+  );
   if (homepageCandidates.length === 1) {
-    return { candidate: homepageCandidates[0], ambiguous: false, reason: "homepage-eligible" };
+    return {
+      candidate: homepageCandidates[0],
+      ambiguous: false,
+      reason: "homepage-eligible"
+    };
   }
 
   if (homepageCandidates.length > 1) {
     const chosen = homepageCandidates
       .slice()
-      .sort((left, right) => String(right.createdAt || "").localeCompare(String(left.createdAt || "")))[0];
-    return { candidate: chosen, ambiguous: true, reason: "multiple-homepage-eligible" };
+      .sort((left, right) =>
+        String(right.createdAt || "").localeCompare(
+          String(left.createdAt || "")
+        )
+      )[0];
+    return {
+      candidate: chosen,
+      ambiguous: true,
+      reason: "multiple-homepage-eligible"
+    };
   }
 
   if (familyPosts.length === 1) {
-    return { candidate: familyPosts[0], ambiguous: false, reason: "single-entry" };
+    return {
+      candidate: familyPosts[0],
+      ambiguous: false,
+      reason: "single-entry"
+    };
   }
 
-  const nonWorkingCandidates = familyPosts.filter((post) => !isTechnicalWorking(post, familyPosts));
+  const nonWorkingCandidates = familyPosts.filter(
+    (post) => !isTechnicalWorking(post, familyPosts)
+  );
   if (nonWorkingCandidates.length === 1) {
-    return { candidate: nonWorkingCandidates[0], ambiguous: false, reason: "sole-non-working" };
+    return {
+      candidate: nonWorkingCandidates[0],
+      ambiguous: false,
+      reason: "sole-non-working"
+    };
   }
 
-  return { candidate: null, ambiguous: nonWorkingCandidates.length > 1, reason: "no-clear-canon" };
+  return {
+    candidate: null,
+    ambiguous: nonWorkingCandidates.length > 1,
+    reason: "no-clear-canon"
+  };
 }
 
 function classifyFamily(familyPosts, options = {}) {
@@ -564,7 +722,10 @@ function applyClassification(posts = [], options = {}) {
 
   families.forEach((familyPosts) => {
     const result = classifyFamily(familyPosts, options);
-    const manualFamilyResult = applyManualFamilyRule(getFamilyKey(familyPosts[0]), result.posts);
+    const manualFamilyResult = applyManualFamilyRule(
+      getFamilyKey(familyPosts[0]),
+      result.posts
+    );
     nextPosts.push(...manualFamilyResult.posts);
     if (result.ambiguous) {
       ambiguousFamilies.push(result.ambiguous);
@@ -585,19 +746,31 @@ function applyClassification(posts = [], options = {}) {
   });
 
   const summary = {
-    canon: manuallyAdjustedPosts.filter((post) => post.releaseStatus === "canon").length,
-    alternate: manuallyAdjustedPosts.filter((post) => post.releaseStatus === "alternate").length,
-    working: manuallyAdjustedPosts.filter((post) => post.releaseStatus === "working").length
+    canon: manuallyAdjustedPosts.filter(
+      (post) => post.releaseStatus === "canon"
+    ).length,
+    alternate: manuallyAdjustedPosts.filter(
+      (post) => post.releaseStatus === "alternate"
+    ).length,
+    working: manuallyAdjustedPosts.filter(
+      (post) => post.releaseStatus === "working"
+    ).length
   };
 
   const familySummary = buildFamilySummary(manuallyAdjustedPosts);
-  const familyConflicts = familySummary.filter((family) => family.canon.length > 1 || family.alternate.length > 2);
-  const ambiguousManualReviewFamilies = familySummary.filter((family) => PRIORITY_MANUAL_REVIEW_FAMILIES.includes(family.familyKey));
+  const familyConflicts = familySummary.filter(
+    (family) => family.canon.length > 1 || family.alternate.length > 2
+  );
+  const ambiguousManualReviewFamilies = familySummary.filter((family) =>
+    PRIORITY_MANUAL_REVIEW_FAMILIES.includes(family.familyKey)
+  );
 
   return {
     posts: manuallyAdjustedPosts,
     summary,
-    ambiguousFamilies: ambiguousFamilies.sort((left, right) => left.familyKey.localeCompare(right.familyKey)),
+    ambiguousFamilies: ambiguousFamilies.sort((left, right) =>
+      left.familyKey.localeCompare(right.familyKey)
+    ),
     familyConflicts,
     ambiguousManualReviewFamilies
   };
@@ -622,7 +795,10 @@ function printReport(label, result) {
 async function updateFileTarget(options = {}) {
   const raw = fs.readFileSync(POSTS_FILE, "utf8");
   const data = JSON.parse(raw);
-  const result = applyClassification(Array.isArray(data.posts) ? data.posts : [], options);
+  const result = applyClassification(
+    Array.isArray(data.posts) ? data.posts : [],
+    options
+  );
   data.posts = result.posts;
   fs.writeFileSync(POSTS_FILE, `${JSON.stringify(data, null, 2)}\n`);
   printReport("file", result);
@@ -639,7 +815,9 @@ async function updateDbTarget(options = {}) {
 }
 
 async function main() {
-  const targetArg = process.argv.find((argument) => argument.startsWith("--target="));
+  const targetArg = process.argv.find((argument) =>
+    argument.startsWith("--target=")
+  );
   const target = targetArg ? targetArg.split("=")[1] : "both";
   const force = process.argv.includes("--force");
 

@@ -1,0 +1,49 @@
+{
+  "posts": [],
+  "collections": [],
+  "siteContent": {
+    "branding": {
+      "siteName": "",
+      "siteTagline": ""
+    },
+    "home": {
+      "heroEyebrow": "",
+      "heroTitle": "",
+      "heroText": "",
+      "featuredReleaseSlug": "",
+      "featuredCtaLabel": "",
+      "jumpCtaLabel": "",
+      "noteEyebrow": "",
+      "noteTitle": "",
+      "noteText": "",
+      "browseEyebrow": "",
+      "browseTitle": "",
+      "browseText": "",
+      "browseLinkLabel": "",
+      "exploreEyebrow": "",
+      "exploreTitle": "",
+      "exploreText": "",
+      "exploreLinkLabel": "",
+      "identityEyebrow": "",
+      "identityTitle": "",
+      "identityText": "",
+      "identityLine": ""
+    },
+    "guidedPaths": [],
+    "collectionThemes": [],
+    "about": {
+      "heroEyebrow": "",
+      "heroTitle": "",
+      "heroText": "",
+      "artistEyebrow": "",
+      "artistTitle": "",
+      "artistText": "",
+      "siteEyebrow": "",
+      "siteTitle": "",
+      "siteText": "",
+      "quoteEyebrow": "",
+      "quoteTitle": "",
+      "quoteText": ""
+    }
+  }
+}

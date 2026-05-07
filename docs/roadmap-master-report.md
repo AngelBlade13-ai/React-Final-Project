@@ -57,7 +57,7 @@ This roadmap covered the public website UI, admin UI, release/world presentation
   - action state
 - Added stale-preview safety so changing JSON or files invalidates an old preview before apply/reseed can run.
 - Kept the safe split between:
-  - writing to `backend/data/posts.json`
+  - writing to `backend/data/posts.local.json`
   - reseeding the live site
 - Preserved the importer’s ability to attach media and interact with the website code automatically.
 
@@ -93,5 +93,5 @@ The roadmap is complete. The site now has clearer separation between public, dis
 
 ## Notes
 
-- The local backend catalog edits in `backend/data/posts.json` were preserved and were not part of this UI roadmap work.
+- The local backend catalog edits in `backend/data/posts.local.json` were preserved and were not part of this UI roadmap work.
 - Remaining improvements are optional follow-up polish, not unfinished roadmap items.

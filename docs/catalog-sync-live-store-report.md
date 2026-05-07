@@ -1,6 +1,6 @@
 # Catalog Sync Report
 
-- Catalog file: `backend\data\posts.json`
+- Catalog file: `backend\data\posts.local.json`
 - Generated: `2026-04-27T21:14:57.610Z`
 
 ## Summary
@@ -21,7 +21,7 @@
 
 - Repo-tracked catalog now covers authored content only: `posts`, `collections`, and `siteContent`.
 - `users` and `comments` remain live operational data and are intentionally excluded from the tracked catalog file.
-- `backend/data/posts.json` is the canonical restore source for authored catalog state.
+- `backend/data/posts.local.json` is the local authored catalog restore source.
 
 ## Post Drift
 

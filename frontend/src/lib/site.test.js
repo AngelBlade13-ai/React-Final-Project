@@ -1,11 +1,84 @@
 import { describe, expect, it } from "vitest";
-import catalogData from "../../../backend/data/posts.json";
 import { resolveGuidedListeningPath } from "./listeningPaths";
 import {
   getPrimaryCollectionSurfacePosts,
   getReleaseStatus,
   sortCollectionsForPublicNavigation
 } from "./site";
+
+const catalogFixture = {
+  collections: [
+    {
+      slug: "fractureverse",
+      title: "Fractureverse",
+      isPublicPrimary: true
+    },
+    {
+      slug: "villain-anthology",
+      title: "Villain Anthology",
+      isPublicPrimary: false
+    }
+  ],
+  posts: [
+    {
+      slug: "the-one-you-used-to-be-reimagined",
+      title: "The One You Used To Be Reimagined",
+      collectionSlugs: ["fractureverse"],
+      releaseStatus: "canon",
+      isPubliclyVisible: true
+    },
+    {
+      slug: "still-breathing-in-a-dying-world-reimagined",
+      title: "Still Breathing In A Dying World Reimagined",
+      collectionSlugs: ["fractureverse"],
+      releaseStatus: "canon",
+      isPubliclyVisible: true
+    },
+    {
+      slug: "shattered-trust-reimagined",
+      title: "Shattered Trust Reimagined",
+      collectionSlugs: ["fractureverse"],
+      releaseStatus: "canon",
+      isPubliclyVisible: true
+    },
+    {
+      slug: "you-were-better-before-you-saved-the-world-reimagined",
+      title: "You Were Better Before You Saved The World Reimagined",
+      collectionSlugs: ["fractureverse"],
+      releaseStatus: "canon",
+      isPubliclyVisible: true
+    },
+    {
+      slug: "we-were-never-meant-to-survive-reimagined-duet",
+      title: "We Were Never Meant To Survive Reimagined Duet",
+      collectionSlugs: ["fractureverse"],
+      releaseStatus: "canon",
+      isPubliclyVisible: true
+    },
+    {
+      slug: "the-hands-that-shield",
+      title: "The Hands That Shield",
+      collectionSlugs: ["villain-anthology"],
+      subCategory: "villain",
+      themeTags: ["villain"],
+      worldLayer: "villain",
+      releaseStatus: "canon",
+      isPubliclyVisible: true,
+      createdAt: "2026-05-01T00:00:00.000Z"
+    },
+    {
+      slug: "you-wanted-a-hero",
+      title: "You Wanted A Hero",
+      collectionSlugs: ["villain-anthology"],
+      subCategory: "villain",
+      themeTags: ["villain"],
+      worldLayer: "villain",
+      releaseStatus: "canon",
+      isPubliclyVisible: true,
+      createdAt: "2026-05-02T00:00:00.000Z"
+    }
+  ]
+};
 
 describe("sortCollectionsForPublicNavigation", () => {
   it("keeps primary collection anchors ahead of other public collections", () => {
@@ -66,8 +139,8 @@ describe("resolveGuidedListeningPath", () => {
   it("keeps the Fractureverse path scoped to the five main fragments", () => {
     const path = resolveGuidedListeningPath(
       "fractureverse",
-      catalogData.posts,
-      catalogData.collections
+      catalogFixture.posts,
+      catalogFixture.collections
     );
 
     expect(path.posts.map((post) => post.slug)).toEqual([
@@ -82,8 +155,8 @@ describe("resolveGuidedListeningPath", () => {
   it("includes villain-tagged standalone records in the Villain / Catastrophe path", () => {
     const path = resolveGuidedListeningPath(
       "villain-catastrophe",
-      catalogData.posts,
-      catalogData.collections
+      catalogFixture.posts,
+      catalogFixture.collections
     );
     const slugs = path.posts.map((post) => post.slug);
 
@@ -94,8 +167,8 @@ describe("resolveGuidedListeningPath", () => {
   it("lets admin-managed guided paths use explicit slug ordering", () => {
     const path = resolveGuidedListeningPath(
       "manual-test",
-      catalogData.posts,
-      catalogData.collections,
+      catalogFixture.posts,
+      catalogFixture.collections,
       {
         guidedPaths: [
           {

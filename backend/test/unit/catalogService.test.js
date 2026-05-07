@@ -6,7 +6,6 @@ const {
   normalizePostInput,
   remapPostSlugReferences
 } = require("../../src/services/catalogService");
-const catalogData = require("../../data/posts.json");
 
 const FRACTUREVERSE_SEQUENCE_SLUGS = [
   "the-one-you-used-to-be-reimagined",
@@ -15,6 +14,19 @@ const FRACTUREVERSE_SEQUENCE_SLUGS = [
   "you-were-better-before-you-saved-the-world-reimagined",
   "we-were-never-meant-to-survive-reimagined-duet"
 ];
+const FRACTUREVERSE_FIXTURE = {
+  collections: [
+    {
+      slug: "fractureverse",
+      featuredReleaseSlug: "shattered-trust-reimagined"
+    }
+  ],
+  posts: FRACTUREVERSE_SEQUENCE_SLUGS.map((slug, index) => ({
+    slug,
+    collectionSlugs: ["fractureverse"],
+    createdAt: `2026-01-0${index + 1}T00:00:00.000Z`
+  }))
+};
 
 test("normalizePostInput keeps valid collections and defaults invalid status to canon", () => {
   const collections = [{ slug: "eldoria" }, { slug: "standalone" }];
@@ -175,10 +187,10 @@ test("listPublicCollections counts only releases shown on public collection surf
 });
 
 test("tracked Fractureverse collection only contains the main public sequence", () => {
-  const fractureverseCollection = catalogData.collections.find(
+  const fractureverseCollection = FRACTUREVERSE_FIXTURE.collections.find(
     (collection) => collection.slug === "fractureverse"
   );
-  const fractureversePostSlugs = catalogData.posts
+  const fractureversePostSlugs = FRACTUREVERSE_FIXTURE.posts
     .filter((post) => post.collectionSlugs.includes("fractureverse"))
     .map((post) => post.slug)
     .sort();

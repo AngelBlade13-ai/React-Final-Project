@@ -23,7 +23,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-DEFAULT_DATA_PATH = Path("backend/data/posts.json")
+DEFAULT_DATA_PATH = Path("backend/data/posts.local.json")
 STATUS_ORDER = ("canon", "alternate", "working")
 
 
@@ -42,7 +42,7 @@ def parse_args() -> argparse.Namespace:
         "--data",
         type=Path,
         default=DEFAULT_DATA_PATH,
-        help="Path to the archive JSON file. Defaults to backend/data/posts.json.",
+        help="Path to the archive JSON file. Defaults to backend/data/posts.local.json.",
     )
     parser.add_argument(
         "--format",

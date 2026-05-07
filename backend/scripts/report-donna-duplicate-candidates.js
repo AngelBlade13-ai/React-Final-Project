@@ -2,8 +2,11 @@ const fs = require("fs");
 const path = require("path");
 const dotenv = require("dotenv");
 
-const POSTS_FILE = path.resolve(__dirname, "../data/posts.json");
-const REPORT_FILE = path.resolve(__dirname, "../reports/donna-duplicate-candidates-report.json");
+const POSTS_FILE = path.resolve(__dirname, "../data/posts.local.json");
+const REPORT_FILE = path.resolve(
+  __dirname,
+  "../reports/donna-duplicate-candidates-report.json"
+);
 
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
@@ -28,18 +31,28 @@ function sortPosts(posts = []) {
     }
 
     if (Boolean(right.isPrimaryVersion) !== Boolean(left.isPrimaryVersion)) {
-      return Number(Boolean(right.isPrimaryVersion)) - Number(Boolean(left.isPrimaryVersion));
+      return (
+        Number(Boolean(right.isPrimaryVersion)) -
+        Number(Boolean(left.isPrimaryVersion))
+      );
     }
 
-    if (Boolean(right.isHomepageEligible) !== Boolean(left.isHomepageEligible)) {
-      return Number(Boolean(right.isHomepageEligible)) - Number(Boolean(left.isHomepageEligible));
+    if (
+      Boolean(right.isHomepageEligible) !== Boolean(left.isHomepageEligible)
+    ) {
+      return (
+        Number(Boolean(right.isHomepageEligible)) -
+        Number(Boolean(left.isHomepageEligible))
+      );
     }
 
     if (Boolean(left.isArchive) !== Boolean(right.isArchive)) {
       return Number(Boolean(left.isArchive)) - Number(Boolean(right.isArchive));
     }
 
-    return String(right.createdAt || "").localeCompare(String(left.createdAt || ""));
+    return String(right.createdAt || "").localeCompare(
+      String(left.createdAt || "")
+    );
   });
 }
 
@@ -62,7 +75,10 @@ function summarizePost(post) {
 function getPublicPosts(posts = []) {
   return posts.filter((post) => {
     const status = getReleaseStatus(post);
-    return (status === "canon" || status === "alternate") && post.isPubliclyVisible !== false;
+    return (
+      (status === "canon" || status === "alternate") &&
+      post.isPubliclyVisible !== false
+    );
   });
 }
 
@@ -74,7 +90,10 @@ function getCanonicalSignals(posts = []) {
     hasHomepage: posts.some((post) => Boolean(post.isHomepageEligible)),
     allWorkingOrArchive:
       posts.length > 0 &&
-      posts.every((post) => getReleaseStatus(post) === "working" || Boolean(post.isArchive)),
+      posts.every(
+        (post) =>
+          getReleaseStatus(post) === "working" || Boolean(post.isArchive)
+      ),
     hasMeaningfulAlternate: posts.some((post) => {
       const status = getReleaseStatus(post);
       return status === "alternate" || isMeaningfulAlternate(post);
@@ -96,44 +115,74 @@ function recommendFamily(familyKey, posts) {
   if (publicDonnaPosts.length > 0 && publicNonDonnaPosts.length > 0) {
     recommendation = "keep-both";
     confidence = "high";
-    reasons.push("Both Donna and non-Donna posts are currently classified for public visibility.");
+    reasons.push(
+      "Both Donna and non-Donna posts are currently classified for public visibility."
+    );
   } else if (publicNonDonnaPosts.length > 0) {
     recommendation = "keep-non-donna";
-    confidence = nonDonnaSignals.hasCanon || donnaSignals.allWorkingOrArchive ? "high" : "medium";
-    reasons.push("Only non-Donna posts are currently classified for public visibility.");
+    confidence =
+      nonDonnaSignals.hasCanon || donnaSignals.allWorkingOrArchive
+        ? "high"
+        : "medium";
+    reasons.push(
+      "Only non-Donna posts are currently classified for public visibility."
+    );
   } else if (publicDonnaPosts.length > 0) {
     recommendation = "keep-donna";
-    confidence = donnaSignals.hasCanon || nonDonnaSignals.allWorkingOrArchive ? "high" : "medium";
-    reasons.push("Only Donna posts are currently classified for public visibility.");
+    confidence =
+      donnaSignals.hasCanon || nonDonnaSignals.allWorkingOrArchive
+        ? "high"
+        : "medium";
+    reasons.push(
+      "Only Donna posts are currently classified for public visibility."
+    );
   } else if (nonDonnaSignals.hasMeaningfulAlternate && !donnaSignals.hasCanon) {
     recommendation = "keep-non-donna";
     confidence = "medium";
-    reasons.push("The non-Donna side reads as a meaningful alternate or refined rewrite while Donna lacks a public-favored version.");
+    reasons.push(
+      "The non-Donna side reads as a meaningful alternate or refined rewrite while Donna lacks a public-favored version."
+    );
   } else if (nonDonnaSignals.hasMeaningfulAlternate) {
     recommendation = "keep-both";
     confidence = "medium";
-    reasons.push("The non-Donna side looks meaningfully distinct, so the family may need canon/alternate treatment.");
+    reasons.push(
+      "The non-Donna side looks meaningfully distinct, so the family may need canon/alternate treatment."
+    );
   } else {
     recommendation = "keep-donna";
     confidence = "medium";
-    reasons.push("No stronger non-Donna public signal was found, so the default bias stays with the Donna source record.");
+    reasons.push(
+      "No stronger non-Donna public signal was found, so the default bias stays with the Donna source record."
+    );
   }
 
   if (nonDonnaSignals.hasCanon && donnaSignals.allWorkingOrArchive) {
-    reasons.push("Non-Donna has the stronger canon signal while the Donna side is effectively archival/working.");
+    reasons.push(
+      "Non-Donna has the stronger canon signal while the Donna side is effectively archival/working."
+    );
   }
 
   if (donnaSignals.hasCanon && nonDonnaSignals.allWorkingOrArchive) {
-    reasons.push("Donna has the stronger canon signal while the non-Donna side is effectively archival/working.");
+    reasons.push(
+      "Donna has the stronger canon signal while the non-Donna side is effectively archival/working."
+    );
   }
 
-  if (publicDonnaPosts.length > 0 && publicNonDonnaPosts.length > 0 && (donnaSignals.hasAlternate || nonDonnaSignals.hasAlternate)) {
-    reasons.push("This family already presents as canon plus alternate rather than a simple duplicate.");
+  if (
+    publicDonnaPosts.length > 0 &&
+    publicNonDonnaPosts.length > 0 &&
+    (donnaSignals.hasAlternate || nonDonnaSignals.hasAlternate)
+  ) {
+    reasons.push(
+      "This family already presents as canon plus alternate rather than a simple duplicate."
+    );
   }
 
   return {
     familyKey,
-    matchBasis: posts.some((post) => String(post.versionFamily || "").trim()) ? "versionFamily" : "clean-title-fallback",
+    matchBasis: posts.some((post) => String(post.versionFamily || "").trim())
+      ? "versionFamily"
+      : "clean-title-fallback",
     recommendation,
     confidence,
     reasons,
@@ -157,7 +206,11 @@ function buildDuplicateReport(posts = []) {
   });
 
   const candidates = [...families.entries()]
-    .filter(([, familyPosts]) => familyPosts.some((post) => isDonnaPost(post)) && familyPosts.some((post) => !isDonnaPost(post)))
+    .filter(
+      ([, familyPosts]) =>
+        familyPosts.some((post) => isDonnaPost(post)) &&
+        familyPosts.some((post) => !isDonnaPost(post))
+    )
     .map(([familyKey, familyPosts]) => recommendFamily(familyKey, familyPosts))
     .sort((left, right) => left.familyKey.localeCompare(right.familyKey));
 

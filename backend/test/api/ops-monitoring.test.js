@@ -80,7 +80,7 @@ test("unsafe requests without the trusted mutation header are blocked", async (t
   assert.match(response.body.message, /blocked unsafe request/i);
 });
 
-test("admin reseed endpoint rewrites the live database from posts.json", async (t) => {
+test("admin reseed endpoint rewrites the live database from the local authored catalog file", async (t) => {
   const context = await createApiTestContext({
     RESEED_LIVE_SITE_TEST_RESULT: "reseed ok"
   });
@@ -106,9 +106,9 @@ test("admin reseed endpoint rewrites the live database from posts.json", async (
     .set("Cookie", adminCookie);
 
   assert.equal(reseedResponse.status, 200);
-  assert.equal(
+  assert.match(
     reseedResponse.body.message,
-    "Live site reseeded from backend/data/posts.json."
+    /reseeded from .*posts\.local\.json/i
   );
   assert.ok(reseedResponse.body.reseed);
   assert.ok(reseedResponse.body.reseed.logPath);
@@ -126,7 +126,7 @@ test("admin reseed endpoint rewrites the live database from posts.json", async (
 
   assert.ok(reseedAuditEntry);
   assert.equal(reseedAuditEntry.entityType, "site");
-  assert.equal(reseedAuditEntry.entityId, "posts.json");
+  assert.equal(reseedAuditEntry.entityId, "posts.local.json");
 });
 
 test("local assistant endpoints fail safely when local AI is disabled", async (t) => {

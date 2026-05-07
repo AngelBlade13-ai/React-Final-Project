@@ -23,7 +23,8 @@ const config = {
   mongoDirectUri: process.env.MONGODB_DIRECT_URI || "",
   mongoDbName: process.env.MONGODB_DB_NAME || "suno_blog",
   postsFile:
-    process.env.POSTS_FILE || path.join(__dirname, "..", "data", "posts.json"),
+    process.env.POSTS_FILE ||
+    path.join(__dirname, "..", "data", "posts.local.json"),
   websiteRoot: path.resolve(__dirname, "..", ".."),
   importerRoot:
     process.env.IMPORTER_ROOT ||

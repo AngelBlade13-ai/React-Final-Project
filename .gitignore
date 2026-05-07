@@ -13,6 +13,7 @@ backend/backups/
 backend/reports/
 backend/data/operational-seed.local.json
 backend/data/posts.local.json
+backend/data/posts.json
 backend/data/posts.json.backup.*.json
 backend/src/data/remote-ai-tunnel.json
 backend/src/data/remote-ai-tunnel.log

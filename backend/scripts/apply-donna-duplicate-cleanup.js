@@ -2,8 +2,11 @@ const fs = require("fs");
 const path = require("path");
 const dotenv = require("dotenv");
 
-const POSTS_FILE = path.resolve(__dirname, "../data/posts.json");
-const REPORT_FILE = path.resolve(__dirname, "../reports/donna-duplicate-cleanup-report.json");
+const POSTS_FILE = path.resolve(__dirname, "../data/posts.local.json");
+const REPORT_FILE = path.resolve(
+  __dirname,
+  "../reports/donna-duplicate-cleanup-report.json"
+);
 
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
@@ -12,14 +15,28 @@ const { readStore, writeStore } = require("../src/data/store");
 const { isDonnaPost } = require("./classify-release-status");
 
 const CLEANUP_RULES = [
-  { familyKey: "crown-of-dreams", keepSlug: "crown-of-dreams-original-version" },
-  { familyKey: "heart-full-of-hope", keepSlug: "heart-full-of-hope-original-version" },
-  { familyKey: "princess-in-waiting", keepSlug: "princess-in-waiting-original-version" },
-  { familyKey: "shadows-of-the-crown", keepSlug: "shadows-of-the-crown-version-1" }
+  {
+    familyKey: "crown-of-dreams",
+    keepSlug: "crown-of-dreams-original-version"
+  },
+  {
+    familyKey: "heart-full-of-hope",
+    keepSlug: "heart-full-of-hope-original-version"
+  },
+  {
+    familyKey: "princess-in-waiting",
+    keepSlug: "princess-in-waiting-original-version"
+  },
+  {
+    familyKey: "shadows-of-the-crown",
+    keepSlug: "shadows-of-the-crown-version-1"
+  }
 ];
 
 function normalizeFamilyKey(value = "") {
-  return String(value || "").trim().toLowerCase();
+  return String(value || "")
+    .trim()
+    .toLowerCase();
 }
 
 function summarizePost(post) {
@@ -42,7 +59,9 @@ function applyCleanup(posts = [], timestamp = new Date().toISOString()) {
   const nextPosts = posts.map((post) => ({ ...post }));
 
   CLEANUP_RULES.forEach((rule) => {
-    const familyPosts = nextPosts.filter((post) => normalizeFamilyKey(post.versionFamily) === rule.familyKey);
+    const familyPosts = nextPosts.filter(
+      (post) => normalizeFamilyKey(post.versionFamily) === rule.familyKey
+    );
     const keepPost = familyPosts.find((post) => post.slug === rule.keepSlug);
     const donnaPosts = familyPosts.filter((post) => isDonnaPost(post));
 
@@ -55,12 +74,15 @@ function applyCleanup(posts = [], timestamp = new Date().toISOString()) {
       return;
     }
 
-    const unexpectedNonDonnaMembers = familyPosts.filter((post) => !isDonnaPost(post) && post.slug !== rule.keepSlug);
+    const unexpectedNonDonnaMembers = familyPosts.filter(
+      (post) => !isDonnaPost(post) && post.slug !== rule.keepSlug
+    );
 
     if (unexpectedNonDonnaMembers.length) {
       ambiguousCases.push({
         familyKey: rule.familyKey,
-        issue: "Additional non-Donna members exist outside the approved keep target.",
+        issue:
+          "Additional non-Donna members exist outside the approved keep target.",
         members: familyPosts.map(summarizePost)
       });
     }
@@ -81,7 +103,8 @@ function applyCleanup(posts = [], timestamp = new Date().toISOString()) {
       if (isDonnaPost(post)) {
         post.isPubliclyVisible = false;
         post.supersededBySlug = rule.keepSlug;
-        post.supersededReason = "Superseded Donna duplicate hidden in favor of the approved non-Donna public version.";
+        post.supersededReason =
+          "Superseded Donna duplicate hidden in favor of the approved non-Donna public version.";
         post.supersededAt = timestamp;
         hiddenPosts.push({
           familyKey: rule.familyKey,
@@ -152,7 +175,9 @@ function printReport(target, report) {
 }
 
 async function main() {
-  const targetArg = process.argv.find((argument) => argument.startsWith("--target="));
+  const targetArg = process.argv.find((argument) =>
+    argument.startsWith("--target=")
+  );
   const target = targetArg ? targetArg.split("=")[1] : "both";
 
   if (target === "file") {

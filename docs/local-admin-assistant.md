@@ -141,5 +141,5 @@ profile's model is actually installed.
 - Keeps model output review-only until an admin explicitly applies future
   suggestions through existing editors.
 - Preserves source-of-truth discipline: AI suggestions do not touch
-  `backend/data/posts.json`; approved admin content can still be synced through
+  `backend/data/posts.local.json`; approved admin content can still be synced through
   the existing source-of-truth workflow.

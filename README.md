@@ -108,7 +108,7 @@ npm run verify
 python tools/content_audit.py
 ```
 
-On first backend startup, the API seeds MongoDB from the legacy JSON source if the database is empty.
+On first backend startup, the API seeds MongoDB from the local authored catalog file if the database is empty. By default that file is `backend/data/posts.local.json`.
 
 ## Usage
 
@@ -344,10 +344,11 @@ Update response example:
 
 ## Repository Notes
 
-- `.gitignore` excludes `node_modules`, build output, and `.env`
+- `.gitignore` excludes `node_modules`, build output, `.env`, and local authored data files
 - `.env.example` lists the required configuration variables
 - commit history uses feature-focused commit messages on separate branches
-- `backend/data/posts.json` is the repo-tracked source of truth for authored catalog content
+- `backend/data/posts.local.json` is the local authored catalog file used by the app by default
+- `backend/data/posts.template.json` is the safe repo-tracked template
 - `docs/catalog-source-of-truth.md` documents catalog sync, backup layers, and restore guidance
 
 ## Deployment
@@ -376,7 +377,7 @@ python tools/content_audit.py --format markdown
 python tools/content_audit.py --format json --write docs/content-audit.json
 ```
 
-The script reads `backend/data/posts.json` by default and reports:
+The script reads `backend/data/posts.local.json` by default and reports:
 
 - release counts by status
 - video and lyrics coverage

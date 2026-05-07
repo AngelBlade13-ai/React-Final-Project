@@ -6,9 +6,23 @@ const { connectToDatabase, closeDatabase } = require("../src/lib/mongo");
 const { readStore } = require("../src/data/store");
 
 const REPO_ROOT = path.resolve(__dirname, "..", "..");
-const DEFAULT_CATALOG_PATH = path.resolve(REPO_ROOT, "backend", "data", "posts.json");
-const DEFAULT_REPORT_PATH = path.resolve(REPO_ROOT, "docs", "catalog-sync-live-store-report.md");
-const PUBLIC_PRIMARY_COLLECTION_SLUGS = ["fractureverse", "eldoria", "original-personal", "standalone"];
+const DEFAULT_CATALOG_PATH = path.resolve(
+  REPO_ROOT,
+  "backend",
+  "data",
+  "posts.local.json"
+);
+const DEFAULT_REPORT_PATH = path.resolve(
+  REPO_ROOT,
+  "docs",
+  "catalog-sync-live-store-report.md"
+);
+const PUBLIC_PRIMARY_COLLECTION_SLUGS = [
+  "fractureverse",
+  "eldoria",
+  "original-personal",
+  "standalone"
+];
 const POST_COMPARE_FIELDS = [
   "title",
   "videoUrl",
@@ -61,17 +75,26 @@ function parseArgs(argv = []) {
     }
 
     if (arg.startsWith("--catalog=")) {
-      options.catalogPath = path.resolve(process.cwd(), arg.slice("--catalog=".length));
+      options.catalogPath = path.resolve(
+        process.cwd(),
+        arg.slice("--catalog=".length)
+      );
       return;
     }
 
     if (arg.startsWith("--report=")) {
-      options.reportPath = path.resolve(process.cwd(), arg.slice("--report=".length));
+      options.reportPath = path.resolve(
+        process.cwd(),
+        arg.slice("--report=".length)
+      );
       return;
     }
 
     if (arg.startsWith("--snapshot=")) {
-      options.snapshotPath = path.resolve(process.cwd(), arg.slice("--snapshot=".length));
+      options.snapshotPath = path.resolve(
+        process.cwd(),
+        arg.slice("--snapshot=".length)
+      );
     }
   });
 
@@ -83,12 +106,19 @@ function normalizeString(value) {
 }
 
 function sortCollectionSlugs(collectionSlugs = []) {
-  return [...new Set(collectionSlugs.map((slug) => normalizeString(slug)).filter(Boolean))].sort((left, right) => {
+  return [
+    ...new Set(
+      collectionSlugs.map((slug) => normalizeString(slug)).filter(Boolean)
+    )
+  ].sort((left, right) => {
     const leftIndex = PUBLIC_PRIMARY_COLLECTION_SLUGS.indexOf(left);
     const rightIndex = PUBLIC_PRIMARY_COLLECTION_SLUGS.indexOf(right);
 
     if (leftIndex !== rightIndex) {
-      return (leftIndex === -1 ? Number.MAX_SAFE_INTEGER : leftIndex) - (rightIndex === -1 ? Number.MAX_SAFE_INTEGER : rightIndex);
+      return (
+        (leftIndex === -1 ? Number.MAX_SAFE_INTEGER : leftIndex) -
+        (rightIndex === -1 ? Number.MAX_SAFE_INTEGER : rightIndex)
+      );
     }
 
     return left.localeCompare(right);
@@ -107,7 +137,13 @@ function normalizeArchiveMeta(archiveMeta) {
     signalType: normalizeString(archiveMeta.signalType),
     description: normalizeString(archiveMeta.description),
     systemNote: normalizeString(archiveMeta.systemNote),
-    linkedSlugs: [...new Set((Array.isArray(archiveMeta.linkedSlugs) ? archiveMeta.linkedSlugs : []).map((slug) => normalizeString(slug)).filter(Boolean))].sort(),
+    linkedSlugs: [
+      ...new Set(
+        (Array.isArray(archiveMeta.linkedSlugs) ? archiveMeta.linkedSlugs : [])
+          .map((slug) => normalizeString(slug))
+          .filter(Boolean)
+      )
+    ].sort(),
     chapterNumber: normalizeString(archiveMeta.chapterNumber),
     entryType: normalizeString(archiveMeta.entryType),
     subtitle: normalizeString(archiveMeta.subtitle),
@@ -126,7 +162,9 @@ function normalizeArchiveMeta(archiveMeta) {
     playerFlavorLine: normalizeString(archiveMeta.playerFlavorLine)
   };
 
-  return Object.values(normalized).some((value) => (Array.isArray(value) ? value.length : Boolean(value)))
+  return Object.values(normalized).some((value) =>
+    Array.isArray(value) ? value.length : Boolean(value)
+  )
     ? normalized
     : null;
 }
@@ -152,7 +190,13 @@ function normalizePostForCatalog(post) {
     subCategory: normalizeString(post.subCategory),
     sourceTag: normalizeString(post.sourceTag),
     worldLayer: normalizeString(post.worldLayer),
-    themeTags: [...new Set((Array.isArray(post.themeTags) ? post.themeTags : []).map((tag) => normalizeString(tag)).filter(Boolean))].sort(),
+    themeTags: [
+      ...new Set(
+        (Array.isArray(post.themeTags) ? post.themeTags : [])
+          .map((tag) => normalizeString(tag))
+          .filter(Boolean)
+      )
+    ].sort(),
     isPubliclyVisible: post.isPubliclyVisible !== false,
     supersededBySlug: normalizeString(post.supersededBySlug),
     supersededReason: normalizeString(post.supersededReason),
@@ -186,7 +230,9 @@ function normalizeThemeProfile(themeProfile) {
         mutedText: normalizeString(themeProfile.palette?.light?.mutedText),
         border: normalizeString(themeProfile.palette?.light?.border),
         primary: normalizeString(themeProfile.palette?.light?.primary),
-        primaryStrong: normalizeString(themeProfile.palette?.light?.primaryStrong),
+        primaryStrong: normalizeString(
+          themeProfile.palette?.light?.primaryStrong
+        ),
         secondary: normalizeString(themeProfile.palette?.light?.secondary)
       },
       dark: {
@@ -197,7 +243,9 @@ function normalizeThemeProfile(themeProfile) {
         mutedText: normalizeString(themeProfile.palette?.dark?.mutedText),
         border: normalizeString(themeProfile.palette?.dark?.border),
         primary: normalizeString(themeProfile.palette?.dark?.primary),
-        primaryStrong: normalizeString(themeProfile.palette?.dark?.primaryStrong),
+        primaryStrong: normalizeString(
+          themeProfile.palette?.dark?.primaryStrong
+        ),
         secondary: normalizeString(themeProfile.palette?.dark?.secondary)
       }
     },
@@ -225,7 +273,9 @@ function normalizeSiteContent(siteContent = {}) {
       heroEyebrow: normalizeString(siteContent.home?.heroEyebrow),
       heroTitle: normalizeString(siteContent.home?.heroTitle),
       heroText: normalizeString(siteContent.home?.heroText),
-      featuredReleaseSlug: normalizeString(siteContent.home?.featuredReleaseSlug),
+      featuredReleaseSlug: normalizeString(
+        siteContent.home?.featuredReleaseSlug
+      ),
       featuredCtaLabel: normalizeString(siteContent.home?.featuredCtaLabel),
       jumpCtaLabel: normalizeString(siteContent.home?.jumpCtaLabel),
       noteEyebrow: normalizeString(siteContent.home?.noteEyebrow),
@@ -270,7 +320,10 @@ function sortCollections(collections = []) {
     const rightIndex = PUBLIC_PRIMARY_COLLECTION_SLUGS.indexOf(right.slug);
 
     if (leftIndex !== rightIndex) {
-      return (leftIndex === -1 ? Number.MAX_SAFE_INTEGER : leftIndex) - (rightIndex === -1 ? Number.MAX_SAFE_INTEGER : rightIndex);
+      return (
+        (leftIndex === -1 ? Number.MAX_SAFE_INTEGER : leftIndex) -
+        (rightIndex === -1 ? Number.MAX_SAFE_INTEGER : rightIndex)
+      );
     }
 
     return left.title.localeCompare(right.title);
@@ -279,7 +332,9 @@ function sortCollections(collections = []) {
 
 function sortPosts(posts = []) {
   return [...posts].sort((left, right) => {
-    const dateDelta = String(right.createdAt || "").localeCompare(String(left.createdAt || ""));
+    const dateDelta = String(right.createdAt || "").localeCompare(
+      String(left.createdAt || "")
+    );
 
     if (dateDelta !== 0) {
       return dateDelta;
@@ -291,8 +346,16 @@ function sortPosts(posts = []) {
 
 function buildCatalogFromStore(store) {
   return {
-    posts: sortPosts((Array.isArray(store.posts) ? store.posts : []).map(normalizePostForCatalog)),
-    collections: sortCollections((Array.isArray(store.collections) ? store.collections : []).map(normalizeCollectionForCatalog)),
+    posts: sortPosts(
+      (Array.isArray(store.posts) ? store.posts : []).map(
+        normalizePostForCatalog
+      )
+    ),
+    collections: sortCollections(
+      (Array.isArray(store.collections) ? store.collections : []).map(
+        normalizeCollectionForCatalog
+      )
+    ),
     siteContent: normalizeSiteContent(store.siteContent || {})
   };
 }
@@ -302,8 +365,12 @@ async function readTrackedCatalog(catalogPath) {
     const file = await fs.readFile(catalogPath, "utf8");
     const parsed = JSON.parse(file);
     return {
-      posts: Array.isArray(parsed.posts) ? parsed.posts.map(normalizePostForCatalog) : [],
-      collections: Array.isArray(parsed.collections) ? parsed.collections.map(normalizeCollectionForCatalog) : [],
+      posts: Array.isArray(parsed.posts)
+        ? parsed.posts.map(normalizePostForCatalog)
+        : [],
+      collections: Array.isArray(parsed.collections)
+        ? parsed.collections.map(normalizeCollectionForCatalog)
+        : [],
       siteContent: normalizeSiteContent(parsed.siteContent || {})
     };
   } catch (error) {
@@ -320,23 +387,46 @@ async function readTrackedCatalog(catalogPath) {
 }
 
 function getChangedFields(left, right, fields) {
-  return fields.filter((field) => JSON.stringify(left?.[field] ?? null) !== JSON.stringify(right?.[field] ?? null));
+  return fields.filter(
+    (field) =>
+      JSON.stringify(left?.[field] ?? null) !==
+      JSON.stringify(right?.[field] ?? null)
+  );
 }
 
 function buildReconciliationSummary(trackedCatalog, nextCatalog, liveStore) {
-  const trackedPostsBySlug = new Map(trackedCatalog.posts.map((post) => [post.slug, post]));
-  const nextPostsBySlug = new Map(nextCatalog.posts.map((post) => [post.slug, post]));
-  const trackedCollectionsBySlug = new Map(trackedCatalog.collections.map((collection) => [collection.slug, collection]));
-  const nextCollectionsBySlug = new Map(nextCatalog.collections.map((collection) => [collection.slug, collection]));
+  const trackedPostsBySlug = new Map(
+    trackedCatalog.posts.map((post) => [post.slug, post])
+  );
+  const nextPostsBySlug = new Map(
+    nextCatalog.posts.map((post) => [post.slug, post])
+  );
+  const trackedCollectionsBySlug = new Map(
+    trackedCatalog.collections.map((collection) => [
+      collection.slug,
+      collection
+    ])
+  );
+  const nextCollectionsBySlug = new Map(
+    nextCatalog.collections.map((collection) => [collection.slug, collection])
+  );
 
-  const liveOnlyPosts = nextCatalog.posts.filter((post) => !trackedPostsBySlug.has(post.slug));
-  const trackedOnlyPosts = trackedCatalog.posts.filter((post) => !nextPostsBySlug.has(post.slug));
+  const liveOnlyPosts = nextCatalog.posts.filter(
+    (post) => !trackedPostsBySlug.has(post.slug)
+  );
+  const trackedOnlyPosts = trackedCatalog.posts.filter(
+    (post) => !nextPostsBySlug.has(post.slug)
+  );
   const changedPosts = nextCatalog.posts
     .filter((post) => trackedPostsBySlug.has(post.slug))
     .map((post) => ({
       slug: post.slug,
       title: post.title,
-      fields: getChangedFields(trackedPostsBySlug.get(post.slug), post, POST_COMPARE_FIELDS)
+      fields: getChangedFields(
+        trackedPostsBySlug.get(post.slug),
+        post,
+        POST_COMPARE_FIELDS
+      )
     }))
     .filter((entry) => entry.fields.length);
 
@@ -352,18 +442,37 @@ function buildReconciliationSummary(trackedCatalog, nextCatalog, liveStore) {
     .map((collection) => ({
       slug: collection.slug,
       title: collection.title,
-      fields: getChangedFields(trackedCollectionsBySlug.get(collection.slug), collection, COLLECTION_COMPARE_FIELDS)
+      fields: getChangedFields(
+        trackedCollectionsBySlug.get(collection.slug),
+        collection,
+        COLLECTION_COMPARE_FIELDS
+      )
     }))
     .filter((entry) => entry.fields.length);
-  const liveOnlyCollections = nextCatalog.collections.filter((collection) => !trackedCollectionsBySlug.has(collection.slug));
-  const trackedOnlyCollections = trackedCatalog.collections.filter((collection) => !nextCollectionsBySlug.has(collection.slug));
+  const liveOnlyCollections = nextCatalog.collections.filter(
+    (collection) => !trackedCollectionsBySlug.has(collection.slug)
+  );
+  const trackedOnlyCollections = trackedCatalog.collections.filter(
+    (collection) => !nextCollectionsBySlug.has(collection.slug)
+  );
 
-  const siteContentChanges = ["branding", "home", "collectionThemes", "about"].filter(
-    (section) => JSON.stringify(trackedCatalog.siteContent?.[section] ?? null) !== JSON.stringify(nextCatalog.siteContent?.[section] ?? null)
+  const siteContentChanges = [
+    "branding",
+    "home",
+    "collectionThemes",
+    "about"
+  ].filter(
+    (section) =>
+      JSON.stringify(trackedCatalog.siteContent?.[section] ?? null) !==
+      JSON.stringify(nextCatalog.siteContent?.[section] ?? null)
   );
 
   const invalidCollectionFeatured = nextCatalog.collections
-    .filter((collection) => collection.featuredReleaseSlug && !nextPostsBySlug.has(collection.featuredReleaseSlug))
+    .filter(
+      (collection) =>
+        collection.featuredReleaseSlug &&
+        !nextPostsBySlug.has(collection.featuredReleaseSlug)
+    )
     .map((collection) => ({
       collectionSlug: collection.slug,
       featuredReleaseSlug: collection.featuredReleaseSlug
@@ -371,14 +480,19 @@ function buildReconciliationSummary(trackedCatalog, nextCatalog, liveStore) {
   const hiddenCollectionFeatured = nextCatalog.collections
     .filter((collection) => {
       const featuredPost = nextPostsBySlug.get(collection.featuredReleaseSlug);
-      return featuredPost && (!featuredPost.published || featuredPost.isPubliclyVisible === false);
+      return (
+        featuredPost &&
+        (!featuredPost.published || featuredPost.isPubliclyVisible === false)
+      );
     })
     .map((collection) => ({
       collectionSlug: collection.slug,
       featuredReleaseSlug: collection.featuredReleaseSlug
     }));
   const homeFeaturedSlug = nextCatalog.siteContent.home.featuredReleaseSlug;
-  const homeFeaturedPost = homeFeaturedSlug ? nextPostsBySlug.get(homeFeaturedSlug) : null;
+  const homeFeaturedPost = homeFeaturedSlug
+    ? nextPostsBySlug.get(homeFeaturedSlug)
+    : null;
 
   return {
     trackedPostCount: trackedCatalog.posts.length,
@@ -408,7 +522,9 @@ function buildReconciliationSummary(trackedCatalog, nextCatalog, liveStore) {
           visible: false
         },
     liveUserCount: Array.isArray(liveStore.users) ? liveStore.users.length : 0,
-    liveCommentCount: Array.isArray(liveStore.comments) ? liveStore.comments.length : 0
+    liveCommentCount: Array.isArray(liveStore.comments)
+      ? liveStore.comments.length
+      : 0
   };
 }
 
@@ -416,7 +532,7 @@ function buildReportMarkdown(summary, options) {
   const relativeCatalogPath = path.relative(REPO_ROOT, options.catalogPath);
   const catalogLabel =
     path.isAbsolute(relativeCatalogPath) || relativeCatalogPath.startsWith("..")
-      ? "backend/data/posts.json (baseline override)"
+      ? "backend/data/posts.local.json (baseline override)"
       : relativeCatalogPath;
   const lines = [
     "# Catalog Sync Report",
@@ -442,7 +558,7 @@ function buildReportMarkdown(summary, options) {
     "",
     "- Repo-tracked catalog now covers authored content only: `posts`, `collections`, and `siteContent`.",
     "- `users` and `comments` remain live operational data and are intentionally excluded from the tracked catalog file.",
-    "- `backend/data/posts.json` is the canonical restore source for authored catalog state.",
+    "- `backend/data/posts.local.json` is the local authored catalog restore source.",
     "",
     "## Post Drift",
     ""
@@ -472,7 +588,9 @@ function buildReportMarkdown(summary, options) {
     lines.push("");
     lines.push("### Field Drift Totals", "");
     Object.entries(summary.fieldDriftCounts)
-      .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
+      .sort(
+        (left, right) => right[1] - left[1] || left[0].localeCompare(right[0])
+      )
       .forEach(([field, count]) => {
         lines.push(`- \`${field}\`: ${count}`);
       });
@@ -483,7 +601,9 @@ function buildReportMarkdown(summary, options) {
 
   if (summary.changedCollections.length) {
     summary.changedCollections.forEach((collection) => {
-      lines.push(`- \`${collection.slug}\` changed: ${collection.fields.join(", ")}`);
+      lines.push(
+        `- \`${collection.slug}\` changed: ${collection.fields.join(", ")}`
+      );
     });
     lines.push("");
   } else {
@@ -520,7 +640,9 @@ function buildReportMarkdown(summary, options) {
 
   if (summary.invalidCollectionFeatured.length) {
     summary.invalidCollectionFeatured.forEach((entry) => {
-      lines.push(`- Invalid collection feature: \`${entry.collectionSlug}\` -> \`${entry.featuredReleaseSlug}\``);
+      lines.push(
+        `- Invalid collection feature: \`${entry.collectionSlug}\` -> \`${entry.featuredReleaseSlug}\``
+      );
     });
   } else {
     lines.push("- All collection featured slugs point to valid posts.");
@@ -528,10 +650,14 @@ function buildReportMarkdown(summary, options) {
 
   if (summary.hiddenCollectionFeatured.length) {
     summary.hiddenCollectionFeatured.forEach((entry) => {
-      lines.push(`- Hidden collection feature: \`${entry.collectionSlug}\` -> \`${entry.featuredReleaseSlug}\``);
+      lines.push(
+        `- Hidden collection feature: \`${entry.collectionSlug}\` -> \`${entry.featuredReleaseSlug}\``
+      );
     });
   } else {
-    lines.push("- All collection featured slugs point to published, visible posts.");
+    lines.push(
+      "- All collection featured slugs point to published, visible posts."
+    );
   }
 
   if (summary.homeFeaturedSlug) {
@@ -544,7 +670,13 @@ function buildReportMarkdown(summary, options) {
     lines.push("- Home featured slug is empty.");
   }
 
-  lines.push("", "## Recommended Follow-Up", "", "- Merge this reconciliation before any data-layer refactor work.", "- Build safe partial updates against the reconciled catalog so future live changes do not drift silently.");
+  lines.push(
+    "",
+    "## Recommended Follow-Up",
+    "",
+    "- Merge this reconciliation before any data-layer refactor work.",
+    "- Build safe partial updates against the reconciled catalog so future live changes do not drift silently."
+  );
 
   return `${lines.join("\n")}\n`;
 }
@@ -565,7 +697,11 @@ async function main() {
       readStore()
     ]);
     const nextCatalog = buildCatalogFromStore(liveStore);
-    const summary = buildReconciliationSummary(trackedCatalog, nextCatalog, liveStore);
+    const summary = buildReconciliationSummary(
+      trackedCatalog,
+      nextCatalog,
+      liveStore
+    );
 
     if (options.write) {
       await writeJsonFile(options.catalogPath, nextCatalog);
@@ -573,7 +709,11 @@ async function main() {
 
     if (options.reportPath) {
       await fs.mkdir(path.dirname(options.reportPath), { recursive: true });
-      await fs.writeFile(options.reportPath, buildReportMarkdown(summary, options), "utf8");
+      await fs.writeFile(
+        options.reportPath,
+        buildReportMarkdown(summary, options),
+        "utf8"
+      );
     }
 
     if (options.snapshotPath) {
@@ -586,17 +726,27 @@ async function main() {
     console.log(`Live-only posts: ${summary.liveOnlyPosts.length}`);
     console.log(`Tracked-only posts: ${summary.trackedOnlyPosts.length}`);
     console.log(`Posts with field drift: ${summary.changedPosts.length}`);
-    console.log(`Collections with field drift: ${summary.changedCollections.length}`);
-    console.log(`Site content sections changed: ${summary.siteContentChanges.length}`);
-    console.log(`Collection featured slug issues: ${summary.invalidCollectionFeatured.length + summary.hiddenCollectionFeatured.length}`);
+    console.log(
+      `Collections with field drift: ${summary.changedCollections.length}`
+    );
+    console.log(
+      `Site content sections changed: ${summary.siteContentChanges.length}`
+    );
+    console.log(
+      `Collection featured slug issues: ${summary.invalidCollectionFeatured.length + summary.hiddenCollectionFeatured.length}`
+    );
     console.log(`Home featured slug: ${summary.homeFeaturedSlug || "(empty)"}`);
 
     if (!options.write) {
-      console.log("Catalog file was not modified. Re-run with --write to update the tracked catalog.");
+      console.log(
+        "Catalog file was not modified. Re-run with --write to update the tracked catalog."
+      );
     }
 
     if (!options.reportPath) {
-      console.log("No report was written. Re-run with --report to capture the reconciliation summary.");
+      console.log(
+        "No report was written. Re-run with --report to capture the reconciliation summary."
+      );
     }
   } finally {
     await closeDatabase();

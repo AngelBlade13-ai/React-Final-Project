@@ -4,7 +4,7 @@ Working curation sheet for the current site catalog.
 
 This does **not** apply deletions by itself. It is the agreed shortlist for future cleanup work, based on:
 
-- current site data in `backend/data/posts.json`
+- current site data in `backend/data/posts.local.json`
 - curation intent in `docs/site-memory.md`
 - later Suno generations and screenshot review
 

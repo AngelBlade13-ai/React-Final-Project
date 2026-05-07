@@ -2,7 +2,10 @@ require("dotenv").config({ quiet: true });
 
 const config = require("../src/config");
 const { closeDatabase, connectToDatabase } = require("../src/lib/mongo");
-const { applyLiveStoreSync, previewLiveStoreSync } = require("../src/services/liveStoreSync");
+const {
+  applyLiveStoreSync,
+  previewLiveStoreSync
+} = require("../src/services/liveStoreSync");
 
 async function main() {
   const options = parseArgs(process.argv.slice(2));
@@ -16,13 +19,15 @@ async function main() {
   console.log(`Live store snapshot: ${result.liveSnapshotPath}`);
   console.log(`Sync report:         ${result.reportPath}`);
   console.log(
-    `Post drift summary:  ${result.report.posts.onlyInLive.length} live-only, `
-      + `${result.report.posts.onlyInFile.length} file-only, `
-      + `${result.report.posts.changed.length} changed`
+    `Post drift summary:  ${result.report.posts.onlyInLive.length} live-only, ` +
+      `${result.report.posts.onlyInFile.length} file-only, ` +
+      `${result.report.posts.changed.length} changed`
   );
 
   if (!options.write) {
-    console.log("No file changes written. Re-run with --write to overwrite posts.json from the live store.");
+    console.log(
+      "No file changes written. Re-run with --write to overwrite the authored catalog file from the live store."
+    );
     return;
   }
 
@@ -33,7 +38,7 @@ async function main() {
 function parseArgs(argv) {
   const options = {
     write: false,
-    outputDir: "",
+    outputDir: ""
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -71,15 +76,26 @@ function parseArgs(argv) {
 }
 
 function printHelp() {
-  console.log("Usage: node scripts/sync-live-store-to-posts-file.js [--write] [--output-dir PATH]");
+  console.log(
+    "Usage: node scripts/sync-live-store-to-posts-file.js [--write] [--output-dir PATH]"
+  );
   console.log("");
-  console.log("Without --write, this creates a live store snapshot and a drift report only.");
-  console.log("With --write, it also backs up backend/data/posts.json and overwrites it from the live store.");
+  console.log(
+    "Without --write, this creates a live store snapshot and a drift report only."
+  );
+  console.log(
+    "With --write, it also backs up the authored catalog file and overwrites it from the live store."
+  );
 }
 
-main().catch((error) => {
-  console.error("Failed to reconcile live store back into posts file.", error);
-  process.exitCode = 1;
-}).finally(async () => {
-  await closeDatabase();
-});
+main()
+  .catch((error) => {
+    console.error(
+      "Failed to reconcile live store back into posts file.",
+      error
+    );
+    process.exitCode = 1;
+  })
+  .finally(async () => {
+    await closeDatabase();
+  });

@@ -1,5 +1,6 @@
 const express = require("express");
 const crypto = require("crypto");
+const path = require("path");
 const { requireAdmin } = require("../middleware/auth");
 const {
   requireCatalogFileMutationsEnabled
@@ -1163,7 +1164,7 @@ router.post(
       await recordAdminAuditEvent(req, {
         action: "catalog.live_store_synced_to_file",
         entityType: "catalog",
-        entityId: "posts.json",
+        entityId: path.basename(result.report.postsFile || ""),
         entityLabel: "Tracked catalog sync",
         details: {
           backupPath: result.backupPath,
@@ -1172,7 +1173,7 @@ router.post(
         }
       });
       return res.json({
-        message: "Live admin data was written back into posts.json.",
+        message: `Live admin data was written back into ${path.basename(result.report.postsFile || "the catalog file")}.`,
         sync: {
           generatedAt: result.report.generatedAt,
           postsFile: result.report.postsFile,
@@ -1199,7 +1200,7 @@ router.post(
       await recordAdminAuditEvent(req, {
         action: "site.reseeded",
         entityType: "site",
-        entityId: "posts.json",
+        entityId: path.basename(result.postsFile || ""),
         entityLabel: "Live site reseed",
         details: {
           postsFile: result.postsFile || "",
@@ -1208,7 +1209,7 @@ router.post(
       });
 
       return res.json({
-        message: "Live site reseeded from backend/data/posts.json.",
+        message: `Live site reseeded from ${result.postsFile || "the authored catalog file"}.`,
         reseed: {
           generatedAt: result.generatedAt,
           logPath: result.logPath,
