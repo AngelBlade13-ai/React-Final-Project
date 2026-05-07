@@ -28,6 +28,7 @@ const ALLOWED_PATH_ALGORITHM_SORTS = new Set([
   "eldoria"
 ]);
 const ALLOWED_PATH_MATCH_MODES = new Set(["any", "all"]);
+const MIN_CONTENT_CHANGE_LENGTH = 24;
 
 function buildUnavailableStatus(reason) {
   return {
@@ -180,6 +181,32 @@ function valuesAreEquivalent(left, right) {
   return String(left || "").trim() === String(right || "").trim();
 }
 
+function normalizeComparableText(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+}
+
+function hasMeaningfulTextDiff(nextValue, currentValue, minimumLength = 12) {
+  const normalizedNext = normalizeComparableText(nextValue);
+  const normalizedCurrent = normalizeComparableText(currentValue);
+
+  if (!normalizedNext || normalizedNext === normalizedCurrent) {
+    return false;
+  }
+
+  if (!normalizedCurrent) {
+    return normalizedNext.length >= minimumLength;
+  }
+
+  return (
+    Math.abs(normalizedNext.length - normalizedCurrent.length) >= 8 ||
+    !normalizedNext.includes(normalizedCurrent) ||
+    !normalizedCurrent.includes(normalizedNext)
+  );
+}
+
 function normalizeFieldAssessments(value = []) {
   if (!Array.isArray(value)) {
     return [];
@@ -213,6 +240,13 @@ function isAcceptableExcerpt(value) {
   );
 }
 
+function isStrongExcerptPatch(value, currentDraft = {}) {
+  return (
+    isAcceptableExcerpt(value) &&
+    hasMeaningfulTextDiff(value, currentDraft.excerpt, 24)
+  );
+}
+
 function hasStructuredReleaseNote(value) {
   const content = String(value || "").trim();
 
@@ -224,6 +258,20 @@ function hasStructuredReleaseNote(value) {
       /(Universe|Characters|POV|Version|Theme|Mood|Source|Notes):/i.test(
         content
       ))
+  );
+}
+
+function applyDeterministicAssessmentGuards(
+  fieldAssessments = [],
+  currentDraft = {}
+) {
+function isStrongContentPatch(value, currentDraft = {}) {
+  const content = String(value || "").trim();
+
+  return (
+    hasStructuredReleaseNote(content) &&
+    content.length >= 140 &&
+    hasMeaningfulTextDiff(content, currentDraft.content, MIN_CONTENT_CHANGE_LENGTH)
   );
 }
 
@@ -301,7 +349,7 @@ function normalizeSuggestionPatch(
   if (
     allowedFields.has("excerpt") &&
     typeof value.excerpt === "string" &&
-    value.excerpt.trim()
+    isStrongExcerptPatch(value.excerpt, currentDraft)
   ) {
     patch.excerpt = value.excerpt.trim();
   }
@@ -309,7 +357,7 @@ function normalizeSuggestionPatch(
   if (
     allowedFields.has("content") &&
     typeof value.content === "string" &&
-    value.content.trim()
+    isStrongContentPatch(value.content, currentDraft)
   ) {
     patch.content = value.content.trim();
   }
@@ -439,6 +487,49 @@ function summarizeCollectionForAssistant(collection = {}) {
     isPublicPrimary: Boolean(collection.isPublicPrimary),
     featuredReleaseSlug: collection.featuredReleaseSlug || ""
   };
+}
+
+function summarizeRelatedPostForAssistant(post = {}) {
+  return {
+    slug: String(post.slug || "").trim(),
+    title: String(post.title || "").trim(),
+    releaseStatus: String(post.releaseStatus || "canon").trim(),
+    collections: Array.isArray(post.collectionSlugs) ? post.collectionSlugs : [],
+    excerpt: String(post.excerpt || "")
+      .trim()
+      .slice(0, 180),
+    contentPreview: String(post.content || "")
+      .trim()
+      .slice(0, 220)
+  };
+}
+
+function getComparablePostsForAssistant(posts = [], postDraft = {}) {
+  const draftSlug = String(postDraft.slug || "").trim();
+  const draftVersionFamily = String(postDraft.versionFamily || "").trim();
+  const draftCollections = Array.isArray(postDraft.collectionSlugs)
+    ? postDraft.collectionSlugs
+    : [];
+
+  return posts
+    .filter((post) => {
+      if (!post || post.slug === draftSlug) {
+        return false;
+      }
+
+      const postCollections = Array.isArray(post.collectionSlugs)
+        ? post.collectionSlugs
+        : [];
+
+      return (
+        (draftVersionFamily &&
+          String(post.versionFamily || "").trim() === draftVersionFamily) ||
+        (draftCollections.length &&
+          postCollections.some((slug) => draftCollections.includes(slug)))
+      );
+    })
+    .slice(0, 5)
+    .map(summarizeRelatedPostForAssistant);
 }
 
 function summarizePathPostForAssistant(post = {}) {
@@ -974,10 +1065,12 @@ async function suggestPostDraftWithLocalAi(store, postDraft = {}) {
   }
 
   const collections = Array.isArray(store.collections) ? store.collections : [];
+  const posts = Array.isArray(store.posts) ? store.posts : [];
   const context = {
     allowedReleaseStatuses: Array.from(VALID_RELEASE_STATUSES),
     collections: collections.map(summarizeCollectionForAssistant),
-    currentDraft: summarizePostDraftForAssistant(postDraft)
+    currentDraft: summarizePostDraftForAssistant(postDraft),
+    comparablePosts: getComparablePostsForAssistant(posts, postDraft)
   };
   const prompt = [
     "Return only compact JSON for one music archive post draft.",
@@ -990,6 +1083,8 @@ async function suggestPostDraftWithLocalAi(store, postDraft = {}) {
     "Your main job is to improve authoring fields when needed: excerpt and content.",
     "Rewrite excerpt as sharper public card copy only when it needs improvement.",
     "Rewrite content as a stronger release note only when it needs improvement, preserving the draft's meaning.",
+    "When you improve excerpt or content, make the replacement materially better, not just paraphrased.",
+    "Use comparablePosts only as style or canon context reference. Do not copy their wording or merge their facts into the current draft.",
     "Do not invent collection slugs. Use only provided collection slugs.",
     "For metadata fields, suggest a field only if it improves or changes the current value. Do not repeat existing values.",
     'Shape: {"summary":"one sentence","fieldAssessments":[{"field":"excerpt","status":"keep","reason":"why"}],"suggestedPatch":{"excerpt":"","content":"","subCategory":"","worldLayer":"","themeTags":[""],"releaseStatus":"canon","collectionSlugs":[""]},"rationale":["reason"],"warnings":["warning"]}.',
@@ -1005,6 +1100,47 @@ async function suggestPostDraftWithLocalAi(store, postDraft = {}) {
     collections,
     postDraft
   );
+
+  const shouldRetryForPatch =
+    !Object.keys(result.suggestedPatch || {}).length &&
+    result.fieldAssessments?.some(
+      (entry) => entry.status === "improve" || entry.status === "missing"
+    );
+
+  if (shouldRetryForPatch) {
+    const retryPrompt = [
+      "Return only compact JSON for one music archive post draft.",
+      "Your previous answer assessed fields as improve or missing but did not produce a usable patch.",
+      "Retry with stronger, more decisive suggestions only for fields that genuinely need change.",
+      "If you suggest excerpt, it must be publication-ready and materially different from the current excerpt.",
+      "If you suggest content, it must be a structured release note and materially better than the current content.",
+      "If no field truly needs change, mark every field keep and return an empty suggestedPatch.",
+      "Shape: {\"summary\":\"one sentence\",\"fieldAssessments\":[{\"field\":\"excerpt\",\"status\":\"keep\",\"reason\":\"why\"}],\"suggestedPatch\":{\"excerpt\":\"\",\"content\":\"\",\"subCategory\":\"\",\"worldLayer\":\"\",\"themeTags\":[\"\"],\"releaseStatus\":\"canon\",\"collectionSlugs\":[\"\"]},\"rationale\":[\"reason\"],\"warnings\":[\"warning\"]}.",
+      "",
+      JSON.stringify({
+        ...context,
+        previousFieldAssessments: result.fieldAssessments,
+        previousWarnings: result.warnings
+      })
+    ].join("\n");
+    const retryResult = normalizePostSuggestionResult(
+      await generateJson(retryPrompt, {
+        num_ctx: 4096,
+        num_predict: 900,
+        temperature: 0.1
+      }),
+      collections,
+      postDraft
+    );
+
+    if (Object.keys(retryResult.suggestedPatch || {}).length) {
+      return {
+        ...retryResult,
+        generatedAt: new Date().toISOString(),
+        model: config.localAiModel
+      };
+    }
+  }
 
   return {
     ...result,
@@ -1135,5 +1271,12 @@ module.exports = {
   reviewCatalogWithLocalAi,
   suggestGuidedPathWithLocalAi,
   suggestNewGuidedPathWithLocalAi,
-  suggestPostDraftWithLocalAi
+  suggestPostDraftWithLocalAi,
+  __test: {
+    isAcceptableExcerpt,
+    hasStructuredReleaseNote,
+    isStrongExcerptPatch,
+    isStrongContentPatch,
+    normalizePostSuggestionResult
+  }
 };
