@@ -1,4 +1,5 @@
-const fs = require("fs/promises");
+const fs = require("fs");
+const fsPromises = require("fs/promises");
 const net = require("net");
 const os = require("os");
 const path = require("path");
@@ -12,8 +13,15 @@ const TUNNEL_STATE_PATH = path.join(
   "data",
   "remote-ai-tunnel.json"
 );
+const TUNNEL_LOG_PATH = path.join(
+  __dirname,
+  "..",
+  "data",
+  "remote-ai-tunnel.log"
+);
 const WAIT_INTERVAL_MS = 250;
 const READY_TIMEOUT_MS = 12000;
+const FAILURE_LOG_TAIL_LENGTH = 1200;
 
 function isTunnelTestMode() {
   return process.env.REMOTE_AI_TUNNEL_TEST_MODE === "true";
@@ -72,7 +80,7 @@ function expandHomePath(value) {
 
 async function readTunnelState() {
   try {
-    const file = await fs.readFile(TUNNEL_STATE_PATH, "utf8");
+    const file = await fsPromises.readFile(TUNNEL_STATE_PATH, "utf8");
     return JSON.parse(file);
   } catch {
     return null;
@@ -80,16 +88,46 @@ async function readTunnelState() {
 }
 
 async function writeTunnelState(state) {
-  await fs.mkdir(path.dirname(TUNNEL_STATE_PATH), { recursive: true });
-  await fs.writeFile(TUNNEL_STATE_PATH, JSON.stringify(state, null, 2));
+  await fsPromises.mkdir(path.dirname(TUNNEL_STATE_PATH), { recursive: true });
+  await fsPromises.writeFile(TUNNEL_STATE_PATH, JSON.stringify(state, null, 2));
 }
 
 async function clearTunnelState() {
   try {
-    await fs.unlink(TUNNEL_STATE_PATH);
+    await fsPromises.unlink(TUNNEL_STATE_PATH);
   } catch {
     // Ignore missing file cleanup.
   }
+}
+
+async function resetTunnelLog() {
+  await fsPromises.mkdir(path.dirname(TUNNEL_LOG_PATH), { recursive: true });
+  await fsPromises.writeFile(TUNNEL_LOG_PATH, "");
+}
+
+async function readTunnelLogTail() {
+  try {
+    const contents = await fsPromises.readFile(TUNNEL_LOG_PATH, "utf8");
+    const normalized = String(contents || "").trim();
+
+    if (!normalized) {
+      return "";
+    }
+
+    return normalized.slice(-FAILURE_LOG_TAIL_LENGTH);
+  } catch {
+    return "";
+  }
+}
+
+function buildTunnelFailureMessage(logTail) {
+  const normalizedLog = String(logTail || "").trim();
+
+  if (!normalizedLog) {
+    return `SSH tunnel did not become ready on local port ${config.runpodTunnelLocalPort}.`;
+  }
+
+  return `SSH tunnel did not become ready on local port ${config.runpodTunnelLocalPort}. SSH reported: ${normalizedLog}`;
 }
 
 function isPidRunning(pid) {
@@ -162,6 +200,7 @@ async function getRemoteAiTunnelStatus() {
       sshPort: resolvedTarget.port,
       sshUser: resolvedTarget.user,
       targetSource: resolvedTarget.source,
+      lastError: process.env.REMOTE_AI_TUNNEL_TEST_LAST_ERROR || "",
       message:
         process.env.REMOTE_AI_TUNNEL_TEST_RUNNING === "true"
           ? "SSH tunnel is active."
@@ -182,7 +221,7 @@ async function getRemoteAiTunnelStatus() {
     config.runpodTunnelLocalPort
   );
 
-  if (!pidRunning && state) {
+  if (!pidRunning && state && !state.lastError) {
     await clearTunnelState();
   }
 
@@ -195,6 +234,7 @@ async function getRemoteAiTunnelStatus() {
     sshPort: resolvedTarget.port,
     sshUser: resolvedTarget.user,
     targetSource: resolvedTarget.source,
+    lastError: pidRunning ? "" : String(state?.lastError || "").trim(),
     message:
       pidRunning && portReachable
         ? "SSH tunnel is active."
@@ -245,6 +285,8 @@ async function startRemoteAiTunnel() {
 
   const forwardTarget = `${config.runpodTunnelLocalPort}:${config.runpodTunnelRemoteHost}:${config.runpodTunnelRemotePort}`;
   const sshTarget = `${sshTargetConfig.user}@${sshTargetConfig.host}`;
+  await resetTunnelLog();
+  const logFd = fs.openSync(TUNNEL_LOG_PATH, "a");
   const child = spawn(
     "ssh",
     [
@@ -257,7 +299,13 @@ async function startRemoteAiTunnel() {
       "-i",
       sshKeyPath,
       "-o",
+      "BatchMode=yes",
+      "-o",
+      "StrictHostKeyChecking=accept-new",
+      "-o",
       "ExitOnForwardFailure=yes",
+      "-o",
+      "ConnectTimeout=10",
       "-o",
       "ServerAliveInterval=30",
       "-o",
@@ -265,24 +313,43 @@ async function startRemoteAiTunnel() {
     ],
     {
       detached: true,
-      stdio: "ignore",
+      stdio: ["ignore", logFd, logFd],
       windowsHide: true
     }
   );
+  fs.closeSync(logFd);
   child.unref();
 
   await writeTunnelState({
     pid: child.pid,
-    startedAt: new Date().toISOString()
+    startedAt: new Date().toISOString(),
+    sshHost: sshTargetConfig.host,
+    sshPort: sshTargetConfig.port,
+    sshUser: sshTargetConfig.user,
+    targetSource: sshTargetConfig.source,
+    lastError: ""
   });
 
   const ready = await waitForTunnelReady();
 
   if (!ready) {
-    await stopRemoteAiTunnel();
-    const error = new Error(
-      `SSH tunnel did not become ready on local port ${config.runpodTunnelLocalPort}.`
-    );
+    const logTail = await readTunnelLogTail();
+
+    if (isPidRunning(child.pid)) {
+      process.kill(child.pid);
+    }
+
+    await writeTunnelState({
+      pid: null,
+      startedAt: new Date().toISOString(),
+      sshHost: sshTargetConfig.host,
+      sshPort: sshTargetConfig.port,
+      sshUser: sshTargetConfig.user,
+      targetSource: sshTargetConfig.source,
+      lastError: buildTunnelFailureMessage(logTail)
+    });
+
+    const error = new Error(buildTunnelFailureMessage(logTail));
     error.statusCode = 504;
     throw error;
   }
@@ -296,6 +363,7 @@ async function startRemoteAiTunnel() {
 async function stopRemoteAiTunnel() {
   if (isTunnelTestMode()) {
     process.env.REMOTE_AI_TUNNEL_TEST_RUNNING = "false";
+    process.env.REMOTE_AI_TUNNEL_TEST_LAST_ERROR = "";
     return getRemoteAiTunnelStatus();
   }
 
