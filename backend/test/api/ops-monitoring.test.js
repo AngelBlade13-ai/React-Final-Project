@@ -464,7 +464,7 @@ test("remote Ollama wake control starts ollama serve through ssh safely", async 
     process.nextTick(() => {
       child.stdout.emit(
         "data",
-        '__OLLAMA_STARTED__=1\n{"models":[{"name":"qwen2.5:7b"}]}'
+        '__OLLAMA_INSTALLED__=1\n__OLLAMA_STARTED__=1\n{"models":[{"name":"qwen2.5:7b"}]}'
       );
       child.emit("close", 0);
     });
@@ -489,8 +489,13 @@ test("remote Ollama wake control starts ollama serve through ssh safely", async 
   assert.equal(wakeResponse.status, 200);
   assert.equal(wakeResponse.body.remoteOllama.available, true);
   assert.equal(wakeResponse.body.remoteOllama.running, true);
+  assert.equal(wakeResponse.body.remoteOllama.installedNow, true);
   assert.equal(wakeResponse.body.remoteOllama.startedNow, true);
   assert.equal(wakeResponse.body.remoteOllama.modelInstalled, true);
+  assert.equal(
+    wakeResponse.body.remoteOllama.modelsPath,
+    "/workspace/ollama-models"
+  );
   assert.equal(wakeResponse.body.remoteOllama.sshHost, "213.192.2.117");
   assert.equal(wakeResponse.body.remoteOllama.sshPort, 40179);
 });

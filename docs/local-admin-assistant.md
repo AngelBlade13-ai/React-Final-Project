@@ -57,9 +57,14 @@ ssh -N -L 11434:127.0.0.1:11434 root@RUNPOD_SSH_HOST -p RUNPOD_SSH_PORT -i ~/.ss
 ```
 
 Once the pod and tunnel are ready, the same panel can also wake remote Ollama.
-That action SSHes into the pod, starts `ollama serve` with
+That action SSHes into the pod, installs Ollama if the binary is missing,
+forces `OLLAMA_MODELS=/workspace/ollama-models`, starts `ollama serve` with
 `OLLAMA_KEEP_ALIVE=30m` if it is not already running, and waits for
 `http://127.0.0.1:11434/api/tags` to respond before reporting success.
+
+If you want a manual fallback inside the pod, the repo also includes
+`backend/scripts/runpod-bootstrap-ollama.sh`, which performs the same install,
+model-path, and startup flow.
 
 The Paths tab can also ask for one new guided path concept. The backend prompts
 the model to find a real catalog gap, rejects duplicate slugs, filters suggested
@@ -88,8 +93,9 @@ hardware.
 On the RunPod pod, keep Ollama warm for admin sessions:
 
 ```bash
+export OLLAMA_MODELS=/workspace/ollama-models
 pkill -f ollama
-OLLAMA_KEEP_ALIVE=30m nohup ollama serve > /workspace/ollama.log 2>&1 &
+OLLAMA_KEEP_ALIVE=30m nohup /usr/local/bin/ollama serve > /workspace/ollama.log 2>&1 &
 curl http://127.0.0.1:11434/api/tags
 ```
 
