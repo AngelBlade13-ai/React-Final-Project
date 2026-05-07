@@ -261,10 +261,6 @@ function hasStructuredReleaseNote(value) {
   );
 }
 
-function applyDeterministicAssessmentGuards(
-  fieldAssessments = [],
-  currentDraft = {}
-) {
 function isStrongContentPatch(value, currentDraft = {}) {
   const content = String(value || "").trim();
 
