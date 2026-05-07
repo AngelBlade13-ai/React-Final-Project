@@ -46,6 +46,14 @@ This only controls the RunPod pod itself. If `LOCAL_AI_BASE_URL` points to an
 SSH tunnel such as `http://127.0.0.1:11434`, that tunnel still has to be opened
 separately on the machine running the backend.
 
+The same Insights panel can also automate the local SSH tunnel when
+`RUNPOD_SSH_HOST` and `RUNPOD_SSH_KEY_PATH` are configured. It launches a local
+detached command equivalent to:
+
+```powershell
+ssh -N -L 11434:127.0.0.1:11434 root@RUNPOD_SSH_HOST -p RUNPOD_SSH_PORT -i ~/.ssh/id_ed25519
+```
+
 The Paths tab can also ask for one new guided path concept. The backend prompts
 the model to find a real catalog gap, rejects duplicate slugs, filters suggested
 post slugs against public catalog posts, and warns when the model does not
@@ -97,6 +105,13 @@ LOCAL_AI_TIMEOUT_MS=120000
 RUNPOD_API_KEY=
 RUNPOD_POD_ID=
 RUNPOD_API_BASE_URL=https://rest.runpod.io/v1
+RUNPOD_SSH_HOST=
+RUNPOD_SSH_PORT=22
+RUNPOD_SSH_USER=root
+RUNPOD_SSH_KEY_PATH=~/.ssh/id_ed25519
+RUNPOD_TUNNEL_LOCAL_PORT=11434
+RUNPOD_TUNNEL_REMOTE_HOST=127.0.0.1
+RUNPOD_TUNNEL_REMOTE_PORT=11434
 ```
 
 Set `LOCAL_AI_ENABLED=false` to keep the endpoints visible but unavailable in a

@@ -332,6 +332,50 @@ test("remote AI pod controls proxy runpod start stop and status safely", async (
   );
 });
 
+test("remote AI tunnel controls report and toggle tunnel state safely", async (t) => {
+  const context = await createApiTestContext({
+    REMOTE_AI_TUNNEL_TEST_MODE: "true",
+    REMOTE_AI_TUNNEL_TEST_RUNNING: "false",
+    RUNPOD_SSH_HOST: "213.192.2.117",
+    RUNPOD_SSH_PORT: "40098",
+    RUNPOD_SSH_USER: "root",
+    RUNPOD_SSH_KEY_PATH: "~/.ssh/id_ed25519"
+  });
+  t.after(async () => {
+    await context.close();
+  });
+
+  const loginResponse = await context.agent
+    .post("/api/admin/login")
+    .set(context.mutationHeaders)
+    .send({
+      email: "admin@example.com",
+      password: "Admin123!"
+    });
+
+  assert.equal(loginResponse.status, 200);
+
+  const statusResponse = await context.agent.get("/api/admin/assistant/status");
+
+  assert.equal(statusResponse.status, 200);
+  assert.equal(statusResponse.body.remoteTunnel.configured, true);
+  assert.equal(statusResponse.body.remoteTunnel.running, false);
+
+  const startResponse = await context.agent
+    .post("/api/admin/assistant/remote-tunnel/start")
+    .set(context.mutationHeaders);
+
+  assert.equal(startResponse.status, 200);
+  assert.equal(startResponse.body.remoteTunnel.running, true);
+
+  const stopResponse = await context.agent
+    .post("/api/admin/assistant/remote-tunnel/stop")
+    .set(context.mutationHeaders);
+
+  assert.equal(stopResponse.status, 200);
+  assert.equal(stopResponse.body.remoteTunnel.running, false);
+});
+
 test("admin importer launcher starts the local importer behind admin auth", async (t) => {
   const context = await createApiTestContext({
     IMPORTER_LAUNCH_TEST_RESULT: "started"

@@ -40,6 +40,14 @@ const config = {
   runpodPodId: process.env.RUNPOD_POD_ID || "",
   runpodApiBaseUrl:
     process.env.RUNPOD_API_BASE_URL || "https://rest.runpod.io/v1",
+  runpodSshHost: process.env.RUNPOD_SSH_HOST || "",
+  runpodSshPort: Number(process.env.RUNPOD_SSH_PORT) || 22,
+  runpodSshUser: process.env.RUNPOD_SSH_USER || "root",
+  runpodSshKeyPath: process.env.RUNPOD_SSH_KEY_PATH || "",
+  runpodTunnelLocalPort: Number(process.env.RUNPOD_TUNNEL_LOCAL_PORT) || 11434,
+  runpodTunnelRemoteHost: process.env.RUNPOD_TUNNEL_REMOTE_HOST || "127.0.0.1",
+  runpodTunnelRemotePort:
+    Number(process.env.RUNPOD_TUNNEL_REMOTE_PORT) || 11434,
   operationalSeedFile:
     process.env.OPERATIONAL_SEED_FILE ||
     path.join(__dirname, "..", "data", "operational-seed.local.json"),

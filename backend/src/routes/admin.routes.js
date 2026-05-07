@@ -38,6 +38,11 @@ const {
   startRunpodPod,
   stopRunpodPod
 } = require("../services/runpodPodService");
+const {
+  getRemoteAiTunnelStatus,
+  startRemoteAiTunnel,
+  stopRemoteAiTunnel
+} = require("../services/remoteAiTunnelService");
 const { runPostFileReseed } = require("../services/reseedLiveSiteService");
 const {
   appendSlugHistory,
@@ -816,11 +821,12 @@ router.get("/insights", async (req, res, next) => {
 
 router.get("/assistant/status", async (req, res, next) => {
   try {
-    const [status, remotePod] = await Promise.all([
+    const [status, remotePod, remoteTunnel] = await Promise.all([
       getLocalAiStatus(),
-      getRunpodPodStatus()
+      getRunpodPodStatus(),
+      getRemoteAiTunnelStatus()
     ]);
-    return res.json({ localAi: status, remotePod });
+    return res.json({ localAi: status, remotePod, remoteTunnel });
   } catch (error) {
     next(error);
   }
@@ -869,6 +875,55 @@ router.post("/assistant/remote-pod/stop", async (req, res) => {
     return res
       .status(error.statusCode || 500)
       .json({ message: error.message || "Failed to stop the remote AI pod." });
+  }
+});
+
+router.post("/assistant/remote-tunnel/start", async (req, res) => {
+  try {
+    const remoteTunnel = await startRemoteAiTunnel();
+
+    await recordAdminAuditEvent(req, {
+      action: "assistant.remote_tunnel_started",
+      entityType: "assistant",
+      entityId: "remote-ai-tunnel",
+      entityLabel: "Remote AI SSH tunnel",
+      details: {
+        localUrl: remoteTunnel.localUrl,
+        pid: remoteTunnel.pid || 0,
+        sshHost: remoteTunnel.sshHost || "",
+        sshPort: remoteTunnel.sshPort || 0
+      }
+    });
+
+    return res.json({ remoteTunnel });
+  } catch (error) {
+    return res.status(error.statusCode || 500).json({
+      message: error.message || "Failed to start the remote AI SSH tunnel."
+    });
+  }
+});
+
+router.post("/assistant/remote-tunnel/stop", async (req, res) => {
+  try {
+    const remoteTunnel = await stopRemoteAiTunnel();
+
+    await recordAdminAuditEvent(req, {
+      action: "assistant.remote_tunnel_stopped",
+      entityType: "assistant",
+      entityId: "remote-ai-tunnel",
+      entityLabel: "Remote AI SSH tunnel",
+      details: {
+        localUrl: remoteTunnel.localUrl,
+        sshHost: remoteTunnel.sshHost || "",
+        sshPort: remoteTunnel.sshPort || 0
+      }
+    });
+
+    return res.json({ remoteTunnel });
+  } catch (error) {
+    return res.status(error.statusCode || 500).json({
+      message: error.message || "Failed to stop the remote AI SSH tunnel."
+    });
   }
 });
 

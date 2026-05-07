@@ -111,12 +111,16 @@ export default function AdminInsightsPage() {
   const [reseedResult, setReseedResult] = useState(null);
   const [localAiStatus, setLocalAiStatus] = useState(null);
   const [remotePodStatus, setRemotePodStatus] = useState(null);
+  const [remoteTunnelStatus, setRemoteTunnelStatus] = useState(null);
   const [localAiError, setLocalAiError] = useState("");
   const [localAiReview, setLocalAiReview] = useState(null);
   const [localAiReviewLoading, setLocalAiReviewLoading] = useState(false);
   const [localAiReviewError, setLocalAiReviewError] = useState("");
   const [remotePodActionLoading, setRemotePodActionLoading] = useState("");
   const [remotePodActionError, setRemotePodActionError] = useState("");
+  const [remoteTunnelActionLoading, setRemoteTunnelActionLoading] =
+    useState("");
+  const [remoteTunnelActionError, setRemoteTunnelActionError] = useState("");
 
   useEffect(() => {
     let isCancelled = false;
@@ -180,10 +184,12 @@ export default function AdminInsightsPage() {
           if (localAiResult.status === "fulfilled") {
             setLocalAiStatus(localAiResult.value.localAi || null);
             setRemotePodStatus(localAiResult.value.remotePod || null);
+            setRemoteTunnelStatus(localAiResult.value.remoteTunnel || null);
             setLocalAiError("");
           } else {
             setLocalAiStatus(null);
             setRemotePodStatus(null);
+            setRemoteTunnelStatus(null);
             setLocalAiError(
               localAiResult.reason?.message ||
                 "Failed to load local assistant status."
@@ -304,9 +310,11 @@ export default function AdminInsightsPage() {
 
       setLocalAiStatus(data.localAi || null);
       setRemotePodStatus(data.remotePod || null);
+      setRemoteTunnelStatus(data.remoteTunnel || null);
     } catch (apiError) {
       setLocalAiStatus(null);
       setRemotePodStatus(null);
+      setRemoteTunnelStatus(null);
       setLocalAiError(apiError.message);
     }
   }
@@ -329,6 +337,27 @@ export default function AdminInsightsPage() {
       setRemotePodActionError(apiError.message);
     } finally {
       setRemotePodActionLoading("");
+    }
+  }
+
+  async function handleRemoteTunnelAction(action) {
+    try {
+      setRemoteTunnelActionLoading(action);
+      setRemoteTunnelActionError("");
+
+      const data = await readJson(
+        adminFetch(`${apiBaseUrl}/admin/assistant/remote-tunnel/${action}`, {
+          method: "POST"
+        }),
+        `Failed to ${action} the remote AI SSH tunnel.`
+      );
+
+      setRemoteTunnelStatus(data.remoteTunnel || null);
+      await handleRefreshLocalAiStatus();
+    } catch (apiError) {
+      setRemoteTunnelActionError(apiError.message);
+    } finally {
+      setRemoteTunnelActionLoading("");
     }
   }
 
@@ -417,6 +446,17 @@ export default function AdminInsightsPage() {
       note: remotePodStatus?.configured
         ? "RunPod control ready"
         : "Not configured"
+    },
+    {
+      label: "SSH Tunnel",
+      value: loading
+        ? "--"
+        : remoteTunnelStatus?.running
+          ? "Active"
+          : remoteTunnelStatus?.configured
+            ? "Inactive"
+            : "Unconfigured",
+      note: remoteTunnelStatus?.localUrl || "127.0.0.1 forward"
     }
   ];
 
@@ -774,6 +814,20 @@ export default function AdminInsightsPage() {
                 "Configure RunPod env vars to control a remote GPU pod."}
             </span>
           </article>
+          <article className="metric-summary-card">
+            <p className="note-label">SSH Tunnel</p>
+            <strong>
+              {remoteTunnelStatus?.running
+                ? "Active"
+                : remoteTunnelStatus?.configured
+                  ? "Inactive"
+                  : "Unconfigured"}
+            </strong>
+            <span>
+              {remoteTunnelStatus?.message ||
+                "Automate the local SSH forward used by LOCAL_AI_BASE_URL."}
+            </span>
+          </article>
         </div>
         <div className="archive-intelligence-actions">
           <button
@@ -808,6 +862,32 @@ export default function AdminInsightsPage() {
               : "Stop Remote AI"}
           </button>
           <button
+            className="secondary-button"
+            disabled={
+              remoteTunnelActionLoading === "start" ||
+              !remoteTunnelStatus?.configured
+            }
+            onClick={() => handleRemoteTunnelAction("start")}
+            type="button"
+          >
+            {remoteTunnelActionLoading === "start"
+              ? "Opening SSH Tunnel..."
+              : "Open SSH Tunnel"}
+          </button>
+          <button
+            className="secondary-button"
+            disabled={
+              remoteTunnelActionLoading === "stop" ||
+              !remoteTunnelStatus?.configured
+            }
+            onClick={() => handleRemoteTunnelAction("stop")}
+            type="button"
+          >
+            {remoteTunnelActionLoading === "stop"
+              ? "Closing SSH Tunnel..."
+              : "Close SSH Tunnel"}
+          </button>
+          <button
             className="hero-link"
             disabled={
               localAiReviewLoading ||
@@ -825,13 +905,15 @@ export default function AdminInsightsPage() {
         {remotePodStatus?.configured ? (
           <p className="meta">
             {`RunPod pod ${remotePodStatus.podId || "unknown"} is ${remotePodStatus.runtimeStatus}. `}
-            Starting and stopping the pod does not create an SSH tunnel. If your{" "}
-            <code>LOCAL_AI_BASE_URL</code> points at a local tunnel, keep that
-            tunnel open separately.
+            The tunnel and the pod are managed separately because the pod can be
+            running while the local SSH forward is still closed.
           </p>
         ) : null}
         {remotePodActionError ? (
           <p className="error-text">{remotePodActionError}</p>
+        ) : null}
+        {remoteTunnelActionError ? (
+          <p className="error-text">{remoteTunnelActionError}</p>
         ) : null}
         {localAiReviewError ? (
           <p className="error-text">{localAiReviewError}</p>
