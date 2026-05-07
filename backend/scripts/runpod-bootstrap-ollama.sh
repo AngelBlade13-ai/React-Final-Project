@@ -19,8 +19,8 @@ if pgrep -f "[o]llama serve" >/dev/null 2>&1; then
   echo "Ollama is already running."
 else
   echo "Starting Ollama with models at ${OLLAMA_MODELS}..."
-  OLLAMA_MODELS="${OLLAMA_MODELS}" OLLAMA_KEEP_ALIVE="${OLLAMA_KEEP_ALIVE}" \
-    nohup "${OLLAMA_BINARY}" serve > "${OLLAMA_LOG}" 2>&1 </dev/null &
+  setsid -f sh -lc \
+    "exec env OLLAMA_MODELS='${OLLAMA_MODELS}' OLLAMA_KEEP_ALIVE='${OLLAMA_KEEP_ALIVE}' '${OLLAMA_BINARY}' serve >>'${OLLAMA_LOG}' 2>&1"
 fi
 
 for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
