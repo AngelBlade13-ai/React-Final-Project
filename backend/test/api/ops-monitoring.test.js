@@ -459,6 +459,10 @@ test("remote Ollama wake control starts ollama serve through ssh safely", async 
     const child = new EventEmitter();
     child.stdout = new EventEmitter();
     child.stderr = new EventEmitter();
+    child.stdin = {
+      write() {},
+      end() {}
+    };
     child.kill = () => {};
 
     process.nextTick(() => {
