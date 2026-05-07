@@ -491,6 +491,7 @@ test("remote Ollama wake control starts ollama serve through ssh safely", async 
   assert.equal(wakeResponse.body.remoteOllama.running, true);
   assert.equal(wakeResponse.body.remoteOllama.installedNow, true);
   assert.equal(wakeResponse.body.remoteOllama.startedNow, true);
+  assert.equal(wakeResponse.body.remoteOllama.retriedStart, false);
   assert.equal(wakeResponse.body.remoteOllama.modelInstalled, true);
   assert.equal(
     wakeResponse.body.remoteOllama.modelsPath,

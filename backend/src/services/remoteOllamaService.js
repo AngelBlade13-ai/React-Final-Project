@@ -186,6 +186,7 @@ function normalizeRemoteOllamaResponse({
   const installedNow = output.includes("__OLLAMA_INSTALLED__=1");
   const alreadyRunning = output.includes("__OLLAMA_ALREADY_RUNNING__=1");
   const startedNow = output.includes("__OLLAMA_STARTED__=1");
+  const retriedStart = output.includes("__OLLAMA_RETRIED_START__=1");
 
   return {
     configured: true,
@@ -194,6 +195,7 @@ function normalizeRemoteOllamaResponse({
     installedNow,
     startedNow,
     alreadyRunning,
+    retriedStart,
     sshHost,
     sshPort,
     sshUser,
@@ -203,14 +205,18 @@ function normalizeRemoteOllamaResponse({
     modelInstalled: models.includes(config.localAiModel),
     message: data
       ? installedNow && startedNow
-        ? "Remote Ollama was installed, started, and responded to /api/tags."
+        ? retriedStart
+          ? "Remote Ollama was installed, retried once, and responded to /api/tags."
+          : "Remote Ollama was installed, started, and responded to /api/tags."
         : installedNow
           ? "Remote Ollama was installed and responded to /api/tags."
         : startedNow
-          ? "Remote Ollama started and responded to /api/tags."
-        : alreadyRunning
-          ? "Remote Ollama was already running and responded to /api/tags."
-          : "Remote Ollama responded to /api/tags."
+          ? retriedStart
+            ? "Remote Ollama retried once and responded to /api/tags."
+            : "Remote Ollama started and responded to /api/tags."
+          : alreadyRunning
+            ? "Remote Ollama was already running and responded to /api/tags."
+            : "Remote Ollama responded to /api/tags."
       : "Remote Ollama did not return a valid /api/tags response."
   };
 }
@@ -225,6 +231,7 @@ async function wakeRemoteOllama() {
       startedNow: process.env.REMOTE_OLLAMA_TEST_STARTED_NOW === "true",
       alreadyRunning:
         process.env.REMOTE_OLLAMA_TEST_STARTED_NOW !== "true",
+      retriedStart: process.env.REMOTE_OLLAMA_TEST_RETRIED_START === "true",
       sshHost: "213.192.2.117",
       sshPort: 40179,
       sshUser: "root",
@@ -244,7 +251,7 @@ async function wakeRemoteOllama() {
     throw error;
   }
 
-  const remoteCommand = `sh -lc 'set -e; export OLLAMA_MODELS=${REMOTE_OLLAMA_MODELS_DIR}; mkdir -p "${REMOTE_OLLAMA_MODELS_DIR}"; if [ ! -x "${REMOTE_OLLAMA_BINARY}" ]; then curl -fsSL https://ollama.com/install.sh | sh; echo "__OLLAMA_INSTALLED__=1"; fi; if pgrep -f "[o]llama serve" >/dev/null; then echo "__OLLAMA_ALREADY_RUNNING__=1"; else OLLAMA_MODELS="${REMOTE_OLLAMA_MODELS_DIR}" OLLAMA_KEEP_ALIVE=${REMOTE_OLLAMA_KEEP_ALIVE} nohup ${REMOTE_OLLAMA_BINARY} serve >/workspace/ollama.log 2>&1 </dev/null & echo "__OLLAMA_STARTED__=1"; fi; for i in 1 2 3 4 5 6 7 8 9 10 11 12; do sleep 2; if curl -fsS http://127.0.0.1:11434/api/tags; then exit 0; fi; done; exit 1'`;
+  const remoteCommand = `sh -lc 'set -e; export OLLAMA_MODELS=${REMOTE_OLLAMA_MODELS_DIR}; mkdir -p "${REMOTE_OLLAMA_MODELS_DIR}"; if [ ! -x "${REMOTE_OLLAMA_BINARY}" ]; then curl -fsSL https://ollama.com/install.sh | sh; echo "__OLLAMA_INSTALLED__=1"; sleep 3; fi; if pgrep -f "[o]llama serve" >/dev/null; then echo "__OLLAMA_ALREADY_RUNNING__=1"; else OLLAMA_MODELS="${REMOTE_OLLAMA_MODELS_DIR}" OLLAMA_KEEP_ALIVE=${REMOTE_OLLAMA_KEEP_ALIVE} nohup ${REMOTE_OLLAMA_BINARY} serve >/workspace/ollama.log 2>&1 </dev/null & echo "__OLLAMA_STARTED__=1"; fi; for i in 1 2 3 4 5 6; do sleep 2; if curl -fsS http://127.0.0.1:11434/api/tags; then exit 0; fi; done; pkill -f "[o]llama serve" || true; sleep 2; OLLAMA_MODELS="${REMOTE_OLLAMA_MODELS_DIR}" OLLAMA_KEEP_ALIVE=${REMOTE_OLLAMA_KEEP_ALIVE} nohup ${REMOTE_OLLAMA_BINARY} serve >/workspace/ollama.log 2>&1 </dev/null & echo "__OLLAMA_RETRIED_START__=1"; for i in 1 2 3 4 5 6; do sleep 2; if curl -fsS http://127.0.0.1:11434/api/tags; then exit 0; fi; done; exit 1'`;
   const result = await runSshCommand(
     remoteCommand,
     WAKE_REMOTE_OLLAMA_TIMEOUT_MS
