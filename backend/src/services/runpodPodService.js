@@ -17,6 +17,43 @@ function isRunpodConfigured() {
   return Boolean(config.runpodApiKey && config.runpodPodId);
 }
 
+function normalizePortMappings(portMappings = {}) {
+  if (!portMappings || typeof portMappings !== "object") {
+    return {};
+  }
+
+  return Object.fromEntries(
+    Object.entries(portMappings).map(([internalPort, publicPort]) => [
+      String(internalPort).trim(),
+      Number(publicPort) || 0
+    ])
+  );
+}
+
+function getRunpodSshEndpointFromPod(pod = {}) {
+  const publicIp = String(pod.publicIp || "").trim();
+  const portMappings = normalizePortMappings(pod.portMappings);
+  const sshPort = portMappings["22"];
+
+  if (!publicIp || !sshPort) {
+    return {
+      ready: false,
+      host: publicIp,
+      port: sshPort || 0,
+      user: config.runpodSshUser,
+      source: "runpod"
+    };
+  }
+
+  return {
+    ready: true,
+    host: publicIp,
+    port: sshPort,
+    user: config.runpodSshUser,
+    source: "runpod"
+  };
+}
+
 async function fetchRunpod(path, options = {}) {
   const response = await fetch(`${config.runpodApiBaseUrl}${path}`, {
     ...options,
@@ -51,6 +88,8 @@ function normalizeRunpodStatus(pod = {}) {
           ? "terminated"
           : "unknown";
 
+  const sshEndpoint = getRunpodSshEndpointFromPod(pod);
+
   return {
     configured: true,
     provider: "runpod",
@@ -60,6 +99,11 @@ function normalizeRunpodStatus(pod = {}) {
     runtimeStatus,
     costPerHr: Number(pod.costPerHr || 0) || 0,
     publicIp: pod.publicIp || "",
+    portMappings: normalizePortMappings(pod.portMappings),
+    sshHost: sshEndpoint.host,
+    sshPort: sshEndpoint.port,
+    sshUser: sshEndpoint.user,
+    sshReady: sshEndpoint.ready,
     lastStartedAt: pod.lastStartedAt || "",
     lastStatusChange: pod.lastStatusChange || "",
     canStart: desiredStatus === "EXITED",
@@ -75,6 +119,18 @@ function normalizeRunpodStatus(pod = {}) {
   };
 }
 
+async function getRunpodPod() {
+  if (!isRunpodConfigured()) {
+    const error = new Error(
+      "Set RUNPOD_API_KEY and RUNPOD_POD_ID to enable RunPod discovery."
+    );
+    error.statusCode = 503;
+    throw error;
+  }
+
+  return fetchRunpod(`/pods/${config.runpodPodId}`);
+}
+
 async function getRunpodPodStatus() {
   if (!isRunpodConfigured()) {
     return buildUnconfiguredStatus(
@@ -83,7 +139,7 @@ async function getRunpodPodStatus() {
   }
 
   try {
-    const pod = await fetchRunpod(`/pods/${config.runpodPodId}`);
+    const pod = await getRunpodPod();
     return normalizeRunpodStatus(pod);
   } catch (error) {
     return {
@@ -97,6 +153,21 @@ async function getRunpodPodStatus() {
       message: error.message || "Failed to read RunPod status."
     };
   }
+}
+
+async function getRunpodSshEndpoint() {
+  if (!isRunpodConfigured()) {
+    return {
+      ready: false,
+      host: "",
+      port: 0,
+      user: config.runpodSshUser,
+      source: "runpod"
+    };
+  }
+
+  const pod = await getRunpodPod();
+  return getRunpodSshEndpointFromPod(pod);
 }
 
 async function startRunpodPod() {
@@ -133,6 +204,7 @@ async function stopRunpodPod() {
 
 module.exports = {
   getRunpodPodStatus,
+  getRunpodSshEndpoint,
   startRunpodPod,
   stopRunpodPod
 };

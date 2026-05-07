@@ -47,8 +47,10 @@ SSH tunnel such as `http://127.0.0.1:11434`, that tunnel still has to be opened
 separately on the machine running the backend.
 
 The same Insights panel can also automate the local SSH tunnel when
-`RUNPOD_SSH_HOST` and `RUNPOD_SSH_KEY_PATH` are configured. It launches a local
-detached command equivalent to:
+`RUNPOD_SSH_KEY_PATH` is configured. If `RUNPOD_SSH_HOST` is blank, the backend
+asks the RunPod pod API for the current `publicIp` and `portMappings["22"]`, so
+the tunnel target updates automatically after a pod restart. It launches a
+local detached command equivalent to:
 
 ```powershell
 ssh -N -L 11434:127.0.0.1:11434 root@RUNPOD_SSH_HOST -p RUNPOD_SSH_PORT -i ~/.ssh/id_ed25519
@@ -115,7 +117,8 @@ RUNPOD_TUNNEL_REMOTE_PORT=11434
 ```
 
 Set `LOCAL_AI_ENABLED=false` to keep the endpoints visible but unavailable in a
-safe, explicit way.
+safe, explicit way. Leave `RUNPOD_SSH_HOST` blank if you want the app to
+discover the current SSH host and exposed port from RunPod automatically.
 
 ### Why This Shape
 

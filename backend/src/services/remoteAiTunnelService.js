@@ -4,6 +4,7 @@ const os = require("os");
 const path = require("path");
 const { spawn } = require("child_process");
 const config = require("../config");
+const { getRunpodSshEndpoint } = require("./runpodPodService");
 
 const TUNNEL_STATE_PATH = path.join(
   __dirname,
@@ -29,7 +30,34 @@ function buildUnconfiguredStatus(message) {
 }
 
 function isTunnelConfigured() {
-  return Boolean(config.runpodSshHost && config.runpodSshKeyPath);
+  return Boolean(config.runpodSshKeyPath && (config.runpodSshHost || config.runpodApiKey));
+}
+
+async function resolveTunnelSshTarget() {
+  const manualHost = String(config.runpodSshHost || "").trim();
+  const manualPort = Number(config.runpodSshPort) || 0;
+
+  if (manualHost && manualPort > 0) {
+    return {
+      host: manualHost,
+      port: manualPort,
+      user: config.runpodSshUser,
+      source: "manual"
+    };
+  }
+
+  const discoveredEndpoint = await getRunpodSshEndpoint();
+
+  if (discoveredEndpoint?.ready) {
+    return discoveredEndpoint;
+  }
+
+  return {
+    host: "",
+    port: 0,
+    user: config.runpodSshUser,
+    source: "runpod"
+  };
 }
 
 function expandHomePath(value) {
@@ -117,15 +145,23 @@ async function waitForTunnelReady(timeoutMs = READY_TIMEOUT_MS) {
 }
 
 async function getRemoteAiTunnelStatus() {
+  const resolvedTarget = await resolveTunnelSshTarget().catch(() => ({
+    host: "",
+    port: 0,
+    user: config.runpodSshUser,
+    source: "runpod"
+  }));
+
   if (isTunnelTestMode()) {
     return {
-      configured: true,
+      configured: Boolean(config.runpodSshKeyPath && (resolvedTarget.host || config.runpodApiKey)),
       running: process.env.REMOTE_AI_TUNNEL_TEST_RUNNING === "true",
       pid: process.env.REMOTE_AI_TUNNEL_TEST_RUNNING === "true" ? 4321 : null,
       localUrl: `http://127.0.0.1:${config.runpodTunnelLocalPort}`,
-      sshHost: config.runpodSshHost,
-      sshPort: config.runpodSshPort,
-      sshUser: config.runpodSshUser,
+      sshHost: resolvedTarget.host,
+      sshPort: resolvedTarget.port,
+      sshUser: resolvedTarget.user,
+      targetSource: resolvedTarget.source,
       message:
         process.env.REMOTE_AI_TUNNEL_TEST_RUNNING === "true"
           ? "SSH tunnel is active."
@@ -135,7 +171,7 @@ async function getRemoteAiTunnelStatus() {
 
   if (!isTunnelConfigured()) {
     return buildUnconfiguredStatus(
-      "Set RUNPOD_SSH_HOST and RUNPOD_SSH_KEY_PATH to enable tunnel automation."
+      "Set RUNPOD_SSH_KEY_PATH plus either RUNPOD_SSH_HOST or the RunPod API settings to enable tunnel automation."
     );
   }
 
@@ -155,12 +191,15 @@ async function getRemoteAiTunnelStatus() {
     running: pidRunning && portReachable,
     pid: pidRunning ? pid : null,
     localUrl: `http://127.0.0.1:${config.runpodTunnelLocalPort}`,
-    sshHost: config.runpodSshHost,
-    sshPort: config.runpodSshPort,
-    sshUser: config.runpodSshUser,
+    sshHost: resolvedTarget.host,
+    sshPort: resolvedTarget.port,
+    sshUser: resolvedTarget.user,
+    targetSource: resolvedTarget.source,
     message:
       pidRunning && portReachable
         ? "SSH tunnel is active."
+        : !resolvedTarget.host || !resolvedTarget.port
+          ? "RunPod SSH endpoint is not ready yet."
         : pidRunning
           ? "SSH tunnel process exists but local port is not ready."
           : "SSH tunnel is not running."
@@ -178,7 +217,7 @@ async function startRemoteAiTunnel() {
 
   if (!isTunnelConfigured()) {
     const error = new Error(
-      "Set RUNPOD_SSH_HOST and RUNPOD_SSH_KEY_PATH before starting the SSH tunnel."
+      "Set RUNPOD_SSH_KEY_PATH plus either RUNPOD_SSH_HOST or the RunPod API settings before starting the SSH tunnel."
     );
     error.statusCode = 503;
     throw error;
@@ -194,8 +233,18 @@ async function startRemoteAiTunnel() {
   }
 
   const sshKeyPath = expandHomePath(config.runpodSshKeyPath);
+  const sshTargetConfig = await resolveTunnelSshTarget();
+
+  if (!sshTargetConfig.host || !sshTargetConfig.port) {
+    const error = new Error(
+      "RunPod has not published an SSH host/port yet. Wait for the pod to finish initializing, then try again."
+    );
+    error.statusCode = 503;
+    throw error;
+  }
+
   const forwardTarget = `${config.runpodTunnelLocalPort}:${config.runpodTunnelRemoteHost}:${config.runpodTunnelRemotePort}`;
-  const sshTarget = `${config.runpodSshUser}@${config.runpodSshHost}`;
+  const sshTarget = `${sshTargetConfig.user}@${sshTargetConfig.host}`;
   const child = spawn(
     "ssh",
     [
@@ -204,7 +253,7 @@ async function startRemoteAiTunnel() {
       forwardTarget,
       sshTarget,
       "-p",
-      String(config.runpodSshPort),
+      String(sshTargetConfig.port),
       "-i",
       sshKeyPath,
       "-o",

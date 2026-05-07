@@ -240,7 +240,10 @@ test("remote AI pod controls proxy runpod start stop and status safely", async (
           name: "Remote AI",
           desiredStatus,
           costPerHr: "0.46",
-          publicIp: "127.0.0.1",
+          publicIp: "213.192.2.117",
+          portMappings: {
+            "22": 40179
+          },
           lastStartedAt: "2026-05-06T19:00:00.000Z",
           lastStatusChange: "started"
         })
@@ -301,6 +304,9 @@ test("remote AI pod controls proxy runpod start stop and status safely", async (
   assert.equal(statusResponse.body.remotePod.configured, true);
   assert.equal(statusResponse.body.remotePod.runtimeStatus, "running");
   assert.equal(statusResponse.body.remotePod.podId, "pod_test_123");
+  assert.equal(statusResponse.body.remotePod.sshHost, "213.192.2.117");
+  assert.equal(statusResponse.body.remotePod.sshPort, 40179);
+  assert.equal(statusResponse.body.remotePod.sshReady, true);
 
   const startResponse = await context.agent
     .post("/api/admin/assistant/remote-pod/start")
@@ -333,15 +339,37 @@ test("remote AI pod controls proxy runpod start stop and status safely", async (
 });
 
 test("remote AI tunnel controls report and toggle tunnel state safely", async (t) => {
+  const originalFetch = global.fetch;
+  global.fetch = async (url) => {
+    const normalizedUrl = String(url);
+
+    if (normalizedUrl === "https://rest.runpod.io/v1/pods/pod_test_123") {
+      return {
+        ok: true,
+        json: async () => ({
+          id: "pod_test_123",
+          desiredStatus: "RUNNING",
+          publicIp: "213.192.2.117",
+          portMappings: {
+            "22": 40179
+          }
+        })
+      };
+    }
+
+    throw new Error(`Unexpected fetch URL: ${normalizedUrl}`);
+  };
+
   const context = await createApiTestContext({
     REMOTE_AI_TUNNEL_TEST_MODE: "true",
     REMOTE_AI_TUNNEL_TEST_RUNNING: "false",
-    RUNPOD_SSH_HOST: "213.192.2.117",
-    RUNPOD_SSH_PORT: "40098",
+    RUNPOD_API_KEY: "test-runpod-key",
+    RUNPOD_POD_ID: "pod_test_123",
     RUNPOD_SSH_USER: "root",
     RUNPOD_SSH_KEY_PATH: "~/.ssh/id_ed25519"
   });
   t.after(async () => {
+    global.fetch = originalFetch;
     await context.close();
   });
 
@@ -360,6 +388,8 @@ test("remote AI tunnel controls report and toggle tunnel state safely", async (t
   assert.equal(statusResponse.status, 200);
   assert.equal(statusResponse.body.remoteTunnel.configured, true);
   assert.equal(statusResponse.body.remoteTunnel.running, false);
+  assert.equal(statusResponse.body.remoteTunnel.sshHost, "213.192.2.117");
+  assert.equal(statusResponse.body.remoteTunnel.sshPort, 40179);
 
   const startResponse = await context.agent
     .post("/api/admin/assistant/remote-tunnel/start")
@@ -367,6 +397,8 @@ test("remote AI tunnel controls report and toggle tunnel state safely", async (t
 
   assert.equal(startResponse.status, 200);
   assert.equal(startResponse.body.remoteTunnel.running, true);
+  assert.equal(startResponse.body.remoteTunnel.sshHost, "213.192.2.117");
+  assert.equal(startResponse.body.remoteTunnel.sshPort, 40179);
 
   const stopResponse = await context.agent
     .post("/api/admin/assistant/remote-tunnel/stop")
