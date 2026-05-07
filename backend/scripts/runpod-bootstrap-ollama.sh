@@ -19,7 +19,7 @@ if pgrep -f "[o]llama serve" >/dev/null 2>&1; then
   echo "Ollama is already running."
 else
   echo "Starting Ollama with models at ${OLLAMA_MODELS}..."
-  setsid -f sh -lc \
+  setsid -f sh -c \
     "exec env OLLAMA_MODELS='${OLLAMA_MODELS}' OLLAMA_KEEP_ALIVE='${OLLAMA_KEEP_ALIVE}' '${OLLAMA_BINARY}' serve >>'${OLLAMA_LOG}' 2>&1"
 fi
 

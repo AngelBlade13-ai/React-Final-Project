@@ -252,7 +252,7 @@ async function wakeRemoteOllama() {
     throw error;
   }
 
-  const startDetachedCommand = `setsid -f sh -lc 'exec env OLLAMA_MODELS="${REMOTE_OLLAMA_MODELS_DIR}" OLLAMA_KEEP_ALIVE="${REMOTE_OLLAMA_KEEP_ALIVE}" "${REMOTE_OLLAMA_BINARY}" serve >>"${REMOTE_OLLAMA_LOG}" 2>&1'`;
+  const startDetachedCommand = `setsid -f sh -c "exec env OLLAMA_MODELS='${REMOTE_OLLAMA_MODELS_DIR}' OLLAMA_KEEP_ALIVE='${REMOTE_OLLAMA_KEEP_ALIVE}' '${REMOTE_OLLAMA_BINARY}' serve >>'${REMOTE_OLLAMA_LOG}' 2>&1"`;
   const remoteCommand = `sh -lc 'set -e; export OLLAMA_MODELS=${REMOTE_OLLAMA_MODELS_DIR}; mkdir -p "${REMOTE_OLLAMA_MODELS_DIR}"; touch "${REMOTE_OLLAMA_LOG}"; if [ ! -x "${REMOTE_OLLAMA_BINARY}" ]; then curl -fsSL https://ollama.com/install.sh | sh; echo "__OLLAMA_INSTALLED__=1"; sleep 3; fi; if pgrep -f "[o]llama serve" >/dev/null; then echo "__OLLAMA_ALREADY_RUNNING__=1"; else ${startDetachedCommand}; echo "__OLLAMA_STARTED__=1"; fi; for i in 1 2 3 4 5 6; do sleep 2; if curl -fsS http://127.0.0.1:11434/api/tags; then exit 0; fi; done; pkill -f "[o]llama serve" || true; sleep 2; ${startDetachedCommand}; echo "__OLLAMA_RETRIED_START__=1"; for i in 1 2 3 4 5 6; do sleep 2; if curl -fsS http://127.0.0.1:11434/api/tags; then exit 0; fi; done; exit 1'`;
   const result = await runSshCommand(
     remoteCommand,
