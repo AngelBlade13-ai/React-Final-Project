@@ -2,6 +2,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const {
   __test: {
+    getGuidedPathCandidatePosts,
     isAcceptableExcerpt,
     hasStructuredReleaseNote,
     isStrongExcerptPatch,
@@ -114,4 +115,64 @@ test("normalizePostSuggestionResult filters reordered metadata that repeats curr
   );
 
   assert.deepEqual(result.suggestedPatch, {});
+});
+
+test("getGuidedPathCandidatePosts scopes homepage preset to public homepage-eligible posts", () => {
+  const posts = [
+    {
+      slug: "homepage-canon",
+      published: true,
+      isPubliclyVisible: true,
+      isHomepageEligible: true,
+      releaseStatus: "canon",
+      versionFamily: "family-a",
+      createdAt: "2026-05-01T00:00:00.000Z"
+    },
+    {
+      slug: "homepage-alternate-same-family",
+      published: true,
+      isPubliclyVisible: true,
+      isHomepageEligible: true,
+      releaseStatus: "alternate",
+      versionFamily: "family-a",
+      createdAt: "2026-05-02T00:00:00.000Z"
+    },
+    {
+      slug: "homepage-second",
+      published: true,
+      isPubliclyVisible: true,
+      isHomepageEligible: true,
+      releaseStatus: "canon",
+      versionFamily: "family-b",
+      createdAt: "2026-05-03T00:00:00.000Z"
+    },
+    {
+      slug: "not-homepage",
+      published: true,
+      isPubliclyVisible: true,
+      isHomepageEligible: false,
+      releaseStatus: "canon",
+      versionFamily: "family-c",
+      createdAt: "2026-05-04T00:00:00.000Z"
+    },
+    {
+      slug: "working-homepage",
+      published: true,
+      isPubliclyVisible: true,
+      isHomepageEligible: true,
+      releaseStatus: "working",
+      versionFamily: "family-d",
+      createdAt: "2026-05-05T00:00:00.000Z"
+    }
+  ];
+
+  const candidates = getGuidedPathCandidatePosts(posts, {
+    slug: "start-here",
+    algorithm: { preset: "homepage", maxItems: 5 }
+  });
+
+  assert.deepEqual(
+    candidates.map((post) => post.slug),
+    ["homepage-second", "homepage-canon"]
+  );
 });

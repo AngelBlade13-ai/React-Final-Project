@@ -592,8 +592,54 @@ function summarizeGuidedPathForAssistant(path = {}) {
 
 function getPublicPathPosts(posts = []) {
   return posts.filter(
-    (post) => post.published && post.isPubliclyVisible !== false
+    (post) =>
+      post.published &&
+      post.isPubliclyVisible !== false &&
+      String(post.releaseStatus || "canon").trim().toLowerCase() !== "working"
   );
+}
+
+function getHomepagePathCandidatePosts(posts = []) {
+  const publicPosts = getPublicPathPosts(posts);
+  const seenVersionKeys = new Set();
+  const releaseStatusRank = {
+    canon: 0,
+    alternate: 1,
+    working: 2
+  };
+
+  return publicPosts
+    .filter((post) => Boolean(post?.isHomepageEligible))
+    .sort((left, right) => {
+      const leftStatus =
+        releaseStatusRank[String(left?.releaseStatus || "canon").trim().toLowerCase()] ??
+        9;
+      const rightStatus =
+        releaseStatusRank[String(right?.releaseStatus || "canon").trim().toLowerCase()] ??
+        9;
+
+      if (leftStatus !== rightStatus) {
+        return leftStatus - rightStatus;
+      }
+
+      return String(right?.createdAt || "").localeCompare(
+        String(left?.createdAt || "")
+      );
+    })
+    .filter((post) => {
+      const versionKey = String(post?.versionFamily || post?.slug || "").trim();
+
+      if (!versionKey) {
+        return true;
+      }
+
+      if (seenVersionKeys.has(versionKey)) {
+        return false;
+      }
+
+      seenVersionKeys.add(versionKey);
+      return true;
+    });
 }
 
 function getGuidedPathCandidatePosts(posts = [], guidedPath = {}) {
@@ -601,6 +647,7 @@ function getGuidedPathCandidatePosts(posts = [], guidedPath = {}) {
     guidedPath?.algorithm && typeof guidedPath.algorithm === "object"
       ? guidedPath.algorithm
       : {};
+  const preset = String(algorithm.preset || "").trim();
   const collectionSlug = String(algorithm.collectionSlug || "").trim();
   const collectionSlugs = Array.isArray(algorithm.collectionSlugs)
     ? algorithm.collectionSlugs
@@ -622,6 +669,7 @@ function getGuidedPathCandidatePosts(posts = [], guidedPath = {}) {
         .filter(Boolean)
     : [];
   const hasExplicitScope =
+    preset ||
     collectionSlug ||
     collectionSlugs.length ||
     themeHint ||
@@ -629,6 +677,10 @@ function getGuidedPathCandidatePosts(posts = [], guidedPath = {}) {
     themeTags.length ||
     worldLayers.length;
   const publicPosts = getPublicPathPosts(posts);
+
+  if (preset === "homepage") {
+    return getHomepagePathCandidatePosts(posts);
+  }
 
   if (!hasExplicitScope) {
     return publicPosts;
@@ -1218,6 +1270,8 @@ async function suggestGuidedPathWithLocalAi(store, guidedPath = {}) {
     "Return only compact JSON for one guided listening path in a music archive.",
     "Improve path membership and rules for the currentPath.",
     "Use exact post slugs only from publicPosts. Do not invent slugs.",
+    "If currentPath uses algorithm.preset=homepage, keep the path broad, newcomer-friendly, and representative of the site's actual public entry points.",
+    "For homepage-style paths, do not rename or frame the path as a single-world route unless the selected posts genuinely justify that scope.",
     "If the path needs a carefully curated sequence, use suggestedPatch.postSlugs.",
     "If the path should stay dynamic, use suggestedPatch.algorithm with only provided collection slugs, release statuses, and sort values.",
     "If currentPath already has algorithm.collectionSlug and no postSlugs, preserve the algorithm approach and do not return postSlugs.",
@@ -1310,6 +1364,7 @@ module.exports = {
   suggestPostDraftWithLocalAi,
   __test: {
     isAcceptableExcerpt,
+    getGuidedPathCandidatePosts,
     hasStructuredReleaseNote,
     isStrongExcerptPatch,
     isStrongContentPatch,
