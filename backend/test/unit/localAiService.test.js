@@ -78,3 +78,40 @@ test("normalizePostSuggestionResult filters weak excerpt and content patches", (
 
   assert.deepEqual(result.suggestedPatch, {});
 });
+
+test("normalizePostSuggestionResult filters reordered metadata that repeats current values", () => {
+  const currentDraft = {
+    subCategory: "identity",
+    worldLayer: "eldoria",
+    releaseStatus: "canon",
+    themeTags: ["identity", "resilience", "memory"],
+    collectionSlugs: ["eldoria", "original-personal"]
+  };
+
+  const result = normalizePostSuggestionResult(
+    {
+      fieldAssessments: [
+        { field: "subCategory", status: "improve", reason: "Needs work." },
+        { field: "worldLayer", status: "improve", reason: "Needs work." },
+        { field: "releaseStatus", status: "improve", reason: "Needs work." },
+        { field: "themeTags", status: "improve", reason: "Needs work." },
+        {
+          field: "collectionSlugs",
+          status: "improve",
+          reason: "Needs work."
+        }
+      ],
+      suggestedPatch: {
+        subCategory: " identity ",
+        worldLayer: "Eldoria",
+        releaseStatus: "CANON",
+        themeTags: ["memory", "identity", "resilience", "memory"],
+        collectionSlugs: ["original-personal", "eldoria"]
+      }
+    },
+    [{ slug: "eldoria" }, { slug: "original-personal" }],
+    currentDraft
+  );
+
+  assert.deepEqual(result.suggestedPatch, {});
+});

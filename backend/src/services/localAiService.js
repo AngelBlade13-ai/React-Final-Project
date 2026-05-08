@@ -186,10 +186,20 @@ function normalizeReviewResult(value = {}) {
   };
 }
 
+function normalizeComparableArray(value) {
+  return [
+    ...new Set(
+      (Array.isArray(value) ? value : [])
+        .map((entry) => String(entry || "").trim().toLowerCase())
+        .filter(Boolean)
+    )
+  ].sort();
+}
+
 function valuesAreEquivalent(left, right) {
   if (Array.isArray(left) || Array.isArray(right)) {
-    const leftValues = Array.isArray(left) ? left : [];
-    const rightValues = Array.isArray(right) ? right : [];
+    const leftValues = normalizeComparableArray(left);
+    const rightValues = normalizeComparableArray(right);
 
     return (
       leftValues.length === rightValues.length &&
@@ -197,7 +207,7 @@ function valuesAreEquivalent(left, right) {
     );
   }
 
-  return String(left || "").trim() === String(right || "").trim();
+  return normalizeComparableText(left) === normalizeComparableText(right);
 }
 
 function normalizeComparableText(value) {
