@@ -7,7 +7,9 @@ const {
     hasStructuredReleaseNote,
     isStrongExcerptPatch,
     isStrongContentPatch,
-    normalizePostSuggestionResult
+    normalizeNewGuidedPathSuggestionResult,
+    normalizePostSuggestionResult,
+    titleFitsSuggestedMembership
   }
 } = require("../../src/services/localAiService");
 
@@ -174,5 +176,69 @@ test("getGuidedPathCandidatePosts scopes homepage preset to public homepage-elig
   assert.deepEqual(
     candidates.map((post) => post.slug),
     ["homepage-second", "homepage-canon"]
+  );
+});
+
+test("titleFitsSuggestedMembership rejects world titles that do not match selected posts", () => {
+  const posts = [
+    {
+      slug: "identity-song",
+      collectionSlugs: ["original-personal"],
+      worldLayer: ""
+    },
+    {
+      slug: "eldoria-song",
+      collectionSlugs: ["eldoria"],
+      worldLayer: "eldoria"
+    }
+  ];
+
+  assert.equal(
+    titleFitsSuggestedMembership(
+      "Eldoria / Fractureverse Threshold",
+      { postSlugs: ["identity-song"] },
+      posts
+    ),
+    false
+  );
+
+  assert.equal(
+    titleFitsSuggestedMembership(
+      "Eldoria Threshold",
+      { postSlugs: ["eldoria-song"] },
+      posts
+    ),
+    true
+  );
+});
+
+test("normalizeNewGuidedPathSuggestionResult clears mismatched world titles", () => {
+  const posts = [
+    {
+      slug: "identity-song",
+      published: true,
+      isPubliclyVisible: true,
+      collectionSlugs: ["original-personal"],
+      worldLayer: ""
+    }
+  ];
+
+  const result = normalizeNewGuidedPathSuggestionResult(
+    {
+      suggestedPatch: {
+        slug: "new-threshold",
+        title: "Eldoria and Fractureverse Threshold",
+        postSlugs: ["identity-song"]
+      }
+    },
+    { posts, collections: [] },
+    []
+  );
+
+  assert.equal(result.suggestedPatch.title, undefined);
+  assert.ok(
+    result.warnings.includes(
+      "The assistant title did not match the suggested path membership, so it was cleared."
+    )
   );
 });

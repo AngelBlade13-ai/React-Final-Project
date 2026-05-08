@@ -801,6 +801,78 @@ function normalizeGuidedPathAlgorithmPatch(value = {}, collections = []) {
   return patch;
 }
 
+function getWorldSignalMap() {
+  return {
+    fractureverse: {
+      collectionSlug: "fractureverse",
+      worldLayer: "fractureverse"
+    },
+    eldoria: {
+      collectionSlug: "eldoria",
+      worldLayer: "eldoria"
+    },
+    villain: {
+      worldLayer: "villain"
+    }
+  };
+}
+
+function titleFitsSuggestedMembership(title = "", suggestedPatch = {}, posts = []) {
+  const normalizedTitle = String(title || "").trim().toLowerCase();
+
+  if (!normalizedTitle) {
+    return true;
+  }
+
+  const mentionedWorldKeys = Object.keys(getWorldSignalMap()).filter((key) =>
+    normalizedTitle.includes(key)
+  );
+
+  if (!mentionedWorldKeys.length) {
+    return true;
+  }
+
+  const postSlugSet = new Set(
+    Array.isArray(suggestedPatch.postSlugs) ? suggestedPatch.postSlugs : []
+  );
+  const selectedPosts = posts.filter((post) => postSlugSet.has(post.slug));
+  const algorithm =
+    suggestedPatch.algorithm && typeof suggestedPatch.algorithm === "object"
+      ? suggestedPatch.algorithm
+      : {};
+  const algorithmCollectionSlug = String(algorithm.collectionSlug || "")
+    .trim()
+    .toLowerCase();
+  const algorithmCollectionSlugs = Array.isArray(algorithm.collectionSlugs)
+    ? algorithm.collectionSlugs.map((slug) => String(slug || "").trim().toLowerCase())
+    : [];
+  const algorithmWorldLayers = Array.isArray(algorithm.worldLayers)
+    ? algorithm.worldLayers.map((layer) => String(layer || "").trim().toLowerCase())
+    : [];
+
+  return mentionedWorldKeys.every((worldKey) => {
+    const signal = getWorldSignalMap()[worldKey];
+    const hasManualMembershipMatch = selectedPosts.some((post) => {
+      const postCollections = Array.isArray(post.collectionSlugs)
+        ? post.collectionSlugs.map((slug) => String(slug || "").trim().toLowerCase())
+        : [];
+      const postWorldLayer = String(post.worldLayer || "").trim().toLowerCase();
+
+      return (
+        (signal.collectionSlug && postCollections.includes(signal.collectionSlug)) ||
+        (signal.worldLayer && postWorldLayer === signal.worldLayer)
+      );
+    });
+    const hasAlgorithmMatch =
+      (signal.collectionSlug &&
+        (algorithmCollectionSlug === signal.collectionSlug ||
+          algorithmCollectionSlugs.includes(signal.collectionSlug))) ||
+      (signal.worldLayer && algorithmWorldLayers.includes(signal.worldLayer));
+
+    return hasManualMembershipMatch || hasAlgorithmMatch;
+  });
+}
+
 function normalizeGuidedPathSuggestionResult(
   value = {},
   store = {},
@@ -945,6 +1017,16 @@ function normalizeNewGuidedPathSuggestionResult(
   }
 
   const warnings = normalizeTextList(value.warnings, 5);
+
+  if (
+    suggestedPatch.title &&
+    !titleFitsSuggestedMembership(suggestedPatch.title, suggestedPatch, posts)
+  ) {
+    warnings.push(
+      "The assistant title did not match the suggested path membership, so it was cleared."
+    );
+    delete suggestedPatch.title;
+  }
 
   if (!suggestedPatch.slug) {
     warnings.push("The assistant did not provide a unique usable slug.");
@@ -1333,6 +1415,8 @@ async function suggestNewGuidedPathWithLocalAi(store, existingPaths = []) {
     "Find a meaningful catalog gap using publicPosts and collections.",
     "The new path must be clearly distinct from existingPaths. Do not make a minor rename, mood variant, or near-duplicate sequence.",
     "Use exact post slugs only from publicPosts. Do not invent slugs.",
+    "The title must describe the actual selected path, not a mashup of existing path names or world titles.",
+    "Only mention a world like Eldoria or Fractureverse in the title if the suggested membership is genuinely centered on that world.",
     "Prefer 4 to 10 postSlugs for a manual curated sequence unless a validated algorithm is clearly better.",
     "Use suggestedPatch.slug as a short unique lowercase kebab-case slug not present in existingPaths.",
     'Shape: {"summary":"one sentence","mode":"manual|algorithm|hybrid","isNewPath":true,"suggestedPatch":{"slug":"","title":"","eyebrow":"","intro":"","moodNote":"","themeHint":"","postSlugs":[""],"algorithm":{}},"rationale":["reason"],"warnings":["warning"]}.',
@@ -1368,6 +1452,8 @@ module.exports = {
     hasStructuredReleaseNote,
     isStrongExcerptPatch,
     isStrongContentPatch,
-    normalizePostSuggestionResult
+    normalizePostSuggestionResult,
+    normalizeNewGuidedPathSuggestionResult,
+    titleFitsSuggestedMembership
   }
 };
