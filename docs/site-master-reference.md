@@ -653,3 +653,859 @@ For deeper topic-specific reading, see:
 - `docs/frontend-data-cache-layer.md`
 - `docs/route-level-code-splitting.md`
 
+## 17. Field-By-Field Entity Reference
+
+This section is for explaining the exact meaning of the core fields point by point.
+
+### 17.1 Post Fields
+
+- `id`
+  - internal unique identifier
+  - used for admin updates, deletes, and store persistence
+- `title`
+  - the human-facing song or release name
+  - shown on cards, public pages, admin tables, search results, and path listings
+- `slug`
+  - stable public route key
+  - powers `/release/:slug`
+  - can be redirected through slug-history logic if renamed
+- `videoUrl`
+  - media playback URL
+  - used by release pages and the mini player
+- `excerpt`
+  - short public-facing summary
+  - powers release cards and hero summaries
+- `content`
+  - longer release-note body
+  - usually more structured and editorial than a normal blog body
+- `lyrics`
+  - optional lyrics text
+  - shown on release pages when present
+- `createdAt`
+  - chronology anchor
+  - affects ordering and curation
+- `published`
+  - whether the record is intended to be publicly live
+- `collectionSlugs`
+  - collection memberships
+  - determine where the release appears across collection pages and some paths
+- `subCategory`
+  - editorial category such as identity, villain, princess motif, etc.
+- `sourceTag`
+  - author/editor source context
+- `worldLayer`
+  - world or thematic layer
+  - used by immersive worlds and path logic
+- `themeTags`
+  - multi-tag thematic descriptors
+  - used by paths, discovery, and assistant logic
+- `versionFamily`
+  - groups related versions of the same conceptual song
+- `isPrimaryVersion`
+  - marks the primary version within a family
+- `isArchive`
+  - indicates archive/alternate treatment
+- `isHomepageEligible`
+  - lets the song enter homepage-style curated pools
+- `isPubliclyVisible`
+  - final public visibility gate
+- `releaseStatus`
+  - one of:
+    - `canon`
+    - `alternate`
+    - `working`
+- `supersededBySlug`
+  - points at the version that replaced this one
+- `supersededReason`
+  - explains why it was displaced
+- `supersededAt`
+  - timestamp for supersession
+- `archiveMeta`
+  - immersive world metadata bag
+
+### 17.2 `archiveMeta` Fields
+
+Fractureverse-oriented fields:
+
+- `fragmentId`
+- `state`
+- `perspective`
+- `signalType`
+- `description`
+- `systemNote`
+- `linkedSlugs`
+
+Eldoria-oriented fields:
+
+- `chapterNumber`
+- `entryType`
+- `subtitle`
+- `openingPassage`
+- `coreSituation`
+- `coreTension`
+- `chronicleObservation`
+- `chronicleContradiction`
+- `chronicleConclusion`
+- `emotionalState`
+- `coreConflict`
+- `risk`
+- `anchorQuote`
+- `resolution`
+- `entryStatus`
+- `playerFlavorLine`
+
+These fields drive:
+
+- themed labels
+- sequence rendering
+- world timelines
+- immersive copy blocks
+- relationship panels
+
+### 17.3 Collection Fields
+
+- `id`
+  - internal identifier
+- `slug`
+  - public route key for `/collections/:slug`
+- `title`
+  - display name
+- `description`
+  - collection summary copy
+- `featuredReleaseSlug`
+  - controls which release is spotlighted first
+- `theme`
+  - determines whether the collection behaves like:
+    - a standard shelf
+    - a themed shelf
+    - an immersive world
+- `isPublicPrimary`
+  - marks public-first collections that should be emphasized in browse surfaces
+
+### 17.4 Guided Path Fields
+
+- `slug`
+  - public route key for `/paths/:slug`
+- `title`
+  - public path name
+- `eyebrow`
+  - framing label
+- `intro`
+  - explanation of the path
+- `moodNote`
+  - fast listening-orientation note
+- `themeHint`
+  - lightweight thematic hint
+- `postSlugs`
+  - manual ordered sequence
+- `algorithm`
+  - dynamic path rules
+
+### 17.5 Guided Path Algorithm Fields
+
+- `preset`
+  - special predefined logic like `homepage`
+- `collectionSlug`
+  - single collection scope
+- `collectionSlugs`
+  - multi-collection scope
+- `sectionKeys`
+  - category/subcategory scope
+- `themeTags`
+  - tag scope
+- `worldLayers`
+  - world-layer scope
+- `releaseStatuses`
+  - canon/alternate/working filter
+- `match`
+  - `any` or `all`
+- `maxItems`
+  - result-size cap
+- `sort`
+  - `curated`, `fractureverse`, or `eldoria`
+
+## 18. Page-By-Page Frontend Reference
+
+### 18.1 App Shell
+
+File:
+
+- `frontend/src/App.jsx`
+
+What it owns:
+
+- route registration
+- route-level lazy loading
+- theme state
+- forced theme state for immersive pages
+- current public-user session bootstrap
+- admin session bootstrap
+- mini-player queue, progress, and playback state
+- site metadata provider
+
+How it fits:
+
+- this is the single global frontend shell
+- public and admin layouts both live under it
+
+### 18.2 Public Layout
+
+File:
+
+- `frontend/src/layouts/PublicLayout.jsx`
+
+What it does:
+
+- renders header, nav, theme toggle, sign-in/account links
+- handles hidden admin-access reveal
+- hosts public routes through `Outlet`
+
+### 18.3 Admin Layout
+
+File:
+
+- `frontend/src/layouts/AdminLayout.jsx`
+
+What it does:
+
+- creates authenticated `adminFetch`
+- handles admin-session expiry
+- loads:
+  - posts
+  - collections
+  - site content
+- stores shared admin editing state
+- powers all admin child pages
+
+### 18.4 Public Home
+
+File:
+
+- `frontend/src/pages/public/PublicHome.jsx`
+
+What it does:
+
+- presents site identity
+- highlights curated public entry points
+- points people to collections, paths, and explore
+
+### 18.5 Collections Index
+
+File:
+
+- `frontend/src/pages/public/CollectionsIndexPage.jsx`
+
+What it does:
+
+- lists public collections
+- separates more public-primary collection surfaces from internal/supporting ones
+
+### 18.6 Collection Detail
+
+File:
+
+- `frontend/src/pages/public/CollectionDetailPage.jsx`
+
+What it does:
+
+- loads one collection and its releases
+- resolves redirect slugs
+- determines whether the collection is:
+  - standard
+  - Fractureverse
+  - Eldoria
+- computes featured release, timeline, and alternate/secondary relationships
+- applies immersive visual rules for themed collections
+
+### 18.7 Release Detail
+
+File:
+
+- `frontend/src/pages/public/PublicReleasePage.jsx`
+
+What it does:
+
+- loads one release
+- resolves redirect slugs
+- renders playback media
+- renders release framing and collection context
+- renders sequence navigation
+- renders version-family context
+- renders comments
+
+### 18.8 Guided Paths Index
+
+File:
+
+- `frontend/src/pages/public/GuidedPathsIndexPage.jsx`
+
+What it does:
+
+- lists available guided listening routes
+
+### 18.9 Guided Path Detail
+
+File:
+
+- `frontend/src/pages/public/GuidedPathPage.jsx`
+
+What it does:
+
+- resolves a path into songs
+- presents the resolved route to the user
+
+### 18.10 Explore
+
+File:
+
+- `frontend/src/pages/public/ExplorePage.jsx`
+
+What it does:
+
+- utility retrieval surface
+- supports:
+  - search phrase
+  - collection filter
+  - release-status filter
+  - URL-backed search state
+
+### 18.11 About
+
+File:
+
+- `frontend/src/pages/public/AboutPage.jsx`
+
+What it does:
+
+- explains the artist/site framing outside song-specific content
+
+### 18.12 Account
+
+File:
+
+- `frontend/src/pages/public/AccountPage.jsx`
+
+What it does:
+
+- registration
+- login
+- profile update
+- sign-out
+
+### 18.13 Admin Login
+
+File:
+
+- `frontend/src/pages/admin/AdminLogin.jsx`
+
+What it does:
+
+- starts the admin-auth flow
+
+### 18.14 Admin Posts
+
+File:
+
+- `frontend/src/pages/admin/AdminPostsPage.jsx`
+
+What it does:
+
+- create/edit/delete release records
+- assign collections
+- edit metadata
+- trigger AI post assistant
+
+### 18.15 Admin Collections
+
+File:
+
+- `frontend/src/pages/admin/AdminCollectionsPage.jsx`
+
+What it does:
+
+- create/edit/delete collections
+- assign themes
+- set featured release
+
+### 18.16 Admin About
+
+File:
+
+- `frontend/src/pages/admin/AdminAboutPage.jsx`
+
+What it does:
+
+- edit about-page content
+
+### 18.17 Admin Site
+
+File:
+
+- `frontend/src/pages/admin/AdminSitePage.jsx`
+
+What it does:
+
+- edit site-wide framing content
+- edit theme profiles
+
+### 18.18 Admin Paths
+
+File:
+
+- `frontend/src/pages/admin/AdminPathsPage.jsx`
+
+What it does:
+
+- manage guided paths as real admin objects
+- edit manual order
+- edit algorithm rules
+- trigger AI path patching
+- trigger AI new-path creation
+
+### 18.19 Admin Insights
+
+File:
+
+- `frontend/src/pages/admin/AdminInsightsPage.jsx`
+
+What it does:
+
+- shows archive health
+- shows operational health
+- shows audit logs
+- controls assistant, remote pod, tunnel, and remote Ollama
+- hosts live-store sync tools
+
+### 18.20 Admin Comments
+
+File:
+
+- `frontend/src/pages/admin/AdminCommentsPage.jsx`
+
+What it does:
+
+- moderates user comments
+
+## 19. Route-By-Route Backend Reference
+
+### 19.1 Public Routes
+
+File:
+
+- `backend/src/routes/public.routes.js`
+
+#### `GET /api/posts`
+
+What it does:
+
+- reads the store
+- filters to publicly visible posts
+- attaches collection details
+- returns public release records
+
+Used by:
+
+- homepage
+- explore
+- public lists
+- guided path resolution surfaces
+
+#### `GET /api/posts/:slug`
+
+What it does:
+
+- resolves the post
+- honors redirect slug logic
+- returns public release payload
+
+Used by:
+
+- release pages
+
+#### `GET /api/posts/:slug/comments`
+
+What it does:
+
+- resolves release
+- filters visible comments
+- sorts them by creation time
+
+Used by:
+
+- release-page comments section
+
+#### `POST /api/posts/:slug/comments`
+
+What it does:
+
+- requires logged-in non-admin user
+- validates comment body
+- inserts public comment
+
+#### `PUT /api/comments/:id`
+
+What it does:
+
+- requires ownership/permission
+- validates comment update
+- replaces comment
+
+#### `DELETE /api/comments/:id`
+
+What it does:
+
+- requires ownership/permission
+- deletes comment
+
+#### `GET /api/collections`
+
+What it does:
+
+- returns public collections
+- can honor scope query behavior
+
+#### `GET /api/collections/:slug`
+
+What it does:
+
+- resolves collection by slug with redirect support
+- loads public releases in that collection
+- returns collection summary plus releases
+
+#### `GET /api/about`
+
+What it does:
+
+- returns about-page content
+
+#### `GET /api/site-content`
+
+What it does:
+
+- returns public branding/home/theme/path configuration
+
+### 19.2 Auth Routes
+
+File:
+
+- `backend/src/routes/auth.routes.js`
+
+#### `POST /api/admin/login`
+
+What it does:
+
+- validates configured admin credentials
+- clears user cookie
+- issues admin cookie
+- records audit event
+
+#### `POST /api/auth/register`
+
+What it does:
+
+- validates public-user registration
+- hashes password
+- inserts user
+- issues user cookie
+
+#### `POST /api/auth/login`
+
+What it does:
+
+- validates user credentials
+- issues user cookie
+
+#### `POST /api/auth/logout`
+
+What it does:
+
+- clears user session cookie
+
+#### `POST /api/admin/logout`
+
+What it does:
+
+- clears admin session cookie
+
+#### `GET /api/auth/me`
+
+What it does:
+
+- returns current public user
+- rejects admin session use for this route
+
+#### `PUT /api/auth/me`
+
+What it does:
+
+- updates display name and optionally password
+- reissues user cookie
+
+### 19.3 Admin Routes
+
+File:
+
+- `backend/src/routes/admin.routes.js`
+
+All admin routes are protected by `requireAdmin`.
+
+#### Session And Audit
+
+- `GET /api/admin/session`
+- `GET /api/admin/audit-logs`
+
+#### Posts
+
+- `GET /api/admin/posts`
+- `POST /api/admin/posts`
+- `POST /api/admin/posts/bulk-update`
+- `PUT /api/admin/posts/:id`
+- `DELETE /api/admin/posts/:id`
+
+These routes handle:
+
+- creation
+- edit
+- delete
+- bulk edit
+- slug remapping
+- collection reconciliation
+- audit logging
+
+#### Collections
+
+- `GET /api/admin/collections`
+- `POST /api/admin/collections`
+- `PUT /api/admin/collections/:id`
+- `DELETE /api/admin/collections/:id`
+
+These routes handle:
+
+- collection CRUD
+- featured-release validation
+- collection relationship safety
+
+#### Site Content
+
+- `GET /api/admin/site-content`
+- `PUT /api/admin/site-content/about`
+- `PUT /api/admin/site-content/site`
+
+These routes handle:
+
+- branding
+- homepage copy
+- about content
+- theme profiles
+- guided paths
+
+#### Insights And Assistant
+
+- `GET /api/admin/insights`
+- `GET /api/admin/assistant/status`
+- `POST /api/admin/assistant/remote-pod/start`
+- `POST /api/admin/assistant/remote-pod/stop`
+- `POST /api/admin/assistant/remote-tunnel/start`
+- `POST /api/admin/assistant/remote-tunnel/stop`
+- `POST /api/admin/assistant/remote-ollama/wake`
+- `POST /api/admin/assistant/catalog-review`
+- `POST /api/admin/assistant/post-suggestions`
+- `POST /api/admin/assistant/guided-path-suggestions`
+- `POST /api/admin/assistant/guided-path-new-suggestion`
+
+#### Importer
+
+- `POST /api/admin/importer/launch`
+
+#### Live Store / Source Of Truth
+
+- `GET /api/admin/live-store-sync`
+- `POST /api/admin/live-store-sync`
+- admin reseed endpoints
+
+#### Comments
+
+- `GET /api/admin/comments`
+- `PUT /api/admin/comments/:id`
+
+### 19.4 Upload Routes
+
+File:
+
+- `backend/src/routes/upload.routes.js`
+
+Purpose:
+
+- support admin-side media upload flow
+
+## 20. End-To-End Data Flow
+
+### 20.1 Public Page Load Flow
+
+1. Browser loads the SPA shell.
+2. `App.jsx` initializes theme, sessions, and routes.
+3. Public page uses SWR hook from `usePublicApi.js`.
+4. Hook requests a public API endpoint.
+5. Express route reads the store.
+6. Catalog/site services normalize and filter data.
+7. JSON returns to the browser.
+8. Public page renders normalized results.
+
+### 20.2 Admin Page Load Flow
+
+1. Admin route is opened.
+2. Admin session is validated.
+3. `AdminLayout` loads posts, collections, and site content.
+4. Child pages read shared admin context/state.
+5. Save actions call admin endpoints through authenticated `adminFetch`.
+
+### 20.3 Post Save Flow
+
+1. Admin edits a post draft.
+2. Frontend submits to admin route.
+3. Backend normalizes post input.
+4. Backend validates the draft.
+5. Backend checks slug and reference constraints.
+6. Store writes the updated post.
+7. Related references and collections reconcile if needed.
+8. Audit event is recorded.
+9. Updated post returns to frontend.
+
+### 20.4 Guided Path Resolution Flow
+
+1. Guided paths are loaded from site content.
+2. Path config is normalized.
+3. Resolver chooses:
+   - manual `postSlugs`, or
+   - algorithm logic
+4. Resolver filters to public posts.
+5. Resolver applies collection/status/theme/world rules.
+6. Resolver sorts and caps results.
+7. Public path page renders resolved posts.
+
+### 20.5 Assistant Suggestion Flow
+
+1. Admin presses an assistant action.
+2. Frontend calls an assistant endpoint.
+3. Backend checks assistant availability.
+4. Backend builds scoped context for the task.
+5. Backend asks the model for strict JSON.
+6. Backend repairs/parses JSON if possible.
+7. Backend filters weak, invalid, repetitive, or unsafe patches.
+8. Suggestion returns to the UI.
+9. Admin explicitly applies or ignores it.
+
+### 20.6 Remote AI Cold-Start Flow
+
+1. Admin starts remote pod.
+2. Backend calls RunPod API.
+3. Admin opens SSH tunnel.
+4. Backend discovers live SSH endpoint and starts the tunnel.
+5. Admin wakes remote Ollama.
+6. Backend sends bootstrap script over SSH.
+7. Remote bootstrap installs Ollama if missing.
+8. Bootstrap points Ollama at `/workspace/ollama-models`.
+9. Bootstrap starts `ollama serve`.
+10. Backend confirms `/api/tags`.
+11. Assistant becomes usable.
+
+## 21. How The Themed Worlds Fit Together
+
+### 21.1 Fractureverse
+
+Fractureverse relies on:
+
+- collection membership
+- canon-first sequence logic
+- fragment-oriented archive metadata
+- custom world sort and relationship logic
+
+### 21.2 Eldoria
+
+Eldoria relies on:
+
+- collection membership
+- chapter-style archive metadata
+- themed presentation logic
+- chronicle/map/timeline framing
+
+### 21.3 Why This Matters
+
+Themed worlds are not separate products. They are specialized interpretations of the same core post and collection model.
+
+## 22. How To Explain The AI Layer To Someone Else
+
+If someone asks what the AI does, the precise answer is:
+
+- it is admin-side only
+- it reads structured context prepared by the backend
+- it returns structured JSON suggestions
+- the backend validates and filters those suggestions
+- an admin still decides whether to apply them
+
+So the AI is:
+
+- editorial aid
+- curation aid
+- path-planning aid
+
+It is not:
+
+- autonomous publishing
+- autonomous catalog rewriting
+
+## 23. Operational Reality And Failure Modes
+
+### 23.1 Public Data Looks Wrong
+
+Likely causes:
+
+- live DB drift
+- authored/live source-of-truth mismatch
+- visibility or release-status changes
+
+### 23.2 Admin Save Fails
+
+Likely causes:
+
+- validation rejection
+- slug conflict
+- session/auth issue
+- persistence failure
+
+### 23.3 Assistant Fails
+
+Likely causes:
+
+- Ollama unavailable
+- model missing
+- tunnel missing
+- remote pod stopped
+- invalid model JSON output
+- backend normalization dropped all proposed changes
+
+### 23.4 Site Feels Slow
+
+Likely causes:
+
+- immersive page effects
+- admin data-request fan-out
+- remote AI cold-start time
+- first inference model load time
+
+## 24. Practical Talking Script
+
+If you need to explain the site point for point:
+
+1. The site is a music archive, not a generic blog.
+2. The main content unit is a release record called a post.
+3. Posts carry music, notes, metadata, and world context.
+4. Collections group posts into shelves or immersive worlds.
+5. Guided paths create curated or algorithmic routes through the catalog.
+6. The public site is the listening and discovery surface.
+7. The admin site is the authoring and operations surface.
+8. MongoDB stores the live state.
+9. Local catalog files support the authored source-of-truth workflow.
+10. The AI assistant helps review and suggest, but does not publish automatically.
+11. Remote AI support exists so the assistant can run on stronger hardware than the local laptop.
+12. Everything fits together as one archive with multiple surfaces, not as unrelated pages.
