@@ -6,7 +6,6 @@ const { getRunpodSshEndpoint } = require("./runpodPodService");
 
 const SSH_COMMAND_TIMEOUT_MS = 30000;
 const WAKE_REMOTE_OLLAMA_TIMEOUT_MS = 180000;
-const REMOTE_OLLAMA_KEEP_ALIVE = "30m";
 const REMOTE_OLLAMA_BINARY = "/usr/local/bin/ollama";
 const REMOTE_OLLAMA_MODELS_DIR = "/workspace/ollama-models";
 const REMOTE_OLLAMA_LOG = "/workspace/ollama.log";
@@ -267,15 +266,17 @@ set -e
 
 OLLAMA_BINARY="${REMOTE_OLLAMA_BINARY}"
 OLLAMA_MODELS="${REMOTE_OLLAMA_MODELS_DIR}"
-OLLAMA_KEEP_ALIVE="${REMOTE_OLLAMA_KEEP_ALIVE}"
+OLLAMA_KEEP_ALIVE="${config.remoteOllamaKeepAlive}"
+OLLAMA_NUM_PARALLEL="${config.remoteOllamaNumParallel}"
 OLLAMA_LOG="${REMOTE_OLLAMA_LOG}"
 
 mkdir -p "${REMOTE_OLLAMA_MODELS_DIR}"
 touch "${REMOTE_OLLAMA_LOG}"
 export OLLAMA_MODELS="${REMOTE_OLLAMA_MODELS_DIR}"
+export OLLAMA_NUM_PARALLEL="${config.remoteOllamaNumParallel}"
 
 start_ollama() {
-  setsid -f sh -c "exec env OLLAMA_MODELS='${REMOTE_OLLAMA_MODELS_DIR}' OLLAMA_KEEP_ALIVE='${REMOTE_OLLAMA_KEEP_ALIVE}' '${REMOTE_OLLAMA_BINARY}' serve >>'${REMOTE_OLLAMA_LOG}' 2>&1"
+  setsid -f sh -c "exec env OLLAMA_MODELS='${REMOTE_OLLAMA_MODELS_DIR}' OLLAMA_KEEP_ALIVE='${config.remoteOllamaKeepAlive}' OLLAMA_NUM_PARALLEL='${config.remoteOllamaNumParallel}' '${REMOTE_OLLAMA_BINARY}' serve >>'${REMOTE_OLLAMA_LOG}' 2>&1"
 }
 
 wait_for_tags() {

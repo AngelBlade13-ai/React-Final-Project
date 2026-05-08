@@ -36,6 +36,16 @@ const config = {
   localAiBaseUrl: process.env.LOCAL_AI_BASE_URL || "http://127.0.0.1:11434",
   localAiModel: process.env.LOCAL_AI_MODEL || "qwen2.5:7b",
   localAiTimeoutMs: Number(process.env.LOCAL_AI_TIMEOUT_MS) || 120000,
+  localAiStatusCacheMs: Number(process.env.LOCAL_AI_STATUS_CACHE_MS) || 8000,
+  localAiKeepAlive: process.env.LOCAL_AI_KEEP_ALIVE || "45m",
+  localAiDefaultNumCtx: Number(process.env.LOCAL_AI_DEFAULT_NUM_CTX) || 4096,
+  localAiDefaultNumPredict:
+    Number(process.env.LOCAL_AI_DEFAULT_NUM_PREDICT) || 320,
+  localAiNumThread: Number(process.env.LOCAL_AI_NUM_THREAD) || 0,
+  localAiPostNumPredict: Number(process.env.LOCAL_AI_POST_NUM_PREDICT) || 700,
+  localAiPathNumPredict: Number(process.env.LOCAL_AI_PATH_NUM_PREDICT) || 850,
+  localAiNewPathNumPredict:
+    Number(process.env.LOCAL_AI_NEW_PATH_NUM_PREDICT) || 900,
   runpodApiKey: process.env.RUNPOD_API_KEY || "",
   runpodPodId: process.env.RUNPOD_POD_ID || "",
   runpodApiBaseUrl:
@@ -48,6 +58,12 @@ const config = {
   runpodTunnelRemoteHost: process.env.RUNPOD_TUNNEL_REMOTE_HOST || "127.0.0.1",
   runpodTunnelRemotePort:
     Number(process.env.RUNPOD_TUNNEL_REMOTE_PORT) || 11434,
+  remoteOllamaKeepAlive:
+    process.env.REMOTE_OLLAMA_KEEP_ALIVE ||
+    process.env.LOCAL_AI_KEEP_ALIVE ||
+    "45m",
+  remoteOllamaNumParallel:
+    Number(process.env.REMOTE_OLLAMA_NUM_PARALLEL) || 1,
   operationalSeedFile:
     process.env.OPERATIONAL_SEED_FILE ||
     path.join(__dirname, "..", "data", "operational-seed.local.json"),

@@ -29,6 +29,11 @@ const ALLOWED_PATH_ALGORITHM_SORTS = new Set([
 ]);
 const ALLOWED_PATH_MATCH_MODES = new Set(["any", "all"]);
 const MIN_CONTENT_CHANGE_LENGTH = 24;
+let cachedLocalAiStatus = null;
+
+function clearLocalAiStatusCache() {
+  cachedLocalAiStatus = null;
+}
 
 function buildUnavailableStatus(reason) {
   return {
@@ -78,6 +83,13 @@ async function getLocalAiStatus() {
     );
   }
 
+  if (
+    cachedLocalAiStatus &&
+    Date.now() - cachedLocalAiStatus.createdAt < config.localAiStatusCacheMs
+  ) {
+    return cachedLocalAiStatus.value;
+  }
+
   try {
     const response = await fetchOllama("/api/tags");
     const data = await response.json().catch(() => ({}));
@@ -92,7 +104,7 @@ async function getLocalAiStatus() {
       ? data.models.map((model) => model.name).filter(Boolean)
       : [];
 
-    return {
+    const status = {
       available: true,
       enabled: true,
       baseUrl: config.localAiBaseUrl,
@@ -103,6 +115,13 @@ async function getLocalAiStatus() {
         ? "Local AI is available."
         : `Ollama is running, but ${config.localAiModel} is not installed.`
     };
+
+    cachedLocalAiStatus = {
+      createdAt: Date.now(),
+      value: status
+    };
+
+    return status;
   } catch (error) {
     return buildUnavailableStatus(
       error.name === "AbortError"
@@ -944,9 +963,15 @@ function buildCatalogContext(store = {}) {
 async function generateJson(prompt, options = {}) {
   const generationOptions = {
     temperature: options.temperature ?? 0.2,
-    num_ctx: options.num_ctx || 4096,
-    num_predict: options.num_predict || 320
+    num_ctx: options.num_ctx || config.localAiDefaultNumCtx,
+    num_predict: options.num_predict || config.localAiDefaultNumPredict
   };
+
+  if (config.localAiNumThread > 0) {
+    generationOptions.num_thread = config.localAiNumThread;
+  }
+
+  clearLocalAiStatusCache();
   const response = await fetchOllama("/api/generate", {
     method: "POST",
     headers: {
@@ -957,6 +982,7 @@ async function generateJson(prompt, options = {}) {
       prompt,
       stream: false,
       format: "json",
+      keep_alive: config.localAiKeepAlive,
       options: generationOptions
     })
   });
@@ -986,10 +1012,14 @@ async function generateJson(prompt, options = {}) {
         prompt: repairPrompt,
         stream: false,
         format: "json",
+        keep_alive: config.localAiKeepAlive,
         options: {
           temperature: 0,
           num_ctx: Math.max(2048, generationOptions.num_ctx),
-          num_predict: Math.max(500, generationOptions.num_predict)
+          num_predict: Math.max(500, generationOptions.num_predict),
+          ...(config.localAiNumThread > 0
+            ? { num_thread: config.localAiNumThread }
+            : {})
         }
       })
     });
@@ -1091,7 +1121,7 @@ async function suggestPostDraftWithLocalAi(store, postDraft = {}) {
   const result = normalizePostSuggestionResult(
     await generateJson(prompt, {
       num_ctx: 4096,
-      num_predict: 900
+      num_predict: config.localAiPostNumPredict
     }),
     collections,
     postDraft
@@ -1122,7 +1152,7 @@ async function suggestPostDraftWithLocalAi(store, postDraft = {}) {
     const retryResult = normalizePostSuggestionResult(
       await generateJson(retryPrompt, {
         num_ctx: 4096,
-        num_predict: 900,
+        num_predict: config.localAiPostNumPredict,
         temperature: 0.1
       }),
       collections,
@@ -1190,7 +1220,7 @@ async function suggestGuidedPathWithLocalAi(store, guidedPath = {}) {
   const result = normalizeGuidedPathSuggestionResult(
     await generateJson(prompt, {
       num_ctx: 8192,
-      num_predict: 1100
+      num_predict: config.localAiPathNumPredict
     }),
     store,
     guidedPath
@@ -1249,7 +1279,7 @@ async function suggestNewGuidedPathWithLocalAi(store, existingPaths = []) {
   const result = normalizeNewGuidedPathSuggestionResult(
     await generateJson(prompt, {
       num_ctx: 8192,
-      num_predict: 1200
+      num_predict: config.localAiNewPathNumPredict
     }),
     store,
     paths

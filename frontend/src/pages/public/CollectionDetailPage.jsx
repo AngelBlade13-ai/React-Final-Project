@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import EldoriaSigil from "../../components/EldoriaSigil";
 import EldoriaWorldMap from "../../components/EldoriaWorldMap";
@@ -158,11 +158,11 @@ export default function CollectionDetailPage({
     isLoading: loading
   } = usePublicCollection(slug);
   const [activeFragmentSlug, setActiveFragmentSlug] = useState("");
-  const [eldoriaMousePosition, setEldoriaMousePosition] = useState({
-    x: 50,
-    y: 34
-  });
-  const [eldoriaScrollDepth, setEldoriaScrollDepth] = useState(0);
+  const worldHeaderRef = useRef(null);
+  const worldContentRef = useRef(null);
+  const eldoriaScrollFrameRef = useRef(0);
+  const eldoriaPointerFrameRef = useRef(0);
+  const eldoriaPointerRef = useRef({ x: 50, y: 34 });
   const [eldoriaTransitionSlug, setEldoriaTransitionSlug] = useState("");
   const [worldEntryMode, setWorldEntryMode] = useState("");
   const error = collectionError?.message || "";
@@ -404,19 +404,47 @@ export default function CollectionDetailPage({
 
   useEffect(() => {
     if (!isEldoria) {
-      setEldoriaScrollDepth(0);
+      [worldHeaderRef.current, worldContentRef.current].forEach((element) => {
+        if (!element) {
+          return;
+        }
+
+        element.style.setProperty("--eldoria-scroll-depth", "0px");
+        element.style.setProperty("--eldoria-mouse-x", "50%");
+        element.style.setProperty("--eldoria-mouse-y", "34%");
+      });
       return undefined;
     }
 
-    function updateScrollDepth() {
-      setEldoriaScrollDepth(window.scrollY || 0);
+    function applyScrollDepth() {
+      eldoriaScrollFrameRef.current = 0;
+      const nextDepth = `${window.scrollY || 0}px`;
+
+      [worldHeaderRef.current, worldContentRef.current].forEach((element) => {
+        element?.style.setProperty("--eldoria-scroll-depth", nextDepth);
+      });
     }
 
-    updateScrollDepth();
+    function updateScrollDepth() {
+      if (eldoriaScrollFrameRef.current) {
+        return;
+      }
+
+      eldoriaScrollFrameRef.current = window.requestAnimationFrame(
+        applyScrollDepth
+      );
+    }
+
+    applyScrollDepth();
     window.addEventListener("scroll", updateScrollDepth, { passive: true });
 
     return () => {
       window.removeEventListener("scroll", updateScrollDepth);
+
+      if (eldoriaScrollFrameRef.current) {
+        window.cancelAnimationFrame(eldoriaScrollFrameRef.current);
+        eldoriaScrollFrameRef.current = 0;
+      }
     };
   }, [isEldoria]);
 
@@ -443,9 +471,28 @@ export default function CollectionDetailPage({
     const x = ((event.clientX - bounds.left) / bounds.width) * 100;
     const y = ((event.clientY - bounds.top) / bounds.height) * 100;
 
-    setEldoriaMousePosition({
+    eldoriaPointerRef.current = {
       x: Number.isFinite(x) ? x : 50,
       y: Number.isFinite(y) ? y : 34
+    };
+
+    if (eldoriaPointerFrameRef.current) {
+      return;
+    }
+
+    eldoriaPointerFrameRef.current = window.requestAnimationFrame(() => {
+      eldoriaPointerFrameRef.current = 0;
+      const nextMouseX = `${eldoriaPointerRef.current.x}%`;
+      const nextMouseY = `${eldoriaPointerRef.current.y}%`;
+
+      [worldHeaderRef.current, worldContentRef.current].forEach((element) => {
+        if (!element) {
+          return;
+        }
+
+        element.style.setProperty("--eldoria-mouse-x", nextMouseX);
+        element.style.setProperty("--eldoria-mouse-y", nextMouseY);
+      });
     });
   }
 
@@ -478,6 +525,7 @@ export default function CollectionDetailPage({
   return (
     <>
       <header
+        ref={worldHeaderRef}
         className={`section-hero world-header ${collection?.theme ? `world-header-${collection.theme}` : ""}${
           isEldoria ? " eldoria-world-header" : ""
         }${isEldoria && eldoriaAudioActive ? " eldoria-world-awake" : ""}${worldEntryActive ? " world-entry-pending" : ""}`}
@@ -485,8 +533,9 @@ export default function CollectionDetailPage({
         style={
           isEldoria
             ? {
-                "--eldoria-mouse-x": `${eldoriaMousePosition.x}%`,
-                "--eldoria-mouse-y": `${eldoriaMousePosition.y}%`
+                "--eldoria-mouse-x": "50%",
+                "--eldoria-mouse-y": "34%",
+                "--eldoria-scroll-depth": "0px"
               }
             : undefined
         }
@@ -601,6 +650,7 @@ export default function CollectionDetailPage({
 
       {collection ? (
         <main
+          ref={worldContentRef}
           className={`content-grid collection-world-page${isFractureverse ? " fractureverse-page" : ""}${isEldoria ? " eldoria-page" : ""}${
             fractureInteraction.primaryEngaged ? " fracture-anchor-engaged" : ""
           }${isEldoria && eldoriaAudioActive ? " eldoria-world-awake" : ""}${worldEntryActive ? " world-entry-pending" : ""}`}
@@ -608,9 +658,9 @@ export default function CollectionDetailPage({
           style={
             isEldoria
               ? {
-                  "--eldoria-mouse-x": `${eldoriaMousePosition.x}%`,
-                  "--eldoria-mouse-y": `${eldoriaMousePosition.y}%`,
-                  "--eldoria-scroll-depth": `${eldoriaScrollDepth}px`
+                  "--eldoria-mouse-x": "50%",
+                  "--eldoria-mouse-y": "34%",
+                  "--eldoria-scroll-depth": "0px"
                 }
               : undefined
           }

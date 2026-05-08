@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import CommentsSection from "../../components/CommentsSection";
 import EldoriaSigil from "../../components/EldoriaSigil";
@@ -48,11 +48,11 @@ export default function PublicReleasePage({
     isLoading: postLoading
   } = usePublicRelease(slug);
   const [showLyrics, setShowLyrics] = useState(false);
-  const [eldoriaMousePosition, setEldoriaMousePosition] = useState({
-    x: 52,
-    y: 30
-  });
-  const [eldoriaScrollDepth, setEldoriaScrollDepth] = useState(0);
+  const releaseHeroRef = useRef(null);
+  const releaseDetailRef = useRef(null);
+  const eldoriaScrollFrameRef = useRef(0);
+  const eldoriaPointerFrameRef = useRef(0);
+  const eldoriaPointerRef = useRef({ x: 52, y: 30 });
   usePageMetadata({
     description:
       post?.excerpt || "Listen to the release and read the note behind it.",
@@ -229,19 +229,47 @@ export default function PublicReleasePage({
 
   useEffect(() => {
     if (!isEldoria) {
-      setEldoriaScrollDepth(0);
+      [releaseHeroRef.current, releaseDetailRef.current].forEach((element) => {
+        if (!element) {
+          return;
+        }
+
+        element.style.setProperty("--eldoria-scroll-depth", "0px");
+        element.style.setProperty("--eldoria-mouse-x", "52%");
+        element.style.setProperty("--eldoria-mouse-y", "30%");
+      });
       return undefined;
     }
 
-    function updateScrollDepth() {
-      setEldoriaScrollDepth(window.scrollY || 0);
+    function applyScrollDepth() {
+      eldoriaScrollFrameRef.current = 0;
+      const nextDepth = `${window.scrollY || 0}px`;
+
+      [releaseHeroRef.current, releaseDetailRef.current].forEach((element) => {
+        element?.style.setProperty("--eldoria-scroll-depth", nextDepth);
+      });
     }
 
-    updateScrollDepth();
+    function updateScrollDepth() {
+      if (eldoriaScrollFrameRef.current) {
+        return;
+      }
+
+      eldoriaScrollFrameRef.current = window.requestAnimationFrame(
+        applyScrollDepth
+      );
+    }
+
+    applyScrollDepth();
     window.addEventListener("scroll", updateScrollDepth, { passive: true });
 
     return () => {
       window.removeEventListener("scroll", updateScrollDepth);
+
+      if (eldoriaScrollFrameRef.current) {
+        window.cancelAnimationFrame(eldoriaScrollFrameRef.current);
+        eldoriaScrollFrameRef.current = 0;
+      }
     };
   }, [isEldoria]);
 
@@ -254,15 +282,35 @@ export default function PublicReleasePage({
     const x = ((event.clientX - bounds.left) / bounds.width) * 100;
     const y = ((event.clientY - bounds.top) / bounds.height) * 100;
 
-    setEldoriaMousePosition({
+    eldoriaPointerRef.current = {
       x: Number.isFinite(x) ? x : 52,
       y: Number.isFinite(y) ? y : 30
+    };
+
+    if (eldoriaPointerFrameRef.current) {
+      return;
+    }
+
+    eldoriaPointerFrameRef.current = window.requestAnimationFrame(() => {
+      eldoriaPointerFrameRef.current = 0;
+      const nextMouseX = `${eldoriaPointerRef.current.x}%`;
+      const nextMouseY = `${eldoriaPointerRef.current.y}%`;
+
+      [releaseHeroRef.current, releaseDetailRef.current].forEach((element) => {
+        if (!element) {
+          return;
+        }
+
+        element.style.setProperty("--eldoria-mouse-x", nextMouseX);
+        element.style.setProperty("--eldoria-mouse-y", nextMouseY);
+      });
     });
   }
 
   return (
     <>
       <header
+        ref={releaseHeroRef}
         className={`hero homepage-hero release-hero${isFractureverse ? " fracture-release-hero" : ""}${isEldoria ? " eldoria-release-hero" : ""}${
           isEldoria && eldoriaAudioActive ? " eldoria-release-awake" : ""
         }`}
@@ -270,8 +318,9 @@ export default function PublicReleasePage({
         style={
           isEldoria
             ? {
-                "--eldoria-mouse-x": `${eldoriaMousePosition.x}%`,
-                "--eldoria-mouse-y": `${eldoriaMousePosition.y}%`
+                "--eldoria-mouse-x": "52%",
+                "--eldoria-mouse-y": "30%",
+                "--eldoria-scroll-depth": "0px"
               }
             : undefined
         }
@@ -487,14 +536,15 @@ export default function PublicReleasePage({
 
       {post ? (
         <main
+          ref={releaseDetailRef}
           className={`content-grid release-detail-grid${isEldoria ? " eldoria-release-detail-grid" : ""}${isEldoria && eldoriaAudioActive ? " eldoria-release-awake" : ""}`}
           onMouseMove={handleEldoriaPointerMove}
           style={
             isEldoria
               ? {
-                  "--eldoria-mouse-x": `${eldoriaMousePosition.x}%`,
-                  "--eldoria-mouse-y": `${eldoriaMousePosition.y}%`,
-                  "--eldoria-scroll-depth": `${eldoriaScrollDepth}px`
+                  "--eldoria-mouse-x": "52%",
+                  "--eldoria-mouse-y": "30%",
+                  "--eldoria-scroll-depth": "0px"
                 }
               : undefined
           }
