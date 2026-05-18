@@ -392,6 +392,16 @@ function normalizeReviewResult(value = {}) {
   };
 }
 
+function hasUsableReviewResult(value = {}) {
+  const review = normalizeReviewResult(value);
+
+  return Boolean(
+    review.summary ||
+      review.risks.length ||
+      review.suggestedActions.length
+  );
+}
+
 function normalizeComparableArray(value) {
   return [
     ...new Set(
@@ -1400,11 +1410,45 @@ async function reviewCatalogWithLocalAi(store, options = {}) {
     "",
     JSON.stringify(context)
   ].join("\n");
-  const result = normalizeReviewResult(await generateJson(prompt, options));
+  const firstPass = normalizeReviewResult(await generateJson(prompt, options));
+
+  if (hasUsableReviewResult(firstPass)) {
+    return {
+      ...DEFAULT_REVIEW_RESULT,
+      ...firstPass,
+      generatedAt: new Date().toISOString(),
+      model: status.model
+    };
+  }
+
+  const retryPrompt = [
+    "Return only compact JSON for this music archive admin review.",
+    "Your previous response was empty or unusable.",
+    "You must return at least one non-empty field.",
+    'Shape: {"summary":"one sentence","risks":["risk"],"suggestedActions":["action"]}.',
+    "Use at most 3 risks and 3 actions.",
+    "If the catalog looks broadly healthy, still provide a concise summary and at least one concrete suggestedAction.",
+    "",
+    JSON.stringify(context)
+  ].join("\n");
+  const retryResult = normalizeReviewResult(
+    await generateJson(retryPrompt, {
+      ...options,
+      temperature: 0.1
+    })
+  );
+
+  if (!hasUsableReviewResult(retryResult)) {
+    const error = new Error(
+      "The selected model returned no usable catalog review content."
+    );
+    error.statusCode = 502;
+    throw error;
+  }
 
   return {
     ...DEFAULT_REVIEW_RESULT,
-    ...result,
+    ...retryResult,
     generatedAt: new Date().toISOString(),
     model: status.model
   };
@@ -1616,6 +1660,7 @@ module.exports = {
     isStrongExcerptPatch,
     isStrongContentPatch,
     getConfiguredModelProfiles,
+    hasUsableReviewResult,
     normalizePostSuggestionResult,
     normalizeNewGuidedPathSuggestionResult,
     resolveRequestedModel,

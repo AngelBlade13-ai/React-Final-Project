@@ -3,6 +3,7 @@ const assert = require("node:assert/strict");
 const {
   __test: {
     getGuidedPathCandidatePosts,
+    hasUsableReviewResult,
     isAcceptableExcerpt,
     hasStructuredReleaseNote,
     isStrongExcerptPatch,
@@ -117,6 +118,26 @@ test("normalizePostSuggestionResult filters reordered metadata that repeats curr
   );
 
   assert.deepEqual(result.suggestedPatch, {});
+});
+
+test("hasUsableReviewResult rejects fully empty catalog reviews", () => {
+  assert.equal(
+    hasUsableReviewResult({
+      summary: "",
+      risks: [],
+      suggestedActions: []
+    }),
+    false
+  );
+
+  assert.equal(
+    hasUsableReviewResult({
+      summary: "Catalog is broadly coherent.",
+      risks: [],
+      suggestedActions: []
+    }),
+    true
+  );
 });
 
 test("getGuidedPathCandidatePosts scopes homepage preset to public homepage-eligible posts", () => {
