@@ -322,6 +322,74 @@ test("assistant requests fail safely when the selected model profile is not inst
   assert.equal(response.body.localAi.modelInstalled, false);
 });
 
+test("catalog review retries once when the model returns an empty response", async (t) => {
+  const originalFetch = global.fetch;
+  let generateCallCount = 0;
+
+  global.fetch = async (url) => {
+    const normalizedUrl = String(url);
+
+    if (normalizedUrl.endsWith("/api/tags")) {
+      return {
+        ok: true,
+        json: async () => ({
+          models: [{ name: "qwen2.5:7b" }]
+        })
+      };
+    }
+
+    if (normalizedUrl.endsWith("/api/generate")) {
+      generateCallCount += 1;
+
+      return {
+        ok: true,
+        json: async () =>
+          generateCallCount === 1
+            ? { response: "" }
+            : {
+                response: JSON.stringify({
+                  summary: "Catalog is broadly healthy.",
+                  risks: [],
+                  suggestedActions: ["Tighten one or two collection highlights."]
+                })
+              }
+      };
+    }
+
+    throw new Error(`Unexpected fetch URL: ${normalizedUrl}`);
+  };
+
+  const context = await createApiTestContext({
+    LOCAL_AI_ENABLED: "true"
+  });
+  t.after(async () => {
+    global.fetch = originalFetch;
+    await context.close();
+  });
+
+  const loginResponse = await context.agent
+    .post("/api/admin/login")
+    .set(context.mutationHeaders)
+    .send({
+      email: "admin@example.com",
+      password: "Admin123!"
+    });
+
+  assert.equal(loginResponse.status, 200);
+
+  const response = await context.agent
+    .post("/api/admin/assistant/catalog-review")
+    .set(context.mutationHeaders);
+
+  assert.equal(response.status, 200);
+  assert.equal(response.body.review.summary, "Catalog is broadly healthy.");
+  assert.deepEqual(response.body.review.risks, []);
+  assert.deepEqual(response.body.review.suggestedActions, [
+    "Tighten one or two collection highlights."
+  ]);
+  assert.equal(generateCallCount, 2);
+});
+
 test("remote AI pod controls proxy runpod start stop and status safely", async (t) => {
   const originalFetch = global.fetch;
   const fetchCalls = [];

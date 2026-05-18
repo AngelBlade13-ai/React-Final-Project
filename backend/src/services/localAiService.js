@@ -324,6 +324,36 @@ async function getLocalAiStatus(options = {}) {
   }
 }
 
+async function requestGenerate({
+  model,
+  prompt,
+  keepAlive,
+  generationOptions,
+  format = "json"
+}) {
+  const response = await fetchOllama("/api/generate", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      model,
+      prompt,
+      stream: false,
+      format,
+      keep_alive: keepAlive,
+      options: generationOptions
+    })
+  });
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(data.error || "The local model request failed.");
+  }
+
+  return data;
+}
+
 async function assertLocalAiReady(options = {}) {
   const status = await getLocalAiStatus(options);
 
@@ -1333,24 +1363,28 @@ async function generateJson(prompt, options = {}) {
   }
 
   clearLocalAiStatusCache();
-  const response = await fetchOllama("/api/generate", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      model: selection.model,
-      prompt,
-      stream: false,
-      format: "json",
-      keep_alive: config.localAiKeepAlive,
-      options: generationOptions
-    })
+  let data = await requestGenerate({
+    model: selection.model,
+    prompt,
+    keepAlive: config.localAiKeepAlive,
+    generationOptions
   });
-  const data = await response.json().catch(() => ({}));
 
-  if (!response.ok) {
-    throw new Error(data.error || "The local model request failed.");
+  if (!String(data.response || "").trim()) {
+    data = await requestGenerate({
+      model: selection.model,
+      prompt: [
+        "Return valid compact JSON only.",
+        "Do not leave the response empty.",
+        "",
+        prompt
+      ].join("\n"),
+      keepAlive: config.localAiKeepAlive,
+      generationOptions: {
+        ...generationOptions,
+        temperature: 0.1
+      }
+    });
   }
 
   try {
@@ -1363,32 +1397,19 @@ async function generateJson(prompt, options = {}) {
       "",
       String(data.response || "")
     ].join("\n");
-    const repairResponse = await fetchOllama("/api/generate", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: selection.model,
-        prompt: repairPrompt,
-        stream: false,
-        format: "json",
-        keep_alive: config.localAiKeepAlive,
-        options: {
-          temperature: 0,
-          num_ctx: Math.max(2048, generationOptions.num_ctx),
-          num_predict: Math.max(500, generationOptions.num_predict),
-          ...(config.localAiNumThread > 0
-            ? { num_thread: config.localAiNumThread }
-            : {})
-        }
-      })
+    const repairData = await requestGenerate({
+      model: selection.model,
+      prompt: repairPrompt,
+      keepAlive: config.localAiKeepAlive,
+      generationOptions: {
+        temperature: 0,
+        num_ctx: Math.max(2048, generationOptions.num_ctx),
+        num_predict: Math.max(500, generationOptions.num_predict),
+        ...(config.localAiNumThread > 0
+          ? { num_thread: config.localAiNumThread }
+          : {})
+      }
     });
-    const repairData = await repairResponse.json().catch(() => ({}));
-
-    if (!repairResponse.ok) {
-      throw error;
-    }
 
     try {
       return extractJsonObject(repairData.response);
