@@ -125,7 +125,8 @@ test("hasUsableReviewResult rejects fully empty catalog reviews", () => {
     hasUsableReviewResult({
       summary: "",
       risks: [],
-      suggestedActions: []
+      suggestedActions: [],
+      findings: []
     }),
     false
   );
@@ -135,6 +136,43 @@ test("hasUsableReviewResult rejects fully empty catalog reviews", () => {
       summary: "Catalog is broadly coherent.",
       risks: [],
       suggestedActions: []
+    }),
+    true
+  );
+
+  assert.equal(
+    hasUsableReviewResult({
+      summary: "",
+      risks: [],
+      suggestedActions: [],
+      findings: [
+        {
+          severity: "warning",
+          targetType: "post",
+          targetSlug: "test-post",
+          field: "themeTags",
+          issue: "Missing tags.",
+          recommendedAction: "Add theme tags."
+        }
+      ]
+    }),
+    true
+  );
+});
+
+test("hasUsableReviewResult counts findings as usable review content", () => {
+  assert.equal(
+    hasUsableReviewResult({
+      findings: [
+        {
+          severity: "warning",
+          targetType: "path",
+          targetSlug: "start-here",
+          field: "postSlugs",
+          issue: "Membership is too narrow.",
+          recommendedAction: "Review the candidate set."
+        }
+      ]
     }),
     true
   );

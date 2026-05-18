@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { useAdminContext } from "../../layouts/AdminLayout";
 import {
@@ -34,6 +35,7 @@ function formatPatchValue(value) {
 
 export default function AdminPathsPage() {
   useDocumentTitle("Admin Paths");
+  const [searchParams] = useSearchParams();
   const {
     adminFetch,
     collections,
@@ -60,6 +62,7 @@ export default function AdminPathsPage() {
   );
   const [songToAddSlug, setSongToAddSlug] = useState("");
   const [showAdvancedJson, setShowAdvancedJson] = useState(false);
+  const focusedPathSlug = String(searchParams.get("slug") || "").trim();
 
   useEffect(() => {
     setGuidedPathsDraft(
@@ -82,10 +85,19 @@ export default function AdminPathsPage() {
       return;
     }
 
+    if (
+      focusedPathSlug &&
+      draftPaths.some((path) => path.slug === focusedPathSlug) &&
+      focusedPathSlug !== selectedGuidedPathSlug
+    ) {
+      setSelectedGuidedPathSlug(focusedPathSlug);
+      return;
+    }
+
     if (!draftPaths.some((path) => path.slug === selectedGuidedPathSlug)) {
       setSelectedGuidedPathSlug(draftPaths[0].slug);
     }
-  }, [draftPaths, selectedGuidedPathSlug]);
+  }, [draftPaths, focusedPathSlug, selectedGuidedPathSlug]);
 
   useEffect(() => {
     let isCancelled = false;

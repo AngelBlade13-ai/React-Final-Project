@@ -59,6 +59,61 @@ function formatUptime(totalSeconds = 0) {
   return `${Math.max(1, minutes)}m`;
 }
 
+function buildAdminFindingLink(finding = {}) {
+  const targetSlug = String(finding?.targetSlug || "").trim();
+  const targetType = String(finding?.targetType || "catalog")
+    .trim()
+    .toLowerCase();
+
+  if (targetType === "post" && targetSlug) {
+    return `/admin/posts?slug=${encodeURIComponent(targetSlug)}`;
+  }
+
+  if (targetType === "collection" && targetSlug) {
+    return `/admin/collections?slug=${encodeURIComponent(targetSlug)}`;
+  }
+
+  if (targetType === "path" && targetSlug) {
+    return `/admin/paths?slug=${encodeURIComponent(targetSlug)}`;
+  }
+
+  if (targetType === "catalog") {
+    return "/admin/insights";
+  }
+
+  return "";
+}
+
+function formatFindingTarget(finding = {}) {
+  const targetType = String(finding?.targetType || "catalog")
+    .trim()
+    .toLowerCase();
+  const targetSlug = String(finding?.targetSlug || "").trim();
+  const field = String(finding?.field || "").trim();
+  const baseLabel =
+    targetType === "post"
+      ? "Post"
+      : targetType === "collection"
+        ? "Collection"
+        : targetType === "path"
+          ? "Path"
+          : "Catalog";
+
+  if (targetSlug && field) {
+    return `${baseLabel}: ${targetSlug} -> ${field}`;
+  }
+
+  if (targetSlug) {
+    return `${baseLabel}: ${targetSlug}`;
+  }
+
+  if (field) {
+    return `${baseLabel}: ${field}`;
+  }
+
+  return baseLabel;
+}
+
 function describeAuditDetails(entry) {
   const details = entry?.details || {};
 
@@ -1022,10 +1077,58 @@ export default function AdminInsightsPage() {
                 <h3>Assistant Review</h3>
               </div>
               <span className="issue-count-pill">
-                {localAiReview.risks?.length || 0}
+                {(localAiReview.findings?.length || 0) +
+                  (localAiReview.risks?.length || 0)}
               </span>
             </div>
             <p>{localAiReview.summary}</p>
+            {localAiReview.findings?.length ? (
+              <>
+                <p className="note-label">Actionable Findings</p>
+                <div className="insight-sample-list">
+                  {localAiReview.findings.map((finding, index) => {
+                    const targetLink = buildAdminFindingLink(finding);
+                    const key = [
+                      finding.targetType,
+                      finding.targetSlug,
+                      finding.field,
+                      index
+                    ].join(":");
+
+                    return (
+                      <article
+                        className={`insight-issue-card severity-${finding.severity || "info"}`}
+                        key={key}
+                      >
+                        <div className="insight-issue-head">
+                          <div>
+                            <p className="eyebrow">
+                              {formatSeverity(finding.severity)}
+                            </p>
+                            <h4>{formatFindingTarget(finding)}</h4>
+                          </div>
+                        </div>
+                        <p>{finding.issue}</p>
+                        <p className="meta">{finding.recommendedAction}</p>
+                        {targetLink ? (
+                          <div className="archive-intelligence-actions">
+                            <Link className="secondary-button" to={targetLink}>
+                              {finding.targetType === "post"
+                                ? "Open Post Workspace"
+                                : finding.targetType === "collection"
+                                  ? "Open Collection Workspace"
+                                  : finding.targetType === "path"
+                                    ? "Open Path Workspace"
+                                    : "Open Insights"}
+                            </Link>
+                          </div>
+                        ) : null}
+                      </article>
+                    );
+                  })}
+                </div>
+              </>
+            ) : null}
             {localAiReview.risks?.length ? (
               <>
                 <p className="note-label">Risks</p>

@@ -4,8 +4,16 @@ const { slugify } = require("../utils/slugify");
 const DEFAULT_REVIEW_RESULT = {
   summary: "",
   risks: [],
-  suggestedActions: []
+  suggestedActions: [],
+  findings: []
 };
+const REVIEW_FINDING_TARGET_TYPES = new Set([
+  "post",
+  "collection",
+  "path",
+  "catalog"
+]);
+const REVIEW_FINDING_SEVERITIES = new Set(["info", "warning", "critical"]);
 const VALID_RELEASE_STATUSES = new Set(["canon", "alternate", "working"]);
 const ASSISTANT_PATCH_FIELDS = [
   "excerpt",
@@ -415,11 +423,71 @@ function normalizeTextList(value, limit = 8) {
     : [];
 }
 
-function normalizeReviewResult(value = {}) {
+function normalizeReviewResult(value = {}, allowedTargets = null) {
+  const findings = Array.isArray(value.findings)
+    ? value.findings
+        .map((entry) => {
+          const targetType = String(entry?.targetType || "catalog")
+            .trim()
+            .toLowerCase();
+          const severity = String(entry?.severity || "info")
+            .trim()
+            .toLowerCase();
+          const targetSlug = String(entry?.targetSlug || "").trim();
+          const field = String(entry?.field || "").trim();
+          const issue = String(entry?.issue || "").trim();
+          const recommendedAction = String(entry?.recommendedAction || "").trim();
+
+          if (
+            !issue ||
+            !recommendedAction ||
+            !REVIEW_FINDING_TARGET_TYPES.has(targetType) ||
+            !REVIEW_FINDING_SEVERITIES.has(severity)
+          ) {
+            return null;
+          }
+
+          if (allowedTargets && targetSlug) {
+            if (
+              targetType === "post" &&
+              !allowedTargets.posts.has(targetSlug)
+            ) {
+              return null;
+            }
+
+            if (
+              targetType === "collection" &&
+              !allowedTargets.collections.has(targetSlug)
+            ) {
+              return null;
+            }
+
+            if (
+              targetType === "path" &&
+              !allowedTargets.paths.has(targetSlug)
+            ) {
+              return null;
+            }
+          }
+
+          return {
+            severity,
+            targetType,
+            targetSlug,
+            field,
+            issue,
+            recommendedAction
+          };
+        })
+        .filter(Boolean)
+        .slice(0, 6)
+    : [];
+
   return {
     summary: String(value.summary || "").trim(),
     risks: normalizeTextList(value.risks),
-    suggestedActions: normalizeTextList(value.suggestedActions)
+    suggestedActions: normalizeTextList(value.suggestedActions),
+    findings
   };
 }
 
@@ -427,9 +495,10 @@ function hasUsableReviewResult(value = {}) {
   const review = normalizeReviewResult(value);
 
   return Boolean(
-    review.summary ||
+      review.summary ||
       review.risks.length ||
-      review.suggestedActions.length
+      review.suggestedActions.length ||
+      review.findings.length
   );
 }
 
@@ -703,6 +772,8 @@ function summarizePostForAssistant(post = {}) {
     slug: post.slug,
     title: post.title,
     published: Boolean(post.published),
+    isPubliclyVisible: post.isPubliclyVisible !== false,
+    isHomepageEligible: Boolean(post.isHomepageEligible),
     releaseStatus: post.releaseStatus || "canon",
     collections: Array.isArray(post.collectionSlugs)
       ? post.collectionSlugs
@@ -1420,19 +1491,48 @@ async function generateJson(prompt, options = {}) {
   }
 }
 
+function buildCatalogReviewTargets(store = {}) {
+  const posts = Array.isArray(store.posts) ? store.posts : [];
+  const collections = Array.isArray(store.collections) ? store.collections : [];
+  const guidedPaths = Array.isArray(store.siteContent?.guidedPaths)
+    ? store.siteContent.guidedPaths
+    : [];
+
+  return {
+    posts: new Set(
+      posts.map((post) => String(post?.slug || "").trim()).filter(Boolean)
+    ),
+    collections: new Set(
+      collections
+        .map((collection) => String(collection?.slug || "").trim())
+        .filter(Boolean)
+    ),
+    paths: new Set(
+      guidedPaths.map((path) => String(path?.slug || "").trim()).filter(Boolean)
+    )
+  };
+}
+
 async function reviewCatalogWithLocalAi(store, options = {}) {
   const status = await assertLocalAiReady(options);
 
   const context = buildCatalogContext(store);
+  const allowedTargets = buildCatalogReviewTargets(store);
   const prompt = [
     "Return only compact JSON for this music archive admin review.",
     "Do not invent slugs. No code advice.",
-    'Shape: {"summary":"one sentence","risks":["risk"],"suggestedActions":["action"]}.',
+    'Shape: {"summary":"one sentence","risks":["risk"],"suggestedActions":["action"],"findings":[{"severity":"warning","targetType":"post|collection|path|catalog","targetSlug":"existing-slug-or-empty","field":"fieldName-or-empty","issue":"what is wrong","recommendedAction":"what to do next"}]}.',
     "Use at most 3 risks and 3 actions.",
+    "Use at most 5 findings.",
+    "Only use targetSlug values that already exist in the JSON context.",
+    "Findings should be concrete and actionable, not vague observations.",
     "",
     JSON.stringify(context)
   ].join("\n");
-  const firstPass = normalizeReviewResult(await generateJson(prompt, options));
+  const firstPass = normalizeReviewResult(
+    await generateJson(prompt, options),
+    allowedTargets
+  );
 
   if (hasUsableReviewResult(firstPass)) {
     return {
@@ -1447,8 +1547,10 @@ async function reviewCatalogWithLocalAi(store, options = {}) {
     "Return only compact JSON for this music archive admin review.",
     "Your previous response was empty or unusable.",
     "You must return at least one non-empty field.",
-    'Shape: {"summary":"one sentence","risks":["risk"],"suggestedActions":["action"]}.',
+    'Shape: {"summary":"one sentence","risks":["risk"],"suggestedActions":["action"],"findings":[{"severity":"warning","targetType":"post|collection|path|catalog","targetSlug":"existing-slug-or-empty","field":"fieldName-or-empty","issue":"what is wrong","recommendedAction":"what to do next"}]}.',
     "Use at most 3 risks and 3 actions.",
+    "Use at most 5 findings.",
+    "Only use targetSlug values that already exist in the JSON context.",
     "If the catalog looks broadly healthy, still provide a concise summary and at least one concrete suggestedAction.",
     "",
     JSON.stringify(context)
@@ -1457,7 +1559,8 @@ async function reviewCatalogWithLocalAi(store, options = {}) {
     await generateJson(retryPrompt, {
       ...options,
       temperature: 0.1
-    })
+    }),
+    allowedTargets
   );
 
   if (!hasUsableReviewResult(retryResult)) {

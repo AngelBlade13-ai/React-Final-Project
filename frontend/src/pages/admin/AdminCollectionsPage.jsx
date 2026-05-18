@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { useAdminContext } from "../../layouts/AdminLayout";
 
@@ -29,6 +30,7 @@ function matchesCollectionFilters(collection, filters = {}) {
 
 export default function AdminCollectionsPage() {
   useDocumentTitle("Admin Collections");
+  const [searchParams] = useSearchParams();
   const {
     collectionForm,
     collectionMessage,
@@ -44,7 +46,9 @@ export default function AdminCollectionsPage() {
     startCollectionEdit,
     updateCollectionForm
   } = useAdminContext();
-  const [collectionSearch, setCollectionSearch] = useState("");
+  const [collectionSearch, setCollectionSearch] = useState(
+    () => searchParams.get("slug") || searchParams.get("q") || ""
+  );
   const [collectionThemeFilter, setCollectionThemeFilter] = useState("");
   const [collectionVisibilityFilter, setCollectionVisibilityFilter] = useState("");
   const activeCollection = editingCollectionId ? collections.find((collection) => collection.id === editingCollectionId) || null : null;
@@ -66,6 +70,10 @@ export default function AdminCollectionsPage() {
         .sort((left, right) => String(left.title || "").localeCompare(String(right.title || ""))),
     [collectionSearch, collectionThemeFilter, collectionVisibilityFilter, collections]
   );
+
+  useEffect(() => {
+    setCollectionSearch(searchParams.get("slug") || searchParams.get("q") || "");
+  }, [searchParams]);
 
   return (
     <main className="admin-grid">

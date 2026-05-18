@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import ReleaseMedia from "../../components/ReleaseMedia";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import {
@@ -322,6 +323,7 @@ function formatAssessmentStatus(status) {
 
 export default function AdminPostsPage() {
   useDocumentTitle("Admin Posts");
+  const [searchParams] = useSearchParams();
   const {
     adminFetch,
     collections,
@@ -351,7 +353,9 @@ export default function AdminPostsPage() {
   const [activeMetadataTheme, setActiveMetadataTheme] = useState("");
   const [activeSection, setActiveSection] = useState("essentials");
   const [storedDraft, setStoredDraft] = useState(null);
-  const [catalogSearch, setCatalogSearch] = useState("");
+  const [catalogSearch, setCatalogSearch] = useState(
+    () => searchParams.get("slug") || searchParams.get("q") || ""
+  );
   const [catalogCollectionSlug, setCatalogCollectionSlug] = useState("");
   const [catalogReleaseStatus, setCatalogReleaseStatus] = useState("");
   const [catalogSourceTag, setCatalogSourceTag] = useState("");
@@ -481,6 +485,7 @@ export default function AdminPostsPage() {
   );
   const blockingCount = validation.blocking.length;
   const advisoryCount = validation.advisory.length;
+  const focusedPostSlug = String(searchParams.get("slug") || "").trim();
 
   useEffect(() => {
     if (!metadataThemes.length) {
@@ -492,6 +497,24 @@ export default function AdminPostsPage() {
       setActiveMetadataTheme(metadataThemes[0].theme);
     }
   }, [activeMetadataTheme, metadataThemes]);
+
+  useEffect(() => {
+    setCatalogSearch(searchParams.get("slug") || searchParams.get("q") || "");
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (!focusedPostSlug) {
+      return;
+    }
+
+    const focusedPost = posts.find((post) => post.slug === focusedPostSlug);
+
+    if (!focusedPost) {
+      return;
+    }
+
+    setCatalogSearch(focusedPostSlug);
+  }, [focusedPostSlug, posts]);
 
   useEffect(() => {
     setActiveSection("essentials");
