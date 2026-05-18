@@ -35,7 +35,7 @@ export function buildAssistantStatusUrl(apiBaseUrl, profileKey) {
     url.searchParams.set("profile", String(profileKey).trim());
   }
 
-  return `${url.pathname}${url.search}`;
+  return url.toString();
 }
 
 export function withAssistantProfile(body = {}, profileKey) {
