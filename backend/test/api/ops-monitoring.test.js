@@ -223,6 +223,105 @@ test("local assistant endpoints fail safely when local AI is disabled", async (t
   );
 });
 
+test("assistant status reflects the selected model profile and installed models", async (t) => {
+  const originalFetch = global.fetch;
+
+  global.fetch = async (url) => {
+    if (String(url).endsWith("/api/tags")) {
+      return {
+        ok: true,
+        json: async () => ({
+          models: [{ name: "qwen2.5:7b" }, { name: "qwen3:14b" }]
+        })
+      };
+    }
+
+    throw new Error(`Unexpected fetch URL: ${url}`);
+  };
+
+  const context = await createApiTestContext({
+    LOCAL_AI_ENABLED: "true"
+  });
+  t.after(async () => {
+    global.fetch = originalFetch;
+    await context.close();
+  });
+
+  const loginResponse = await context.agent
+    .post("/api/admin/login")
+    .set(context.mutationHeaders)
+    .send({
+      email: "admin@example.com",
+      password: "Admin123!"
+    });
+
+  assert.equal(loginResponse.status, 200);
+
+  const statusResponse = await context.agent.get(
+    "/api/admin/assistant/status?profile=balanced"
+  );
+
+  assert.equal(statusResponse.status, 200);
+  assert.equal(statusResponse.body.localAi.model, "qwen3:14b");
+  assert.equal(statusResponse.body.localAi.selectedProfileKey, "balanced");
+  assert.equal(statusResponse.body.localAi.modelInstalled, true);
+  assert.ok(
+    statusResponse.body.localAi.modelProfiles.some(
+      (profile) =>
+        profile.key === "thorough" &&
+        profile.model === "qwen3:30b" &&
+        profile.installed === false
+    )
+  );
+});
+
+test("assistant requests fail safely when the selected model profile is not installed", async (t) => {
+  const originalFetch = global.fetch;
+
+  global.fetch = async (url) => {
+    if (String(url).endsWith("/api/tags")) {
+      return {
+        ok: true,
+        json: async () => ({
+          models: [{ name: "qwen2.5:7b" }]
+        })
+      };
+    }
+
+    throw new Error(`Unexpected fetch URL: ${url}`);
+  };
+
+  const context = await createApiTestContext({
+    LOCAL_AI_ENABLED: "true"
+  });
+  t.after(async () => {
+    global.fetch = originalFetch;
+    await context.close();
+  });
+
+  const loginResponse = await context.agent
+    .post("/api/admin/login")
+    .set(context.mutationHeaders)
+    .send({
+      email: "admin@example.com",
+      password: "Admin123!"
+    });
+
+  assert.equal(loginResponse.status, 200);
+
+  const response = await context.agent
+    .post("/api/admin/assistant/catalog-review")
+    .set(context.mutationHeaders)
+    .send({
+      profile: "thorough"
+    });
+
+  assert.equal(response.status, 503);
+  assert.match(response.body.message, /qwen3:30b/i);
+  assert.equal(response.body.localAi.model, "qwen3:30b");
+  assert.equal(response.body.localAi.modelInstalled, false);
+});
+
 test("remote AI pod controls proxy runpod start stop and status safely", async (t) => {
   const originalFetch = global.fetch;
   const fetchCalls = [];

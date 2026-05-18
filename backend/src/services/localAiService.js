@@ -29,19 +29,197 @@ const ALLOWED_PATH_ALGORITHM_SORTS = new Set([
 ]);
 const ALLOWED_PATH_MATCH_MODES = new Set(["any", "all"]);
 const MIN_CONTENT_CHANGE_LENGTH = 24;
-let cachedLocalAiStatus = null;
+const DEFAULT_LOCAL_AI_MODEL_PROFILES = [
+  {
+    key: "fast",
+    label: "Fast",
+    model: "qwen2.5:7b"
+  },
+  {
+    key: "balanced",
+    label: "Balanced",
+    model: "qwen3:14b"
+  },
+  {
+    key: "thorough",
+    label: "Thorough",
+    model: "qwen3:30b"
+  }
+];
+let cachedLocalAiCatalog = null;
 
 function clearLocalAiStatusCache() {
-  cachedLocalAiStatus = null;
+  cachedLocalAiCatalog = null;
 }
 
-function buildUnavailableStatus(reason) {
+function normalizeProfileKey(value = "") {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, "-");
+}
+
+function normalizeModelProfilesInput(value) {
+  if (Array.isArray(value)) {
+    return value;
+  }
+
+  if (value && typeof value === "object") {
+    return Object.entries(value).map(([key, entry]) => ({
+      key,
+      ...(entry && typeof entry === "object" ? entry : {})
+    }));
+  }
+
+  return [];
+}
+
+function getConfiguredModelProfiles() {
+  const normalizedDefaults = DEFAULT_LOCAL_AI_MODEL_PROFILES.map((profile) => ({
+    ...profile,
+    key: normalizeProfileKey(profile.key)
+  }));
+
+  if (!String(config.localAiModelProfilesRaw || "").trim()) {
+    return normalizedDefaults;
+  }
+
+  try {
+    const parsed = JSON.parse(config.localAiModelProfilesRaw);
+    const profiles = normalizeModelProfilesInput(parsed)
+      .map((entry, index) => {
+        const key = normalizeProfileKey(entry?.key || entry?.id || `profile-${index + 1}`);
+        const model = String(entry?.model || "").trim();
+
+        if (!key || !model) {
+          return null;
+        }
+
+        return {
+          key,
+          label: String(entry?.label || entry?.name || key).trim(),
+          model
+        };
+      })
+      .filter(Boolean);
+
+    if (!profiles.length) {
+      return normalizedDefaults;
+    }
+
+    const uniqueProfiles = [];
+    const seenKeys = new Set();
+
+    for (const profile of profiles) {
+      if (seenKeys.has(profile.key)) {
+        continue;
+      }
+
+      seenKeys.add(profile.key);
+      uniqueProfiles.push(profile);
+    }
+
+    if (
+      !uniqueProfiles.some(
+        (profile) =>
+          normalizeComparableText(profile.model) ===
+          normalizeComparableText(config.localAiModel)
+      )
+    ) {
+      uniqueProfiles.unshift({
+        key: "default",
+        label: "Default",
+        model: config.localAiModel
+      });
+    }
+
+    return uniqueProfiles;
+  } catch {
+    return normalizedDefaults;
+  }
+}
+
+function resolveRequestedModel(options = {}) {
+  const profiles = getConfiguredModelProfiles();
+  const requestedProfileKey = normalizeProfileKey(
+    options.profileKey || options.profile
+  );
+  const requestedModel = String(options.model || "").trim();
+  let selectedProfile = requestedProfileKey
+    ? profiles.find((profile) => profile.key === requestedProfileKey) || null
+    : null;
+  let selectedModel = selectedProfile?.model || requestedModel || "";
+
+  if (!selectedProfile && selectedModel) {
+    selectedProfile =
+      profiles.find(
+        (profile) =>
+          normalizeComparableText(profile.model) ===
+          normalizeComparableText(selectedModel)
+      ) || null;
+  }
+
+  if (!selectedProfile && !selectedModel) {
+    selectedProfile =
+      profiles.find(
+        (profile) =>
+          normalizeComparableText(profile.model) ===
+          normalizeComparableText(config.localAiModel)
+      ) ||
+      profiles[0] ||
+      null;
+  }
+
+  if (!selectedModel) {
+    selectedModel = selectedProfile?.model || config.localAiModel;
+  }
+
+  return {
+    model: selectedModel,
+    profileKey: selectedProfile?.key || "",
+    profileLabel: selectedProfile?.label || "",
+    profiles
+  };
+}
+
+function modelIsInstalled(models = [], model = "") {
+  return models.some(
+    (entry) =>
+      normalizeComparableText(entry) === normalizeComparableText(model)
+  );
+}
+
+function buildModelProfileStatusList(
+  profiles = [],
+  installedModels = [],
+  selectedModel = ""
+) {
+  return profiles.map((profile) => ({
+    ...profile,
+    installed: modelIsInstalled(installedModels, profile.model),
+    selected:
+      normalizeComparableText(profile.model) ===
+      normalizeComparableText(selectedModel)
+  }));
+}
+
+function buildUnavailableStatus(reason, options = {}) {
+  const selection = resolveRequestedModel(options);
+
   return {
     available: false,
     enabled: Boolean(config.localAiEnabled),
     baseUrl: config.localAiBaseUrl,
-    model: config.localAiModel,
+    model: selection.model,
+    selectedProfileKey: selection.profileKey,
+    selectedProfileLabel: selection.profileLabel,
+    modelProfiles: buildModelProfileStatusList(
+      selection.profiles,
+      [],
+      selection.model
+    ),
     models: [],
+    modelInstalled: false,
     message: reason
   };
 }
@@ -76,18 +254,43 @@ async function fetchOllama(path, options = {}) {
   }
 }
 
-async function getLocalAiStatus() {
+function buildAvailableStatus(models = [], options = {}) {
+  const selection = resolveRequestedModel(options);
+  const installed = modelIsInstalled(models, selection.model);
+
+  return {
+    available: true,
+    enabled: true,
+    baseUrl: config.localAiBaseUrl,
+    model: selection.model,
+    selectedProfileKey: selection.profileKey,
+    selectedProfileLabel: selection.profileLabel,
+    modelProfiles: buildModelProfileStatusList(
+      selection.profiles,
+      models,
+      selection.model
+    ),
+    models,
+    modelInstalled: installed,
+    message: installed
+      ? "Local AI is available."
+      : `Ollama is running, but ${selection.model} is not installed.`
+  };
+}
+
+async function getLocalAiStatus(options = {}) {
   if (!config.localAiEnabled) {
     return buildUnavailableStatus(
-      "Local AI is disabled by LOCAL_AI_ENABLED=false."
+      "Local AI is disabled by LOCAL_AI_ENABLED=false.",
+      options
     );
   }
 
   if (
-    cachedLocalAiStatus &&
-    Date.now() - cachedLocalAiStatus.createdAt < config.localAiStatusCacheMs
+    cachedLocalAiCatalog &&
+    Date.now() - cachedLocalAiCatalog.createdAt < config.localAiStatusCacheMs
   ) {
-    return cachedLocalAiStatus.value;
+    return buildAvailableStatus(cachedLocalAiCatalog.models, options);
   }
 
   try {
@@ -96,7 +299,8 @@ async function getLocalAiStatus() {
 
     if (!response.ok) {
       return buildUnavailableStatus(
-        data.error || "Ollama did not return a healthy status."
+        data.error || "Ollama did not return a healthy status.",
+        options
       );
     }
 
@@ -104,31 +308,33 @@ async function getLocalAiStatus() {
       ? data.models.map((model) => model.name).filter(Boolean)
       : [];
 
-    const status = {
-      available: true,
-      enabled: true,
-      baseUrl: config.localAiBaseUrl,
-      model: config.localAiModel,
-      models,
-      modelInstalled: models.includes(config.localAiModel),
-      message: models.includes(config.localAiModel)
-        ? "Local AI is available."
-        : `Ollama is running, but ${config.localAiModel} is not installed.`
-    };
-
-    cachedLocalAiStatus = {
+    cachedLocalAiCatalog = {
       createdAt: Date.now(),
-      value: status
+      models
     };
 
-    return status;
+    return buildAvailableStatus(models, options);
   } catch (error) {
     return buildUnavailableStatus(
       error.name === "AbortError"
         ? "Timed out while contacting Ollama."
-        : "Ollama is not running or is not reachable."
+        : "Ollama is not running or is not reachable.",
+      options
     );
   }
+}
+
+async function assertLocalAiReady(options = {}) {
+  const status = await getLocalAiStatus(options);
+
+  if (!status.available || !status.modelInstalled) {
+    const error = new Error(status.message);
+    error.statusCode = 503;
+    error.localAiStatus = status;
+    throw error;
+  }
+
+  return status;
 }
 
 function extractJsonObject(value) {
@@ -1105,6 +1311,7 @@ function buildCatalogContext(store = {}) {
 }
 
 async function generateJson(prompt, options = {}) {
+  const selection = resolveRequestedModel(options);
   const generationOptions = {
     temperature: options.temperature ?? 0.2,
     num_ctx: options.num_ctx || config.localAiDefaultNumCtx,
@@ -1122,7 +1329,7 @@ async function generateJson(prompt, options = {}) {
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      model: config.localAiModel,
+      model: selection.model,
       prompt,
       stream: false,
       format: "json",
@@ -1152,7 +1359,7 @@ async function generateJson(prompt, options = {}) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: config.localAiModel,
+        model: selection.model,
         prompt: repairPrompt,
         stream: false,
         format: "json",
@@ -1181,22 +1388,8 @@ async function generateJson(prompt, options = {}) {
   }
 }
 
-async function reviewCatalogWithLocalAi(store) {
-  const status = await getLocalAiStatus();
-
-  if (!status.available) {
-    const error = new Error(status.message);
-    error.statusCode = 503;
-    error.localAiStatus = status;
-    throw error;
-  }
-
-  if (!status.modelInstalled) {
-    const error = new Error(status.message);
-    error.statusCode = 503;
-    error.localAiStatus = status;
-    throw error;
-  }
+async function reviewCatalogWithLocalAi(store, options = {}) {
+  const status = await assertLocalAiReady(options);
 
   const context = buildCatalogContext(store);
   const prompt = [
@@ -1207,32 +1400,18 @@ async function reviewCatalogWithLocalAi(store) {
     "",
     JSON.stringify(context)
   ].join("\n");
-  const result = normalizeReviewResult(await generateJson(prompt));
+  const result = normalizeReviewResult(await generateJson(prompt, options));
 
   return {
     ...DEFAULT_REVIEW_RESULT,
     ...result,
     generatedAt: new Date().toISOString(),
-    model: config.localAiModel
+    model: status.model
   };
 }
 
-async function suggestPostDraftWithLocalAi(store, postDraft = {}) {
-  const status = await getLocalAiStatus();
-
-  if (!status.available) {
-    const error = new Error(status.message);
-    error.statusCode = 503;
-    error.localAiStatus = status;
-    throw error;
-  }
-
-  if (!status.modelInstalled) {
-    const error = new Error(status.message);
-    error.statusCode = 503;
-    error.localAiStatus = status;
-    throw error;
-  }
+async function suggestPostDraftWithLocalAi(store, postDraft = {}, options = {}) {
+  const status = await assertLocalAiReady(options);
 
   const collections = Array.isArray(store.collections) ? store.collections : [];
   const posts = Array.isArray(store.posts) ? store.posts : [];
@@ -1264,6 +1443,7 @@ async function suggestPostDraftWithLocalAi(store, postDraft = {}) {
   ].join("\n");
   const result = normalizePostSuggestionResult(
     await generateJson(prompt, {
+      ...options,
       num_ctx: 4096,
       num_predict: config.localAiPostNumPredict
     }),
@@ -1295,6 +1475,7 @@ async function suggestPostDraftWithLocalAi(store, postDraft = {}) {
     ].join("\n");
     const retryResult = normalizePostSuggestionResult(
       await generateJson(retryPrompt, {
+        ...options,
         num_ctx: 4096,
         num_predict: config.localAiPostNumPredict,
         temperature: 0.1
@@ -1307,7 +1488,7 @@ async function suggestPostDraftWithLocalAi(store, postDraft = {}) {
       return {
         ...retryResult,
         generatedAt: new Date().toISOString(),
-        model: config.localAiModel
+        model: status.model
       };
     }
   }
@@ -1315,26 +1496,16 @@ async function suggestPostDraftWithLocalAi(store, postDraft = {}) {
   return {
     ...result,
     generatedAt: new Date().toISOString(),
-    model: config.localAiModel
+    model: status.model
   };
 }
 
-async function suggestGuidedPathWithLocalAi(store, guidedPath = {}) {
-  const status = await getLocalAiStatus();
-
-  if (!status.available) {
-    const error = new Error(status.message);
-    error.statusCode = 503;
-    error.localAiStatus = status;
-    throw error;
-  }
-
-  if (!status.modelInstalled) {
-    const error = new Error(status.message);
-    error.statusCode = 503;
-    error.localAiStatus = status;
-    throw error;
-  }
+async function suggestGuidedPathWithLocalAi(
+  store,
+  guidedPath = {},
+  options = {}
+) {
+  const status = await assertLocalAiReady(options);
 
   const posts = Array.isArray(store.posts) ? store.posts : [];
   const collections = Array.isArray(store.collections) ? store.collections : [];
@@ -1365,6 +1536,7 @@ async function suggestGuidedPathWithLocalAi(store, guidedPath = {}) {
   ].join("\n");
   const result = normalizeGuidedPathSuggestionResult(
     await generateJson(prompt, {
+      ...options,
       num_ctx: 8192,
       num_predict: config.localAiPathNumPredict
     }),
@@ -1375,26 +1547,16 @@ async function suggestGuidedPathWithLocalAi(store, guidedPath = {}) {
   return {
     ...result,
     generatedAt: new Date().toISOString(),
-    model: config.localAiModel
+    model: status.model
   };
 }
 
-async function suggestNewGuidedPathWithLocalAi(store, existingPaths = []) {
-  const status = await getLocalAiStatus();
-
-  if (!status.available) {
-    const error = new Error(status.message);
-    error.statusCode = 503;
-    error.localAiStatus = status;
-    throw error;
-  }
-
-  if (!status.modelInstalled) {
-    const error = new Error(status.message);
-    error.statusCode = 503;
-    error.localAiStatus = status;
-    throw error;
-  }
+async function suggestNewGuidedPathWithLocalAi(
+  store,
+  existingPaths = [],
+  options = {}
+) {
+  const status = await assertLocalAiReady(options);
 
   const posts = Array.isArray(store.posts) ? store.posts : [];
   const collections = Array.isArray(store.collections) ? store.collections : [];
@@ -1426,6 +1588,7 @@ async function suggestNewGuidedPathWithLocalAi(store, existingPaths = []) {
   ].join("\n");
   const result = normalizeNewGuidedPathSuggestionResult(
     await generateJson(prompt, {
+      ...options,
       num_ctx: 8192,
       num_predict: config.localAiNewPathNumPredict
     }),
@@ -1436,7 +1599,7 @@ async function suggestNewGuidedPathWithLocalAi(store, existingPaths = []) {
   return {
     ...result,
     generatedAt: new Date().toISOString(),
-    model: config.localAiModel
+    model: status.model
   };
 }
 
@@ -1452,8 +1615,10 @@ module.exports = {
     hasStructuredReleaseNote,
     isStrongExcerptPatch,
     isStrongContentPatch,
+    getConfiguredModelProfiles,
     normalizePostSuggestionResult,
     normalizeNewGuidedPathSuggestionResult,
+    resolveRequestedModel,
     titleFitsSuggestedMembership
   }
 };

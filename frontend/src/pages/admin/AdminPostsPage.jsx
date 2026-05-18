@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import ReleaseMedia from "../../components/ReleaseMedia";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
+import {
+  buildAssistantStatusUrl,
+  readAssistantModelProfile,
+  withAssistantProfile,
+  writeAssistantModelProfile
+} from "../../lib/adminAssistant";
 import { formatPostDate } from "../../lib/formatters";
 import {
   apiBaseUrl,
@@ -366,6 +372,11 @@ export default function AdminPostsPage() {
   const [assistantLoading, setAssistantLoading] = useState(false);
   const [assistantError, setAssistantError] = useState("");
   const [assistantMessage, setAssistantMessage] = useState("");
+  const [assistantStatus, setAssistantStatus] = useState(null);
+  const [assistantStatusError, setAssistantStatusError] = useState("");
+  const [selectedAssistantProfile, setSelectedAssistantProfile] = useState(() =>
+    readAssistantModelProfile()
+  );
 
   const fractureverseCollection = collections.find((collection) => collection.theme === "fractureverse");
   const eldoriaCollection = collections.find((collection) => collection.theme === "eldoria");
@@ -542,6 +553,45 @@ export default function AdminPostsPage() {
     setSelectedPostIds((current) => current.filter((postId) => validPostIds.has(postId)));
   }, [posts]);
 
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function loadAssistantStatus() {
+      try {
+        setAssistantStatusError("");
+        const response = await adminFetch(
+          buildAssistantStatusUrl(apiBaseUrl, selectedAssistantProfile)
+        );
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(data.message || "Failed to load assistant status.");
+        }
+
+        if (!isCancelled) {
+          setAssistantStatus(data.localAi || null);
+        }
+      } catch (apiError) {
+        if (!isCancelled) {
+          setAssistantStatus(null);
+          setAssistantStatusError(apiError.message);
+        }
+      }
+    }
+
+    loadAssistantStatus();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [adminFetch, selectedAssistantProfile]);
+
+  function handleAssistantProfileChange(event) {
+    const nextProfile = event.target.value;
+    setSelectedAssistantProfile(nextProfile);
+    writeAssistantModelProfile(nextProfile);
+  }
+
   function confirmAbandonChanges(actionLabel) {
     if (!isDirty) {
       return true;
@@ -701,6 +751,7 @@ export default function AdminPostsPage() {
       const response = await adminFetch(`${apiBaseUrl}/admin/assistant/post-suggestions`, {
         method: "POST",
         body: JSON.stringify({
+          ...withAssistantProfile({}, selectedAssistantProfile),
           postDraft: currentSnapshot
         })
       });
@@ -1364,8 +1415,42 @@ export default function AdminPostsPage() {
                 <p className="upload-status">
                   Ask the local assistant for safe draft suggestions. Nothing is saved until you apply the patch and submit this form.
                 </p>
+                <label>
+                  Assistant Model Profile
+                  <select
+                    onChange={handleAssistantProfileChange}
+                    value={
+                      selectedAssistantProfile ||
+                      assistantStatus?.selectedProfileKey ||
+                      ""
+                    }
+                  >
+                    {(assistantStatus?.modelProfiles || []).map((profile) => (
+                      <option key={profile.key} value={profile.key}>
+                        {`${profile.label} - ${profile.model}${profile.installed ? "" : " (missing)"}`}
+                      </option>
+                    ))}
+                    {!assistantStatus?.modelProfiles?.length ? (
+                      <option value="">Default runtime model</option>
+                    ) : null}
+                  </select>
+                </label>
+                <p className="meta">
+                  {assistantStatus?.message ||
+                    assistantStatusError ||
+                    "Load assistant status to see which model is active."}
+                </p>
                 <div className="admin-form-actions">
-                  <button className="secondary-button" disabled={assistantLoading} onClick={handlePostAssistantSuggest} type="button">
+                  <button
+                    className="secondary-button"
+                    disabled={
+                      assistantLoading ||
+                      !assistantStatus?.available ||
+                      !assistantStatus?.modelInstalled
+                    }
+                    onClick={handlePostAssistantSuggest}
+                    type="button"
+                  >
                     {assistantLoading ? "Asking Assistant..." : "Suggest Draft Patch"}
                   </button>
                   {assistantSuggestion ? (
@@ -1375,6 +1460,7 @@ export default function AdminPostsPage() {
                   ) : null}
                 </div>
                 {assistantError ? <p className="error-text">{assistantError}</p> : null}
+                {assistantStatusError ? <p className="error-text">{assistantStatusError}</p> : null}
                 {assistantMessage ? <p className="success-text">{assistantMessage}</p> : null}
                 {assistantSuggestion ? (
                   <div className="editor-validation-group">

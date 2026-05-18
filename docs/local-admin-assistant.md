@@ -114,6 +114,8 @@ the remote pod through `http://127.0.0.1:11434`.
 LOCAL_AI_ENABLED=true
 LOCAL_AI_BASE_URL=http://127.0.0.1:11434
 LOCAL_AI_MODEL=qwen2.5:7b
+# Optional model profiles exposed in admin selectors.
+# LOCAL_AI_MODEL_PROFILES=[{"key":"fast","label":"Fast","model":"qwen2.5:7b"},{"key":"balanced","label":"Balanced","model":"qwen3:14b"},{"key":"thorough","label":"Thorough","model":"qwen3:30b"}]
 LOCAL_AI_TIMEOUT_MS=120000
 RUNPOD_API_KEY=
 RUNPOD_POD_ID=
@@ -129,7 +131,9 @@ RUNPOD_TUNNEL_REMOTE_PORT=11434
 
 Set `LOCAL_AI_ENABLED=false` to keep the endpoints visible but unavailable in a
 safe, explicit way. Leave `RUNPOD_SSH_HOST` blank if you want the app to
-discover the current SSH host and exposed port from RunPod automatically.
+discover the current SSH host and exposed port from RunPod automatically. The
+assistant selectors in admin only enable a profile when Ollama reports that the
+profile's model is actually installed.
 
 ### Why This Shape
 

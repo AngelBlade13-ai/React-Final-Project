@@ -35,6 +35,7 @@ const config = {
   localAiEnabled: process.env.LOCAL_AI_ENABLED !== "false",
   localAiBaseUrl: process.env.LOCAL_AI_BASE_URL || "http://127.0.0.1:11434",
   localAiModel: process.env.LOCAL_AI_MODEL || "qwen2.5:7b",
+  localAiModelProfilesRaw: process.env.LOCAL_AI_MODEL_PROFILES || "",
   localAiTimeoutMs: Number(process.env.LOCAL_AI_TIMEOUT_MS) || 120000,
   localAiStatusCacheMs: Number(process.env.LOCAL_AI_STATUS_CACHE_MS) || 8000,
   localAiKeepAlive: process.env.LOCAL_AI_KEEP_ALIVE || "45m",

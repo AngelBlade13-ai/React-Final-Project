@@ -80,6 +80,13 @@ const {
 
 const router = express.Router();
 
+function getAssistantModelSelection(req) {
+  return {
+    profile: String(req.query?.profile || req.body?.profile || "").trim(),
+    model: String(req.query?.model || req.body?.model || "").trim()
+  };
+}
+
 router.use(requireAdmin);
 
 router.get("/session", (req, res) => {
@@ -822,8 +829,9 @@ router.get("/insights", async (req, res, next) => {
 
 router.get("/assistant/status", async (req, res, next) => {
   try {
+    const assistantSelection = getAssistantModelSelection(req);
     const [status, remotePod, remoteTunnel] = await Promise.all([
-      getLocalAiStatus(),
+      getLocalAiStatus(assistantSelection),
       getRunpodPodStatus(),
       getRemoteAiTunnelStatus()
     ]);
@@ -957,7 +965,8 @@ router.post("/assistant/remote-ollama/wake", async (req, res) => {
 router.post("/assistant/catalog-review", async (req, res, next) => {
   try {
     const store = await readStore();
-    const review = await reviewCatalogWithLocalAi(store);
+    const assistantSelection = getAssistantModelSelection(req);
+    const review = await reviewCatalogWithLocalAi(store, assistantSelection);
 
     await recordAdminAuditEvent(req, {
       action: "assistant.catalog_reviewed",
@@ -966,6 +975,7 @@ router.post("/assistant/catalog-review", async (req, res, next) => {
       entityLabel: "Local AI catalog review",
       details: {
         model: review.model,
+        selectedProfileKey: assistantSelection.profile || "",
         riskCount: review.risks.length,
         suggestedActionCount: review.suggestedActions.length
       }
@@ -987,9 +997,11 @@ router.post("/assistant/catalog-review", async (req, res, next) => {
 router.post("/assistant/post-suggestions", async (req, res, next) => {
   try {
     const store = await readStore();
+    const assistantSelection = getAssistantModelSelection(req);
     const suggestion = await suggestPostDraftWithLocalAi(
       store,
-      req.body?.postDraft || {}
+      req.body?.postDraft || {},
+      assistantSelection
     );
 
     await recordAdminAuditEvent(req, {
@@ -1000,6 +1012,7 @@ router.post("/assistant/post-suggestions", async (req, res, next) => {
       details: {
         changedFields: Object.keys(suggestion.suggestedPatch || {}),
         model: suggestion.model,
+        selectedProfileKey: assistantSelection.profile || "",
         warningCount: suggestion.warnings.length
       }
     });
@@ -1020,9 +1033,11 @@ router.post("/assistant/post-suggestions", async (req, res, next) => {
 router.post("/assistant/guided-path-suggestions", async (req, res, next) => {
   try {
     const store = await readStore();
+    const assistantSelection = getAssistantModelSelection(req);
     const suggestion = await suggestGuidedPathWithLocalAi(
       store,
-      req.body?.guidedPath || {}
+      req.body?.guidedPath || {},
+      assistantSelection
     );
 
     await recordAdminAuditEvent(req, {
@@ -1035,6 +1050,7 @@ router.post("/assistant/guided-path-suggestions", async (req, res, next) => {
         changedFields: Object.keys(suggestion.suggestedPatch || {}),
         mode: suggestion.mode,
         model: suggestion.model,
+        selectedProfileKey: assistantSelection.profile || "",
         warningCount: suggestion.warnings.length
       }
     });
@@ -1055,12 +1071,14 @@ router.post("/assistant/guided-path-suggestions", async (req, res, next) => {
 router.post("/assistant/guided-path-new-suggestion", async (req, res, next) => {
   try {
     const store = await readStore();
+    const assistantSelection = getAssistantModelSelection(req);
     const existingPaths = Array.isArray(req.body?.guidedPaths)
       ? req.body.guidedPaths
       : store.siteContent?.guidedPaths || [];
     const suggestion = await suggestNewGuidedPathWithLocalAi(
       store,
-      existingPaths
+      existingPaths,
+      assistantSelection
     );
 
     await recordAdminAuditEvent(req, {
@@ -1072,6 +1090,7 @@ router.post("/assistant/guided-path-new-suggestion", async (req, res, next) => {
       details: {
         mode: suggestion.mode,
         model: suggestion.model,
+        selectedProfileKey: assistantSelection.profile || "",
         slug: suggestion.suggestedPatch?.slug || "",
         warningCount: suggestion.warnings.length
       }

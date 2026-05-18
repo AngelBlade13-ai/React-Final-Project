@@ -2,6 +2,12 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import {
+  buildAssistantStatusUrl,
+  readAssistantModelProfile,
+  withAssistantProfile,
+  writeAssistantModelProfile
+} from "../../lib/adminAssistant";
+import {
   formatPercent,
   formatPostDate,
   formatRelativeTime
@@ -125,6 +131,9 @@ export default function AdminInsightsPage() {
     useState(false);
   const [remoteOllamaActionError, setRemoteOllamaActionError] = useState("");
   const [remoteOllamaMessage, setRemoteOllamaMessage] = useState("");
+  const [selectedAssistantProfile, setSelectedAssistantProfile] = useState(() =>
+    readAssistantModelProfile()
+  );
 
   useEffect(() => {
     let isCancelled = false;
@@ -151,7 +160,9 @@ export default function AdminInsightsPage() {
               "Failed to load health snapshot."
             ),
             readJson(
-              adminFetch(`${apiBaseUrl}/admin/assistant/status`),
+              adminFetch(
+                buildAssistantStatusUrl(apiBaseUrl, selectedAssistantProfile)
+              ),
               "Failed to load local assistant status."
             )
           ]);
@@ -212,7 +223,7 @@ export default function AdminInsightsPage() {
     return () => {
       isCancelled = true;
     };
-  }, [adminFetch]);
+  }, [adminFetch, selectedAssistantProfile]);
 
   async function handlePreviewLiveSync() {
     try {
@@ -308,7 +319,9 @@ export default function AdminInsightsPage() {
       setLocalAiError("");
       setRemotePodActionError("");
       const data = await readJson(
-        adminFetch(`${apiBaseUrl}/admin/assistant/status`),
+        adminFetch(
+          buildAssistantStatusUrl(apiBaseUrl, selectedAssistantProfile)
+        ),
         "Failed to load local assistant status."
       );
 
@@ -321,6 +334,12 @@ export default function AdminInsightsPage() {
       setRemoteTunnelStatus(null);
       setLocalAiError(apiError.message);
     }
+  }
+
+  function handleAssistantProfileChange(event) {
+    const nextProfile = event.target.value;
+    setSelectedAssistantProfile(nextProfile);
+    writeAssistantModelProfile(nextProfile);
   }
 
   async function handleRemotePodAction(action) {
@@ -397,7 +416,8 @@ export default function AdminInsightsPage() {
 
       const data = await readJson(
         adminFetch(`${apiBaseUrl}/admin/assistant/catalog-review`, {
-          method: "POST"
+          method: "POST",
+          body: JSON.stringify(withAssistantProfile({}, selectedAssistantProfile))
         }),
         "Failed to run local assistant catalog review."
       );
@@ -818,7 +838,7 @@ export default function AdminInsightsPage() {
             <span>
               {localAiStatus?.modelInstalled
                 ? "Installed"
-                : "Run: ollama pull qwen2.5:7b"}
+                : `Run: ollama pull ${localAiStatus?.model || "qwen2.5:7b"}`}
             </span>
           </article>
           <article className="metric-summary-card">
@@ -856,6 +876,33 @@ export default function AdminInsightsPage() {
                 "Automate the local SSH forward used by LOCAL_AI_BASE_URL."}
             </span>
           </article>
+        </div>
+        <div className="admin-form" style={{ marginTop: "1rem" }}>
+          <label>
+            Assistant Model Profile
+            <select
+              onChange={handleAssistantProfileChange}
+              value={
+                selectedAssistantProfile ||
+                localAiStatus?.selectedProfileKey ||
+                ""
+              }
+            >
+              {(localAiStatus?.modelProfiles || []).map((profile) => (
+                <option key={profile.key} value={profile.key}>
+                  {`${profile.label} - ${profile.model}${profile.installed ? "" : " (missing)"}`}
+                </option>
+              ))}
+              {!localAiStatus?.modelProfiles?.length ? (
+                <option value="">Default runtime model</option>
+              ) : null}
+            </select>
+          </label>
+          <p className="full-span meta">
+            {localAiStatus?.selectedProfileLabel
+              ? `${localAiStatus.selectedProfileLabel} routes assistant requests to ${localAiStatus.model}.`
+              : `Assistant requests currently target ${localAiStatus?.model || "the default Ollama model"}.`}
+          </p>
         </div>
         <div className="archive-intelligence-actions">
           <button

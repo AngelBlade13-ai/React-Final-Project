@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import { useAdminContext } from "../../layouts/AdminLayout";
+import {
+  buildAssistantStatusUrl,
+  readAssistantModelProfile,
+  withAssistantProfile,
+  writeAssistantModelProfile
+} from "../../lib/adminAssistant";
 import { resolveGuidedListeningPaths } from "../../lib/listeningPaths";
 import { apiBaseUrl } from "../../lib/site";
 
@@ -47,6 +53,11 @@ export default function AdminPathsPage() {
   const [guidedPathAssistantError, setGuidedPathAssistantError] = useState("");
   const [guidedPathAssistantMessage, setGuidedPathAssistantMessage] =
     useState("");
+  const [assistantStatus, setAssistantStatus] = useState(null);
+  const [assistantStatusError, setAssistantStatusError] = useState("");
+  const [selectedAssistantProfile, setSelectedAssistantProfile] = useState(() =>
+    readAssistantModelProfile()
+  );
   const [songToAddSlug, setSongToAddSlug] = useState("");
   const [showAdvancedJson, setShowAdvancedJson] = useState(false);
 
@@ -75,6 +86,41 @@ export default function AdminPathsPage() {
       setSelectedGuidedPathSlug(draftPaths[0].slug);
     }
   }, [draftPaths, selectedGuidedPathSlug]);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function loadAssistantStatus() {
+      try {
+        setAssistantStatusError("");
+        const response = await adminFetch(
+          buildAssistantStatusUrl(apiBaseUrl, selectedAssistantProfile)
+        );
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(data.message || "Failed to load assistant status.");
+        }
+
+        if (!isCancelled) {
+          setAssistantStatus(data.localAi || null);
+        }
+      } catch (error) {
+        if (!isCancelled) {
+          setAssistantStatus(null);
+          setAssistantStatusError(
+            error.message || "Failed to load assistant status."
+          );
+        }
+      }
+    }
+
+    loadAssistantStatus();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [adminFetch, selectedAssistantProfile]);
 
   const selectedPath = useMemo(
     () =>
@@ -112,6 +158,12 @@ export default function AdminPathsPage() {
   const availablePostsToAdd = publicPosts.filter(
     (post) => !selectedPostSlugs.includes(post.slug)
   );
+
+  function handleAssistantProfileChange(event) {
+    const nextProfile = event.target.value;
+    setSelectedAssistantProfile(nextProfile);
+    writeAssistantModelProfile(nextProfile);
+  }
 
   function applyGuidedPathsDraft(nextPaths, message) {
     setGuidedPathsDraft(JSON.stringify(nextPaths, null, 2));
@@ -258,7 +310,9 @@ export default function AdminPathsPage() {
       `${apiBaseUrl}/admin/assistant/${endpoint}`,
       {
         method: "POST",
-        body: JSON.stringify(body)
+        body: JSON.stringify(
+          withAssistantProfile(body, selectedAssistantProfile)
+        )
       }
     );
     const data = await response.json();
@@ -681,10 +735,40 @@ export default function AdminPathsPage() {
               ))}
             </select>
           </label>
+          <label>
+            Assistant Model Profile
+            <select
+              onChange={handleAssistantProfileChange}
+              value={
+                selectedAssistantProfile ||
+                assistantStatus?.selectedProfileKey ||
+                ""
+              }
+            >
+              {(assistantStatus?.modelProfiles || []).map((profile) => (
+                <option key={profile.key} value={profile.key}>
+                  {`${profile.label} - ${profile.model}${profile.installed ? "" : " (missing)"}`}
+                </option>
+              ))}
+              {!assistantStatus?.modelProfiles?.length ? (
+                <option value="">Default runtime model</option>
+              ) : null}
+            </select>
+          </label>
+          <p className="full-span meta">
+            {assistantStatus?.message ||
+              assistantStatusError ||
+              "Load assistant status to see which model is active."}
+          </p>
           <div className="admin-form-actions">
             <button
               className="secondary-button"
-              disabled={guidedPathAssistantLoading || !draftPaths.length}
+              disabled={
+                guidedPathAssistantLoading ||
+                !draftPaths.length ||
+                !assistantStatus?.available ||
+                !assistantStatus?.modelInstalled
+              }
               onClick={handleGuidedPathAssistantSuggest}
               type="button"
             >
@@ -694,7 +778,11 @@ export default function AdminPathsPage() {
             </button>
             <button
               className="secondary-button"
-              disabled={guidedPathAssistantLoading}
+              disabled={
+                guidedPathAssistantLoading ||
+                !assistantStatus?.available ||
+                !assistantStatus?.modelInstalled
+              }
               onClick={handleNewGuidedPathSuggestion}
               type="button"
             >
@@ -714,6 +802,9 @@ export default function AdminPathsPage() {
           </div>
           {guidedPathAssistantError ? (
             <p className="error-text full-span">{guidedPathAssistantError}</p>
+          ) : null}
+          {assistantStatusError ? (
+            <p className="error-text full-span">{assistantStatusError}</p>
           ) : null}
           {guidedPathAssistantMessage ? (
             <p className="success-text full-span">
