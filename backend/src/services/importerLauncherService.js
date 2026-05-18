@@ -45,6 +45,8 @@ async function launchImporter(options = {}) {
       "--web",
       "--website-root",
       config.websiteRoot,
+      "--website-posts",
+      config.postsFile,
       "--port",
       String(port),
       "--no-browser"
