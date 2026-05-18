@@ -106,6 +106,7 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
 
       const response = await fetch(url, {
         credentials: "include",
+        cache: options.cache || "no-store",
         ...options,
         headers
       });
