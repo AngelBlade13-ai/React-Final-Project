@@ -341,6 +341,7 @@ async function requestGenerate({
       prompt,
       stream: false,
       format,
+      think: false,
       keep_alive: keepAlive,
       options: generationOptions
     })
