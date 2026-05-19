@@ -33,6 +33,31 @@ function formatPatchValue(value) {
   return String(value || "Clear field");
 }
 
+function mergeGuidedPathSuggestionPatch(path, patch) {
+  const sanitizedPatch = { ...patch };
+  const currentPostSlugs = Array.isArray(path.postSlugs) ? path.postSlugs : [];
+
+  if (Array.isArray(sanitizedPatch.postSlugs)) {
+    sanitizedPatch.postSlugs = sanitizedPatch.postSlugs
+      .map((slug) => String(slug || "").trim())
+      .filter(Boolean);
+
+    if (!sanitizedPatch.postSlugs.length) {
+      delete sanitizedPatch.postSlugs;
+    }
+  }
+
+  if (sanitizedPatch.postSlugs?.length) {
+    return { ...path, ...sanitizedPatch, algorithm: {} };
+  }
+
+  if (currentPostSlugs.length && sanitizedPatch.algorithm) {
+    delete sanitizedPatch.algorithm;
+  }
+
+  return { ...path, ...sanitizedPatch };
+}
+
 export default function AdminPathsPage() {
   useDocumentTitle("Admin Paths");
   const [searchParams] = useSearchParams();
@@ -470,7 +495,9 @@ export default function AdminPathsPage() {
         }
 
         const nextPaths = paths.map((path, index) =>
-          index === selectedIndex ? { ...path, ...patch } : path
+          index === selectedIndex
+            ? mergeGuidedPathSuggestionPatch(path, patch)
+            : path
         );
 
         applyGuidedPathsDraft(nextPaths, "Saving guided path suggestion...");

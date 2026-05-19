@@ -17,3 +17,21 @@ test("normalizeGuidedPathsInput keeps assistant-created paths with slug-only tit
   assert.equal(path.title, "Late Night Identity");
   assert.deepEqual(path.postSlugs, ["what-i-dont-say-out-loud"]);
 });
+
+test("normalizeGuidedPathsInput clears homepage preset when algorithm has scoped rules", () => {
+  const [path] = normalizeGuidedPathsInput([
+    {
+      slug: "proto-origins",
+      title: "Proto Origins",
+      algorithm: {
+        preset: "homepage",
+        collectionSlug: "fractureverse",
+        maxItems: 8,
+        sort: "curated"
+      }
+    }
+  ]);
+
+  assert.equal(path.algorithm.preset, "");
+  assert.equal(path.algorithm.collectionSlug, "fractureverse");
+});

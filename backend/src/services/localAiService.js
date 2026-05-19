@@ -1381,6 +1381,33 @@ function getHomepagePathCandidatePosts(posts = []) {
     });
 }
 
+function normalizePathSignal(value = "") {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function postMatchesPathHint(post = {}, themeHint = "") {
+  const normalizedHint = normalizePathSignal(themeHint);
+
+  if (!normalizedHint) {
+    return false;
+  }
+
+  const values = [
+    post.worldLayer,
+    post.subCategory,
+    ...(Array.isArray(post.collectionSlugs) ? post.collectionSlugs : []),
+    ...(Array.isArray(post.themeTags) ? post.themeTags : [])
+  ].map(normalizePathSignal);
+
+  return values.some(
+    (value) => value === normalizedHint || value.includes(normalizedHint)
+  );
+}
+
 function getGuidedPathCandidatePosts(posts = [], guidedPath = {}) {
   const algorithm =
     guidedPath?.algorithm && typeof guidedPath.algorithm === "object"
@@ -1407,17 +1434,18 @@ function getGuidedPathCandidatePosts(posts = [], guidedPath = {}) {
         .map((layer) => String(layer || "").trim())
         .filter(Boolean)
     : [];
-  const hasExplicitScope =
-    preset ||
+  const hasScopedCriteria =
     collectionSlug ||
     collectionSlugs.length ||
     themeHint ||
     sectionKeys.length ||
     themeTags.length ||
     worldLayers.length;
+  const hasExplicitScope =
+    (preset && !hasScopedCriteria) || hasScopedCriteria;
   const publicPosts = getPublicPathPosts(posts);
 
-  if (preset === "homepage") {
+  if (preset === "homepage" && !hasScopedCriteria) {
     return getHomepagePathCandidatePosts(posts);
   }
 
@@ -1429,12 +1457,21 @@ function getGuidedPathCandidatePosts(posts = [], guidedPath = {}) {
     const postCollections = Array.isArray(post.collectionSlugs)
       ? post.collectionSlugs
       : [];
+    const themeHintConflictsWithCollectionScope =
+      themeHint &&
+      (collectionSlug || collectionSlugs.length) &&
+      ![collectionSlug, ...collectionSlugs]
+        .map(normalizePathSignal)
+        .includes(normalizePathSignal(themeHint));
 
     return (
-      (collectionSlug && postCollections.includes(collectionSlug)) ||
-      (collectionSlugs.length &&
+      (!themeHintConflictsWithCollectionScope &&
+        collectionSlug &&
+        postCollections.includes(collectionSlug)) ||
+      (!themeHintConflictsWithCollectionScope &&
+        collectionSlugs.length &&
         postCollections.some((slug) => collectionSlugs.includes(slug))) ||
-      (themeHint && postCollections.includes(themeHint)) ||
+      postMatchesPathHint(post, themeHint) ||
       (sectionKeys.length &&
         sectionKeys.includes(String(post.subCategory || "").trim())) ||
       (themeTags.length &&
@@ -1537,7 +1574,22 @@ function normalizeGuidedPathAlgorithmPatch(value = {}, collections = []) {
     patch.sort = sort;
   }
 
+  if (guidedPathAlgorithmHasScope(patch) && patch.preset === "homepage") {
+    delete patch.preset;
+  }
+
   return patch;
+}
+
+function guidedPathAlgorithmHasScope(algorithm = {}) {
+  return Boolean(
+    String(algorithm.collectionSlug || "").trim() ||
+      (Array.isArray(algorithm.collectionSlugs) &&
+        algorithm.collectionSlugs.length) ||
+      (Array.isArray(algorithm.sectionKeys) && algorithm.sectionKeys.length) ||
+      (Array.isArray(algorithm.themeTags) && algorithm.themeTags.length) ||
+      (Array.isArray(algorithm.worldLayers) && algorithm.worldLayers.length)
+  );
 }
 
 function getWorldSignalMap() {
@@ -1634,6 +1686,9 @@ function normalizeGuidedPathSuggestionResult(
   const pathIsAlgorithmBacked =
     Boolean(String(currentAlgorithm.collectionSlug || "").trim()) &&
     !(Array.isArray(guidedPath?.postSlugs) && guidedPath.postSlugs.length);
+  const currentHasManualOrder =
+    Array.isArray(guidedPath?.postSlugs) && guidedPath.postSlugs.length > 0;
+  const warnings = normalizeTextList(value.warnings, 5);
 
   if (typeof rawPatch.title === "string" && rawPatch.title.trim()) {
     suggestedPatch.title = rawPatch.title.trim();
@@ -1656,13 +1711,21 @@ function normalizeGuidedPathSuggestionResult(
   }
 
   if (!pathIsAlgorithmBacked && Array.isArray(rawPatch.postSlugs)) {
-    suggestedPatch.postSlugs = [
+    const normalizedPostSlugs = [
       ...new Set(
         rawPatch.postSlugs
           .map((slug) => String(slug || "").trim())
           .filter((slug) => postSlugSet.has(slug))
       )
     ].slice(0, 25);
+
+    if (normalizedPostSlugs.length) {
+      suggestedPatch.postSlugs = normalizedPostSlugs;
+    } else if (currentHasManualOrder) {
+      warnings.push(
+        "The assistant did not provide usable replacement songs, so the existing manual order was preserved."
+      );
+    }
   }
 
   if (rawPatch.algorithm && typeof rawPatch.algorithm === "object") {
@@ -1671,7 +1734,11 @@ function normalizeGuidedPathSuggestionResult(
       collections
     );
 
-    if (Object.keys(algorithmPatch).length) {
+    if (Object.keys(algorithmPatch).length && currentHasManualOrder) {
+      warnings.push(
+        "The assistant tried to switch this manual path to rules without replacement songs, so the existing manual order was preserved."
+      );
+    } else if (Object.keys(algorithmPatch).length) {
       suggestedPatch.algorithm = algorithmPatch;
     }
   }
@@ -1682,7 +1749,7 @@ function normalizeGuidedPathSuggestionResult(
       ? String(value.mode)
       : "manual",
     rationale: normalizeTextList(value.rationale, 6),
-    warnings: normalizeTextList(value.warnings, 5),
+    warnings: [...new Set(warnings)].slice(0, 5),
     suggestedPatch
   };
 }
@@ -2270,11 +2337,14 @@ async function suggestGuidedPathWithLocalAi(
     "Return only compact JSON for one guided listening path in a music archive.",
     "Improve path membership and rules for the currentPath.",
     "Use exact post slugs only from publicPosts. Do not invent slugs.",
+    "Never clear currentPath.postSlugs unless you return a non-empty replacement postSlugs list.",
+    "Only keep algorithm.preset=homepage when the path is actually a broad newcomer/homepage route and has no specific collection, world, section, or theme scope.",
+    "If currentPath.themeHint is a specific story/world signal such as proto, fractureverse, eldoria, villain, identity, or princess, prefer a precise manual postSlugs sequence over a broad homepage algorithm.",
     "If currentPath uses algorithm.preset=homepage, keep the path broad, newcomer-friendly, and representative of the site's actual public entry points.",
     "For homepage-style paths, do not rename or frame the path as a single-world route unless the selected posts genuinely justify that scope.",
     "If the path needs a carefully curated sequence, use suggestedPatch.postSlugs.",
     "If the path should stay dynamic, use suggestedPatch.algorithm with only provided collection slugs, release statuses, and sort values.",
-    "If currentPath already has algorithm.collectionSlug and no postSlugs, preserve the algorithm approach and do not return postSlugs.",
+    "If currentPath already has algorithm.collectionSlug and no postSlugs, preserve the algorithm approach only when that collection still matches the path title and themeHint; otherwise return manual postSlugs.",
     "Do not include unrelated or merely adjacent songs. Prefer precision over count.",
     'Shape: {"summary":"one sentence","mode":"manual|algorithm|hybrid","suggestedPatch":{"title":"","eyebrow":"","intro":"","moodNote":"","themeHint":"","postSlugs":[""],"algorithm":{}},"rationale":["reason"],"warnings":["warning"]}.',
     "Omit patch fields that should not change. Use at most 12 postSlugs, 5 rationale items, and 3 warnings.",
@@ -2375,6 +2445,7 @@ module.exports = {
     normalizePostSuggestionResult,
     normalizeAssistantFindingDecisions,
     normalizeFindingReviewResult,
+    normalizeGuidedPathSuggestionResult,
     normalizeNewGuidedPathSuggestionResult,
     resolveRequestedModel,
     summarizePostForAssistant,

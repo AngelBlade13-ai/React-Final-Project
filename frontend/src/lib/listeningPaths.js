@@ -219,6 +219,51 @@ function postMatchesAlgorithm(post, algorithm = {}) {
   return algorithm.match === "all" ? criteria.every(Boolean) : criteria.some(Boolean);
 }
 
+function algorithmHasScopedCriteria(algorithm = {}) {
+  return Boolean(
+    String(algorithm.collectionSlug || "").trim() ||
+      normalizeList(algorithm.collectionSlugs).length ||
+      normalizeList(algorithm.sectionKeys || algorithm.sectionKey).length ||
+      normalizeList(algorithm.themeTags).length ||
+      normalizeList(algorithm.worldLayers || algorithm.worldLayer).length
+  );
+}
+
+function normalizeSignal(value = "") {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function postMatchesThemeHint(post = {}, themeHint = "") {
+  const normalizedHint = normalizeSignal(themeHint);
+
+  if (!normalizedHint) {
+    return false;
+  }
+
+  const values = [
+    post.worldLayer,
+    post.subCategory,
+    ...(Array.isArray(post.collectionSlugs) ? post.collectionSlugs : []),
+    ...(Array.isArray(post.themeTags) ? post.themeTags : [])
+  ].map(normalizeSignal);
+
+  return values.some((value) => value === normalizedHint || value.includes(normalizedHint));
+}
+
+function themeHintConflictsWithCollectionScope(themeHint = "", collectionSlugs = []) {
+  const normalizedHint = normalizeSignal(themeHint);
+
+  if (!normalizedHint || !collectionSlugs.length) {
+    return false;
+  }
+
+  return !collectionSlugs.map(normalizeSignal).includes(normalizedHint);
+}
+
 function sortPathPosts(posts, algorithm = {}) {
   if (algorithm.sort === "fractureverse") {
     return sortFractureversePosts(posts);
@@ -233,20 +278,41 @@ function sortPathPosts(posts, algorithm = {}) {
 
 function resolveAlgorithmPath(path, posts, collectionsBySlug) {
   const algorithm = path.algorithm || {};
+  const themeHint = String(path.themeHint || "").trim();
+  const hasScopedCriteria = algorithmHasScopedCriteria(algorithm);
 
-  if (algorithm.preset === "homepage") {
+  if (algorithm.preset === "homepage" && !hasScopedCriteria && !themeHint) {
     return getHomepageCuratedPosts(posts).slice(0, Number(algorithm.maxItems) || 5);
   }
 
   const publicPosts = getPublicCollectionPosts(posts);
   const collectionSlug = String(algorithm.collectionSlug || "").trim();
-  const basePosts = collectionSlug ? filterCollectionPosts(publicPosts, collectionSlug, collectionsBySlug) : publicPosts;
+  const collectionSlugs = [
+    collectionSlug,
+    ...normalizeList(algorithm.collectionSlugs)
+  ].filter(Boolean);
+  const collectionScopeConflicts = themeHintConflictsWithCollectionScope(
+    themeHint,
+    collectionSlugs
+  );
+  const shouldApplyThemeHintScope =
+    themeHint && (!hasScopedCriteria || collectionScopeConflicts);
+  const effectiveAlgorithm = collectionScopeConflicts
+    ? { ...algorithm, collectionSlug: "", collectionSlugs: [] }
+    : algorithm;
+  const basePosts =
+    collectionSlug && !collectionScopeConflicts
+      ? filterCollectionPosts(publicPosts, collectionSlug, collectionsBySlug)
+      : publicPosts;
   const releaseStatuses = normalizeList(algorithm.releaseStatuses || algorithm.releaseStatus);
   const matchingPosts = basePosts.filter((post) => {
-    const matchesAlgorithm = postMatchesAlgorithm(post, algorithm);
+    const matchesAlgorithm = postMatchesAlgorithm(post, effectiveAlgorithm);
     const matchesStatus = releaseStatuses.length ? releaseStatuses.includes(getReleaseStatus(post)) : true;
+    const matchesThemeHint = shouldApplyThemeHintScope
+      ? postMatchesThemeHint(post, themeHint)
+      : true;
 
-    return matchesAlgorithm && matchesStatus;
+    return matchesAlgorithm && matchesStatus && matchesThemeHint;
   });
   const maxItems = Number(algorithm.maxItems) || 0;
   const sortedPosts = sortPathPosts(matchingPosts, algorithm);

@@ -14,6 +14,7 @@ const {
     isStrongContentPatch,
     normalizeAssistantFindingDecisions,
     normalizeFindingReviewResult,
+    normalizeGuidedPathSuggestionResult,
     normalizeNewGuidedPathSuggestionResult,
     normalizePostSuggestionResult,
     summarizePostForAssistant,
@@ -442,6 +443,53 @@ test("getGuidedPathCandidatePosts scopes homepage preset to public homepage-elig
   );
 });
 
+test("getGuidedPathCandidatePosts lets theme hint override stale homepage and collection scope", () => {
+  const posts = [
+    {
+      slug: "homepage-fractureverse",
+      published: true,
+      isPubliclyVisible: true,
+      isHomepageEligible: true,
+      collectionSlugs: ["fractureverse"],
+      releaseStatus: "canon",
+      worldLayer: "fractureverse"
+    },
+    {
+      slug: "proto-eldoria",
+      published: true,
+      isPubliclyVisible: true,
+      isHomepageEligible: false,
+      collectionSlugs: ["standalone"],
+      releaseStatus: "canon",
+      worldLayer: "Proto-Eldoria"
+    },
+    {
+      slug: "proto-tagged",
+      published: true,
+      isPubliclyVisible: true,
+      isHomepageEligible: false,
+      collectionSlugs: ["standalone"],
+      releaseStatus: "canon",
+      themeTags: ["proto"]
+    }
+  ];
+
+  const candidates = getGuidedPathCandidatePosts(posts, {
+    slug: "proto-origins",
+    themeHint: "proto",
+    algorithm: {
+      preset: "homepage",
+      collectionSlug: "fractureverse",
+      maxItems: 8
+    }
+  });
+
+  assert.deepEqual(
+    candidates.map((post) => post.slug),
+    ["proto-eldoria", "proto-tagged"]
+  );
+});
+
 test("titleFitsSuggestedMembership rejects world titles that do not match selected posts", () => {
   const posts = [
     {
@@ -507,6 +555,53 @@ test("normalizeNewGuidedPathSuggestionResult replaces mismatched world titles wi
   assert.ok(
     result.warnings.includes(
       "The assistant title was missing or unusable, so a title was generated from the slug."
+    )
+  );
+});
+
+test("normalizeGuidedPathSuggestionResult preserves manual songs when assistant returns empty membership", () => {
+  const posts = [
+    "you-remember-me-now",
+    "cauterize-the-world",
+    "the-cost-i-couldnt-pay",
+    "what-the-world-made-of-me"
+  ].map((slug) => ({
+    slug,
+    published: true,
+    isPubliclyVisible: true,
+    releaseStatus: "canon"
+  }));
+  const result = normalizeGuidedPathSuggestionResult(
+    {
+      suggestedPatch: {
+        title: "Proto Origins",
+        postSlugs: [],
+        algorithm: {
+          preset: "homepage",
+          maxItems: 8,
+          sort: "curated"
+        }
+      }
+    },
+    { posts, collections: [] },
+    {
+      slug: "proto-origins",
+      title: "Proto Origins",
+      postSlugs: [
+        "you-remember-me-now",
+        "cauterize-the-world",
+        "the-cost-i-couldnt-pay",
+        "what-the-world-made-of-me"
+      ]
+    }
+  );
+
+  assert.equal(result.suggestedPatch.title, "Proto Origins");
+  assert.equal("postSlugs" in result.suggestedPatch, false);
+  assert.equal("algorithm" in result.suggestedPatch, false);
+  assert.ok(
+    result.warnings.includes(
+      "The assistant did not provide usable replacement songs, so the existing manual order was preserved."
     )
   );
 });

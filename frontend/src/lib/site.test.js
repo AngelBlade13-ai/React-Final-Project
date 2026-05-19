@@ -192,6 +192,87 @@ describe("resolveGuidedListeningPath", () => {
     ]);
   });
 
+  it("does not let a stale homepage preset override scoped algorithm rules", () => {
+    const path = resolveGuidedListeningPath(
+      "scoped-rule-test",
+      catalogFixture.posts,
+      catalogFixture.collections,
+      {
+        guidedPaths: [
+          {
+            slug: "scoped-rule-test",
+            title: "Scoped Rule Test",
+            intro: "A scoped path with a stale homepage preset.",
+            algorithm: {
+              preset: "homepage",
+              collectionSlug: "fractureverse",
+              releaseStatuses: ["canon"],
+              sort: "fractureverse"
+            }
+          }
+        ]
+      }
+    );
+
+    expect(path.posts.map((post) => post.slug)).toEqual([
+      "the-one-you-used-to-be-reimagined",
+      "still-breathing-in-a-dying-world-reimagined",
+      "shattered-trust-reimagined",
+      "you-were-better-before-you-saved-the-world-reimagined",
+      "we-were-never-meant-to-survive-reimagined-duet"
+    ]);
+  });
+
+  it("uses theme hint as a fallback when stale rules conflict with the path scope", () => {
+    const posts = [
+      {
+        slug: "homepage-fractureverse",
+        title: "Homepage Fractureverse",
+        collectionSlugs: ["fractureverse"],
+        releaseStatus: "canon",
+        isHomepageEligible: true,
+        isPubliclyVisible: true,
+        worldLayer: "fractureverse"
+      },
+      {
+        slug: "proto-eldoria",
+        title: "Proto Eldoria",
+        collectionSlugs: ["standalone"],
+        releaseStatus: "canon",
+        isPubliclyVisible: true,
+        worldLayer: "Proto-Eldoria"
+      },
+      {
+        slug: "proto-tagged",
+        title: "Proto Tagged",
+        collectionSlugs: ["standalone"],
+        releaseStatus: "canon",
+        isPubliclyVisible: true,
+        themeTags: ["proto"]
+      }
+    ];
+    const path = resolveGuidedListeningPath("proto-origins", posts, [], {
+      guidedPaths: [
+        {
+          slug: "proto-origins",
+          title: "Proto Origins",
+          themeHint: "proto",
+          algorithm: {
+            preset: "homepage",
+            collectionSlug: "fractureverse",
+            maxItems: 8,
+            sort: "curated"
+          }
+        }
+      ]
+    });
+
+    expect(path.posts.map((post) => post.slug)).toEqual([
+      "proto-eldoria",
+      "proto-tagged"
+    ]);
+  });
+
   it("keeps configured admin paths visible even when no songs resolve", () => {
     const paths = resolveGuidedListeningPaths([], [], {
       guidedPaths: [

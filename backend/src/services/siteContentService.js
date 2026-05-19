@@ -116,7 +116,7 @@ function normalizeGuidedPathAlgorithm(input = {}, existingAlgorithm = {}) {
       ? existingAlgorithm
       : {};
 
-  return {
+  const normalized = {
     preset: String(algorithm.preset || existing.preset || "").trim(),
     collectionSlug: slugify(
       algorithm.collectionSlug || existing.collectionSlug || ""
@@ -143,6 +143,20 @@ function normalizeGuidedPathAlgorithm(input = {}, existingAlgorithm = {}) {
     ),
     sort: String(algorithm.sort || existing.sort || "curated").trim() || "curated"
   };
+
+  const hasScopedCriteria = Boolean(
+    normalized.collectionSlug ||
+      normalized.collectionSlugs.length ||
+      normalized.sectionKeys.length ||
+      normalized.themeTags.length ||
+      normalized.worldLayers.length
+  );
+
+  if (hasScopedCriteria && normalized.preset === "homepage") {
+    normalized.preset = "";
+  }
+
+  return normalized;
 }
 
 function normalizeGuidedPathInput(input = {}, existingPath = {}) {
