@@ -132,7 +132,10 @@ function getConfiguredPaths(siteContent = {}) {
     ? siteContent.guidedPaths.map(normalizePathConfig).filter((path) => path.slug && path.title)
     : [];
 
-  return configuredPaths.length ? configuredPaths : DEFAULT_GUIDED_PATHS;
+  return {
+    paths: configuredPaths.length ? configuredPaths : DEFAULT_GUIDED_PATHS,
+    usesConfiguredPaths: configuredPaths.length > 0
+  };
 }
 
 function dedupeBySlug(posts = []) {
@@ -264,8 +267,9 @@ function resolvePathPosts(path, posts, collectionsBySlug) {
 
 export function resolveGuidedListeningPaths(posts = [], collections = [], siteContent = {}) {
   const collectionsBySlug = buildCollectionMap(collections);
+  const { paths, usesConfiguredPaths } = getConfiguredPaths(siteContent);
 
-  return getConfiguredPaths(siteContent)
+  return paths
     .map(normalizePathConfig)
     .map((path) => {
       const resolvedPosts = dedupeBySlug(resolvePathPosts(path, posts, collectionsBySlug));
@@ -276,7 +280,7 @@ export function resolveGuidedListeningPaths(posts = [], collections = [], siteCo
         count: resolvedPosts.length
       };
     })
-    .filter((path) => path.posts.length > 0);
+    .filter((path) => usesConfiguredPaths || path.posts.length > 0);
 }
 
 export function resolveGuidedListeningPath(pathSlug, posts = [], collections = [], siteContent = {}) {

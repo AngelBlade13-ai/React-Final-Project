@@ -223,6 +223,15 @@ export default function GuidedPathPage({
               </div>
             </section>
           </>
+        ) : path ? (
+          <section className="intro-card homepage-panel empty-state-card">
+            <p className="eyebrow">Path Needs Songs</p>
+            <h3>This guided path is saved, but no public songs resolve yet.</h3>
+            <p>
+              The path exists in the admin configuration. Add manual songs or
+              adjust its rules to make it playable.
+            </p>
+          </section>
         ) : loading ? (
           <section className="intro-card homepage-panel empty-state-card">
             <p className="eyebrow">Loading Path</p>

@@ -184,6 +184,21 @@ export default function AdminPathsPage() {
     setGuidedPathAssistantMessage(message);
   }
 
+  async function saveGuidedPaths(nextPaths, successMessage = "") {
+    const saved = await saveSiteSettingsDraft({
+      ...siteSettingsForm,
+      guidedPaths: nextPaths
+    });
+
+    if (!saved) {
+      throw new Error("Guided path save failed.");
+    }
+
+    if (successMessage) {
+      setGuidedPathAssistantMessage(successMessage);
+    }
+  }
+
   function updateSelectedPath(updater, message = "Path draft updated.") {
     if (!selectedPath) {
       setGuidedPathsError("Select a path before editing it.");
@@ -392,7 +407,7 @@ export default function AdminPathsPage() {
     }
   }
 
-  function handleApplyGuidedPathSuggestion() {
+  async function handleApplyGuidedPathSuggestion() {
     const patch = guidedPathSuggestion?.suggestedPatch || {};
     const patchKeys = Object.keys(patch);
 
@@ -417,9 +432,12 @@ export default function AdminPathsPage() {
           throw new Error("The suggested path slug already exists.");
         }
 
-        applyGuidedPathsDraft(
-          [...paths, patch],
-          "Added the new guided path to the unsaved site settings draft."
+        const nextPaths = [...paths, patch];
+
+        applyGuidedPathsDraft(nextPaths, "Saving new guided path...");
+        await saveGuidedPaths(
+          nextPaths,
+          "Added and saved the new guided path."
         );
         setSelectedGuidedPathSlug(nextSlug);
       } else {
@@ -433,11 +451,14 @@ export default function AdminPathsPage() {
           );
         }
 
-        applyGuidedPathsDraft(
-          paths.map((path, index) =>
-            index === selectedIndex ? { ...path, ...patch } : path
-          ),
-          `Applied ${patchKeys.length} guided path suggestion${patchKeys.length === 1 ? "" : "s"} to the draft.`
+        const nextPaths = paths.map((path, index) =>
+          index === selectedIndex ? { ...path, ...patch } : path
+        );
+
+        applyGuidedPathsDraft(nextPaths, "Saving guided path suggestion...");
+        await saveGuidedPaths(
+          nextPaths,
+          `Applied and saved ${patchKeys.length} guided path suggestion${patchKeys.length === 1 ? "" : "s"}.`
         );
       }
 
@@ -803,12 +824,15 @@ export default function AdminPathsPage() {
             {guidedPathSuggestion ? (
               <button
                 className="hero-link"
+                disabled={savingSiteSettings}
                 onClick={handleApplyGuidedPathSuggestion}
                 type="button"
               >
-                {guidedPathSuggestion.isNewPath
-                  ? "Add New Path"
-                  : "Apply Path Suggestion"}
+                {savingSiteSettings
+                  ? "Saving..."
+                  : guidedPathSuggestion.isNewPath
+                    ? "Add & Save New Path"
+                    : "Apply & Save Path Suggestion"}
               </button>
             ) : null}
           </div>

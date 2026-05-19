@@ -595,8 +595,10 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
           : emptySiteSettings.guidedPaths
       });
       setSiteSettingsMessage("Site settings saved successfully.");
+      return true;
     } catch (apiError) {
       setError(apiError.message);
+      return false;
     } finally {
       setSavingSiteSettings(false);
     }

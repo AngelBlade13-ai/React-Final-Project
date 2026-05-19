@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { resolveGuidedListeningPath } from "./listeningPaths";
+import {
+  resolveGuidedListeningPath,
+  resolveGuidedListeningPaths
+} from "./listeningPaths";
 import {
   getPrimaryCollectionSurfacePosts,
   getReleaseStatus,
@@ -187,5 +190,26 @@ describe("resolveGuidedListeningPath", () => {
       "you-wanted-a-hero",
       "the-hands-that-shield"
     ]);
+  });
+
+  it("keeps configured admin paths visible even when no songs resolve", () => {
+    const paths = resolveGuidedListeningPaths([], [], {
+      guidedPaths: [
+        {
+          slug: "empty-admin-path",
+          title: "Empty Admin Path",
+          intro: "Saved but not populated yet.",
+          postSlugs: ["missing-song"]
+        }
+      ]
+    });
+
+    expect(paths).toHaveLength(1);
+    expect(paths[0].slug).toBe("empty-admin-path");
+    expect(paths[0].count).toBe(0);
+  });
+
+  it("still hides empty fallback paths when no admin paths are configured", () => {
+    expect(resolveGuidedListeningPaths([], [], {})).toEqual([]);
   });
 });
