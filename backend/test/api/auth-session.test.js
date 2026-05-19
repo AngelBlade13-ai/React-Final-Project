@@ -72,6 +72,38 @@ test("admin login sets a cookie-backed session that the admin shell endpoint val
   assert.equal(afterLogoutResponse.status, 401);
 });
 
+test("admin activity refreshes the cookie-backed admin session", async (t) => {
+  const context = await createApiTestContext();
+  t.after(async () => {
+    await context.close();
+  });
+
+  const loginResponse = await context.agent
+    .post("/api/admin/login")
+    .set(context.mutationHeaders)
+    .send({
+      email: "admin@example.com",
+      password: "Admin123!"
+    });
+
+  assert.equal(loginResponse.status, 200);
+  assert.match(
+    loginResponse.headers["set-cookie"].join(";"),
+    /suno_blog_admin_session=/
+  );
+
+  const sessionResponse = await context.agent.get("/api/admin/session");
+
+  assert.equal(sessionResponse.status, 200);
+  assert.equal(sessionResponse.body.admin.role, "admin");
+  assert.equal(sessionResponse.body.admin.email, "admin@example.com");
+  assert.ok(Array.isArray(sessionResponse.headers["set-cookie"]));
+  assert.match(
+    sessionResponse.headers["set-cookie"].join(";"),
+    /suno_blog_admin_session=/
+  );
+});
+
 test("public posts smoke endpoint returns the seeded release catalog", async (t) => {
   const context = await createApiTestContext();
   t.after(async () => {

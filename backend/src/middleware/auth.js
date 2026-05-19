@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 const config = require("../config");
+const { issueAdminToken } = require("../services/authUserService");
 const {
   ADMIN_SESSION_COOKIE,
   USER_SESSION_COOKIE,
@@ -57,6 +58,17 @@ function clearCookieForSource(res, source) {
   }
 }
 
+function refreshAdminCookieForSource(res, source, payload) {
+  if (source !== "admin_cookie" || payload?.role !== "admin") {
+    return;
+  }
+
+  const {
+    setAdminSessionCookie
+  } = require("../services/sessionCookieService");
+  setAdminSessionCookie(res, issueAdminToken());
+}
+
 function authenticate(req, res, next) {
   const { token, source } = getTokenFromRequest(req);
 
@@ -67,6 +79,7 @@ function authenticate(req, res, next) {
   try {
     const payload = jwt.verify(token, config.jwtSecret);
     req.auth = payload;
+    refreshAdminCookieForSource(res, source, payload);
     return next();
   } catch {
     clearCookieForSource(res, source);
@@ -90,6 +103,7 @@ function requireAdmin(req, res, next) {
 
     req.admin = payload;
     req.auth = payload;
+    refreshAdminCookieForSource(res, source, payload);
     return next();
   } catch {
     clearCookieForSource(res, source);
@@ -113,6 +127,7 @@ function requireUser(req, res, next) {
 
     req.user = payload;
     req.auth = payload;
+    refreshAdminCookieForSource(res, source, payload);
     return next();
   } catch {
     clearCookieForSource(res, source);
