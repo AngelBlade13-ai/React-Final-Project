@@ -1185,6 +1185,11 @@ export default function AdminInsightsPage() {
                 {`${localAiReview.suppressedFindingCount} finding${localAiReview.suppressedFindingCount === 1 ? "" : "s"} hidden by prior assistant review or dismissal.`}
               </p>
             ) : null}
+            {localAiReview.contradictedFindingCount ? (
+              <p className="meta">
+                {`${localAiReview.contradictedFindingCount} finding${localAiReview.contradictedFindingCount === 1 ? "" : "s"} hidden because the current post data already contradicted the claim.`}
+              </p>
+            ) : null}
             {localAiReview.findings?.length ? (
               <>
                 <p className="note-label">Actionable Findings</p>

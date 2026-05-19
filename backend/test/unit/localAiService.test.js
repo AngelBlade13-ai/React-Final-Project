@@ -4,6 +4,7 @@ const {
   __test: {
     annotateCatalogFindingsWithMemory,
     buildCatalogFindingFingerprint,
+    findingIsContradictedByCurrentStore,
     getGuidedPathCandidatePosts,
     hasUsableReviewResult,
     isAcceptableExcerpt,
@@ -252,6 +253,69 @@ test("catalog review memory suppresses rejected post findings until target chang
   assert.equal(suppressed.findings.length, 0);
   assert.equal(suppressed.suppressedFindingCount, 1);
   assert.equal(changed.findings.length, 1);
+});
+
+test("catalog review fact-check suppresses findings contradicted by current post fields", () => {
+  const store = {
+    posts: [
+      {
+        slug: "you-wanted-a-hero",
+        subCategory: "villain",
+        worldLayer: "villain",
+        themeTags: ["villain", "righteous-rage"]
+      }
+    ],
+    siteContent: {}
+  };
+  const finding = {
+    severity: "warning",
+    targetType: "post",
+    targetSlug: "you-wanted-a-hero",
+    field: "worldLayer",
+    issue: "worldLayer is empty despite subCategory being 'villain'",
+    recommendedAction: "Set worldLayer to 'villain' for consistency"
+  };
+  const result = annotateCatalogFindingsWithMemory(
+    { findings: [finding] },
+    store
+  );
+
+  assert.equal(findingIsContradictedByCurrentStore(finding, store), true);
+  assert.equal(result.findings.length, 0);
+  assert.equal(result.contradictedFindingCount, 1);
+});
+
+test("catalog review fact-check keeps array findings unless all quoted values already exist", () => {
+  const store = {
+    posts: [
+      {
+        slug: "you-wanted-a-hero",
+        themeTags: ["villain"]
+      }
+    ],
+    siteContent: {}
+  };
+  const missingSpecificTag = {
+    severity: "warning",
+    targetType: "post",
+    targetSlug: "you-wanted-a-hero",
+    field: "themeTags",
+    issue: "Post lacks corresponding themeTags",
+    recommendedAction: "Add themeTags 'villain' and 'justified monster'"
+  };
+  const alreadySatisfied = {
+    ...missingSpecificTag,
+    recommendedAction: "Add themeTags 'villain'"
+  };
+
+  assert.equal(
+    findingIsContradictedByCurrentStore(missingSpecificTag, store),
+    false
+  );
+  assert.equal(
+    findingIsContradictedByCurrentStore(alreadySatisfied, store),
+    true
+  );
 });
 
 test("normalizeFindingReviewResult rejects accepted verdicts without usable patches", () => {

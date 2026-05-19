@@ -573,13 +573,102 @@ function findLatestFindingDecision(decisions = [], fingerprint = "") {
   return null;
 }
 
+function extractQuotedTokens(value = "") {
+  return [
+    ...String(value || "").matchAll(/["'`]([^"'`]+)["'`]/g)
+  ].map((match) => String(match[1] || "").trim()).filter(Boolean);
+}
+
+function findingClaimsMissingValue(finding = {}) {
+  return /\b(empty|missing|blank|unset|lacks?|without|no)\b/i.test(
+    `${finding.issue || ""} ${finding.recommendedAction || ""}`
+  );
+}
+
+function getPostFieldValue(post = {}, field = "") {
+  const normalizedField = String(field || "").trim();
+
+  if (!normalizedField) {
+    return undefined;
+  }
+
+  return Object.prototype.hasOwnProperty.call(post, normalizedField)
+    ? post[normalizedField]
+    : undefined;
+}
+
+function fieldHasValue(value) {
+  if (Array.isArray(value)) {
+    return value.map((entry) => String(entry || "").trim()).some(Boolean);
+  }
+
+  return String(value || "").trim().length > 0;
+}
+
+function quotedTokensMatchField(value, tokens = []) {
+  if (!tokens.length) {
+    return false;
+  }
+
+  if (Array.isArray(value)) {
+    const currentValues = new Set(
+      value.map((entry) => normalizeComparableText(entry)).filter(Boolean)
+    );
+
+    return tokens.every((token) =>
+      currentValues.has(normalizeComparableText(token))
+    );
+  }
+
+  return tokens.some(
+    (token) => normalizeComparableText(value) === normalizeComparableText(token)
+  );
+}
+
+function findingIsContradictedByCurrentStore(finding = {}, store = {}) {
+  if (String(finding.targetType || "").toLowerCase() !== "post") {
+    return false;
+  }
+
+  const post = findPostBySlug(store, finding.targetSlug);
+  const currentValue = getPostFieldValue(post, finding.field);
+
+  if (currentValue === undefined) {
+    return false;
+  }
+
+  const quotedTokens = extractQuotedTokens(
+    `${finding.issue || ""} ${finding.recommendedAction || ""}`
+  );
+
+  if (quotedTokensMatchField(currentValue, quotedTokens)) {
+    return true;
+  }
+
+  if (
+    findingClaimsMissingValue(finding) &&
+    fieldHasValue(currentValue) &&
+    !Array.isArray(currentValue)
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
 function annotateCatalogFindingsWithMemory(review = {}, store = {}) {
   const decisions = normalizeAssistantFindingDecisions(
     store.siteContent?.assistantFindingDecisions
   );
   let suppressedFindingCount = 0;
+  let contradictedFindingCount = 0;
   const findings = (Array.isArray(review.findings) ? review.findings : [])
     .map((finding) => {
+      if (findingIsContradictedByCurrentStore(finding, store)) {
+        contradictedFindingCount += 1;
+        return null;
+      }
+
       const fingerprint = buildCatalogFindingFingerprint(finding);
       const targetStateHash = getCatalogFindingTargetStateHash(store, finding);
       const decision = findLatestFindingDecision(decisions, fingerprint);
@@ -607,6 +696,7 @@ function annotateCatalogFindingsWithMemory(review = {}, store = {}) {
   return {
     ...review,
     findings,
+    contradictedFindingCount,
     suppressedFindingCount
   };
 }
@@ -2160,6 +2250,7 @@ module.exports = {
   __test: {
     annotateCatalogFindingsWithMemory,
     buildCatalogFindingFingerprint,
+    findingIsContradictedByCurrentStore,
     getCatalogFindingTargetStateHash,
     isAcceptableExcerpt,
     getGuidedPathCandidatePosts,
