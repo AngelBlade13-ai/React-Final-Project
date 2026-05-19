@@ -10,6 +10,7 @@ const {
     isStrongContentPatch,
     normalizeNewGuidedPathSuggestionResult,
     normalizePostSuggestionResult,
+    summarizePostForAssistant,
     titleFitsSuggestedMembership
   }
 } = require("../../src/services/localAiService");
@@ -176,6 +177,24 @@ test("hasUsableReviewResult counts findings as usable review content", () => {
     }),
     true
   );
+});
+
+test("summarizePostForAssistant includes excerpt and content preview for catalog review context", () => {
+  const result = summarizePostForAssistant({
+    slug: "crown-of-dreams-original-version",
+    title: "Crown of Dreams",
+    excerpt:
+      "A melancholic allegorical piece about identity and fragile self-recognition.",
+    content:
+      "**Universe:** Original / Personal\n\n**Theme:** A princess-motif allegory about trans identity and dreamlike selfhood.",
+    collectionSlugs: ["original-personal"],
+    subCategory: "princess-motif",
+    worldLayer: "allegorical",
+    themeTags: ["trans-identity", "allegory", "gender-identity"]
+  });
+
+  assert.match(result.excerpt, /melancholic allegorical piece/i);
+  assert.match(result.contentPreview, /princess-motif allegory/i);
 });
 
 test("getGuidedPathCandidatePosts scopes homepage preset to public homepage-eligible posts", () => {

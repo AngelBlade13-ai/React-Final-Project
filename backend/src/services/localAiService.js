@@ -780,7 +780,13 @@ function summarizePostForAssistant(post = {}) {
       : [],
     subCategory: post.subCategory || "",
     worldLayer: post.worldLayer || "",
-    themeTags: Array.isArray(post.themeTags) ? post.themeTags : []
+    themeTags: Array.isArray(post.themeTags) ? post.themeTags : [],
+    excerpt: String(post.excerpt || "")
+      .trim()
+      .slice(0, 180),
+    contentPreview: String(post.content || "")
+      .trim()
+      .slice(0, 220)
   };
 }
 
@@ -1521,6 +1527,11 @@ async function reviewCatalogWithLocalAi(store, options = {}) {
   const prompt = [
     "Return only compact JSON for this music archive admin review.",
     "Do not invent slugs. No code advice.",
+    "Be conservative about editorial taxonomy changes.",
+    "Do not recommend adding themeTags solely because a title, subCategory, or worldLayer sounds related to a motif.",
+    "Do not treat the absence of a literal matching tag as a problem when the current tags are already coherent with the excerpt and content preview.",
+    "Prefer structural issues over subjective metadata expansion: empty or contradictory fields, public visibility mismatches, broken collection/path relationships, and obvious categorization drift.",
+    "If a post appears publication-ready and internally coherent, leave it out of findings.",
     'Shape: {"summary":"one sentence","risks":["risk"],"suggestedActions":["action"],"findings":[{"severity":"warning","targetType":"post|collection|path|catalog","targetSlug":"existing-slug-or-empty","field":"fieldName-or-empty","issue":"what is wrong","recommendedAction":"what to do next"}]}.',
     "Use at most 3 risks and 3 actions.",
     "Use at most 5 findings.",
@@ -1547,6 +1558,10 @@ async function reviewCatalogWithLocalAi(store, options = {}) {
     "Return only compact JSON for this music archive admin review.",
     "Your previous response was empty or unusable.",
     "You must return at least one non-empty field.",
+    "Be conservative about editorial taxonomy changes.",
+    "Do not recommend adding themeTags solely because a title, subCategory, or worldLayer sounds related to a motif.",
+    "Do not treat the absence of a literal matching tag as a problem when the current tags are already coherent with the excerpt and content preview.",
+    "Prefer structural issues over subjective metadata expansion: empty or contradictory fields, public visibility mismatches, broken collection/path relationships, and obvious categorization drift.",
     'Shape: {"summary":"one sentence","risks":["risk"],"suggestedActions":["action"],"findings":[{"severity":"warning","targetType":"post|collection|path|catalog","targetSlug":"existing-slug-or-empty","field":"fieldName-or-empty","issue":"what is wrong","recommendedAction":"what to do next"}]}.',
     "Use at most 3 risks and 3 actions.",
     "Use at most 5 findings.",
@@ -1789,6 +1804,7 @@ module.exports = {
     normalizePostSuggestionResult,
     normalizeNewGuidedPathSuggestionResult,
     resolveRequestedModel,
+    summarizePostForAssistant,
     titleFitsSuggestedMembership
   }
 };
