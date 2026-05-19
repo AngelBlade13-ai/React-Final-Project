@@ -185,18 +185,24 @@ export default function AdminPathsPage() {
   }
 
   async function saveGuidedPaths(nextPaths, successMessage = "") {
-    const saved = await saveSiteSettingsDraft({
+    const savedSettings = await saveSiteSettingsDraft({
       ...siteSettingsForm,
       guidedPaths: nextPaths
     });
 
-    if (!saved) {
+    if (!savedSettings) {
       throw new Error("Guided path save failed.");
     }
+
+    const savedPaths = Array.isArray(savedSettings.guidedPaths)
+      ? savedSettings.guidedPaths
+      : [];
 
     if (successMessage) {
       setGuidedPathAssistantMessage(successMessage);
     }
+
+    return savedPaths;
   }
 
   function updateSelectedPath(updater, message = "Path draft updated.") {
@@ -423,9 +429,14 @@ export default function AdminPathsPage() {
 
       if (guidedPathSuggestion?.isNewPath) {
         const nextSlug = String(patch.slug || "").trim();
+        const nextTitle = String(patch.title || "").trim();
 
         if (!nextSlug) {
           throw new Error("New path suggestions must include a slug.");
+        }
+
+        if (!nextTitle) {
+          throw new Error("New path suggestions must include a title.");
         }
 
         if (paths.some((path) => path.slug === nextSlug)) {
@@ -435,10 +446,17 @@ export default function AdminPathsPage() {
         const nextPaths = [...paths, patch];
 
         applyGuidedPathsDraft(nextPaths, "Saving new guided path...");
-        await saveGuidedPaths(
+        const savedPaths = await saveGuidedPaths(
           nextPaths,
           "Added and saved the new guided path."
         );
+
+        if (!savedPaths.some((path) => path.slug === nextSlug)) {
+          throw new Error(
+            "The backend did not keep the new path after normalization. Check that the suggestion has a slug and title."
+          );
+        }
+
         setSelectedGuidedPathSlug(nextSlug);
       } else {
         const selectedIndex = paths.findIndex(
@@ -456,10 +474,16 @@ export default function AdminPathsPage() {
         );
 
         applyGuidedPathsDraft(nextPaths, "Saving guided path suggestion...");
-        await saveGuidedPaths(
+        const savedPaths = await saveGuidedPaths(
           nextPaths,
           `Applied and saved ${patchKeys.length} guided path suggestion${patchKeys.length === 1 ? "" : "s"}.`
         );
+
+        if (!savedPaths.some((path) => path.slug === selectedGuidedPathSlug)) {
+          throw new Error(
+            "The backend did not keep the selected path after normalization."
+          );
+        }
       }
 
       setGuidedPathSuggestion(null);

@@ -578,7 +578,7 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
         throw new Error(data.message || "Save failed.");
       }
 
-      setSiteSettingsForm({
+      const normalizedSiteSettings = {
         branding: {
           ...emptySiteSettings.branding,
           ...(data.siteContent?.branding || {})
@@ -593,9 +593,11 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
         guidedPaths: Array.isArray(data.siteContent?.guidedPaths)
           ? data.siteContent.guidedPaths
           : emptySiteSettings.guidedPaths
-      });
+      };
+
+      setSiteSettingsForm(normalizedSiteSettings);
       setSiteSettingsMessage("Site settings saved successfully.");
-      return true;
+      return normalizedSiteSettings;
     } catch (apiError) {
       setError(apiError.message);
       return false;

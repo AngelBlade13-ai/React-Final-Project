@@ -147,10 +147,15 @@ function normalizeGuidedPathAlgorithm(input = {}, existingAlgorithm = {}) {
 
 function normalizeGuidedPathInput(input = {}, existingPath = {}) {
   const slug = slugify(input.slug || existingPath.slug || input.title || "");
+  const fallbackTitle = slug
+    .split("-")
+    .filter(Boolean)
+    .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
+    .join(" ");
 
   return {
     slug,
-    title: String(input.title || existingPath.title || "").trim(),
+    title: String(input.title || existingPath.title || fallbackTitle).trim(),
     eyebrow: String(input.eyebrow || existingPath.eyebrow || "Guided Path").trim(),
     intro: String(input.intro || existingPath.intro || "").trim(),
     moodNote: String(input.moodNote || existingPath.moodNote || "").trim(),
