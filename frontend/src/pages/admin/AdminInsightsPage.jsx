@@ -114,6 +114,33 @@ function formatFindingTarget(finding = {}) {
   return baseLabel;
 }
 
+function buildFindingKey(finding = {}, fallback = "") {
+  return (
+    String(finding?.fingerprint || "").trim() ||
+    [
+      finding?.targetType || "catalog",
+      finding?.targetSlug || "",
+      finding?.field || "",
+      finding?.issue || "",
+      fallback
+    ].join(":")
+  );
+}
+
+function formatDecisionStatus(status = "") {
+  return String(status || "")
+    .replace(/[-_]+/g, " ")
+    .replace(/\b([a-z])/g, (match) => match.toUpperCase());
+}
+
+function formatPatchValue(value) {
+  if (Array.isArray(value)) {
+    return value.join(", ");
+  }
+
+  return String(value || "");
+}
+
 function describeAuditDetails(entry) {
   const details = entry?.details || {};
 
@@ -177,6 +204,9 @@ export default function AdminInsightsPage() {
   const [localAiReview, setLocalAiReview] = useState(null);
   const [localAiReviewLoading, setLocalAiReviewLoading] = useState(false);
   const [localAiReviewError, setLocalAiReviewError] = useState("");
+  const [findingReviewLoadingKey, setFindingReviewLoadingKey] = useState("");
+  const [findingReviewError, setFindingReviewError] = useState("");
+  const [findingReviews, setFindingReviews] = useState({});
   const [remotePodActionLoading, setRemotePodActionLoading] = useState("");
   const [remotePodActionError, setRemotePodActionError] = useState("");
   const [remoteTunnelActionLoading, setRemoteTunnelActionLoading] =
@@ -467,6 +497,8 @@ export default function AdminInsightsPage() {
     try {
       setLocalAiReviewLoading(true);
       setLocalAiReviewError("");
+      setFindingReviewError("");
+      setFindingReviews({});
       setLocalAiReview(null);
 
       const data = await readJson(
@@ -483,6 +515,69 @@ export default function AdminInsightsPage() {
       setLocalAiReviewError(apiError.message);
     } finally {
       setLocalAiReviewLoading(false);
+    }
+  }
+
+  async function handleReviewFindingWithPostAssistant(finding, index) {
+    const findingKey = buildFindingKey(finding, index);
+
+    try {
+      setFindingReviewLoadingKey(findingKey);
+      setFindingReviewError("");
+
+      const data = await readJson(
+        adminFetch(`${apiBaseUrl}/admin/assistant/catalog-finding-review`, {
+          method: "POST",
+          body: JSON.stringify(
+            withAssistantProfile({ finding }, selectedAssistantProfile)
+          )
+        }),
+        "Failed to review finding with the post assistant."
+      );
+
+      setFindingReviews((current) => ({
+        ...current,
+        [findingKey]: data.review || { decision: data.decision }
+      }));
+      await handleRefreshLocalAiStatus();
+    } catch (apiError) {
+      setFindingReviewError(apiError.message);
+    } finally {
+      setFindingReviewLoadingKey("");
+    }
+  }
+
+  async function handleDismissFinding(finding, index) {
+    const findingKey = buildFindingKey(finding, index);
+
+    try {
+      setFindingReviewLoadingKey(findingKey);
+      setFindingReviewError("");
+
+      await readJson(
+        adminFetch(`${apiBaseUrl}/admin/assistant/catalog-finding-dismiss`, {
+          method: "POST",
+          body: JSON.stringify({ finding })
+        }),
+        "Failed to dismiss finding."
+      );
+
+      setLocalAiReview((current) =>
+        current?.findings?.length
+          ? {
+              ...current,
+              findings: current.findings.filter(
+                (entry, entryIndex) =>
+                  buildFindingKey(entry, entryIndex) !== findingKey
+              ),
+              suppressedFindingCount: (current.suppressedFindingCount || 0) + 1
+            }
+          : current
+      );
+    } catch (apiError) {
+      setFindingReviewError(apiError.message);
+    } finally {
+      setFindingReviewLoadingKey("");
     }
   }
 
@@ -1066,6 +1161,9 @@ export default function AdminInsightsPage() {
         {localAiReviewError ? (
           <p className="error-text">{localAiReviewError}</p>
         ) : null}
+        {findingReviewError ? (
+          <p className="error-text">{findingReviewError}</p>
+        ) : null}
         {localAiReview ? (
           <div
             className="insight-issue-card severity-info"
@@ -1082,18 +1180,24 @@ export default function AdminInsightsPage() {
               </span>
             </div>
             <p>{localAiReview.summary}</p>
+            {localAiReview.suppressedFindingCount ? (
+              <p className="meta">
+                {`${localAiReview.suppressedFindingCount} finding${localAiReview.suppressedFindingCount === 1 ? "" : "s"} hidden by prior assistant review or dismissal.`}
+              </p>
+            ) : null}
             {localAiReview.findings?.length ? (
               <>
                 <p className="note-label">Actionable Findings</p>
                 <div className="insight-sample-list">
                   {localAiReview.findings.map((finding, index) => {
                     const targetLink = buildAdminFindingLink(finding);
-                    const key = [
-                      finding.targetType,
-                      finding.targetSlug,
-                      finding.field,
-                      index
-                    ].join(":");
+                    const key = buildFindingKey(finding, index);
+                    const findingReview = findingReviews[key];
+                    const patchEntries = Object.entries(
+                      findingReview?.suggestedPatch || {}
+                    );
+                    const existingDecision = finding.reviewDecision;
+                    const isReviewing = findingReviewLoadingKey === key;
 
                     return (
                       <article
@@ -1110,8 +1214,73 @@ export default function AdminInsightsPage() {
                         </div>
                         <p>{finding.issue}</p>
                         <p className="meta">{finding.recommendedAction}</p>
-                        {targetLink ? (
-                          <div className="archive-intelligence-actions">
+                        {existingDecision ? (
+                          <p className="meta">
+                            {`Prior post assistant review: ${formatDecisionStatus(existingDecision.status)} / ${existingDecision.reasonCode}.`}
+                          </p>
+                        ) : null}
+                        {findingReview ? (
+                          <div className="insight-sample-list">
+                            <article className="insight-sample-link">
+                              <strong>
+                                {findingReview.verdict === "accepted"
+                                  ? "Post Assistant Confirmed"
+                                  : "Post Assistant Rejected"}
+                              </strong>
+                              <span>
+                                {findingReview.reasonCode ||
+                                  findingReview.decision?.reasonCode ||
+                                  "reviewed"}
+                              </span>
+                              <small>
+                                {findingReview.summary ||
+                                  findingReview.decision?.summary ||
+                                  "The finding was reviewed against the current post."}
+                              </small>
+                            </article>
+                            {patchEntries.length ? (
+                              <article className="insight-sample-link">
+                                <strong>Suggested Patch</strong>
+                                {patchEntries.map(([field, value]) => (
+                                  <small key={field}>
+                                    {`${field}: ${formatPatchValue(value).slice(0, 220)}`}
+                                  </small>
+                                ))}
+                              </article>
+                            ) : null}
+                          </div>
+                        ) : null}
+                        <div className="archive-intelligence-actions">
+                          {finding.targetType === "post" ? (
+                            <button
+                              className="secondary-button"
+                              disabled={
+                                isReviewing ||
+                                !localAiStatus?.available ||
+                                !localAiStatus?.modelInstalled
+                              }
+                              onClick={() =>
+                                handleReviewFindingWithPostAssistant(
+                                  finding,
+                                  index
+                                )
+                              }
+                              type="button"
+                            >
+                              {isReviewing
+                                ? "Reviewing..."
+                                : "Review With Post Assistant"}
+                            </button>
+                          ) : null}
+                          <button
+                            className="secondary-button"
+                            disabled={isReviewing}
+                            onClick={() => handleDismissFinding(finding, index)}
+                            type="button"
+                          >
+                            Dismiss Finding
+                          </button>
+                          {targetLink ? (
                             <Link className="secondary-button" to={targetLink}>
                               {finding.targetType === "post"
                                 ? "Open Post Workspace"
@@ -1121,8 +1290,8 @@ export default function AdminInsightsPage() {
                                     ? "Open Path Workspace"
                                     : "Open Insights"}
                             </Link>
-                          </div>
-                        ) : null}
+                          ) : null}
+                        </div>
                       </article>
                     );
                   })}

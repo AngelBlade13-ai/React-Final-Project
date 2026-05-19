@@ -2,12 +2,16 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const {
   __test: {
+    annotateCatalogFindingsWithMemory,
+    buildCatalogFindingFingerprint,
     getGuidedPathCandidatePosts,
     hasUsableReviewResult,
     isAcceptableExcerpt,
     hasStructuredReleaseNote,
     isStrongExcerptPatch,
     isStrongContentPatch,
+    normalizeAssistantFindingDecisions,
+    normalizeFindingReviewResult,
     normalizeNewGuidedPathSuggestionResult,
     normalizePostSuggestionResult,
     summarizePostForAssistant,
@@ -177,6 +181,122 @@ test("hasUsableReviewResult counts findings as usable review content", () => {
     }),
     true
   );
+});
+
+test("catalog review memory suppresses rejected post findings until target changes", () => {
+  const finding = {
+    severity: "warning",
+    targetType: "post",
+    targetSlug: "crown-of-dreams-original-version",
+    field: "themeTags",
+    issue: "Post lacks princess-related theme tags.",
+    recommendedAction: "Add princess and magical theme tags."
+  };
+  const store = {
+    posts: [
+      {
+        slug: "crown-of-dreams-original-version",
+        excerpt: "A clear identity allegory.",
+        content: "**Universe:** Original / Personal",
+        collectionSlugs: ["original-personal"],
+        releaseStatus: "canon",
+        subCategory: "princess-motif",
+        themeTags: ["trans-identity", "allegory"],
+        worldLayer: "allegorical"
+      }
+    ],
+    siteContent: {}
+  };
+  const firstPass = annotateCatalogFindingsWithMemory(
+    { findings: [finding] },
+    store
+  );
+  const decision = {
+    fingerprint: buildCatalogFindingFingerprint(finding),
+    status: "rejected",
+    reasonCode: "already-coherent",
+    targetType: finding.targetType,
+    targetSlug: finding.targetSlug,
+    field: finding.field,
+    issue: finding.issue,
+    recommendedAction: finding.recommendedAction,
+    targetStateHash: firstPass.findings[0].targetStateHash,
+    summary: "Current tags are coherent."
+  };
+  const suppressed = annotateCatalogFindingsWithMemory(
+    { findings: [finding] },
+    {
+      ...store,
+      siteContent: {
+        assistantFindingDecisions: [decision]
+      }
+    }
+  );
+  const changed = annotateCatalogFindingsWithMemory(
+    { findings: [finding] },
+    {
+      ...store,
+      posts: [
+        {
+          ...store.posts[0],
+          themeTags: ["trans-identity", "allegory", "princess"]
+        }
+      ],
+      siteContent: {
+        assistantFindingDecisions: [decision]
+      }
+    }
+  );
+
+  assert.equal(firstPass.findings.length, 1);
+  assert.equal(suppressed.findings.length, 0);
+  assert.equal(suppressed.suppressedFindingCount, 1);
+  assert.equal(changed.findings.length, 1);
+});
+
+test("normalizeFindingReviewResult rejects accepted verdicts without usable patches", () => {
+  const result = normalizeFindingReviewResult(
+    {
+      verdict: "accepted",
+      reasonCode: "material-improvement",
+      fieldAssessments: [
+        {
+          field: "themeTags",
+          status: "improve",
+          reason: "Needs a theme tag."
+        }
+      ],
+      suggestedPatch: {
+        themeTags: ["identity"]
+      }
+    },
+    [],
+    {
+      themeTags: ["identity"]
+    }
+  );
+
+  assert.equal(result.verdict, "rejected");
+  assert.deepEqual(result.suggestedPatch, {});
+});
+
+test("normalizeAssistantFindingDecisions keeps known decision fields only", () => {
+  const [decision] = normalizeAssistantFindingDecisions([
+    {
+      fingerprint: "catalog-finding:post:one:themeTags:tags",
+      status: "Rejected",
+      reasonCode: "already-coherent",
+      targetType: "post",
+      targetSlug: "one",
+      patchFields: ["themeTags", ""],
+      unknown: true
+    }
+  ]);
+
+  assert.equal(decision.status, "rejected");
+  assert.equal(decision.reasonCode, "already-coherent");
+  assert.deepEqual(decision.patchFields, ["themeTags"]);
+  assert.equal("unknown" in decision, false);
 });
 
 test("summarizePostForAssistant includes excerpt and content preview for catalog review context", () => {

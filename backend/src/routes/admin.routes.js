@@ -28,11 +28,14 @@ const {
 } = require("../services/liveStoreSync");
 const { launchImporter } = require("../services/importerLauncherService");
 const {
+  buildAssistantFindingDecision,
   getLocalAiStatus,
   reviewCatalogWithLocalAi,
+  reviewCatalogFindingWithLocalAi,
   suggestGuidedPathWithLocalAi,
   suggestNewGuidedPathWithLocalAi,
-  suggestPostDraftWithLocalAi
+  suggestPostDraftWithLocalAi,
+  upsertAssistantFindingDecision
 } = require("../services/localAiService");
 const {
   getRunpodPodStatus,
@@ -991,6 +994,100 @@ router.post("/assistant/catalog-review", async (req, res, next) => {
       });
     }
 
+    next(error);
+  }
+});
+
+router.post("/assistant/catalog-finding-review", async (req, res, next) => {
+  try {
+    const store = await readStore();
+    const assistantSelection = getAssistantModelSelection(req);
+    const review = await reviewCatalogFindingWithLocalAi(
+      store,
+      req.body?.finding || {},
+      assistantSelection
+    );
+    const nextDecisions = upsertAssistantFindingDecision(
+      store.siteContent?.assistantFindingDecisions,
+      review.decision
+    );
+    const nextSiteContent = {
+      ...store.siteContent,
+      assistantFindingDecisions: nextDecisions
+    };
+
+    await writeSiteContent(nextSiteContent);
+    await recordAdminAuditEvent(req, {
+      action: "assistant.catalog_finding_reviewed",
+      entityType: "assistant",
+      entityId: review.finding?.fingerprint || "catalog-finding",
+      entityLabel:
+        review.finding?.targetSlug || req.body?.finding?.targetSlug || "Finding",
+      details: {
+        changedFields: Object.keys(review.suggestedPatch || {}),
+        model: review.model,
+        reasonCode: review.reasonCode,
+        selectedProfileKey: assistantSelection.profile || "",
+        targetSlug: review.finding?.targetSlug || "",
+        verdict: review.verdict
+      }
+    });
+
+    return res.json({ review, decision: review.decision });
+  } catch (error) {
+    if (error.localAiStatus) {
+      return res.status(error.statusCode || 503).json({
+        message: error.message,
+        localAi: error.localAiStatus
+      });
+    }
+
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ message: error.message });
+    }
+
+    next(error);
+  }
+});
+
+router.post("/assistant/catalog-finding-dismiss", async (req, res, next) => {
+  try {
+    const store = await readStore();
+    const decision = buildAssistantFindingDecision(
+      store,
+      req.body?.finding || {},
+      {
+        status: "dismissed",
+        reasonCode: "manual-dismissal",
+        summary:
+          String(req.body?.summary || "").trim() ||
+          "Finding dismissed by admin."
+      }
+    );
+    const nextDecisions = upsertAssistantFindingDecision(
+      store.siteContent?.assistantFindingDecisions,
+      decision
+    );
+    const nextSiteContent = {
+      ...store.siteContent,
+      assistantFindingDecisions: nextDecisions
+    };
+
+    await writeSiteContent(nextSiteContent);
+    await recordAdminAuditEvent(req, {
+      action: "assistant.catalog_finding_dismissed",
+      entityType: "assistant",
+      entityId: decision.fingerprint,
+      entityLabel: decision.targetSlug || "Catalog finding",
+      details: {
+        field: decision.field,
+        reasonCode: decision.reasonCode,
+        targetSlug: decision.targetSlug
+      }
+    });
+
+    return res.json({ decision });
+  } catch (error) {
     next(error);
   }
 });

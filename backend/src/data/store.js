@@ -694,6 +694,33 @@ function normalizePost(post) {
 }
 
 function normalizeSiteContent(siteContent = {}) {
+  const assistantFindingDecisions = Array.isArray(
+    siteContent.assistantFindingDecisions
+  )
+    ? siteContent.assistantFindingDecisions
+        .map((entry) => ({
+          fingerprint: String(entry?.fingerprint || "").trim(),
+          status: String(entry?.status || "rejected").trim() || "rejected",
+          reasonCode: String(entry?.reasonCode || "other").trim() || "other",
+          summary: String(entry?.summary || "").trim(),
+          targetType: String(entry?.targetType || "catalog").trim() || "catalog",
+          targetSlug: String(entry?.targetSlug || "").trim(),
+          field: String(entry?.field || "").trim(),
+          issue: String(entry?.issue || "").trim(),
+          recommendedAction: String(entry?.recommendedAction || "").trim(),
+          targetStateHash: String(entry?.targetStateHash || "").trim(),
+          model: String(entry?.model || "").trim(),
+          reviewedAt: String(entry?.reviewedAt || "").trim(),
+          patchFields: Array.isArray(entry?.patchFields)
+            ? entry.patchFields
+                .map((field) => String(field || "").trim())
+                .filter(Boolean)
+            : []
+        }))
+        .filter((entry) => entry.fingerprint)
+        .slice(-100)
+    : [];
+
   return {
     branding: {
       ...seedSiteContent.branding,
@@ -806,7 +833,8 @@ function normalizeSiteContent(siteContent = {}) {
     about: {
       ...seedSiteContent.about,
       ...(siteContent.about || {})
-    }
+    },
+    assistantFindingDecisions
   };
 }
 

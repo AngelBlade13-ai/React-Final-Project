@@ -390,6 +390,114 @@ test("catalog review retries once when the model returns an empty response", asy
   assert.equal(generateCallCount, 2);
 });
 
+test("catalog finding review stores post assistant decision memory", async (t) => {
+  const originalFetch = global.fetch;
+
+  global.fetch = async (url) => {
+    const normalizedUrl = String(url);
+
+    if (normalizedUrl.endsWith("/api/tags")) {
+      return {
+        ok: true,
+        json: async () => ({
+          models: [{ name: "qwen2.5:7b" }]
+        })
+      };
+    }
+
+    if (normalizedUrl.endsWith("/api/generate")) {
+      return {
+        ok: true,
+        json: async () => ({
+          response: JSON.stringify({
+            verdict: "rejected",
+            reasonCode: "already-coherent",
+            summary: "Current post metadata is coherent enough.",
+            fieldAssessments: [
+              {
+                field: "themeTags",
+                status: "keep",
+                reason: "The existing context does not require another tag."
+              }
+            ],
+            suggestedPatch: {},
+            rationale: ["The finding is too thin to justify a post edit."],
+            warnings: []
+          })
+        })
+      };
+    }
+
+    throw new Error(`Unexpected fetch URL: ${normalizedUrl}`);
+  };
+
+  const context = await createApiTestContext({
+    LOCAL_AI_ENABLED: "true"
+  });
+  t.after(async () => {
+    global.fetch = originalFetch;
+    await context.close();
+  });
+
+  const loginResponse = await context.agent
+    .post("/api/admin/login")
+    .set(context.mutationHeaders)
+    .send({
+      email: "admin@example.com",
+      password: "Admin123!"
+    });
+
+  assert.equal(loginResponse.status, 200);
+
+  const createResponse = await context.agent
+    .post("/api/admin/posts")
+    .set(context.mutationHeaders)
+    .send({
+      title: "Finding Review Target",
+      slug: "finding-review-target",
+      excerpt:
+        "A focused test post with enough public-facing copy for assistant review.",
+      content:
+        "**Universe:** Test\n**Theme:** Assistant review\n**Notes:** Used by the API test.",
+      lyrics: "",
+      published: true,
+      collectionSlugs: [],
+      themeTags: ["assistant-review"]
+    });
+
+  assert.equal(createResponse.status, 201);
+
+  const reviewResponse = await context.agent
+    .post("/api/admin/assistant/catalog-finding-review")
+    .set(context.mutationHeaders)
+    .send({
+      finding: {
+        severity: "warning",
+        targetType: "post",
+        targetSlug: "finding-review-target",
+        field: "themeTags",
+        issue: "Theme tags may need another identity tag.",
+        recommendedAction: "Ask the post assistant to verify the tag."
+      }
+    });
+
+  assert.equal(reviewResponse.status, 200);
+  assert.equal(reviewResponse.body.review.verdict, "rejected");
+  assert.equal(reviewResponse.body.decision.status, "rejected");
+  assert.equal(reviewResponse.body.decision.reasonCode, "already-coherent");
+
+  const siteContentResponse = await context.agent.get("/api/admin/site-content");
+
+  assert.equal(siteContentResponse.status, 200);
+  assert.ok(
+    siteContentResponse.body.siteContent.assistantFindingDecisions.some(
+      (decision) =>
+        decision.targetSlug === "finding-review-target" &&
+        decision.status === "rejected"
+    )
+  );
+});
+
 test("remote AI pod controls proxy runpod start stop and status safely", async (t) => {
   const originalFetch = global.fetch;
   const fetchCalls = [];

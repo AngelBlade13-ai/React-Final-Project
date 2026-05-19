@@ -1,3 +1,4 @@
+const crypto = require("crypto");
 const config = require("../config");
 const { slugify } = require("../utils/slugify");
 
@@ -14,6 +15,22 @@ const REVIEW_FINDING_TARGET_TYPES = new Set([
   "catalog"
 ]);
 const REVIEW_FINDING_SEVERITIES = new Set(["info", "warning", "critical"]);
+const FINDING_DECISION_STATUSES = new Set([
+  "accepted",
+  "rejected",
+  "dismissed",
+  "applied"
+]);
+const FINDING_DECISION_REASON_CODES = new Set([
+  "already-coherent",
+  "insufficient-evidence",
+  "conflicts-with-editorial-intent",
+  "duplicate-of-existing-tags",
+  "material-improvement",
+  "no-usable-patch",
+  "manual-dismissal",
+  "other"
+]);
 const VALID_RELEASE_STATUSES = new Set(["canon", "alternate", "working"]);
 const ASSISTANT_PATCH_FIELDS = [
   "excerpt",
@@ -491,6 +508,157 @@ function normalizeReviewResult(value = {}, allowedTargets = null) {
   };
 }
 
+function normalizeFindingDecisionStatus(value = "") {
+  const status = String(value || "")
+    .trim()
+    .toLowerCase();
+
+  return FINDING_DECISION_STATUSES.has(status) ? status : "rejected";
+}
+
+function normalizeFindingDecisionReasonCode(value = "") {
+  const reasonCode = String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, "-");
+
+  return FINDING_DECISION_REASON_CODES.has(reasonCode)
+    ? reasonCode
+    : "other";
+}
+
+function normalizeAssistantFindingDecisions(value = []) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((entry) => {
+      const fingerprint = String(entry?.fingerprint || "").trim();
+      const targetType = String(entry?.targetType || "catalog")
+        .trim()
+        .toLowerCase();
+
+      if (!fingerprint || !REVIEW_FINDING_TARGET_TYPES.has(targetType)) {
+        return null;
+      }
+
+      return {
+        fingerprint,
+        status: normalizeFindingDecisionStatus(entry?.status),
+        reasonCode: normalizeFindingDecisionReasonCode(entry?.reasonCode),
+        summary: String(entry?.summary || "").trim(),
+        targetType,
+        targetSlug: String(entry?.targetSlug || "").trim(),
+        field: String(entry?.field || "").trim(),
+        issue: String(entry?.issue || "").trim(),
+        recommendedAction: String(entry?.recommendedAction || "").trim(),
+        targetStateHash: String(entry?.targetStateHash || "").trim(),
+        model: String(entry?.model || "").trim(),
+        reviewedAt: String(entry?.reviewedAt || "").trim(),
+        patchFields: normalizeTextList(entry?.patchFields, 12)
+      };
+    })
+    .filter(Boolean)
+    .slice(-100);
+}
+
+function findLatestFindingDecision(decisions = [], fingerprint = "") {
+  for (let index = decisions.length - 1; index >= 0; index -= 1) {
+    if (decisions[index]?.fingerprint === fingerprint) {
+      return decisions[index];
+    }
+  }
+
+  return null;
+}
+
+function annotateCatalogFindingsWithMemory(review = {}, store = {}) {
+  const decisions = normalizeAssistantFindingDecisions(
+    store.siteContent?.assistantFindingDecisions
+  );
+  let suppressedFindingCount = 0;
+  const findings = (Array.isArray(review.findings) ? review.findings : [])
+    .map((finding) => {
+      const fingerprint = buildCatalogFindingFingerprint(finding);
+      const targetStateHash = getCatalogFindingTargetStateHash(store, finding);
+      const decision = findLatestFindingDecision(decisions, fingerprint);
+      const decisionMatchesCurrentState =
+        decision &&
+        (!targetStateHash || decision.targetStateHash === targetStateHash);
+
+      if (
+        decisionMatchesCurrentState &&
+        ["rejected", "dismissed", "applied"].includes(decision.status)
+      ) {
+        suppressedFindingCount += 1;
+        return null;
+      }
+
+      return {
+        ...finding,
+        fingerprint,
+        targetStateHash,
+        reviewDecision: decisionMatchesCurrentState ? decision : null
+      };
+    })
+    .filter(Boolean);
+
+  return {
+    ...review,
+    findings,
+    suppressedFindingCount
+  };
+}
+
+function upsertAssistantFindingDecision(decisions = [], decision = {}) {
+  const normalized = normalizeAssistantFindingDecisions([decision])[0];
+
+  if (!normalized) {
+    return normalizeAssistantFindingDecisions(decisions);
+  }
+
+  return [
+    ...normalizeAssistantFindingDecisions(decisions).filter(
+      (entry) => entry.fingerprint !== normalized.fingerprint
+    ),
+    normalized
+  ].slice(-100);
+}
+
+function buildAssistantFindingDecision(
+  store = {},
+  finding = {},
+  decision = {}
+) {
+  const fingerprint =
+    String(finding?.fingerprint || "").trim() ||
+    buildCatalogFindingFingerprint(finding);
+  const targetStateHash =
+    String(finding?.targetStateHash || "").trim() ||
+    getCatalogFindingTargetStateHash(store, finding);
+
+  return {
+    fingerprint,
+    status: normalizeFindingDecisionStatus(decision.status),
+    reasonCode: normalizeFindingDecisionReasonCode(decision.reasonCode),
+    summary: String(decision.summary || "").trim(),
+    targetType: String(finding?.targetType || "catalog")
+      .trim()
+      .toLowerCase(),
+    targetSlug: String(finding?.targetSlug || "").trim(),
+    field: String(finding?.field || "").trim(),
+    issue: String(finding?.issue || "").trim(),
+    recommendedAction: String(finding?.recommendedAction || "").trim(),
+    targetStateHash,
+    model: String(decision.model || "").trim(),
+    reviewedAt: new Date().toISOString(),
+    patchFields: Array.isArray(decision.patchFields)
+      ? decision.patchFields
+      : Object.keys(decision.suggestedPatch || {})
+  };
+}
+
 function hasUsableReviewResult(value = {}) {
   const review = normalizeReviewResult(value);
 
@@ -531,6 +699,75 @@ function normalizeComparableText(value) {
     .trim()
     .toLowerCase()
     .replace(/\s+/g, " ");
+}
+
+function normalizeFindingToken(value = "") {
+  return normalizeComparableText(value)
+    .replace(/["'`]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 96);
+}
+
+function getPostStateHash(post = {}) {
+  if (!post?.slug) {
+    return "";
+  }
+
+  const state = {
+    collectionSlugs: normalizeComparableArray(post.collectionSlugs),
+    content: normalizeComparableText(post.content).slice(0, 3000),
+    excerpt: normalizeComparableText(post.excerpt),
+    isHomepageEligible: Boolean(post.isHomepageEligible),
+    isPrimaryVersion: Boolean(post.isPrimaryVersion),
+    isPubliclyVisible: post.isPubliclyVisible !== false,
+    releaseStatus: normalizeComparableText(post.releaseStatus || "canon"),
+    subCategory: normalizeComparableText(post.subCategory),
+    themeTags: normalizeComparableArray(post.themeTags),
+    versionFamily: normalizeComparableText(post.versionFamily),
+    worldLayer: normalizeComparableText(post.worldLayer)
+  };
+
+  return crypto
+    .createHash("sha256")
+    .update(JSON.stringify(state))
+    .digest("hex")
+    .slice(0, 16);
+}
+
+function findPostBySlug(store = {}, slug = "") {
+  const targetSlug = String(slug || "").trim();
+
+  return (Array.isArray(store.posts) ? store.posts : []).find(
+    (post) => post.slug === targetSlug
+  );
+}
+
+function buildCatalogFindingFingerprint(finding = {}) {
+  const targetType = String(finding?.targetType || "catalog")
+    .trim()
+    .toLowerCase();
+  const targetSlug = normalizeFindingToken(finding?.targetSlug || "catalog");
+  const field = normalizeFindingToken(finding?.field || "general");
+  const issueToken = normalizeFindingToken(
+    `${finding?.issue || ""} ${finding?.recommendedAction || ""}`
+  );
+
+  return [
+    "catalog-finding",
+    REVIEW_FINDING_TARGET_TYPES.has(targetType) ? targetType : "catalog",
+    targetSlug || "catalog",
+    field || "general",
+    issueToken || "general"
+  ].join(":");
+}
+
+function getCatalogFindingTargetStateHash(store = {}, finding = {}) {
+  if (String(finding?.targetType || "").toLowerCase() !== "post") {
+    return "";
+  }
+
+  return getPostStateHash(findPostBySlug(store, finding.targetSlug));
 }
 
 function hasMeaningfulTextDiff(nextValue, currentValue, minimumLength = 12) {
@@ -1546,12 +1783,12 @@ async function reviewCatalogWithLocalAi(store, options = {}) {
   );
 
   if (hasUsableReviewResult(firstPass)) {
-    return {
+    return annotateCatalogFindingsWithMemory({
       ...DEFAULT_REVIEW_RESULT,
       ...firstPass,
       generatedAt: new Date().toISOString(),
       model: status.model
-    };
+    }, store);
   }
 
   const retryPrompt = [
@@ -1586,12 +1823,12 @@ async function reviewCatalogWithLocalAi(store, options = {}) {
     throw error;
   }
 
-  return {
+  return annotateCatalogFindingsWithMemory({
     ...DEFAULT_REVIEW_RESULT,
     ...retryResult,
     generatedAt: new Date().toISOString(),
     model: status.model
-  };
+  }, store);
 }
 
 async function suggestPostDraftWithLocalAi(store, postDraft = {}, options = {}) {
@@ -1679,6 +1916,130 @@ async function suggestPostDraftWithLocalAi(store, postDraft = {}, options = {}) 
 
   return {
     ...result,
+    generatedAt: new Date().toISOString(),
+    model: status.model
+  };
+}
+
+function normalizeFindingReviewResult(
+  value = {},
+  collections = [],
+  currentDraft = {}
+) {
+  const normalizedSuggestion = normalizePostSuggestionResult(
+    value,
+    collections,
+    currentDraft
+  );
+  const rawVerdict = String(value.verdict || "")
+    .trim()
+    .toLowerCase();
+  const hasPatch = Object.keys(normalizedSuggestion.suggestedPatch || {}).length > 0;
+  const verdict =
+    rawVerdict === "accepted" || rawVerdict === "accept" || hasPatch
+      ? hasPatch
+        ? "accepted"
+        : "rejected"
+      : "rejected";
+  const reasonCode =
+    verdict === "accepted"
+      ? normalizeFindingDecisionReasonCode(
+          value.reasonCode || "material-improvement"
+        )
+      : normalizeFindingDecisionReasonCode(
+          value.reasonCode || (rawVerdict ? value.reasonCode : "no-usable-patch")
+        );
+
+  return {
+    ...normalizedSuggestion,
+    verdict,
+    reasonCode: verdict === "accepted" ? reasonCode : reasonCode || "other"
+  };
+}
+
+async function reviewCatalogFindingWithLocalAi(
+  store,
+  finding = {},
+  options = {}
+) {
+  const status = await assertLocalAiReady(options);
+  const allowedTargets = buildCatalogReviewTargets(store);
+  const normalizedFinding = normalizeReviewResult(
+    { findings: [finding] },
+    allowedTargets
+  ).findings[0];
+
+  if (!normalizedFinding) {
+    const error = new Error("The catalog finding is not valid for this store.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (normalizedFinding.targetType !== "post" || !normalizedFinding.targetSlug) {
+    const error = new Error("Only post findings can be reviewed by the post assistant.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const post = findPostBySlug(store, normalizedFinding.targetSlug);
+
+  if (!post) {
+    const error = new Error("The target post no longer exists.");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const collections = Array.isArray(store.collections) ? store.collections : [];
+  const context = {
+    catalogFinding: {
+      ...normalizedFinding,
+      fingerprint: buildCatalogFindingFingerprint(normalizedFinding),
+      targetStateHash: getPostStateHash(post)
+    },
+    allowedReleaseStatuses: Array.from(VALID_RELEASE_STATUSES),
+    collections: collections.map(summarizeCollectionForAssistant),
+    currentDraft: summarizePostDraftForAssistant(post),
+    comparablePosts: getComparablePostsForAssistant(store.posts, post)
+  };
+  const prompt = [
+    "Return only compact JSON for this catalog-finding adjudication.",
+    "You are the post assistant reviewing one Insights finding against the full current post context.",
+    "Accept the finding only if the current post field is clearly missing, inaccurate, contradictory, or materially weaker than the suggested correction.",
+    "Reject the finding if the existing post is already coherent, the evidence is too thin, the suggestion merely adds a literal tag match, or the recommendation conflicts with the post's editorial intent.",
+    "If rejected, return verdict rejected, a precise reasonCode, and an empty suggestedPatch.",
+    "If accepted, return verdict accepted and patch only the fields that should change.",
+    "Do not repeat existing metadata. Do not patch a field unless the value would actually change.",
+    "Allowed reasonCode values: already-coherent, insufficient-evidence, conflicts-with-editorial-intent, duplicate-of-existing-tags, material-improvement, no-usable-patch, other.",
+    'Shape: {"verdict":"accepted|rejected","reasonCode":"already-coherent","summary":"one sentence","fieldAssessments":[{"field":"themeTags","status":"keep","reason":"why"}],"suggestedPatch":{"excerpt":"","content":"","subCategory":"","worldLayer":"","themeTags":[""],"releaseStatus":"canon","collectionSlugs":[""]},"rationale":["reason"],"warnings":["warning"]}.',
+    "Use at most 4 rationale items and 3 warnings.",
+    "",
+    JSON.stringify(context)
+  ].join("\n");
+  const result = normalizeFindingReviewResult(
+    await generateJson(prompt, {
+      ...options,
+      num_ctx: 4096,
+      num_predict: config.localAiPostNumPredict,
+      temperature: 0.1
+    }),
+    collections,
+    post
+  );
+  const decision = buildAssistantFindingDecision(store, context.catalogFinding, {
+    status: result.verdict,
+    reasonCode:
+      result.verdict === "accepted" && !Object.keys(result.suggestedPatch).length
+        ? "no-usable-patch"
+        : result.reasonCode,
+    summary: result.summary,
+    suggestedPatch: result.suggestedPatch,
+    model: status.model
+  });
+
+  return {
+    ...result,
+    finding: context.catalogFinding,
+    decision,
     generatedAt: new Date().toISOString(),
     model: status.model
   };
@@ -1789,11 +2150,17 @@ async function suggestNewGuidedPathWithLocalAi(
 
 module.exports = {
   getLocalAiStatus,
+  buildAssistantFindingDecision,
   reviewCatalogWithLocalAi,
+  reviewCatalogFindingWithLocalAi,
   suggestGuidedPathWithLocalAi,
   suggestNewGuidedPathWithLocalAi,
   suggestPostDraftWithLocalAi,
+  upsertAssistantFindingDecision,
   __test: {
+    annotateCatalogFindingsWithMemory,
+    buildCatalogFindingFingerprint,
+    getCatalogFindingTargetStateHash,
     isAcceptableExcerpt,
     getGuidedPathCandidatePosts,
     hasStructuredReleaseNote,
@@ -1802,6 +2169,8 @@ module.exports = {
     getConfiguredModelProfiles,
     hasUsableReviewResult,
     normalizePostSuggestionResult,
+    normalizeAssistantFindingDecisions,
+    normalizeFindingReviewResult,
     normalizeNewGuidedPathSuggestionResult,
     resolveRequestedModel,
     summarizePostForAssistant,
