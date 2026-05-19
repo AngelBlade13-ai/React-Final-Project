@@ -807,6 +807,86 @@ function titleFromSlug(value = "") {
     .join(" ");
 }
 
+function normalizePathIdentityText(value = "") {
+  return normalizeComparableText(value)
+    .replace(/\b(path|guided|listening|route|sequence|arc|the|a|an)\b/g, " ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function getComparablePathTitle(path = {}) {
+  return normalizePathIdentityText(`${path.title || ""} ${path.slug || ""}`);
+}
+
+function getPathMembershipSlugs(path = {}) {
+  return Array.isArray(path.postSlugs)
+    ? [
+        ...new Set(
+          path.postSlugs
+            .map((slug) => String(slug || "").trim())
+            .filter(Boolean)
+        )
+      ]
+    : [];
+}
+
+function getSetOverlapRatio(leftValues = [], rightValues = []) {
+  const left = new Set(leftValues);
+  const right = new Set(rightValues);
+
+  if (!left.size || !right.size) {
+    return 0;
+  }
+
+  let intersectionSize = 0;
+
+  left.forEach((value) => {
+    if (right.has(value)) {
+      intersectionSize += 1;
+    }
+  });
+
+  return intersectionSize / Math.min(left.size, right.size);
+}
+
+function pathLooksLikeMinorRename(candidate = {}, existingPath = {}) {
+  const candidateText = getComparablePathTitle(candidate);
+  const existingText = getComparablePathTitle(existingPath);
+
+  if (!candidateText || !existingText) {
+    return false;
+  }
+
+  if (candidateText === existingText) {
+    return true;
+  }
+
+  return (
+    candidateText.includes(existingText) ||
+    existingText.includes(candidateText)
+  );
+}
+
+function findNearDuplicatePath(candidate = {}, existingPaths = []) {
+  const candidateSlugs = getPathMembershipSlugs(candidate);
+
+  return existingPaths.find((path) => {
+    const existingSlugs = getPathMembershipSlugs(path);
+    const overlapRatio = getSetOverlapRatio(candidateSlugs, existingSlugs);
+
+    if (
+      candidateSlugs.length &&
+      existingSlugs.length &&
+      overlapRatio >= 0.8
+    ) {
+      return true;
+    }
+
+    return pathLooksLikeMinorRename(candidate, path);
+  });
+}
+
 function getPostStateHash(post = {}) {
   if (!post?.slug) {
     return "";
@@ -1705,6 +1785,27 @@ function normalizeNewGuidedPathSuggestionResult(
     warnings.push("The assistant did not provide usable path membership.");
   }
 
+  const duplicatePath = findNearDuplicatePath(suggestedPatch, existingPaths);
+
+  if (duplicatePath) {
+    warnings.push(
+      `The assistant suggestion is too close to existing path "${duplicatePath.title || duplicatePath.slug}".`
+    );
+
+    return {
+      summary:
+        String(value.summary || "").trim() ||
+        "The suggested path was too similar to an existing path.",
+      mode: ["manual", "algorithm", "hybrid"].includes(String(value.mode || ""))
+        ? String(value.mode)
+        : "manual",
+      isNewPath: true,
+      rationale: normalizeTextList(value.rationale, 6),
+      warnings: [...new Set(warnings)].slice(0, 6),
+      suggestedPatch: {}
+    };
+  }
+
   return {
     summary: String(value.summary || "").trim(),
     mode: ["manual", "algorithm", "hybrid"].includes(String(value.mode || ""))
@@ -2261,6 +2362,7 @@ module.exports = {
   __test: {
     annotateCatalogFindingsWithMemory,
     buildCatalogFindingFingerprint,
+    findNearDuplicatePath,
     findingIsContradictedByCurrentStore,
     getCatalogFindingTargetStateHash,
     isAcceptableExcerpt,

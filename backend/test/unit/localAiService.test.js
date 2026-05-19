@@ -4,6 +4,7 @@ const {
   __test: {
     annotateCatalogFindingsWithMemory,
     buildCatalogFindingFingerprint,
+    findNearDuplicatePath,
     findingIsContradictedByCurrentStore,
     getGuidedPathCandidatePosts,
     hasUsableReviewResult,
@@ -533,4 +534,57 @@ test("normalizeNewGuidedPathSuggestionResult creates fallback title for titleles
 
   assert.equal(result.suggestedPatch.title, "Proto Origins");
   assert.ok(!result.warnings.includes("The assistant did not provide a title."));
+});
+
+test("normalizeNewGuidedPathSuggestionResult rejects near-duplicate new paths", () => {
+  const posts = [
+    "you-remember-me-now",
+    "cauterize-the-world",
+    "the-cost-i-couldnt-pay",
+    "what-the-world-made-of-me"
+  ].map((slug) => ({
+    slug,
+    published: true,
+    isPubliclyVisible: true,
+    releaseStatus: "canon"
+  }));
+  const existingPath = {
+    slug: "proto-origins",
+    title: "Proto Origins",
+    postSlugs: [
+      "you-remember-me-now",
+      "cauterize-the-world",
+      "the-cost-i-couldnt-pay",
+      "what-the-world-made-of-me"
+    ]
+  };
+  const duplicateCandidate = {
+    slug: "proto-precursors",
+    title: "Proto Precursors: Emotional Echoes Before Worlds Form",
+    postSlugs: [
+      "you-remember-me-now",
+      "cauterize-the-world",
+      "the-cost-i-couldnt-pay",
+      "what-the-world-made-of-me"
+    ]
+  };
+  const result = normalizeNewGuidedPathSuggestionResult(
+    {
+      summary: "A fancy renamed proto route.",
+      suggestedPatch: duplicateCandidate
+    },
+    { posts, collections: [] },
+    [existingPath]
+  );
+
+  assert.equal(
+    findNearDuplicatePath(duplicateCandidate, [existingPath]),
+    existingPath
+  );
+  assert.deepEqual(result.suggestedPatch, {});
+  assert.ok(
+    result.warnings.includes(
+      'The assistant suggestion is too close to existing path "Proto Origins".'
+    )
+  );
 });
