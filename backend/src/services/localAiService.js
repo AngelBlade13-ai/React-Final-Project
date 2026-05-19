@@ -799,6 +799,14 @@ function normalizeFindingToken(value = "") {
     .slice(0, 96);
 }
 
+function titleFromSlug(value = "") {
+  return String(value || "")
+    .split("-")
+    .filter(Boolean)
+    .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
+    .join(" ");
+}
+
 function getPostStateHash(post = {}) {
   if (!post?.slug) {
     return "";
@@ -1683,7 +1691,10 @@ function normalizeNewGuidedPathSuggestionResult(
     warnings.push("The assistant did not provide a unique usable slug.");
   }
 
-  if (!suggestedPatch.title) {
+  if (!suggestedPatch.title && suggestedPatch.slug) {
+    suggestedPatch.title = titleFromSlug(suggestedPatch.slug);
+    warnings.push("The assistant title was missing or unusable, so a title was generated from the slug.");
+  } else if (!suggestedPatch.title) {
     warnings.push("The assistant did not provide a title.");
   }
 

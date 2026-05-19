@@ -474,7 +474,7 @@ test("titleFitsSuggestedMembership rejects world titles that do not match select
   );
 });
 
-test("normalizeNewGuidedPathSuggestionResult clears mismatched world titles", () => {
+test("normalizeNewGuidedPathSuggestionResult replaces mismatched world titles with slug title", () => {
   const posts = [
     {
       slug: "identity-song",
@@ -497,10 +497,40 @@ test("normalizeNewGuidedPathSuggestionResult clears mismatched world titles", ()
     []
   );
 
-  assert.equal(result.suggestedPatch.title, undefined);
+  assert.equal(result.suggestedPatch.title, "New Threshold");
   assert.ok(
     result.warnings.includes(
       "The assistant title did not match the suggested path membership, so it was cleared."
     )
   );
+  assert.ok(
+    result.warnings.includes(
+      "The assistant title was missing or unusable, so a title was generated from the slug."
+    )
+  );
+});
+
+test("normalizeNewGuidedPathSuggestionResult creates fallback title for titleless new paths", () => {
+  const posts = [
+    {
+      slug: "you-wanted-a-hero",
+      published: true,
+      isPubliclyVisible: true,
+      releaseStatus: "canon"
+    }
+  ];
+
+  const result = normalizeNewGuidedPathSuggestionResult(
+    {
+      suggestedPatch: {
+        slug: "proto-origins",
+        postSlugs: ["you-wanted-a-hero"]
+      }
+    },
+    { posts, collections: [] },
+    []
+  );
+
+  assert.equal(result.suggestedPatch.title, "Proto Origins");
+  assert.ok(!result.warnings.includes("The assistant did not provide a title."));
 });
