@@ -325,6 +325,46 @@ button {
   cursor: pointer;
 }
 
+:root[data-theme="light"] .hero-link,
+:root[data-theme="light"] button {
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--primary) 86%, white 14%),
+      var(--primary-strong)
+    );
+  color: #3d1026;
+  border-color: color-mix(in srgb, var(--primary-strong) 64%, white 36%);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+.hero-link:hover,
+.hero-link:focus-visible,
+button:hover:not(:disabled),
+button:focus-visible:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--primary-strong) 74%, white 26%);
+  box-shadow:
+    0 14px 28px color-mix(in srgb, var(--primary) 22%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 16%, transparent);
+}
+
+:root[data-theme="light"] .hero-link:hover,
+:root[data-theme="light"] .hero-link:focus-visible,
+:root[data-theme="light"] button:hover:not(:disabled),
+:root[data-theme="light"] button:focus-visible:not(:disabled) {
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--primary) 72%, white 28%),
+      color-mix(in srgb, var(--primary-strong) 86%, #5d1235 14%)
+    );
+  color: #2f081b;
+  box-shadow:
+    0 16px 32px rgba(155, 45, 93, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.36);
+}
+
 .hero-link,
 .card-link,
 button {
@@ -1852,8 +1892,26 @@ select:focus {
 
 :root[data-theme="light"] .home-doorway-stat,
 :root[data-theme="light"] .home-doorway-cta {
-  background: color-mix(in srgb, white 28%, currentColor 8%, transparent);
-  border-color: color-mix(in srgb, currentColor 28%, transparent);
+  background: color-mix(in srgb, white 72%, var(--primary) 28%);
+  border-color: color-mix(in srgb, var(--primary-strong) 42%, white 58%);
+  color: #3d1026;
+  box-shadow: 0 8px 16px rgba(155, 45, 93, 0.12);
+}
+
+:root[data-theme="light"] .home-doorway-fractureverse .home-doorway-stat,
+:root[data-theme="light"] .home-doorway-eldoria .home-doorway-stat {
+  background: rgba(255, 244, 247, 0.94);
+  border-color: rgba(255, 255, 255, 0.72);
+  color: #391524;
+}
+
+:root[data-theme="light"] .home-doorway-link:hover .home-doorway-stat,
+:root[data-theme="light"] .home-doorway-link:focus-visible .home-doorway-stat,
+:root[data-theme="light"] .home-doorway-link:hover .home-doorway-cta,
+:root[data-theme="light"] .home-doorway-link:focus-visible .home-doorway-cta {
+  background: color-mix(in srgb, white 82%, var(--primary) 18%);
+  border-color: color-mix(in srgb, var(--primary-strong) 56%, white 44%);
+  color: #2f081b;
 }
 
 .home-doorway-actions .card-link,

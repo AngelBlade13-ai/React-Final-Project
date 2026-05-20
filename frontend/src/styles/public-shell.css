@@ -150,6 +150,11 @@
   background: color-mix(in srgb, var(--surface) 58%, transparent);
   color: var(--text);
   text-decoration: none;
+  transition:
+    transform 180ms ease,
+    background 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
 }
 
 :root[data-theme="light"] .footer-link-row a {
@@ -160,7 +165,29 @@
 
 .footer-link-row a:hover,
 .footer-link-row a:focus-visible {
-  background: color-mix(in srgb, var(--surface) 58%, var(--primary) 42%);
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--primary-strong) 60%, var(--border) 40%);
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--primary) 74%, var(--surface) 26%),
+      color-mix(in srgb, var(--primary-strong) 78%, var(--secondary) 22%)
+    );
+  color: var(--background);
+  box-shadow: 0 14px 26px color-mix(in srgb, var(--primary) 24%, transparent);
+}
+
+:root[data-theme="light"] .footer-link-row a:hover,
+:root[data-theme="light"] .footer-link-row a:focus-visible {
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--primary) 78%, white 22%),
+      var(--primary-strong)
+    );
+  color: #2f081b;
+  border-color: color-mix(in srgb, var(--primary-strong) 64%, white 36%);
+  box-shadow: 0 16px 28px rgba(155, 45, 93, 0.22);
 }
 
 .site-mark {
