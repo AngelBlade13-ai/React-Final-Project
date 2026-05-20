@@ -12,7 +12,10 @@ import {
 import usePageMetadata from "../../hooks/usePageMetadata";
 import { formatPostDate } from "../../lib/formatters";
 import { resolveGuidedListeningPath } from "../../lib/listeningPaths";
-import { getVisibleCollectionsForPost, hasVideo } from "../../lib/site";
+import {
+  getPlaybackStateCopy,
+  getVisibleCollectionsForPost
+} from "../../lib/site";
 
 export default function GuidedPathPage({
   onPlayTrack,
@@ -49,6 +52,10 @@ export default function GuidedPathPage({
 
   const path = resolveGuidedListeningPath(slug, posts, collections, siteContent);
   const activePost = path?.posts?.[activeIndex] || null;
+  const activePlaybackCopy = getPlaybackStateCopy(
+    activePost,
+    path?.themeHint || ""
+  );
   const activeCollections = getVisibleCollectionsForPost(activePost);
   const playbackContext = path
     ? {
@@ -178,13 +185,13 @@ export default function GuidedPathPage({
                   <div className="home-doorway-actions">
                     <button
                       className="secondary-button"
-                      disabled={!hasVideo(activePost.videoUrl)}
+                      disabled={!activePlaybackCopy.playable}
                       onClick={() => onPlayTrack(activePost, playbackContext)}
                       type="button"
                     >
-                      {hasVideo(activePost.videoUrl)
+                      {activePlaybackCopy.playable
                         ? "Play In Path Queue"
-                        : "Video Pending"}
+                        : activePlaybackCopy.actionLabel}
                     </button>
                     <Link
                       className="hero-link"

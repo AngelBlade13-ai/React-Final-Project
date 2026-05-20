@@ -12,8 +12,8 @@ import { formatPostDate } from "../../lib/formatters";
 import {
   emptySiteSettings,
   getHomepageCuratedPosts,
+  getPlaybackStateCopy,
   getVisibleCollectionsForPost,
-  hasVideo,
   sortCollectionsForPublicNavigation
 } from "../../lib/site";
 
@@ -57,6 +57,7 @@ export default function PublicHome({ onPlayTrack, siteContent }) {
     collections
   ).slice(0, 4);
   const featuredPostCollections = getVisibleCollectionsForPost(featuredPost);
+  const featuredPlaybackCopy = getPlaybackStateCopy(featuredPost);
   const fractureverseCollection =
     collections.find((collection) => collection.slug === "fractureverse") ||
     null;
@@ -240,16 +241,17 @@ export default function PublicHome({ onPlayTrack, siteContent }) {
                   <ReleaseMedia
                     className="featured-release-video"
                     compact
+                    eyebrow={featuredPlaybackCopy.mediaEyebrow}
                     muted
-                    text="The release note is live now. The video can be added later without taking the post down."
+                    text={featuredPlaybackCopy.mediaText}
                     title={featuredPost.title}
                     videoUrl={featuredPost.videoUrl}
                   />
                   <div className="release-card-overlay" />
                   <div className="play-pill featured-play-pill">
-                    {hasVideo(featuredPost.videoUrl)
+                    {featuredPlaybackCopy.playable
                       ? "Featured"
-                      : "Video Pending"}
+                      : featuredPlaybackCopy.pillLabel}
                   </div>
                 </div>
               </Link>
@@ -285,13 +287,11 @@ export default function PublicHome({ onPlayTrack, siteContent }) {
                 <div className="featured-release-actions">
                   <button
                     className="secondary-button mini-player-trigger"
-                    disabled={!hasVideo(featuredPost.videoUrl)}
+                    disabled={!featuredPlaybackCopy.playable}
                     onClick={() => onPlayTrack(featuredPost)}
                     type="button"
                   >
-                    {hasVideo(featuredPost.videoUrl)
-                      ? "Play in Mini Player"
-                      : "Video Pending"}
+                    {featuredPlaybackCopy.actionLabel}
                   </button>
                   <Link
                     className="hero-link"

@@ -1247,6 +1247,51 @@ export function hasVideo(videoUrl) {
   return Boolean(String(videoUrl || "").trim());
 }
 
+export function getPlaybackStateCopy(post, theme = "") {
+  const resolvedTheme = theme || getPrimaryThemeForPost(post);
+  const playable = hasVideo(post?.videoUrl);
+
+  if (resolvedTheme === "fractureverse") {
+    return {
+      playable,
+      mediaEyebrow: playable ? "Playback Available" : "Fragment Unrecorded",
+      mediaText: playable
+        ? "Observation log updated. Fragment playback available."
+        : "Signal trace detected. Playback unavailable. Emotional imprint preserved.",
+      pillLabel: playable ? "Signal Live" : "Fragment Unrecorded",
+      actionLabel: playable ? "Begin Playback" : "Signal Unavailable",
+      compactActionLabel: playable ? "Play Signal" : "Signal Unavailable",
+      openLabel: "Enter Fragment"
+    };
+  }
+
+  if (resolvedTheme === "eldoria") {
+    return {
+      playable,
+      mediaEyebrow: playable ? "Ballad Ready" : "Ballad Awaiting Visuals",
+      mediaText: playable
+        ? "This entry is part of the living chronicle. Playback is available whenever you want to step back into the tale."
+        : "This ballad already belongs to the chronicle in written form. Its visual telling can be added later without losing the page.",
+      pillLabel: playable ? "Ballad" : "Written Ballad",
+      actionLabel: playable ? "Listen to Ballad" : "Awaiting Visuals",
+      compactActionLabel: playable ? "Play the Ballad" : "Awaiting Visuals",
+      openLabel: "Enter Ballad"
+    };
+  }
+
+  return {
+    playable,
+    mediaEyebrow: playable ? "Playback Available" : "Video Pending",
+    mediaText: playable
+      ? "This release is live and ready for playback."
+      : "This release is live now. The video can be attached later.",
+    pillLabel: playable ? "Play" : "Video Pending",
+    actionLabel: playable ? "Play in Mini Player" : "Video Pending",
+    compactActionLabel: playable ? "Play in Mini Player" : "Video Pending",
+    openLabel: "Open Release"
+  };
+}
+
 export function getVideoPosterUrl(videoUrl) {
   const normalizedUrl = String(videoUrl || "").trim();
 

@@ -20,6 +20,7 @@ import {
   getEldoriaMapEntries,
   getEldoriaMeta,
   getFractureverseMeta,
+  getPlaybackStateCopy,
   getPrimaryCollectionSurfacePosts,
   getPublicCollectionPosts,
   getSecondaryVersionPosts,
@@ -27,7 +28,6 @@ import {
   getVisibleCollectionsForPost,
   groupOriginalPersonalPosts,
   getVideoPosterUrl,
-  hasVideo,
   sortEldoriaPosts,
   sortFractureversePosts
 } from "../../lib/site";
@@ -269,6 +269,14 @@ export default function CollectionDetailPage({
   const featuredFragmentMeta = getFractureverseMeta(
     fractureverseFeatured,
     fractureverseTimelineReleases
+  );
+  const fractureverseFeaturedPlaybackCopy = getPlaybackStateCopy(
+    fractureverseFeatured,
+    "fractureverse"
+  );
+  const featuredPlaybackCopy = getPlaybackStateCopy(
+    featuredRelease,
+    collection?.theme || ""
   );
   const displayFragmentMeta =
     getFractureverseMeta(
@@ -811,24 +819,24 @@ export default function CollectionDetailPage({
                     className="featured-release-video"
                     compact
                     eyebrow={
-                      hasVideo(fractureverseFeatured.videoUrl)
+                      fractureverseFeaturedPlaybackCopy.playable
                         ? "Primary Fragment"
-                        : "Data Corrupted"
+                        : fractureverseFeaturedPlaybackCopy.mediaEyebrow
                     }
                     muted
                     text={
-                      hasVideo(fractureverseFeatured.videoUrl)
+                      fractureverseFeaturedPlaybackCopy.playable
                         ? "Observation log updated. Primary anchor available for playback."
-                        : "Visual record lost. Playback unavailable. Emotional imprint preserved."
+                        : fractureverseFeaturedPlaybackCopy.mediaText
                     }
                     title={fractureverseFeatured.title}
                     videoUrl={fractureverseFeatured.videoUrl}
                   />
                   <div className="release-card-overlay" />
                   <div className="play-pill featured-play-pill">
-                    {hasVideo(fractureverseFeatured.videoUrl)
+                    {fractureverseFeaturedPlaybackCopy.playable
                       ? "Primary Fragment"
-                      : "Primary Fragment / Video Pending"}
+                      : fractureverseFeaturedPlaybackCopy.pillLabel}
                   </div>
                 </div>
                 <div className="collection-fragment-copy fracture-primary-copy">
@@ -857,15 +865,13 @@ export default function CollectionDetailPage({
                   <div className="featured-release-actions">
                     <button
                       className="secondary-button mini-player-trigger"
-                      disabled={!hasVideo(fractureverseFeatured.videoUrl)}
+                      disabled={!fractureverseFeaturedPlaybackCopy.playable}
                       onClick={() =>
                         onPlayTrack(fractureverseFeatured, playbackContext)
                       }
                       type="button"
                     >
-                      {hasVideo(fractureverseFeatured.videoUrl)
-                        ? "Begin Playback"
-                        : "Signal Unavailable"}
+                      {fractureverseFeaturedPlaybackCopy.actionLabel}
                     </button>
                     <Link
                       className="hero-link"
@@ -913,21 +919,17 @@ export default function CollectionDetailPage({
                     className="featured-release-video"
                     compact
                     muted
-                    text={
-                      isEldoria
-                        ? "This ballad is already part of the chronicle in written form. Its visual can arrive when the telling is ready."
-                        : "This fragment is live as a written record first. Its video can arrive later."
-                    }
+                    text={featuredPlaybackCopy.mediaText}
                     title={featuredRelease.title}
                     videoUrl={featuredRelease.videoUrl}
                   />
                   <div className="release-card-overlay" />
                   <div className="play-pill featured-play-pill">
-                    {hasVideo(featuredRelease.videoUrl)
+                    {featuredPlaybackCopy.playable
                       ? eldoriaFeaturedMeta?.chapterNumber === "1"
                         ? "First Chronicle Entry"
                         : themeConfig.featuredLabel
-                      : "Video Pending"}
+                      : featuredPlaybackCopy.pillLabel}
                   </div>
                 </div>
                 <div className="collection-fragment-copy">
@@ -961,17 +963,13 @@ export default function CollectionDetailPage({
                   <div className="featured-release-actions">
                     <button
                       className="secondary-button mini-player-trigger"
-                      disabled={!hasVideo(featuredRelease.videoUrl)}
+                      disabled={!featuredPlaybackCopy.playable}
                       onClick={() =>
                         onPlayTrack(featuredRelease, playbackContext)
                       }
                       type="button"
                     >
-                      {hasVideo(featuredRelease.videoUrl)
-                        ? collection.theme === "eldoria"
-                          ? "Listen to Ballad"
-                          : "Play in Mini Player"
-                        : "Video Pending"}
+                      {featuredPlaybackCopy.actionLabel}
                     </button>
                     <Link
                       className="hero-link"

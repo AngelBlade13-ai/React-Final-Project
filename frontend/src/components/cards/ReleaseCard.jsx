@@ -1,10 +1,15 @@
 import { Link } from "react-router-dom";
 import ReleaseMedia from "../ReleaseMedia";
 import { formatPostDate } from "../../lib/formatters";
-import { getPrimaryThemeForPost, getVisibleCollectionsForPost, hasVideo } from "../../lib/site";
+import {
+  getPlaybackStateCopy,
+  getPrimaryThemeForPost,
+  getVisibleCollectionsForPost
+} from "../../lib/site";
 
 export default function ReleaseCard({ emphasis = false, post, onPlayTrack, layout = "card" }) {
   const primaryTheme = getPrimaryThemeForPost(post);
+  const playbackCopy = getPlaybackStateCopy(post, primaryTheme);
   const visibleCollections = getVisibleCollectionsForPost(post);
   const emphasisClass = emphasis ? " release-feed-card-emphasis" : "";
   const releasePath = `/release/${post.slug}`;
@@ -16,14 +21,17 @@ export default function ReleaseCard({ emphasis = false, post, onPlayTrack, layou
           <ReleaseMedia
             className="post-media"
             compact
+            eyebrow={playbackCopy.mediaEyebrow}
             muted
-            text="This release is live now. The video can be attached later."
+            text={playbackCopy.mediaText}
             title={post.title}
             videoUrl={post.videoUrl}
           />
           <div className="release-card-overlay" />
-          <div className="play-pill">{hasVideo(post.videoUrl) ? "Play" : "Video Pending"}</div>
-          <div className="release-card-arrow">{hasVideo(post.videoUrl) ? "Play ->" : "Open ->"}</div>
+          <div className="play-pill">{playbackCopy.pillLabel}</div>
+          <div className="release-card-arrow">
+            {playbackCopy.playable ? "Play ->" : "Open ->"}
+          </div>
         </div>
       </Link>
       <div className="post-body">
@@ -44,11 +52,11 @@ export default function ReleaseCard({ emphasis = false, post, onPlayTrack, layou
         <div className="card-action-row">
           <button
             className="secondary-button mini-player-trigger"
-            disabled={!hasVideo(post.videoUrl)}
+            disabled={!playbackCopy.playable}
             onClick={() => onPlayTrack(post)}
             type="button"
           >
-            {hasVideo(post.videoUrl) ? (primaryTheme === "eldoria" ? "Play the Ballad" : "Play in Mini Player") : "Video Pending"}
+            {playbackCopy.compactActionLabel}
           </button>
           {layout === "horizontal" ? (
             <Link className="result-card-cta" to={releasePath}>

@@ -62,13 +62,14 @@ Latest audit summary on May 20, 2026:
 - World metadata coverage: 9/9
 - Featured collection coverage: 4/4
 
-Known launch content gap:
+Known intentional no-video release:
 
 - `we-were-never-meant-to-survive-reimagined-duet` is published without a video source.
 
-Decision needed before final launch:
+Launch decision:
 
-- Add the missing video URL, or intentionally keep it public with the existing “Video Pending” UI.
+- Keep it public without a video. Duet generation quality is poor for this song, and the Fractureverse presentation intentionally treats it as an unrecorded fragment.
+- Public cards and route surfaces should use theme-aware language such as “Fragment Unrecorded” and “Signal Unavailable,” not generic “Video Pending,” for this release.
 
 ## Deployment Environment
 

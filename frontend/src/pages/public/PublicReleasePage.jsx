@@ -23,11 +23,11 @@ import {
   getPrimaryThemeForPost,
   getReleaseStatus,
   getReleaseThemeHint,
+  getPlaybackStateCopy,
   getSiblingVersionPosts,
   getThemeConfig,
   getVisibleCollectionsForPost,
   getVideoPosterUrl,
-  hasVideo,
   sortCollectionPostsForDisplay,
   sortEldoriaPosts,
   sortFractureversePosts
@@ -83,6 +83,7 @@ export default function PublicReleasePage({
   const isFractureverse = primaryTheme === "fractureverse";
   const isEldoria = primaryTheme === "eldoria";
   const isThemedSequence = isFractureverse || isEldoria;
+  const playbackCopy = getPlaybackStateCopy(post, primaryTheme);
   const fractureMeta = getFractureverseMeta(
     post,
     sequencePosts.length ? sequencePosts : post ? [post] : []
@@ -357,28 +358,14 @@ export default function PublicReleasePage({
               <ReleaseMedia
                 className="release-video"
                 controls
-                eyebrow={
-                  isFractureverse
-                    ? hasVideo(post.videoUrl)
-                      ? "Playback Available"
-                      : "Fragment Unrecorded"
-                    : isEldoria
-                      ? hasVideo(post.videoUrl)
-                        ? "Ballad Ready"
-                        : "Ballad Awaiting Visuals"
-                      : "Video Pending"
-                }
+                eyebrow={playbackCopy.mediaEyebrow}
                 text={
                   isFractureverse
-                    ? hasVideo(post.videoUrl)
+                    ? playbackCopy.playable
                       ? fractureMeta?.systemNote ||
                         "Observation log updated. Fragment playback available."
-                      : "Signal trace detected. Playback unavailable. Emotional imprint preserved."
-                    : isEldoria
-                      ? hasVideo(post.videoUrl)
-                        ? "This entry is part of the living chronicle. Playback is available whenever you want to step back into the tale."
-                        : "This ballad already belongs to the chronicle in written form. Its visual telling can be added later without losing the page."
-                      : "This release has been published before the final video upload. The written entry is live now, and the visual can be added later."
+                      : playbackCopy.mediaText
+                    : playbackCopy.mediaText
                 }
                 title={post.title}
                 videoUrl={post.videoUrl}
@@ -498,19 +485,11 @@ export default function PublicReleasePage({
               <div className="release-hero-actions">
                 <button
                   className="secondary-button mini-player-trigger"
-                  disabled={!hasVideo(post.videoUrl)}
+                  disabled={!playbackCopy.playable}
                   onClick={() => onPlayTrack(post, playbackContext)}
                   type="button"
                 >
-                  {hasVideo(post.videoUrl)
-                    ? isFractureverse
-                      ? "Begin Playback"
-                      : primaryTheme === "eldoria"
-                        ? "Listen to Ballad"
-                        : "Play in Mini Player"
-                    : isFractureverse
-                      ? "Signal Unavailable"
-                      : "Video Pending"}
+                  {playbackCopy.actionLabel}
                 </button>
                 {primaryCollection ? (
                   <Link

@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import ReleaseMedia from "../ReleaseMedia";
-import { getEldoriaMeta, hasVideo } from "../../lib/site";
+import { getEldoriaMeta, getPlaybackStateCopy, hasVideo } from "../../lib/site";
 
 function getEldoriaEntryState(post, eldoriaMeta) {
   const status = String(eldoriaMeta?.entryStatus || "").toLowerCase();
@@ -27,6 +27,10 @@ function getEldoriaEntryState(post, eldoriaMeta) {
 
 export default function TimelineCard({ index, onEnterChronicle, onPlayTrack, playbackContext, post, themeConfig }) {
   const isEldoria = themeConfig.itemName === "Ballad";
+  const playbackCopy = getPlaybackStateCopy(
+    post,
+    isEldoria ? "eldoria" : ""
+  );
   const eldoriaMeta = isEldoria ? getEldoriaMeta(post) : null;
   const displayTitle =
     isEldoria && eldoriaMeta?.subtitle && !post.title.toLowerCase().includes(eldoriaMeta.subtitle.toLowerCase())
@@ -56,12 +60,9 @@ export default function TimelineCard({ index, onEnterChronicle, onPlayTrack, pla
           <ReleaseMedia
             className="post-media"
             compact
+            eyebrow={playbackCopy.mediaEyebrow}
             muted
-            text={
-              isEldoria
-                ? "This chapter has entered the chronicle as writing first. Its visual telling can be added later."
-                : "This fragment has been published as writing first. The video can arrive later."
-            }
+            text={playbackCopy.mediaText}
             title={post.title}
             videoUrl={post.videoUrl}
           />
@@ -84,15 +85,11 @@ export default function TimelineCard({ index, onEnterChronicle, onPlayTrack, pla
         <div className="card-action-row">
           <button
             className="secondary-button mini-player-trigger"
-            disabled={!hasVideo(post.videoUrl)}
+            disabled={!playbackCopy.playable}
             onClick={() => onPlayTrack(post, playbackContext)}
             type="button"
           >
-            {hasVideo(post.videoUrl)
-              ? themeConfig.itemName === "Ballad"
-                ? "Listen to Ballad"
-                : "Play in Mini Player"
-              : "Video Pending"}
+            {playbackCopy.actionLabel}
           </button>
           <Link className="result-card-cta" to={releasePath} {...linkProps}>
             {themeConfig.itemAction}

@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import ReleaseMedia from "../ReleaseMedia";
-import { hasVideo } from "../../lib/site";
+import { getPlaybackStateCopy } from "../../lib/site";
 
 export default function FractureFragmentCard({
   active,
@@ -14,6 +14,7 @@ export default function FractureFragmentCard({
   primaryInfluenced
 }) {
   const releasePath = `/release/${post.slug}`;
+  const playbackCopy = getPlaybackStateCopy(post, "fractureverse");
 
   return (
     <article
@@ -29,13 +30,9 @@ export default function FractureFragmentCard({
           <ReleaseMedia
             className="post-media"
             compact
-            eyebrow={hasVideo(post.videoUrl) ? "Playback Available" : "Fragment Unrecorded"}
+            eyebrow={playbackCopy.mediaEyebrow}
             muted
-            text={
-              hasVideo(post.videoUrl)
-                ? meta.systemNote
-                : "Signal trace detected. Playback unavailable. Emotional imprint preserved."
-            }
+            text={playbackCopy.playable ? meta.systemNote : playbackCopy.mediaText}
             title={meta.title}
             videoUrl={post.videoUrl}
           />
@@ -57,11 +54,11 @@ export default function FractureFragmentCard({
         <div className="card-action-row">
           <button
             className="secondary-button mini-player-trigger"
-            disabled={!hasVideo(post.videoUrl)}
+            disabled={!playbackCopy.playable}
             onClick={() => onPlayTrack(post, playbackContext)}
             type="button"
           >
-            {hasVideo(post.videoUrl) ? "Begin Playback" : "Signal Unavailable"}
+            {playbackCopy.actionLabel}
           </button>
           <Link className="result-card-cta" to={releasePath}>
             Enter Fragment
