@@ -372,6 +372,9 @@
 }
 
 .home-doorway-card {
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  gap: 0.8rem;
   min-height: 100%;
   border-radius: 28px;
 }
@@ -394,13 +397,13 @@
   line-height: 1.55;
 }
 
-.home-doorway-featured {
+.home-doorway-guided {
   background:
-    radial-gradient(circle at top right, color-mix(in srgb, var(--primary) 18%, transparent), transparent 34%),
-    linear-gradient(180deg, color-mix(in srgb, var(--editorial-surface) 80%, white 20%), color-mix(in srgb, var(--editorial-surface) 94%, var(--surface) 6%)),
+    radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--primary) 28%, transparent), transparent 34%),
+    linear-gradient(135deg, color-mix(in srgb, var(--editorial-surface) 72%, var(--primary) 28%), color-mix(in srgb, var(--shell-surface) 76%, var(--secondary) 24%)),
     var(--editorial-surface);
   box-shadow:
-    0 18px 36px color-mix(in srgb, var(--primary) 14%, transparent),
+    0 18px 38px color-mix(in srgb, var(--primary) 18%, transparent),
     0 1px 0 color-mix(in srgb, white 6%, transparent) inset;
 }
 
@@ -491,8 +494,8 @@
   background:
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--editorial-surface) 82%, white 18%),
-      color-mix(in srgb, var(--shell-surface) 94%, var(--surface-alt) 6%)
+      color-mix(in srgb, var(--editorial-surface) 76%, var(--primary) 24%),
+      color-mix(in srgb, var(--shell-surface) 86%, var(--surface-alt) 14%)
     ),
     var(--editorial-surface);
 }
@@ -509,12 +512,12 @@
 
 .latest-release-grid .release-feed-card:first-child .post-body h3,
 .latest-release-grid .release-feed-card:nth-child(2) .post-body h3 {
-  font-size: 1.42rem;
+  font-size: 1.35rem;
 }
 
 .latest-release-grid .release-feed-card:first-child .release-card-media,
 .latest-release-grid .release-feed-card:nth-child(2) .release-card-media {
-  aspect-ratio: 4 / 4.25;
+  aspect-ratio: 16 / 8;
 }
 
 .collection-index-section {
@@ -572,7 +575,7 @@
 .collection-card {
   border-radius: 30px;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--utility-surface) 82%, white 18%), color-mix(in srgb, var(--shell-surface) 94%, var(--surface-alt) 6%)),
+    linear-gradient(180deg, color-mix(in srgb, var(--utility-surface) 74%, var(--primary) 26%), color-mix(in srgb, var(--shell-surface) 84%, var(--surface-alt) 16%)),
     var(--utility-surface);
 }
 

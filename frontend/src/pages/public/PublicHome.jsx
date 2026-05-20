@@ -135,26 +135,22 @@ export default function PublicHome({ onPlayTrack, siteContent }) {
             <span>Start here</span>
           </div>
           <div className="home-doorway-grid">
-            {featuredPost ? (
-              <Link
-                className="home-doorway-link"
-                to={`/release/${featuredPost.slug}`}
-              >
-                <article className="intro-card homepage-panel home-doorway-card home-doorway-featured">
-                  <p className="eyebrow">Featured Release</p>
-                  <h3>{featuredPost.title}</h3>
-                  <p>{featuredPost.excerpt}</p>
-                  <div className="home-doorway-footer">
-                    <span className="home-doorway-stat">
-                      {formatPostDate(featuredPost.createdAt)}
-                    </span>
-                    <span className="home-doorway-cta">
-                      Enter release <span aria-hidden="true">-&gt;</span>
-                    </span>
-                  </div>
-                </article>
-              </Link>
-            ) : null}
+            <Link className="home-doorway-link" to="/paths">
+              <article className="intro-card homepage-panel home-doorway-card home-doorway-guided">
+                <p className="eyebrow">Guided Paths</p>
+                <h3>Choose by feeling, not chronology.</h3>
+                <p>
+                  Follow a curated route through the archive when you want the
+                  next song chosen by mood, world, or emotional thread.
+                </p>
+                <div className="home-doorway-footer">
+                  <span className="home-doorway-stat">Curated routes</span>
+                  <span className="home-doorway-cta">
+                    Browse paths <span aria-hidden="true">-&gt;</span>
+                  </span>
+                </div>
+              </article>
+            </Link>
 
             {fractureverseCollection ? (
               <WorldThresholdLink
@@ -358,9 +354,8 @@ export default function PublicHome({ onPlayTrack, siteContent }) {
               {loading && !latestPosts.length ? (
                 <PublicSkeletonGrid count={4} label="Loading latest releases" />
               ) : (
-                latestPosts.map((post, index) => (
+                latestPosts.map((post) => (
                   <ReleaseCard
-                    emphasis={index < 2}
                     key={post.id}
                     onPlayTrack={onPlayTrack}
                     post={post}

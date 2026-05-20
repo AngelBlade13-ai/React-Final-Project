@@ -486,6 +486,7 @@ button:disabled {
 }
 
 .compact-tag-row {
+  align-self: end;
   margin-top: 0.25rem;
 }
 
@@ -523,6 +524,7 @@ button:disabled {
 }
 
 .collection-link {
+  display: flex;
   color: inherit;
   text-decoration: none;
 }
@@ -531,6 +533,8 @@ button:disabled {
   position: relative;
   display: grid;
   gap: 0.8rem;
+  grid-template-rows: auto auto 1fr auto;
+  width: 100%;
   min-height: 100%;
   overflow: hidden;
   transition:
@@ -541,19 +545,19 @@ button:disabled {
 }
 
 :root[data-theme="light"] .collection-card {
-  border-color: color-mix(in srgb, var(--border) 70%, white 30%);
+  border-color: color-mix(in srgb, var(--border) 78%, var(--primary) 22%);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.6), transparent 28%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.48), transparent 24%),
     linear-gradient(
       145deg,
-      color-mix(in srgb, white 62%, var(--surface) 38%),
-      color-mix(in srgb, var(--surface) 80%, var(--primary) 20%) 58%,
-      color-mix(in srgb, var(--surface-alt) 84%, var(--secondary) 16%)
+      color-mix(in srgb, white 38%, var(--surface) 62%),
+      color-mix(in srgb, var(--surface) 70%, var(--primary) 30%) 54%,
+      color-mix(in srgb, var(--surface-alt) 74%, var(--secondary) 26%)
     ),
     var(--surface);
   box-shadow:
-    0 22px 38px rgba(134, 86, 93, 0.12),
-    0 2px 0 rgba(255, 255, 255, 0.42) inset;
+    0 22px 44px rgba(155, 45, 93, 0.16),
+    0 2px 0 rgba(255, 255, 255, 0.38) inset;
 }
 
 :root[data-theme="light"] .collection-card::before {
@@ -564,12 +568,12 @@ button:disabled {
   background:
     radial-gradient(
       circle at top right,
-      color-mix(in srgb, var(--secondary) 16%, transparent),
+      color-mix(in srgb, var(--secondary) 22%, transparent),
       transparent 34%
     ),
     radial-gradient(
       circle at 16% 12%,
-      color-mix(in srgb, var(--primary) 14%, transparent),
+      color-mix(in srgb, var(--primary) 20%, transparent),
       transparent 28%
     );
   pointer-events: none;
@@ -667,11 +671,17 @@ button:disabled {
   margin: 0;
 }
 
+.collection-card > p {
+  color: color-mix(in srgb, var(--text) 68%, var(--muted-text) 32%);
+  line-height: 1.58;
+}
+
 .collection-meta-row {
   display: flex;
   gap: 0.75rem;
   flex-wrap: wrap;
   align-items: center;
+  margin-top: auto;
 }
 
 .meta-badge {
@@ -730,11 +740,16 @@ button:disabled {
 }
 
 .collection-card-cta {
+  margin-left: auto;
   color: var(--text);
   font-weight: 700;
 }
 
 :root[data-theme="light"] .collection-card-cta {
+  padding: 0.42rem 0.8rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary) 18%, white 82%);
+  border: 1px solid color-mix(in srgb, var(--border) 72%, var(--primary) 28%);
   color: color-mix(in srgb, var(--text) 82%, var(--primary-strong) 18%);
 }
 
@@ -744,7 +759,7 @@ button:disabled {
 }
 
 .release-card-link {
-  display: block;
+  display: flex;
 }
 
 .release-card-surface,
@@ -772,6 +787,23 @@ button:disabled {
     inset 0 1px 0 color-mix(in srgb, var(--text) 4%, transparent);
   display: flex;
   flex-direction: column;
+  width: 100%;
+  min-height: 100%;
+}
+
+:root[data-theme="light"] .homepage-post-card {
+  border-color: color-mix(in srgb, var(--border) 82%, var(--primary) 18%);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.42), transparent 22%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--surface) 74%, var(--primary) 26%),
+      color-mix(in srgb, var(--surface-alt) 64%, var(--surface) 36%)
+    ),
+    var(--surface);
+  box-shadow:
+    0 18px 38px rgba(155, 45, 93, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.42);
 }
 
 .release-feed-card {
@@ -870,8 +902,8 @@ select:focus {
 }
 
 .latest-release-grid {
-  grid-template-columns: repeat(auto-fit, minmax(280px, 340px));
-  justify-content: start;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  align-items: stretch;
 }
 
 .post-media {
@@ -1019,8 +1051,10 @@ select:focus {
 }
 
 .homepage-post-card .post-body {
+  flex: 1;
   padding: 1.1rem 1.2rem 1.35rem;
   display: grid;
+  grid-template-rows: auto auto 1fr auto auto;
   gap: 0.45rem;
 }
 
@@ -1399,6 +1433,7 @@ select:focus {
   gap: 0.75rem;
   flex-wrap: wrap;
   align-items: center;
+  margin-top: auto;
 }
 
 .result-card-cta {
@@ -1583,12 +1618,17 @@ select:focus {
     border-color 220ms ease;
 }
 
-.home-doorway-featured {
+.home-doorway-guided {
   background:
+    radial-gradient(
+      circle at 12% 0%,
+      color-mix(in srgb, var(--primary) 30%, transparent),
+      transparent 34%
+    ),
     linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--surface) 82%, var(--primary) 18%),
-      color-mix(in srgb, var(--surface-alt) 86%, var(--surface) 14%)
+      135deg,
+      color-mix(in srgb, var(--surface) 72%, var(--primary) 28%),
+      color-mix(in srgb, var(--surface-alt) 72%, var(--secondary) 28%)
     ),
     var(--surface);
 }
