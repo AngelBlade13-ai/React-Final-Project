@@ -1738,6 +1738,7 @@
   min-height: 420px;
   padding-top: 3.6rem;
   padding-bottom: 2.2rem;
+  border-radius: 42px;
   border-color: color-mix(in srgb, #d9bd73 36%, #24301f 64%);
   background:
     radial-gradient(
@@ -1755,9 +1756,11 @@
     0 30px 70px rgba(16, 20, 14, 0.28),
     0 0 0 1px rgba(224, 200, 138, 0.14) inset,
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  overflow: hidden;
 }
 
 :root[data-collection-theme="eldoria"] .eldoria-world-header::before {
+  border-radius: inherit;
   background:
     radial-gradient(circle at var(--eldoria-mouse-x, 52%) var(--eldoria-mouse-y, 34%), color-mix(in srgb, #f5e6b8 20%, transparent), transparent 24%),
     radial-gradient(circle at 24% 28%, color-mix(in srgb, var(--primary) 16%, transparent), transparent 36%),
@@ -1772,6 +1775,7 @@
 }
 
 :root[data-collection-theme="eldoria"] .eldoria-world-header::after {
+  border-radius: inherit;
   background:
     radial-gradient(circle at var(--eldoria-mouse-x, 52%) var(--eldoria-mouse-y, 34%), color-mix(in srgb, var(--secondary) 10%, transparent), transparent 18%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 28%),
@@ -1830,44 +1834,41 @@
 :root[data-collection-theme="eldoria"] .eldoria-aside {
   position: relative;
   min-height: 300px;
-  overflow: visible;
-  border-color: transparent;
+  overflow: hidden;
+  border-color: rgba(224, 200, 138, 0.26);
   background:
-    radial-gradient(circle at center, rgba(224, 200, 138, 0.12), transparent 46%),
-    radial-gradient(circle at center, rgba(11, 16, 10, 0.34), transparent 62%);
+    radial-gradient(circle at center, rgba(224, 200, 138, 0.16), transparent 44%),
+    linear-gradient(180deg, rgba(21, 30, 19, 0.84), rgba(11, 16, 10, 0.9));
   box-shadow:
-    0 24px 54px rgba(7, 10, 6, 0.18),
-    inset 0 0 0 1px transparent;
+    0 22px 50px rgba(7, 10, 6, 0.26),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 :root[data-collection-theme="eldoria"] .eldoria-aside::before,
 :root[data-collection-theme="eldoria"] .eldoria-aside::after {
   content: "";
   position: absolute;
-  inset: -12%;
-  border-radius: 50%;
+  inset: 10% 8%;
   pointer-events: none;
 }
 
 :root[data-collection-theme="eldoria"] .eldoria-aside::before {
   background:
-    radial-gradient(circle at 50% 50%, color-mix(in srgb, rgba(239, 221, 173, 0.3) 70%, transparent), transparent 36%),
-    radial-gradient(circle at 58% 38%, color-mix(in srgb, rgba(103, 146, 158, 0.14) 70%, transparent), transparent 24%);
-  filter: blur(26px);
-  opacity: 0.9;
+    radial-gradient(circle at 50% 50%, color-mix(in srgb, rgba(239, 221, 173, 0.24) 70%, transparent), transparent 42%),
+    radial-gradient(circle at 58% 38%, color-mix(in srgb, rgba(103, 146, 158, 0.12) 70%, transparent), transparent 22%);
+  filter: blur(22px);
   animation: eldoriaGlowBreath 12s ease-in-out infinite;
 }
 
 :root[data-collection-theme="eldoria"] .eldoria-aside::after {
   background:
-    radial-gradient(circle at 50% 50%, transparent 46%, rgba(15, 17, 13, 0.16) 76%, transparent 88%);
-  opacity: 0.72;
+    radial-gradient(circle at 50% 50%, transparent 58%, rgba(15, 17, 13, 0.22) 92%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 30%);
 }
 
 :root[data-collection-theme="eldoria"] .eldoria-ambient-dust {
   position: absolute;
-  inset: -18%;
-  border-radius: 50%;
+  inset: -10%;
   background:
     radial-gradient(circle at 16% 24%, rgba(245, 230, 184, 0.22) 0 1.6px, transparent 2px),
     radial-gradient(circle at 32% 70%, rgba(245, 230, 184, 0.14) 0 1.4px, transparent 2px),
@@ -1949,7 +1950,6 @@
 
 :root[data-collection-theme="eldoria"] .eldoria-sigil-shell {
   position: relative;
-  z-index: 1;
   width: min(340px, 100%);
   aspect-ratio: 1;
   display: grid;
