@@ -350,7 +350,9 @@ test("catalog review retries once when the model returns an empty response", asy
                 response: JSON.stringify({
                   summary: "Catalog is broadly healthy.",
                   risks: [],
-                  suggestedActions: ["Tighten one or two collection highlights."]
+                  suggestedActions: [
+                    "Tighten one or two collection highlights."
+                  ]
                 })
               }
       };
@@ -486,7 +488,9 @@ test("catalog finding review stores post assistant decision memory", async (t) =
   assert.equal(reviewResponse.body.decision.status, "rejected");
   assert.equal(reviewResponse.body.decision.reasonCode, "already-coherent");
 
-  const siteContentResponse = await context.agent.get("/api/admin/site-content");
+  const siteContentResponse = await context.agent.get(
+    "/api/admin/site-content"
+  );
 
   assert.equal(siteContentResponse.status, 200);
   assert.ok(
@@ -517,7 +521,7 @@ test("remote AI pod controls proxy runpod start stop and status safely", async (
           costPerHr: "0.46",
           publicIp: "213.192.2.117",
           portMappings: {
-            "22": 40179
+            22: 40179
           },
           lastStartedAt: "2026-05-06T19:00:00.000Z",
           lastStatusChange: "started"
@@ -626,7 +630,7 @@ test("remote AI tunnel controls report and toggle tunnel state safely", async (t
           desiredStatus: "RUNNING",
           publicIp: "213.192.2.117",
           portMappings: {
-            "22": 40179
+            22: 40179
           }
         })
       };
@@ -699,7 +703,7 @@ test("remote Ollama wake control starts ollama serve through ssh safely", async 
           desiredStatus: "RUNNING",
           publicIp: "213.192.2.117",
           portMappings: {
-            "22": 40179
+            22: 40179
           }
         })
       };

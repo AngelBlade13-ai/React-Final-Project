@@ -29,10 +29,7 @@ test("isStrongExcerptPatch rejects weak paraphrases and accepts stronger card co
   };
 
   assert.equal(isAcceptableExcerpt(currentDraft.excerpt), true);
-  assert.equal(
-    isStrongExcerptPatch(currentDraft.excerpt, currentDraft),
-    false
-  );
+  assert.equal(isStrongExcerptPatch(currentDraft.excerpt, currentDraft), false);
   assert.equal(
     isStrongExcerptPatch(
       "A grief-laced memory piece that turns private collapse into precise public-facing copy about what still lingers after the loss, and why the memory refuses to let the speaker go.",
@@ -49,10 +46,7 @@ test("isStrongContentPatch only accepts structured materially improved release n
   };
 
   assert.equal(hasStructuredReleaseNote(currentDraft.content), false);
-  assert.equal(
-    isStrongContentPatch(currentDraft.content, currentDraft),
-    false
-  );
+  assert.equal(isStrongContentPatch(currentDraft.content, currentDraft), false);
   assert.equal(
     isStrongContentPatch(
       "**Universe:** Original / Personal\n**Characters:** Personal narrator\n**POV:** Solo confession\n**Version:** Working Version\n**Theme:** A quiet grief piece about memory that refuses to disappear after loss.\n**Mood:** Intimate, restrained, and fragile.\n**Source:** Suno\n**Notes:** Sparse piano, close mic female vocal, and low ambient texture that keeps the performance feeling private rather than cinematic.",
@@ -79,8 +73,7 @@ test("normalizePostSuggestionResult filters weak excerpt and content patches", (
       suggestedPatch: {
         excerpt:
           "A reflective song about loss and memory, told in soft, introspective language.",
-        content:
-          "Quiet grief song with piano and soft voice."
+        content: "Quiet grief song with piano and soft voice."
       },
       rationale: ["Tried to improve both fields."]
     },
@@ -628,7 +621,9 @@ test("normalizeNewGuidedPathSuggestionResult creates fallback title for titleles
   );
 
   assert.equal(result.suggestedPatch.title, "Proto Origins");
-  assert.ok(!result.warnings.includes("The assistant did not provide a title."));
+  assert.ok(
+    !result.warnings.includes("The assistant did not provide a title.")
+  );
 });
 
 test("normalizeNewGuidedPathSuggestionResult rejects near-duplicate new paths", () => {

@@ -69,7 +69,9 @@ test("public shell has recovery navigation for unknown routes", async ({
   await expect(
     page.getByRole("heading", { name: /this threshold does not open/i })
   ).toBeVisible();
-  await expect(page.getByRole("link", { name: "Search Archive" })).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Search Archive" })
+  ).toBeVisible();
   await expect(
     page.getByRole("navigation", { name: "Footer" }).getByRole("link", {
       name: "Collections"
