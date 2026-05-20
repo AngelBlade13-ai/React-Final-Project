@@ -34,8 +34,14 @@ import {
 import {
   clearThresholdState,
   consumePendingWorldEntry,
-  isImmersiveTheme
+  isImmersiveTheme,
+  prefersReducedMotion
 } from "../../lib/worldTransition";
+
+const WORLD_ENTRY_DURATIONS_MS = {
+  eldoria: 1500,
+  fractureverse: 1350
+};
 
 const FRACTURE_LINE_LAYOUT = {
   anchor: { x: 50, y: 6 },
@@ -380,12 +386,17 @@ export default function CollectionDetailPage({
       return undefined;
     }
 
+    if (prefersReducedMotion()) {
+      return undefined;
+    }
+
     setWorldEntryMode(collection.theme);
+    const durationMs = WORLD_ENTRY_DURATIONS_MS[collection.theme] ?? 1350;
     const timeoutId = window.setTimeout(
       () => {
         setWorldEntryMode("");
       },
-      collection.theme === "eldoria" ? 2050 : 1350
+      durationMs
     );
 
     return () => {

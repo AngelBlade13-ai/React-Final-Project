@@ -1,6 +1,12 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { clearThresholdState, isImmersiveTheme, prefersReducedMotion, setThresholdState, storePendingWorldEntry } from "../lib/worldTransition";
+import {
+  clearThresholdState,
+  isImmersiveTheme,
+  prefersReducedMotion,
+  setThresholdState,
+  storePendingWorldEntry
+} from "../lib/worldTransition";
 
 const THRESHOLD_DELAY_MS = 560;
 
@@ -11,7 +17,19 @@ function isModifiedEvent(event) {
 export default function WorldThresholdLink({ children, className = "", theme = "", to }) {
   const navigate = useNavigate();
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const timeoutIdsRef = useRef([]);
   const immersive = isImmersiveTheme(theme);
+
+  useEffect(() => {
+    const timeoutIds = timeoutIdsRef.current;
+
+    return () => {
+      timeoutIds.forEach((timeoutId) => {
+        window.clearTimeout(timeoutId);
+      });
+      clearThresholdState();
+    };
+  }, []);
 
   function handleClick(event) {
     if (!immersive || event.button !== 0 || isModifiedEvent(event)) {
@@ -19,6 +37,10 @@ export default function WorldThresholdLink({ children, className = "", theme = "
     }
 
     event.preventDefault();
+
+    if (isTransitioning) {
+      return;
+    }
 
     storePendingWorldEntry({
       startedAt: Date.now(),
@@ -34,12 +56,14 @@ export default function WorldThresholdLink({ children, className = "", theme = "
     setIsTransitioning(true);
     setThresholdState(theme);
 
-    window.setTimeout(() => {
+    const navigationTimeoutId = window.setTimeout(() => {
       navigate(to);
-      window.setTimeout(() => {
+      const clearTimeoutId = window.setTimeout(() => {
         clearThresholdState();
       }, 140);
+      timeoutIdsRef.current.push(clearTimeoutId);
     }, THRESHOLD_DELAY_MS);
+    timeoutIdsRef.current.push(navigationTimeoutId);
   }
 
   return (

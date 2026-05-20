@@ -1247,7 +1247,7 @@ select:focus {
   display: grid;
   place-items: center;
   pointer-events: none;
-  animation: world-entry-fade 1.45s ease forwards;
+  animation: world-entry-fade var(--world-entry-duration, 1450ms) ease forwards;
 }
 
 .world-entry-copy {
@@ -1263,6 +1263,8 @@ select:focus {
 }
 
 .world-entry-screen-eldoria {
+  --world-entry-duration: 1500ms;
+
   background:
     radial-gradient(
       circle at center,
@@ -1273,6 +1275,8 @@ select:focus {
 }
 
 .world-entry-screen-fractureverse {
+  --world-entry-duration: 1350ms;
+
   background:
     radial-gradient(
       circle at center,
@@ -1297,6 +1301,20 @@ select:focus {
   opacity: 0;
   transform: translateY(16px) scale(0.985);
   filter: blur(10px);
+  animation: world-content-reveal var(--world-entry-duration, 1450ms) ease-out
+    forwards;
+}
+
+:root[data-collection-theme="eldoria"] .world-header.world-entry-pending,
+:root[data-collection-theme="eldoria"]
+  .collection-world-page.world-entry-pending {
+  --world-entry-duration: 1500ms;
+}
+
+:root[data-collection-theme="fractureverse"] .world-header.world-entry-pending,
+:root[data-collection-theme="fractureverse"]
+  .collection-world-page.world-entry-pending {
+  --world-entry-duration: 1350ms;
 }
 
 .world-header,
@@ -1322,6 +1340,21 @@ select:focus {
 
   100% {
     opacity: 0;
+  }
+}
+
+@keyframes world-content-reveal {
+  0%,
+  34% {
+    opacity: 0;
+    transform: translateY(16px) scale(0.985);
+    filter: blur(10px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
   }
 }
 
