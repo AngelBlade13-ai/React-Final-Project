@@ -199,8 +199,12 @@ export default function PublicHome({ onPlayTrack, siteContent }) {
             <article className="intro-card homepage-panel home-doorway-card home-doorway-utility">
               <p className="eyebrow">{homeContent.browseEyebrow}</p>
               <h3>{homeContent.browseTitle}</h3>
-              <p>{homeContent.browseText}</p>
-              <p className="home-doorway-support">{homeContent.exploreText}</p>
+              <div className="home-doorway-copy">
+                <p>{homeContent.browseText}</p>
+                <p className="home-doorway-support">
+                  {homeContent.exploreText}
+                </p>
+              </div>
               <div className="home-doorway-actions">
                 <Link className="card-link" to="/collections">
                   {homeContent.browseLinkLabel}

@@ -1604,18 +1604,75 @@ select:focus {
 }
 
 .home-doorway-link {
+  display: flex;
   color: inherit;
   text-decoration: none;
 }
 
 .home-doorway-card {
+  position: relative;
   display: grid;
   gap: 0.8rem;
+  grid-template-rows: auto auto 1fr auto;
+  width: 100%;
   min-height: 100%;
+  overflow: hidden;
   transition:
     transform 220ms ease,
     box-shadow 220ms ease,
     border-color 220ms ease;
+}
+
+.home-doorway-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    radial-gradient(
+      circle at 18% 0%,
+      color-mix(in srgb, var(--primary) 16%, transparent),
+      transparent 30%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, white 7%, transparent),
+      color-mix(in srgb, black 8%, transparent)
+    );
+  opacity: 0.75;
+  pointer-events: none;
+}
+
+.home-doorway-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+:root[data-theme="light"] .home-doorway-card {
+  border-color: color-mix(in srgb, var(--border) 78%, var(--primary) 22%);
+  box-shadow:
+    0 22px 44px rgba(155, 45, 93, 0.17),
+    0 2px 0 rgba(255, 255, 255, 0.36) inset;
+}
+
+:root[data-theme="light"] .home-doorway-card::before {
+  background:
+    radial-gradient(
+      circle at 12% 0%,
+      color-mix(in srgb, var(--primary) 26%, transparent),
+      transparent 32%
+    ),
+    radial-gradient(
+      circle at 90% 18%,
+      color-mix(in srgb, var(--secondary) 24%, transparent),
+      transparent 30%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.36),
+      rgba(121, 24, 69, 0.08)
+    );
+  opacity: 1;
 }
 
 .home-doorway-guided {
@@ -1663,6 +1720,60 @@ select:focus {
     var(--surface);
 }
 
+:root[data-theme="light"] .home-doorway-guided {
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--surface) 62%, var(--primary) 38%),
+      color-mix(in srgb, var(--surface-alt) 60%, var(--secondary) 40%)
+    ),
+    var(--surface);
+}
+
+:root[data-theme="light"] .home-doorway-fractureverse {
+  background:
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, #2a1430 62%, var(--primary) 38%),
+      color-mix(in srgb, #170d22 72%, var(--secondary) 28%)
+    );
+  color: #fff0f7;
+}
+
+:root[data-theme="light"] .home-doorway-eldoria {
+  background:
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, #25301f 68%, #c6ab6d 32%),
+      color-mix(in srgb, #121a15 76%, #a6884f 24%)
+    );
+  color: #fff7dc;
+}
+
+:root[data-theme="light"] .home-doorway-utility {
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--surface) 66%, var(--primary) 34%),
+      color-mix(in srgb, var(--surface-alt) 68%, var(--secondary) 32%)
+    ),
+    var(--surface);
+}
+
+:root[data-theme="light"] .home-doorway-fractureverse .eyebrow,
+:root[data-theme="light"] .home-doorway-fractureverse .home-doorway-stat,
+:root[data-theme="light"] .home-doorway-fractureverse .home-doorway-cta,
+:root[data-theme="light"] .home-doorway-eldoria .eyebrow,
+:root[data-theme="light"] .home-doorway-eldoria .home-doorway-stat,
+:root[data-theme="light"] .home-doorway-eldoria .home-doorway-cta {
+  color: inherit;
+}
+
+:root[data-theme="light"] .home-doorway-fractureverse p,
+:root[data-theme="light"] .home-doorway-eldoria p {
+  color: color-mix(in srgb, currentColor 82%, transparent);
+}
+
 .home-doorway-link:hover .home-doorway-card,
 .home-doorway-link:focus-visible .home-doorway-card {
   transform: translateY(-4px);
@@ -1684,6 +1795,18 @@ select:focus {
   color: var(--muted-text);
 }
 
+.home-doorway-copy {
+  display: grid;
+  align-content: start;
+  gap: 0.65rem;
+}
+
+.home-doorway-card > p,
+.home-doorway-copy p {
+  margin: 0;
+  line-height: 1.58;
+}
+
 .home-doorway-footer,
 .home-doorway-actions {
   display: flex;
@@ -1697,9 +1820,14 @@ select:focus {
   margin-top: auto;
 }
 
+.home-doorway-actions {
+  margin-top: auto;
+}
+
 .home-doorway-stat {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   min-height: 2rem;
   padding: 0.35rem 0.75rem;
   border-radius: 999px;
@@ -1710,7 +1838,27 @@ select:focus {
 }
 
 .home-doorway-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.25rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 70%, var(--primary) 30%);
   font-weight: 700;
+}
+
+:root[data-theme="light"] .home-doorway-stat,
+:root[data-theme="light"] .home-doorway-cta {
+  background: color-mix(in srgb, white 28%, currentColor 8%, transparent);
+  border-color: color-mix(in srgb, currentColor 28%, transparent);
+}
+
+.home-doorway-actions .card-link,
+.home-doorway-actions .home-doorway-secondary-link {
+  margin-top: 0;
+  min-height: 2.75rem;
 }
 
 .home-doorway-secondary-link {
