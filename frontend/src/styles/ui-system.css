@@ -100,6 +100,13 @@ button,
 .site-account-link,
 .site-user-logout,
 .site-admin-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: 0.78rem 1.15rem;
+  border-radius: 999px;
+  line-height: 1;
   transition:
     transform 160ms ease,
     background-color 180ms ease,
@@ -115,7 +122,20 @@ button {
     color-mix(in srgb, var(--primary) 86%, white 14%),
     color-mix(in srgb, var(--primary-strong) 76%, var(--secondary) 24%)
   );
-  color: color-mix(in srgb, var(--background) 56%, black 44%);
+  color: #fff7fb;
+}
+
+:root[data-theme="light"] .hero-link,
+:root[data-theme="light"] button {
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--primary) 86%, white 14%),
+      var(--primary-strong)
+    );
+  border-color: color-mix(in srgb, var(--primary-strong) 64%, white 36%);
+  color: #2f081b;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.24);
 }
 
 .secondary-link,
@@ -124,8 +144,29 @@ button {
 .site-account-link,
 .site-user-logout,
 .site-admin-link {
-  background: color-mix(in srgb, var(--surface-raised) 82%, var(--surface) 18%);
-  border-color: color-mix(in srgb, var(--border) 76%, var(--primary) 24%);
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--primary) 74%, var(--surface) 26%),
+      color-mix(in srgb, var(--primary-strong) 72%, var(--secondary) 28%)
+    );
+  border-color: color-mix(in srgb, var(--primary-strong) 60%, var(--border) 40%);
+  color: #fff7fb;
+}
+
+:root[data-theme="light"] .secondary-link,
+:root[data-theme="light"] .secondary-button,
+:root[data-theme="light"] .theme-toggle,
+:root[data-theme="light"] .site-account-link,
+:root[data-theme="light"] .site-user-logout,
+:root[data-theme="light"] .site-admin-link {
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--primary) 82%, white 18%),
+      var(--primary-strong)
+    );
+  border-color: color-mix(in srgb, var(--primary-strong) 62%, white 38%);
   color: var(--text);
 }
 

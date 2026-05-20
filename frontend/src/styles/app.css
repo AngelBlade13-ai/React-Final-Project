@@ -507,8 +507,10 @@ button:disabled {
   margin-top: 0.25rem;
 }
 
-.featured-release-actions .hero-link {
+.featured-release-actions .hero-link,
+.featured-release-actions .secondary-button {
   margin-top: 0;
+  min-width: 12rem;
 }
 
 .featured-play-pill {

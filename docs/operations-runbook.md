@@ -27,7 +27,7 @@ Optional backend environment variables:
 - `LOG_LEVEL`
   - defaults to `info`
 - `ENABLE_REQUEST_LOGGING`
-  - defaults to `true` outside tests
+  - defaults to `true` outside tests if unset; set `false` in local `.env` to avoid per-request dev terminal noise
 - `ENABLE_ADMIN_AUDIT_LOGGING`
   - defaults to `true`
 - `SLOW_REQUEST_THRESHOLD_MS`
