@@ -1,8 +1,12 @@
+import {
+  PublicErrorState,
+  PublicLoadingState
+} from "../../components/PublicDataState";
 import { useAboutContent } from "../../hooks/usePublicApi";
 import usePageMetadata from "../../hooks/usePageMetadata";
 
 export default function AboutPage() {
-  const { about, isLoading: loading } = useAboutContent();
+  const { about, error, isLoading: loading, retry } = useAboutContent();
   usePageMetadata({
     description:
       about.heroText ||
@@ -20,6 +24,19 @@ export default function AboutPage() {
       </header>
 
       <main className="content-grid about-grid">
+        {error ? (
+          <PublicErrorState
+            message={error.message}
+            onRetry={retry}
+            title="About content could not load"
+          />
+        ) : loading ? (
+          <PublicLoadingState
+            message="The artist and archive notes are being loaded."
+            title="Loading about page"
+          />
+        ) : null}
+
         <section className="intro-card homepage-panel">
           <p className="eyebrow">{about.artistEyebrow}</p>
           <h2>{about.artistTitle}</h2>

@@ -1,3 +1,7 @@
+import {
+  PublicErrorState,
+  PublicLoadingState
+} from "../../components/PublicDataState";
 import { CollectionCard } from "../../components/cards";
 import { usePublicCollections } from "../../hooks/usePublicApi";
 import usePageMetadata from "../../hooks/usePageMetadata";
@@ -8,7 +12,12 @@ export default function CollectionsIndexPage() {
       "Browse the archive by collection, world, and curated entry point.",
     title: "Collections"
   });
-  const { collections, isLoading: loading } = usePublicCollections();
+  const {
+    collections,
+    error,
+    isLoading: loading,
+    retry
+  } = usePublicCollections();
   const worldCollections = collections.filter(
     (collection) =>
       collection.theme === "fractureverse" || collection.theme === "eldoria"
@@ -55,6 +64,19 @@ export default function CollectionsIndexPage() {
       </header>
 
       <main className="content-grid">
+        {error ? (
+          <PublicErrorState
+            message={error.message}
+            onRetry={retry}
+            title="Collections could not load"
+          />
+        ) : loading && !collections.length ? (
+          <PublicLoadingState
+            message="Worlds and shelves are being requested from the API."
+            title="Reading the atlas"
+          />
+        ) : null}
+
         <section className="collection-index-section">
           <div className="section-head">
             <h2>World Thresholds</h2>

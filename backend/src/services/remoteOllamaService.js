@@ -57,24 +57,23 @@ async function resolveRemoteSshTarget() {
   };
 }
 
-function runSshCommand(
+async function runSshCommand(
   remoteCommand,
   timeoutMs = SSH_COMMAND_TIMEOUT_MS,
   stdinText = ""
 ) {
-  return new Promise(async (resolve, reject) => {
+  const sshTargetConfig = await resolveRemoteSshTarget();
+
+  if (!sshTargetConfig.host || !sshTargetConfig.port) {
+    const error = new Error(
+      "RunPod SSH endpoint is not ready yet. Start the pod and wait for SSH to initialize."
+    );
+    error.statusCode = 503;
+    throw error;
+  }
+
+  return new Promise((resolve, reject) => {
     try {
-      const sshTargetConfig = await resolveRemoteSshTarget();
-
-      if (!sshTargetConfig.host || !sshTargetConfig.port) {
-        const error = new Error(
-          "RunPod SSH endpoint is not ready yet. Start the pod and wait for SSH to initialize."
-        );
-        error.statusCode = 503;
-        reject(error);
-        return;
-      }
-
       const sshKeyPath = expandHomePath(config.runpodSshKeyPath);
       const sshTarget = `${sshTargetConfig.user}@${sshTargetConfig.host}`;
       const child = childProcess.spawn(

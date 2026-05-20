@@ -729,7 +729,7 @@ test("remote Ollama wake control starts ollama serve through ssh safely", async 
     await context.close();
   });
 
-  childProcess.spawn = (...args) => {
+  childProcess.spawn = (..._args) => {
     const { EventEmitter } = require("node:events");
     const child = new EventEmitter();
     child.stdout = new EventEmitter();

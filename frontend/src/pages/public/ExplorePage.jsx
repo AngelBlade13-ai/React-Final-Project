@@ -1,5 +1,9 @@
 import { startTransition, useDeferredValue, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import {
+  PublicErrorState,
+  PublicLoadingState
+} from "../../components/PublicDataState";
 import { ReleaseCard } from "../../components/cards";
 import { usePublicCollections, usePublicPosts } from "../../hooks/usePublicApi";
 import usePageMetadata from "../../hooks/usePageMetadata";
@@ -25,13 +29,23 @@ export default function ExplorePage({ onPlayTrack }) {
       "Search releases, collections, and lyrical fragments across the archive.",
     title: "Explore"
   });
-  const { posts, isLoading: postsLoading } = usePublicPosts();
-  const { collections, isLoading: collectionsLoading } =
-    usePublicCollections("all");
+  const {
+    posts,
+    error: postsError,
+    isLoading: postsLoading,
+    retry: retryPosts
+  } = usePublicPosts();
+  const {
+    collections,
+    error: collectionsError,
+    isLoading: collectionsLoading,
+    retry: retryCollections
+  } = usePublicCollections("all");
   const [searchParams, setSearchParams] = useSearchParams();
   const [query, setQuery] = useState("");
   const [showInternalCollections, setShowInternalCollections] = useState(false);
   const loading = postsLoading || collectionsLoading;
+  const loadError = postsError || collectionsError;
   const deferredQuery = useDeferredValue(query);
   const normalizedQuery = deferredQuery.trim().toLowerCase();
   const queryParam = searchParams.get("q") || "";
@@ -189,6 +203,22 @@ export default function ExplorePage({ onPlayTrack }) {
       </header>
 
       <main className="content-grid">
+        {loadError ? (
+          <PublicErrorState
+            message={loadError.message}
+            onRetry={() => {
+              retryPosts();
+              retryCollections();
+            }}
+            title="Explore could not reach the archive"
+          />
+        ) : loading && !posts.length && !collections.length ? (
+          <PublicLoadingState
+            message="Search data is loading before filters can be applied."
+            title="Preparing search"
+          />
+        ) : null}
+
         <section className="intro-card homepage-panel explore-toolbar">
           <div className="section-head">
             <h2>Refine Results</h2>

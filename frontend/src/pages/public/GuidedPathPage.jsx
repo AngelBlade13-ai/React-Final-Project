@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
+  PublicErrorState,
+  PublicLoadingState
+} from "../../components/PublicDataState";
+import {
   usePublicCollections,
   usePublicPosts,
   useSiteContent
@@ -21,17 +25,20 @@ export default function GuidedPathPage({
   const {
     posts,
     error: postsError,
-    isLoading: postsLoading
+    isLoading: postsLoading,
+    retry: retryPosts
   } = usePublicPosts();
   const {
     collections,
     error: collectionsError,
-    isLoading: collectionsLoading
+    isLoading: collectionsLoading,
+    retry: retryCollections
   } = usePublicCollections("all");
   const {
     siteContent,
     error: siteContentError,
-    isLoading: siteContentLoading
+    isLoading: siteContentLoading,
+    retry: retrySiteContent
   } = useSiteContent();
   const loading = postsLoading || collectionsLoading || siteContentLoading;
   const error =
@@ -53,6 +60,7 @@ export default function GuidedPathPage({
     : null;
 
   usePageMetadata({
+    canonicalPath: `/paths/${slug}`,
     description: path?.intro || "Follow an authored route through the archive.",
     title: path?.title || "Guided Path"
   });
@@ -127,7 +135,20 @@ export default function GuidedPathPage({
       </header>
 
       <main className="content-grid">
-        {error ? <p className="error-text">{error}</p> : null}
+        {error ? (
+          <PublicErrorState
+            eyebrow="Guided Path"
+            message={error}
+            onRetry={() => {
+              retryPosts();
+              retryCollections();
+              retrySiteContent();
+            }}
+            secondaryHref="/paths"
+            secondaryLabel="All paths"
+            title="This guided path could not load"
+          />
+        ) : null}
         {path && activePost ? (
           <>
             <section className="intro-card homepage-panel guided-path-focus-card">
@@ -233,11 +254,10 @@ export default function GuidedPathPage({
             </p>
           </section>
         ) : loading ? (
-          <section className="intro-card homepage-panel empty-state-card">
-            <p className="eyebrow">Loading Path</p>
-            <h3>Gathering the route.</h3>
-            <p>The path is being assembled from the current public catalog.</p>
-          </section>
+          <PublicLoadingState
+            message="The path is being assembled from the current public catalog."
+            title="Gathering the route"
+          />
         ) : null}
       </main>
     </>

@@ -49,3 +49,26 @@ test("public account and admin smoke paths work against the test stack", async (
 
   await adminContext.close();
 });
+
+test("public shell has recovery navigation for unknown routes", async ({
+  page
+}) => {
+  await page.goto("/not-a-real-threshold");
+
+  await expect(
+    page.getByRole("heading", { name: /this threshold does not open/i })
+  ).toBeVisible();
+  await expect(page.getByRole("link", { name: "Search Archive" })).toBeVisible();
+  await expect(
+    page.getByRole("navigation", { name: "Footer" }).getByRole("link", {
+      name: "Collections"
+    })
+  ).toBeVisible();
+
+  await page.getByRole("link", { name: "Search Archive" }).click();
+  await expect(
+    page.getByRole("heading", {
+      name: /search the archive by title, release notes, and collection/i
+    })
+  ).toBeVisible();
+});

@@ -62,6 +62,9 @@ export default function PublicLayout({
 
   return (
     <div className="page-shell">
+      <a className="skip-link" href="#public-content">
+        Skip to content
+      </a>
       <div aria-hidden="true" className="threshold-overlay" />
       <header className="public-site-header">
         <div className="public-header-brand">
@@ -80,36 +83,72 @@ export default function PublicLayout({
         </div>
         <div className="public-header-nav">
           <nav className="site-nav" aria-label="Primary">
-            <NavLink className={({ isActive }) => `site-nav-link${isActive ? " active" : ""}`} to="/">
+            <NavLink
+              className={({ isActive }) =>
+                `site-nav-link${isActive ? " active" : ""}`
+              }
+              to="/"
+            >
               Home
             </NavLink>
-            <NavLink className={({ isActive }) => `site-nav-link${isActive ? " active" : ""}`} to="/collections">
+            <NavLink
+              className={({ isActive }) =>
+                `site-nav-link${isActive ? " active" : ""}`
+              }
+              to="/collections"
+            >
               Collections
             </NavLink>
-            <NavLink className={({ isActive }) => `site-nav-link${isActive ? " active" : ""}`} to="/paths">
+            <NavLink
+              className={({ isActive }) =>
+                `site-nav-link${isActive ? " active" : ""}`
+              }
+              to="/paths"
+            >
               Paths
             </NavLink>
-            <NavLink className={({ isActive }) => `site-nav-link${isActive ? " active" : ""}`} to="/explore">
+            <NavLink
+              className={({ isActive }) =>
+                `site-nav-link${isActive ? " active" : ""}`
+              }
+              to="/explore"
+            >
               Explore
             </NavLink>
-            <NavLink className={({ isActive }) => `site-nav-link${isActive ? " active" : ""}`} to="/about">
+            <NavLink
+              className={({ isActive }) =>
+                `site-nav-link${isActive ? " active" : ""}`
+              }
+              to="/about"
+            >
               About
             </NavLink>
             {!hasAdminSession ? (
-              <NavLink className={({ isActive }) => `site-nav-link${isActive ? " active" : ""}`} to="/account">
+              <NavLink
+                className={({ isActive }) =>
+                  `site-nav-link${isActive ? " active" : ""}`
+                }
+                to="/account"
+              >
                 {currentUser ? "Account" : "Join"}
               </NavLink>
             ) : null}
           </nav>
         </div>
         <div className="public-header-utility">
-          {!isThemeLocked ? <ThemeToggle setTheme={setTheme} theme={theme} /> : null}
+          {!isThemeLocked ? (
+            <ThemeToggle setTheme={setTheme} theme={theme} />
+          ) : null}
           {currentUser ? (
             <div className="site-user-controls">
               <Link className="site-account-link" to="/account">
                 {currentUser.displayName}
               </Link>
-              <button className="site-user-logout" onClick={onUserLogout} type="button">
+              <button
+                className="site-user-logout"
+                onClick={onUserLogout}
+                type="button"
+              >
                 Sign Out
               </button>
             </div>
@@ -130,7 +169,25 @@ export default function PublicLayout({
           ) : null}
         </div>
       </header>
-      <Outlet />
+      <div id="public-content" tabIndex="-1">
+        <Outlet />
+      </div>
+      <footer className="public-site-footer">
+        <div>
+          <p className="eyebrow">{branding.siteName}</p>
+          <strong>{branding.siteTagline}</strong>
+          <p>
+            A curated release archive with worlds, listening paths, comments,
+            and an admin studio behind the public surface.
+          </p>
+        </div>
+        <nav aria-label="Footer" className="footer-link-row">
+          <Link to="/collections">Collections</Link>
+          <Link to="/paths">Paths</Link>
+          <Link to="/explore">Explore</Link>
+          <Link to="/about">About</Link>
+        </nav>
+      </footer>
     </div>
   );
 }

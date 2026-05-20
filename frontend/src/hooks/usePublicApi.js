@@ -3,17 +3,23 @@ import { apiBaseUrl, emptyAbout, emptySiteSettings } from "../lib/site";
 
 async function fetchJson(url) {
   const response = await fetch(url);
-  const data = await response.json();
+  const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    throw new Error(data.message || "Request failed.");
+    throw new Error(
+      data.message ||
+        `Request failed with ${response.status} ${response.statusText}`.trim()
+    );
   }
 
   return data;
 }
 
 export function useSiteContent() {
-  const { data, error, isLoading } = useSWR(`${apiBaseUrl}/site-content`, fetchJson);
+  const { data, error, isLoading, mutate } = useSWR(
+    `${apiBaseUrl}/site-content`,
+    fetchJson
+  );
 
   return {
     siteContent: {
@@ -35,56 +41,73 @@ export function useSiteContent() {
         : emptySiteSettings.guidedPaths
     },
     error,
-    isLoading
+    isLoading,
+    retry: mutate
   };
 }
 
 export function usePublicPosts() {
-  const { data, error, isLoading } = useSWR(`${apiBaseUrl}/posts`, fetchJson);
+  const { data, error, isLoading, mutate } = useSWR(
+    `${apiBaseUrl}/posts`,
+    fetchJson
+  );
 
   return {
     posts: data?.posts || [],
     error,
-    isLoading
+    isLoading,
+    retry: mutate
   };
 }
 
 export function usePublicCollections(scope = "") {
   const key = `${apiBaseUrl}/collections${scope ? `?scope=${scope}` : ""}`;
-  const { data, error, isLoading } = useSWR(key, fetchJson);
+  const { data, error, isLoading, mutate } = useSWR(key, fetchJson);
 
   return {
     collections: data?.collections || [],
     error,
-    isLoading
+    isLoading,
+    retry: mutate
   };
 }
 
 export function usePublicCollection(slug) {
-  const { data, error, isLoading } = useSWR(slug ? `${apiBaseUrl}/collections/${slug}` : null, fetchJson);
+  const { data, error, isLoading, mutate } = useSWR(
+    slug ? `${apiBaseUrl}/collections/${slug}` : null,
+    fetchJson
+  );
 
   return {
     collection: data?.collection || null,
     releases: data?.releases || [],
     redirectSlug: data?.redirectSlug || "",
     error,
-    isLoading
+    isLoading,
+    retry: mutate
   };
 }
 
 export function usePublicRelease(slug) {
-  const { data, error, isLoading } = useSWR(slug ? `${apiBaseUrl}/posts/${slug}` : null, fetchJson);
+  const { data, error, isLoading, mutate } = useSWR(
+    slug ? `${apiBaseUrl}/posts/${slug}` : null,
+    fetchJson
+  );
 
   return {
     post: data?.post || null,
     redirectSlug: data?.redirectSlug || "",
     error,
-    isLoading
+    isLoading,
+    retry: mutate
   };
 }
 
 export function useAboutContent() {
-  const { data, error, isLoading } = useSWR(`${apiBaseUrl}/about`, fetchJson);
+  const { data, error, isLoading, mutate } = useSWR(
+    `${apiBaseUrl}/about`,
+    fetchJson
+  );
 
   return {
     about: {
@@ -92,6 +115,7 @@ export function useAboutContent() {
       ...(data?.about || {})
     },
     error,
-    isLoading
+    isLoading,
+    retry: mutate
   };
 }

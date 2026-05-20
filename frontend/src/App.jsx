@@ -1,6 +1,7 @@
 import { Component, lazy, Suspense, useEffect, useRef, useState } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import MiniPlayer from "./components/MiniPlayer";
+import RouteAnnouncer from "./components/RouteAnnouncer";
 import {
   SiteMetadataProvider,
   defaultSiteMetadata
@@ -40,6 +41,7 @@ const GuidedPathPage = lazy(() => import("./pages/public/GuidedPathPage"));
 const GuidedPathsIndexPage = lazy(
   () => import("./pages/public/GuidedPathsIndexPage")
 );
+const NotFoundPage = lazy(() => import("./pages/public/NotFoundPage"));
 const PublicHome = lazy(() => import("./pages/public/PublicHome"));
 const PublicReleasePage = lazy(
   () => import("./pages/public/PublicReleasePage")
@@ -593,6 +595,7 @@ function App() {
   return (
     <SiteMetadataProvider siteDescription={siteDescription} siteName={siteName}>
       <BrowserRouter>
+        <RouteAnnouncer />
         <audio ref={audioRef} preload="metadata" />
         <RouteErrorBoundary>
           <Suspense fallback={<RouteFallback />}>
@@ -679,6 +682,7 @@ function App() {
                     />
                   }
                 />
+                <Route path="*" element={<NotFoundPage />} />
               </Route>
               <Route
                 path="/admin/login"

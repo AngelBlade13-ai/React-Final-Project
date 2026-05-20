@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import {
+  PublicErrorState,
+  PublicLoadingState
+} from "../../components/PublicDataState";
 import EldoriaSigil from "../../components/EldoriaSigil";
 import EldoriaWorldMap from "../../components/EldoriaWorldMap";
 import ReleaseMedia from "../../components/ReleaseMedia";
@@ -22,6 +26,7 @@ import {
   getThemeConfig,
   getVisibleCollectionsForPost,
   groupOriginalPersonalPosts,
+  getVideoPosterUrl,
   hasVideo,
   sortEldoriaPosts,
   sortFractureversePosts
@@ -155,7 +160,8 @@ export default function CollectionDetailPage({
     releases,
     redirectSlug,
     error: collectionError,
-    isLoading: loading
+    isLoading: loading,
+    retry
   } = usePublicCollection(slug);
   const [activeFragmentSlug, setActiveFragmentSlug] = useState("");
   const worldHeaderRef = useRef(null);
@@ -167,9 +173,11 @@ export default function CollectionDetailPage({
   const [worldEntryMode, setWorldEntryMode] = useState("");
   const error = collectionError?.message || "";
   usePageMetadata({
+    canonicalPath: `/collections/${redirectSlug || collection?.slug || slug}`,
     description:
       collection?.description ||
       "Explore the releases gathered inside this collection.",
+    image: getVideoPosterUrl(collection?.featuredRelease?.videoUrl),
     title: collection?.title || "Collection"
   });
 
@@ -540,8 +548,7 @@ export default function CollectionDetailPage({
             : undefined
         }
       >
-        {loading ? <h1>Loading collection...</h1> : null}
-        {error ? <p className="error-text">{error}</p> : null}
+        {loading && !collection ? <h1>Loading collection...</h1> : null}
         {collection ? (
           <div className="world-header-layout">
             <div className="world-header-inner">
@@ -648,7 +655,25 @@ export default function CollectionDetailPage({
         </div>
       ) : null}
 
-      {collection ? (
+      {!collection && error ? (
+        <main className="content-grid">
+          <PublicErrorState
+            eyebrow="Collection"
+            message={error}
+            onRetry={retry}
+            secondaryHref="/collections"
+            secondaryLabel="Browse collections"
+            title="This collection could not be opened"
+          />
+        </main>
+      ) : !collection && loading ? (
+        <main className="content-grid">
+          <PublicLoadingState
+            message="The collection page is waiting on releases and world metadata."
+            title="Opening collection"
+          />
+        </main>
+      ) : collection ? (
         <main
           ref={worldContentRef}
           className={`content-grid collection-world-page${isFractureverse ? " fractureverse-page" : ""}${isEldoria ? " eldoria-page" : ""}${

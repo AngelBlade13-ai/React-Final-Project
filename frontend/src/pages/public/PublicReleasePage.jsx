@@ -2,6 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import CommentsSection from "../../components/CommentsSection";
 import EldoriaSigil from "../../components/EldoriaSigil";
+import {
+  PublicErrorState,
+  PublicLoadingState
+} from "../../components/PublicDataState";
 import ReleaseMedia from "../../components/ReleaseMedia";
 import {
   usePublicCollection,
@@ -22,6 +26,7 @@ import {
   getSiblingVersionPosts,
   getThemeConfig,
   getVisibleCollectionsForPost,
+  getVideoPosterUrl,
   hasVideo,
   sortCollectionPostsForDisplay,
   sortEldoriaPosts,
@@ -45,7 +50,8 @@ export default function PublicReleasePage({
     post,
     redirectSlug,
     error: postError,
-    isLoading: postLoading
+    isLoading: postLoading,
+    retry: retryPost
   } = usePublicRelease(slug);
   const [showLyrics, setShowLyrics] = useState(false);
   const releaseHeroRef = useRef(null);
@@ -54,8 +60,10 @@ export default function PublicReleasePage({
   const eldoriaPointerFrameRef = useRef(0);
   const eldoriaPointerRef = useRef({ x: 52, y: 30 });
   usePageMetadata({
+    canonicalPath: `/release/${redirectSlug || post?.slug || slug}`,
     description:
       post?.excerpt || "Listen to the release and read the note behind it.",
+    image: getVideoPosterUrl(post?.videoUrl),
     title: post?.title || "Release",
     type: "article"
   });
@@ -340,8 +348,7 @@ export default function PublicReleasePage({
             ) : null}
           </div>
         </div>
-        {loading ? <h1>Loading release...</h1> : null}
-        {error ? <p className="error-text">{error}</p> : null}
+        {loading && !post ? <h1>Loading release...</h1> : null}
         {post ? (
           <div className="release-hero-layout">
             <div
@@ -534,7 +541,25 @@ export default function PublicReleasePage({
         ) : null}
       </header>
 
-      {post ? (
+      {!post && error ? (
+        <main className="content-grid">
+          <PublicErrorState
+            eyebrow="Release"
+            message={error}
+            onRetry={retryPost}
+            secondaryHref="/explore"
+            secondaryLabel="Search archive"
+            title="This release could not be opened"
+          />
+        </main>
+      ) : !post && loading ? (
+        <main className="content-grid">
+          <PublicLoadingState
+            message="The release page is waiting on playback, notes, and collection context."
+            title="Opening release"
+          />
+        </main>
+      ) : post ? (
         <main
           ref={releaseDetailRef}
           className={`content-grid release-detail-grid${isEldoria ? " eldoria-release-detail-grid" : ""}${isEldoria && eldoriaAudioActive ? " eldoria-release-awake" : ""}`}

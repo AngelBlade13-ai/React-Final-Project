@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://react-final-project-seven-sigma.vercel.app/sitemap.xml

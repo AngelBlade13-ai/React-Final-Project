@@ -1,5 +1,9 @@
 import { Link } from "react-router-dom";
 import {
+  PublicErrorState,
+  PublicLoadingState
+} from "../../components/PublicDataState";
+import {
   usePublicCollections,
   usePublicPosts,
   useSiteContent
@@ -9,6 +13,7 @@ import { resolveGuidedListeningPaths } from "../../lib/listeningPaths";
 
 export default function GuidedPathsIndexPage() {
   usePageMetadata({
+    canonicalPath: "/paths",
     description:
       "Enter the archive through authored routes built around worlds, moods, and recurring themes.",
     title: "Guided Paths"
@@ -16,17 +21,20 @@ export default function GuidedPathsIndexPage() {
   const {
     posts,
     error: postsError,
-    isLoading: postsLoading
+    isLoading: postsLoading,
+    retry: retryPosts
   } = usePublicPosts();
   const {
     collections,
     error: collectionsError,
-    isLoading: collectionsLoading
+    isLoading: collectionsLoading,
+    retry: retryCollections
   } = usePublicCollections("all");
   const {
     siteContent,
     error: siteContentError,
-    isLoading: siteContentLoading
+    isLoading: siteContentLoading,
+    retry: retrySiteContent
   } = useSiteContent();
   const loading = postsLoading || collectionsLoading || siteContentLoading;
   const error =
@@ -49,7 +57,25 @@ export default function GuidedPathsIndexPage() {
       </header>
 
       <main className="content-grid">
-        {error ? <p className="error-text">{error}</p> : null}
+        {error ? (
+          <PublicErrorState
+            eyebrow="Guided Paths"
+            message={error}
+            onRetry={() => {
+              retryPosts();
+              retryCollections();
+              retrySiteContent();
+            }}
+            secondaryHref="/explore"
+            secondaryLabel="Search archive"
+            title="Guided paths could not load"
+          />
+        ) : loading && !paths.length ? (
+          <PublicLoadingState
+            message="The route list is being assembled from releases, collections, and site settings."
+            title="Preparing guided paths"
+          />
+        ) : null}
         <section className="guided-path-grid">
           {paths.map((path) => (
             <article

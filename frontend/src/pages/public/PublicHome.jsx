@@ -1,4 +1,8 @@
 import { Link } from "react-router-dom";
+import {
+  PublicErrorState,
+  PublicLoadingState
+} from "../../components/PublicDataState";
 import WorldThresholdLink from "../../components/WorldThresholdLink";
 import ReleaseMedia from "../../components/ReleaseMedia";
 import { CollectionCard, ReleaseCard } from "../../components/cards";
@@ -22,9 +26,20 @@ export default function PublicHome({ onPlayTrack, siteContent }) {
     description: homeContent.heroText,
     title: ""
   });
-  const { posts, isLoading: postsLoading } = usePublicPosts();
-  const { collections, isLoading: collectionsLoading } = usePublicCollections();
+  const {
+    posts,
+    error: postsError,
+    isLoading: postsLoading,
+    retry: retryPosts
+  } = usePublicPosts();
+  const {
+    collections,
+    error: collectionsError,
+    isLoading: collectionsLoading,
+    retry: retryCollections
+  } = usePublicCollections();
   const loading = postsLoading || collectionsLoading;
+  const loadError = postsError || collectionsError;
   const curatedPosts = getHomepageCuratedPosts(posts);
   const manuallyFeaturedPost =
     posts.find((post) => post.slug === homeContent.featuredReleaseSlug) ||
@@ -96,6 +111,22 @@ export default function PublicHome({ onPlayTrack, siteContent }) {
       </header>
 
       <main className="content-grid">
+        {loadError ? (
+          <PublicErrorState
+            message={loadError.message}
+            onRetry={() => {
+              retryPosts();
+              retryCollections();
+            }}
+            title="The public archive could not load"
+          />
+        ) : loading && !posts.length && !collections.length ? (
+          <PublicLoadingState
+            message="Releases and collections are being requested from the API."
+            title="Opening the threshold"
+          />
+        ) : null}
+
         <section className="home-doorway-section" id="home-doorways">
           <div className="section-head">
             <h2>Choose a Doorway</h2>
