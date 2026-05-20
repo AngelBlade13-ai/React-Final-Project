@@ -35,11 +35,12 @@ import {
   clearThresholdState,
   consumePendingWorldEntry,
   isImmersiveTheme,
-  prefersReducedMotion
+  prefersReducedMotion,
+  readPendingWorldEntry
 } from "../../lib/worldTransition";
 
 const WORLD_ENTRY_DURATIONS_MS = {
-  eldoria: 1500,
+  eldoria: 2200,
   fractureverse: 1350
 };
 
@@ -177,6 +178,7 @@ export default function CollectionDetailPage({
   const eldoriaPointerRef = useRef({ x: 50, y: 34 });
   const [eldoriaTransitionSlug, setEldoriaTransitionSlug] = useState("");
   const [worldEntryMode, setWorldEntryMode] = useState("");
+  const worldEntryStartedAtRef = useRef(0);
   const error = collectionError?.message || "";
   usePageMetadata({
     canonicalPath: `/collections/${redirectSlug || collection?.slug || slug}`,
@@ -373,6 +375,34 @@ export default function CollectionDetailPage({
   }, []);
 
   useEffect(() => {
+    if (prefersReducedMotion()) {
+      return;
+    }
+
+    const pendingEntry = readPendingWorldEntry();
+
+    if (
+      !pendingEntry ||
+      pendingEntry.slug !== slug ||
+      !isImmersiveTheme(pendingEntry.theme)
+    ) {
+      return;
+    }
+
+    const consumedEntry = consumePendingWorldEntry({
+      slug,
+      theme: pendingEntry.theme
+    });
+
+    if (!consumedEntry) {
+      return;
+    }
+
+    worldEntryStartedAtRef.current = Date.now();
+    setWorldEntryMode(consumedEntry.theme);
+  }, [slug]);
+
+  useEffect(() => {
     if (!collection?.slug || !collection?.theme || !isImmersiveCollection) {
       return undefined;
     }
@@ -390,19 +420,31 @@ export default function CollectionDetailPage({
       return undefined;
     }
 
+    worldEntryStartedAtRef.current = Date.now();
     setWorldEntryMode(collection.theme);
-    const durationMs = WORLD_ENTRY_DURATIONS_MS[collection.theme] ?? 1350;
+    return undefined;
+  }, [collection?.slug, collection?.theme, isImmersiveCollection]);
+
+  useEffect(() => {
+    if (!worldEntryMode || !collection?.slug) {
+      return undefined;
+    }
+
+    const startedAt = worldEntryStartedAtRef.current || Date.now();
+    const durationMs = WORLD_ENTRY_DURATIONS_MS[worldEntryMode] ?? 1350;
+    const elapsedMs = Date.now() - startedAt;
+    const remainingMs = Math.max(0, durationMs - elapsedMs);
     const timeoutId = window.setTimeout(
       () => {
         setWorldEntryMode("");
       },
-      durationMs
+      remainingMs
     );
 
     return () => {
       window.clearTimeout(timeoutId);
     };
-  }, [collection?.slug, collection?.theme, isImmersiveCollection]);
+  }, [collection?.slug, worldEntryMode]);
 
   useEffect(() => {
     setActiveCollectionTheme?.(hintedTheme || "");

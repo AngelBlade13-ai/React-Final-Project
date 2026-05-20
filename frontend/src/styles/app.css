@@ -1339,7 +1339,7 @@ select:focus {
 }
 
 .world-entry-screen-eldoria {
-  --world-entry-duration: 1500ms;
+  --world-entry-duration: 2200ms;
 
   background:
     radial-gradient(
@@ -1384,7 +1384,7 @@ select:focus {
 :root[data-collection-theme="eldoria"] .world-header.world-entry-pending,
 :root[data-collection-theme="eldoria"]
   .collection-world-page.world-entry-pending {
-  --world-entry-duration: 1500ms;
+  --world-entry-duration: 2200ms;
 }
 
 :root[data-collection-theme="fractureverse"] .world-header.world-entry-pending,

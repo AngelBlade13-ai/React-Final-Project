@@ -40,6 +40,24 @@ export function storePendingWorldEntry(entry) {
   window.sessionStorage.setItem(WORLD_ENTRY_STORAGE_KEY, JSON.stringify(entry));
 }
 
+export function readPendingWorldEntry() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const raw = window.sessionStorage.getItem(WORLD_ENTRY_STORAGE_KEY);
+
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
 export function consumePendingWorldEntry({ slug = "", theme = "" } = {}) {
   if (typeof window === "undefined") {
     return null;
