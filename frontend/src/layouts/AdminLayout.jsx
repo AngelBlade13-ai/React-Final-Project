@@ -79,6 +79,10 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
   const [savingAbout, setSavingAbout] = useState(false);
   const [savingSiteSettings, setSavingSiteSettings] = useState(false);
   const [importerLaunching, setImporterLaunching] = useState(false);
+  const publishedPostCount = posts.filter((post) => post.published).length;
+  const publicCollectionCount = collections.filter(
+    (collection) => collection.isPublicPrimary
+  ).length;
 
   const handleSessionExpired = useCallback(async () => {
     await Promise.resolve(onAdminLogout?.());
@@ -749,6 +753,23 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
           Site
         </NavLink>
       </nav>
+
+      <section className="admin-status-strip" aria-label="Admin workspace status">
+        <div>
+          <span className="eyebrow">Catalog</span>
+          <strong>{loading ? "Loading" : `${publishedPostCount} published`}</strong>
+        </div>
+        <div>
+          <span className="eyebrow">Collections</span>
+          <strong>
+            {loading ? "Loading" : `${publicCollectionCount} public primary`}
+          </strong>
+        </div>
+        <div>
+          <span className="eyebrow">Session</span>
+          <strong>Protected</strong>
+        </div>
+      </section>
 
       {error ? <p className="error-text admin-error-banner">{error}</p> : null}
 

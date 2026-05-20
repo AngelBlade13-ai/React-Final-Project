@@ -25,6 +25,7 @@ const AdminCollectionsPage = lazy(
 );
 const AdminInsightsPage = lazy(() => import("./pages/admin/AdminInsightsPage"));
 const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
+const AdminNotFoundPage = lazy(() => import("./pages/admin/AdminNotFoundPage"));
 const AdminPathsPage = lazy(() => import("./pages/admin/AdminPathsPage"));
 const AdminPostsPage = lazy(() => import("./pages/admin/AdminPostsPage"));
 const AdminSitePage = lazy(() => import("./pages/admin/AdminSitePage"));
@@ -720,6 +721,7 @@ function App() {
                 <Route path="paths" element={<AdminPathsPage />} />
                 <Route path="about" element={<AdminAboutPage />} />
                 <Route path="site" element={<AdminSitePage />} />
+                <Route path="*" element={<AdminNotFoundPage />} />
               </Route>
             </Routes>
           </Suspense>

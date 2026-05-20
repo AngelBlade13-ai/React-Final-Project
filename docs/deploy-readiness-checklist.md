@@ -18,6 +18,12 @@ Use this checklist before promoting the portfolio site or sending it to reviewer
 - Unmatched routes render a designed 404 page with recovery links.
 - Public shell includes a footer, skip link, stronger keyboard focus states, and route focus reset.
 
+## Admin UX
+
+- Admin shell shows a compact protected workspace status strip.
+- Unknown protected admin routes render a recovery page instead of a blank dashboard.
+- Browser smoke coverage verifies authenticated admin route recovery.
+
 ## Metadata
 
 - Core public pages set dynamic document titles and descriptions.
@@ -92,4 +98,5 @@ After deploy:
 - Open `/paths` and one guided path.
 - Open `/account`.
 - Open `/not-a-real-route` and confirm the 404 recovery page appears.
+- Sign into `/admin/login`, open `/admin/unknown-surface`, and confirm the admin recovery page appears.
 - Open `/api/health` and confirm database status is connected.

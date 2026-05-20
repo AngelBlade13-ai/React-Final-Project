@@ -42,6 +42,17 @@ test("public account and admin smoke paths work against the test stack", async (
     adminPage.getByRole("heading", { name: "Manage Site Content" })
   ).toBeVisible();
 
+  await adminPage.goto("/admin/unknown-surface");
+  await expect(
+    adminPage.getByRole("heading", {
+      name: /this admin surface does not exist/i
+    })
+  ).toBeVisible();
+  await adminPage.getByRole("link", { name: "Open Insights" }).click();
+  await expect(
+    adminPage.getByRole("heading", { name: "Manage Site Content" })
+  ).toBeVisible();
+
   await adminPage.reload();
   await expect(
     adminPage.getByRole("heading", { name: "Manage Site Content" })
