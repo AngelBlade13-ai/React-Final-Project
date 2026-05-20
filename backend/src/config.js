@@ -48,8 +48,10 @@ const config = {
   localAiPathNumPredict: Number(process.env.LOCAL_AI_PATH_NUM_PREDICT) || 850,
   localAiNewPathNumPredict:
     Number(process.env.LOCAL_AI_NEW_PATH_NUM_PREDICT) || 900,
-  runpodApiKey: process.env.RUNPOD_API_KEY || "",
+  runpodPodName: process.env.RUNPOD_POD_NAME || "",
   runpodPodId: process.env.RUNPOD_POD_ID || "",
+  runpodPodIdOverride: process.env.RUNPOD_POD_ID_OVERRIDE === "true",
+  runpodApiKey: process.env.RUNPOD_API_KEY || "",
   runpodApiBaseUrl:
     process.env.RUNPOD_API_BASE_URL || "https://rest.runpod.io/v1",
   runpodSshHost: process.env.RUNPOD_SSH_HOST || "",
@@ -64,8 +66,7 @@ const config = {
     process.env.REMOTE_OLLAMA_KEEP_ALIVE ||
     process.env.LOCAL_AI_KEEP_ALIVE ||
     "45m",
-  remoteOllamaNumParallel:
-    Number(process.env.REMOTE_OLLAMA_NUM_PARALLEL) || 1,
+  remoteOllamaNumParallel: Number(process.env.REMOTE_OLLAMA_NUM_PARALLEL) || 1,
   operationalSeedFile:
     process.env.OPERATIONAL_SEED_FILE ||
     path.join(__dirname, "..", "data", "operational-seed.local.json"),

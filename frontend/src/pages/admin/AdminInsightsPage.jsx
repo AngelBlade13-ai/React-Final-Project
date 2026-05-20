@@ -1011,6 +1011,26 @@ export default function AdminInsightsPage() {
               {remotePodStatus?.message ||
                 "Configure RunPod env vars to control a remote GPU pod."}
             </span>
+            <small>
+              {remotePodStatus?.configuredPodName
+                ? `Configured name: ${remotePodStatus.configuredPodName}`
+                : "Configured name: not set"}
+            </small>
+            <small>
+              {remotePodStatus?.podId
+                ? `Resolved pod ID: ${remotePodStatus.podId}`
+                : remotePodStatus?.configuredPodId
+                  ? `Fallback pod ID: ${remotePodStatus.configuredPodId}`
+                  : "Resolved pod ID: not found"}
+            </small>
+            <small>{`Resolved by: ${remotePodStatus?.resolveSource || "none"}`}</small>
+            {remotePodStatus?.gpuDisplayName || remotePodStatus?.machineId ? (
+              <small>
+                {[remotePodStatus.gpuDisplayName, remotePodStatus.machineId]
+                  .filter(Boolean)
+                  .join(" / ")}
+              </small>
+            ) : null}
           </article>
           <article className="metric-summary-card">
             <p className="note-label">SSH Tunnel</p>

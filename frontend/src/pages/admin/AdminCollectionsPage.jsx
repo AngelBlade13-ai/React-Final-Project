@@ -28,6 +28,13 @@ function matchesCollectionFilters(collection, filters = {}) {
   return true;
 }
 
+function parseListInput(value) {
+  return String(value || "")
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
+
 export default function AdminCollectionsPage() {
   useDocumentTitle("Admin Collections");
   const [searchParams] = useSearchParams();
@@ -142,6 +149,25 @@ export default function AdminCollectionsPage() {
                 </option>
               ))}
             </select>
+            <small className="input-help-text">
+              Visual UI theme only. Use semantic tags below for catalog meaning.
+            </small>
+          </label>
+          <label>
+            World Layers
+            <input
+              onChange={(event) => updateCollectionForm("worldLayers", parseListInput(event.target.value))}
+              placeholder="villain, core, proto"
+              value={(collectionForm.worldLayers || []).join(", ")}
+            />
+          </label>
+          <label>
+            Theme Tags
+            <input
+              onChange={(event) => updateCollectionForm("themeTags", parseListInput(event.target.value))}
+              placeholder="villain, consequence, dark-theatrical"
+              value={(collectionForm.themeTags || []).join(", ")}
+            />
           </label>
           <label className="checkbox-field">
             <input
@@ -230,6 +256,8 @@ export default function AdminCollectionsPage() {
               {collection.slugHistory?.length ? <p className="meta">Redirects: {collection.slugHistory.join(", ")}</p> : null}
               {collection.featuredReleaseSlug ? <p className="meta">Featured slug: {collection.featuredReleaseSlug}</p> : null}
               {collection.theme ? <p className="meta">Theme: {collection.theme}</p> : null}
+              {collection.worldLayers?.length ? <p className="meta">World layers: {collection.worldLayers.join(", ")}</p> : null}
+              {collection.themeTags?.length ? <p className="meta">Theme tags: {collection.themeTags.join(", ")}</p> : null}
               <p className="meta">{collection.isPublicPrimary ? "Public primary collection" : "Internal/archive collection"}</p>
               <div className="admin-actions">
                 <button className="secondary-button" onClick={() => startCollectionEdit(collection)} type="button">

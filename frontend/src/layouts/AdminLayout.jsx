@@ -320,6 +320,12 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
       description: collection.description,
       featuredReleaseSlug: collection.featuredReleaseSlug || "",
       theme: collection.theme || "",
+      themeTags: Array.isArray(collection.themeTags)
+        ? collection.themeTags
+        : [],
+      worldLayers: Array.isArray(collection.worldLayers)
+        ? collection.worldLayers
+        : [],
       isPublicPrimary: Boolean(collection.isPublicPrimary)
     });
   }

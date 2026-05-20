@@ -3,6 +3,12 @@ const { slugify } = require("../utils/slugify");
 const PUBLIC_PRIMARY_COLLECTION_SLUGS = ["fractureverse", "eldoria", "original-personal", "standalone"];
 const VALID_RELEASE_STATUSES = new Set(["canon", "alternate", "working"]);
 
+function normalizeStringList(value, fallback = []) {
+  const source = Array.isArray(value) ? value : Array.isArray(fallback) ? fallback : [];
+
+  return [...new Set(source.map((entry) => String(entry || "").trim()).filter(Boolean))];
+}
+
 function normalizeCollectionInput(input, existingCollection = {}) {
   const explicitSlug = typeof input.slug === "string" ? input.slug.trim() : "";
 
@@ -13,6 +19,8 @@ function normalizeCollectionInput(input, existingCollection = {}) {
     description: String(input.description || existingCollection.description || "").trim(),
     featuredReleaseSlug: String(input.featuredReleaseSlug || "").trim(),
     theme: String(input.theme || existingCollection.theme || "").trim(),
+    themeTags: normalizeStringList(input.themeTags, existingCollection.themeTags),
+    worldLayers: normalizeStringList(input.worldLayers, existingCollection.worldLayers),
     isPublicPrimary:
       typeof input.isPublicPrimary === "boolean"
         ? input.isPublicPrimary

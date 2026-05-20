@@ -420,6 +420,16 @@ function normalizeSlugHistory(slugHistory, currentSlug) {
     : [];
 }
 
+function normalizeStringList(value) {
+  return Array.isArray(value)
+    ? [
+        ...new Set(
+          value.map((entry) => String(entry || "").trim()).filter(Boolean)
+        )
+      ]
+    : [];
+}
+
 function normalizeCollection(collection) {
   if (!collection) {
     return null;
@@ -440,6 +450,8 @@ function normalizeCollection(collection) {
     description: String(collection.description || "").trim(),
     featuredReleaseSlug: String(collection.featuredReleaseSlug || "").trim(),
     theme: String(collection.theme || "").trim(),
+    themeTags: normalizeStringList(collection.themeTags),
+    worldLayers: normalizeStringList(collection.worldLayers),
     isPublicPrimary: Boolean(collection.isPublicPrimary)
   };
 }

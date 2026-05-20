@@ -40,11 +40,11 @@ backend hydrates the admin draft from the legacy guided path defaults so the
 previous hardcoded paths are still editable.
 
 The Insights page also supports optional RunPod lifecycle controls for a remote
-GPU pod. When `RUNPOD_API_KEY` and `RUNPOD_POD_ID` are configured, the admin UI
-can start or stop that pod without exposing provider credentials to the browser.
-This only controls the RunPod pod itself. If `LOCAL_AI_BASE_URL` points to an
-SSH tunnel such as `http://127.0.0.1:11434`, that tunnel still has to be opened
-separately on the machine running the backend.
+GPU pod. When `RUNPOD_API_KEY` and `RUNPOD_POD_NAME` are configured, the backend
+resolves the current pod ID dynamically before start/stop/tunnel/wake actions,
+so recreating a pod does not require editing `.env`. `RUNPOD_POD_ID` remains an
+optional fallback; set `RUNPOD_POD_ID_OVERRIDE=true` only when you intentionally
+want the fixed ID to win over name discovery.
 
 The same Insights panel can also automate the local SSH tunnel when
 `RUNPOD_SSH_KEY_PATH` is configured. If `RUNPOD_SSH_HOST` is blank, the backend
@@ -118,7 +118,9 @@ LOCAL_AI_MODEL=qwen2.5:7b
 # LOCAL_AI_MODEL_PROFILES=[{"key":"fast","label":"Fast","model":"qwen2.5:7b"},{"key":"balanced","label":"Balanced","model":"qwen3:14b"},{"key":"thorough","label":"Thorough","model":"qwen3:30b"}]
 LOCAL_AI_TIMEOUT_MS=120000
 RUNPOD_API_KEY=
+RUNPOD_POD_NAME=angelina-ollama-admin
 RUNPOD_POD_ID=
+RUNPOD_POD_ID_OVERRIDE=false
 RUNPOD_API_BASE_URL=https://rest.runpod.io/v1
 RUNPOD_SSH_HOST=
 RUNPOD_SSH_PORT=22

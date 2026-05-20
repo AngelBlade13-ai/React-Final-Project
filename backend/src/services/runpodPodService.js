@@ -5,6 +5,11 @@ function buildUnconfiguredStatus(message) {
     configured: false,
     provider: "runpod",
     podId: config.runpodPodId,
+    podName: config.runpodPodName || "",
+    configuredPodName: config.runpodPodName || "",
+    configuredPodId: config.runpodPodId || "",
+    podIdOverride: Boolean(config.runpodPodIdOverride),
+    resolveSource: "none",
     desiredStatus: "UNKNOWN",
     runtimeStatus: "unconfigured",
     canStart: false,
@@ -14,7 +19,9 @@ function buildUnconfiguredStatus(message) {
 }
 
 function isRunpodConfigured() {
-  return Boolean(config.runpodApiKey && config.runpodPodId);
+  return Boolean(
+    config.runpodApiKey && (config.runpodPodName || config.runpodPodId)
+  );
 }
 
 function normalizePortMappings(portMappings = {}) {
@@ -62,6 +69,7 @@ async function fetchRunpod(path, options = {}) {
       ...(options.headers || {})
     }
   });
+
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
@@ -75,10 +83,107 @@ async function fetchRunpod(path, options = {}) {
   return data;
 }
 
-function normalizeRunpodStatus(pod = {}) {
+function normalizePodListResponse(data) {
+  if (Array.isArray(data)) {
+    return data;
+  }
+
+  if (Array.isArray(data.pods)) {
+    return data.pods;
+  }
+
+  if (Array.isArray(data.results)) {
+    return data.results;
+  }
+
+  if (Array.isArray(data.data)) {
+    return data.data;
+  }
+
+  return [];
+}
+
+async function listRunpodPods() {
+  const data = await fetchRunpod("/pods");
+  return normalizePodListResponse(data);
+}
+
+async function resolveRunpodPod() {
+  if (!config.runpodApiKey) {
+    const error = new Error("Set RUNPOD_API_KEY to enable RunPod discovery.");
+    error.statusCode = 503;
+    throw error;
+  }
+
+  const podName = String(config.runpodPodName || "").trim();
+  const fallbackPodId = String(config.runpodPodId || "").trim();
+
+  if (fallbackPodId && config.runpodPodIdOverride) {
+    const pod = await fetchRunpod(`/pods/${fallbackPodId}`);
+    return normalizeResolvedRunpodPod(pod, "id");
+  }
+
+  if (podName) {
+    const pods = await listRunpodPods();
+    const matches = pods.filter(
+      (pod) => String(pod.name || "").trim() === podName
+    );
+
+    if (matches.length === 1) {
+      return normalizeResolvedRunpodPod(matches[0], "name");
+    }
+
+    if (matches.length > 1) {
+      const error = new Error(
+        `Multiple RunPod pods are named "${podName}". Rename them so the name is unique.`
+      );
+      error.statusCode = 409;
+      throw error;
+    }
+
+    if (!fallbackPodId) {
+      const error = new Error(
+        `No RunPod pod found with name "${podName}". Check RUNPOD_POD_NAME or rename/create the pod.`
+      );
+      error.statusCode = 404;
+      throw error;
+    }
+  }
+
+  if (fallbackPodId) {
+    const pod = await fetchRunpod(`/pods/${fallbackPodId}`);
+    return normalizeResolvedRunpodPod(pod, "id");
+  }
+
+  const error = new Error(
+    "Set RUNPOD_POD_NAME or RUNPOD_POD_ID to enable remote pod controls."
+  );
+  error.statusCode = 503;
+  throw error;
+}
+
+function normalizeResolvedRunpodPod(pod = {}, source = "id") {
+  return {
+    source,
+    pod,
+    podName: pod.name || config.runpodPodName || "",
+    podId: pod.id || config.runpodPodId || "",
+    status: String(pod.desiredStatus || "").trim().toUpperCase() || "UNKNOWN",
+    machineId: pod.machineId || pod.machine?.id || "",
+    gpuDisplayName:
+      pod.gpuDisplayName ||
+      pod.gpuTypeDisplayName ||
+      pod.machine?.gpuDisplayName ||
+      pod.machine?.gpuTypeDisplayName ||
+      ""
+  };
+}
+
+function normalizeRunpodStatus(pod = {}, resolveSource = "id") {
   const desiredStatus = String(pod.desiredStatus || "")
     .trim()
     .toUpperCase();
+
   const runtimeStatus =
     desiredStatus === "RUNNING"
       ? "running"
@@ -94,7 +199,18 @@ function normalizeRunpodStatus(pod = {}) {
     configured: true,
     provider: "runpod",
     podId: pod.id || config.runpodPodId,
-    name: pod.name || "",
+    podName: pod.name || config.runpodPodName || "",
+    configuredPodName: config.runpodPodName || "",
+    configuredPodId: config.runpodPodId || "",
+    podIdOverride: Boolean(config.runpodPodIdOverride),
+    resolveSource,
+    machineId: pod.machineId || pod.machine?.id || "",
+    gpuDisplayName:
+      pod.gpuDisplayName ||
+      pod.gpuTypeDisplayName ||
+      pod.machine?.gpuDisplayName ||
+      pod.machine?.gpuTypeDisplayName ||
+      "",
     desiredStatus: desiredStatus || "UNKNOWN",
     runtimeStatus,
     costPerHr: Number(pod.costPerHr || 0) || 0,
@@ -110,42 +226,35 @@ function normalizeRunpodStatus(pod = {}) {
     canStop: desiredStatus === "RUNNING",
     message:
       runtimeStatus === "running"
-        ? "RunPod pod is running. Ollama may still require an SSH tunnel or exposed endpoint."
+        ? `RunPod pod is running. Resolved by ${resolveSource}. Ollama may still require an SSH tunnel or exposed endpoint.`
         : runtimeStatus === "stopped"
-          ? "RunPod pod is stopped."
+          ? `RunPod pod is stopped. Resolved by ${resolveSource}.`
           : runtimeStatus === "terminated"
-            ? "RunPod pod is terminated."
-            : "RunPod pod status is unknown."
+            ? `RunPod pod is terminated. Resolved by ${resolveSource}.`
+            : `RunPod pod status is unknown. Resolved by ${resolveSource}.`
   };
-}
-
-async function getRunpodPod() {
-  if (!isRunpodConfigured()) {
-    const error = new Error(
-      "Set RUNPOD_API_KEY and RUNPOD_POD_ID to enable RunPod discovery."
-    );
-    error.statusCode = 503;
-    throw error;
-  }
-
-  return fetchRunpod(`/pods/${config.runpodPodId}`);
 }
 
 async function getRunpodPodStatus() {
   if (!isRunpodConfigured()) {
     return buildUnconfiguredStatus(
-      "Set RUNPOD_API_KEY and RUNPOD_POD_ID to enable remote pod controls."
+      "Set RUNPOD_API_KEY plus RUNPOD_POD_NAME or RUNPOD_POD_ID to enable remote pod controls."
     );
   }
 
   try {
-    const pod = await getRunpodPod();
-    return normalizeRunpodStatus(pod);
+    const resolved = await resolveRunpodPod();
+    return normalizeRunpodStatus(resolved.pod, resolved.source);
   } catch (error) {
     return {
       configured: true,
       provider: "runpod",
       podId: config.runpodPodId,
+      podName: config.runpodPodName || "",
+      configuredPodName: config.runpodPodName || "",
+      configuredPodId: config.runpodPodId || "",
+      podIdOverride: Boolean(config.runpodPodIdOverride),
+      resolveSource: "error",
       desiredStatus: "UNKNOWN",
       runtimeStatus: "error",
       canStart: false,
@@ -166,20 +275,34 @@ async function getRunpodSshEndpoint() {
     };
   }
 
-  const pod = await getRunpodPod();
-  return getRunpodSshEndpointFromPod(pod);
+  const resolved = await resolveRunpodPod();
+  const endpoint = getRunpodSshEndpointFromPod(resolved.pod);
+
+  return {
+    ...endpoint,
+    source: resolved.source
+  };
 }
 
 async function startRunpodPod() {
   if (!isRunpodConfigured()) {
     const error = new Error(
-      "Set RUNPOD_API_KEY and RUNPOD_POD_ID before starting the remote AI pod."
+      "Set RUNPOD_API_KEY plus RUNPOD_POD_NAME or RUNPOD_POD_ID before starting the remote AI pod."
     );
     error.statusCode = 503;
     throw error;
   }
 
-  await fetchRunpod(`/pods/${config.runpodPodId}/start`, {
+  const resolved = await resolveRunpodPod();
+  const podId = resolved.pod?.id;
+
+  if (!podId) {
+    const error = new Error("Resolved RunPod pod does not have an id.");
+    error.statusCode = 502;
+    throw error;
+  }
+
+  await fetchRunpod(`/pods/${podId}/start`, {
     method: "POST"
   });
 
@@ -189,13 +312,22 @@ async function startRunpodPod() {
 async function stopRunpodPod() {
   if (!isRunpodConfigured()) {
     const error = new Error(
-      "Set RUNPOD_API_KEY and RUNPOD_POD_ID before stopping the remote AI pod."
+      "Set RUNPOD_API_KEY plus RUNPOD_POD_NAME or RUNPOD_POD_ID before stopping the remote AI pod."
     );
     error.statusCode = 503;
     throw error;
   }
 
-  await fetchRunpod(`/pods/${config.runpodPodId}/stop`, {
+  const resolved = await resolveRunpodPod();
+  const podId = resolved.pod?.id;
+
+  if (!podId) {
+    const error = new Error("Resolved RunPod pod does not have an id.");
+    error.statusCode = 502;
+    throw error;
+  }
+
+  await fetchRunpod(`/pods/${podId}/stop`, {
     method: "POST"
   });
 
@@ -205,6 +337,7 @@ async function stopRunpodPod() {
 module.exports = {
   getRunpodPodStatus,
   getRunpodSshEndpoint,
+  resolveRunpodPod,
   startRunpodPod,
   stopRunpodPod
 };

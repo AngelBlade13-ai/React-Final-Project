@@ -60,6 +60,8 @@ export const emptyCollection = {
   description: "",
   featuredReleaseSlug: "",
   theme: "",
+  themeTags: [],
+  worldLayers: [],
   isPublicPrimary: false
 };
 

@@ -339,7 +339,9 @@ Important fields:
 - `localAiPathNumPredict`
 - `localAiNewPathNumPredict`
 - `runpodApiKey`
+- `runpodPodName`
 - `runpodPodId`
+- `runpodPodIdOverride`
 - `runpodApiBaseUrl`
 - SSH tunnel and remote Ollama fields
 
@@ -516,6 +518,7 @@ Role:
 
 Important functions:
 
+- `resolveRunpodPod()`
 - `getRunpodPodStatus()`
 - `startRunpodPod()`
 - `stopRunpodPod()`
@@ -524,10 +527,12 @@ Important functions:
 
 Data flowing in:
 
-- RunPod API key and pod ID from config
+- RunPod API key and stable pod name from config
+- optional pod ID fallback, or override when `RUNPOD_POD_ID_OVERRIDE=true`
 
 Data flowing out:
 
+- structured resolution data: source, pod name, pod ID, status, machine ID, and GPU display name
 - normalized pod status object
 - normalized SSH endpoint derived from `publicIp` and `portMappings["22"]`
 
@@ -540,6 +545,8 @@ Reads, writes, or suggests:
 Error handling:
 
 - if config is missing, returns `configured: false`
+- if no pod matches `RUNPOD_POD_NAME`, returns a helpful `runtimeStatus: "error"` unless fallback ID is configured
+- if multiple pods match `RUNPOD_POD_NAME`, returns an error requiring a unique name
 - if provider fetch fails after config is present, returns `runtimeStatus: "error"`
 
 ### [backend/src/services/remoteAiTunnelService.js](/d:/Docs/Active%20Project/React%20Final%20Project/backend/src/services/remoteAiTunnelService.js)
@@ -839,7 +846,9 @@ Relevant config:
 - `LOCAL_AI_MODEL`
 - `LOCAL_AI_MODEL_PROFILES`
 - `RUNPOD_API_KEY`
-- `RUNPOD_POD_ID`
+- `RUNPOD_POD_NAME`
+- `RUNPOD_POD_ID` optional fallback
+- `RUNPOD_POD_ID_OVERRIDE` optional fixed-ID override
 - SSH/tunnel vars
 
 ## Common Errors

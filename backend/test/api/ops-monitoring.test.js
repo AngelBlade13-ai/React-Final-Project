@@ -559,6 +559,8 @@ test("remote AI pod controls proxy runpod start stop and status safely", async (
 
   const context = await createApiTestContext({
     RUNPOD_API_KEY: "test-runpod-key",
+    RUNPOD_POD_NAME: "",
+    RUNPOD_POD_ID_OVERRIDE: "false",
     RUNPOD_POD_ID: "pod_test_123"
   });
 
@@ -617,6 +619,236 @@ test("remote AI pod controls proxy runpod start stop and status safely", async (
   );
 });
 
+test("remote AI pod status resolves runpod pod by configured name", async (t) => {
+  const originalFetch = global.fetch;
+
+  global.fetch = async (url) => {
+    const normalizedUrl = String(url);
+
+    if (normalizedUrl === "https://rest.runpod.io/v1/pods") {
+      return {
+        ok: true,
+        json: async () => ({
+          pods: [
+            {
+              id: "pod_named_123",
+              name: "angelina-ollama-admin",
+              desiredStatus: "RUNNING",
+              machineId: "machine_123",
+              gpuDisplayName: "RTX 4090",
+              publicIp: "213.192.2.117",
+              portMappings: { 22: 40179 }
+            }
+          ]
+        })
+      };
+    }
+
+    if (normalizedUrl.endsWith("/api/tags")) {
+      return { ok: true, json: async () => ({ models: [] }) };
+    }
+
+    throw new Error(`Unexpected fetch URL: ${normalizedUrl}`);
+  };
+
+  const context = await createApiTestContext({
+    RUNPOD_API_KEY: "test-runpod-key",
+    RUNPOD_POD_ID: "",
+    RUNPOD_POD_ID_OVERRIDE: "false",
+    RUNPOD_POD_NAME: "angelina-ollama-admin"
+  });
+
+  t.after(async () => {
+    global.fetch = originalFetch;
+    await context.close();
+  });
+
+  const loginResponse = await context.agent
+    .post("/api/admin/login")
+    .set(context.mutationHeaders)
+    .send({
+      email: "admin@example.com",
+      password: "Admin123!"
+    });
+
+  assert.equal(loginResponse.status, 200);
+
+  const response = await context.agent.get("/api/admin/assistant/status");
+
+  assert.equal(response.status, 200);
+  assert.equal(response.body.remotePod.resolveSource, "name");
+  assert.equal(
+    response.body.remotePod.configuredPodName,
+    "angelina-ollama-admin"
+  );
+  assert.equal(response.body.remotePod.podId, "pod_named_123");
+  assert.equal(response.body.remotePod.machineId, "machine_123");
+  assert.equal(response.body.remotePod.gpuDisplayName, "RTX 4090");
+});
+
+test("remote AI pod status falls back to runpod pod id when name is missing", async (t) => {
+  const originalFetch = global.fetch;
+
+  global.fetch = async (url) => {
+    const normalizedUrl = String(url);
+
+    if (normalizedUrl === "https://rest.runpod.io/v1/pods") {
+      return { ok: true, json: async () => ({ pods: [] }) };
+    }
+
+    if (normalizedUrl === "https://rest.runpod.io/v1/pods/pod_fallback_123") {
+      return {
+        ok: true,
+        json: async () => ({
+          id: "pod_fallback_123",
+          name: "fallback-pod",
+          desiredStatus: "EXITED"
+        })
+      };
+    }
+
+    if (normalizedUrl.endsWith("/api/tags")) {
+      return { ok: true, json: async () => ({ models: [] }) };
+    }
+
+    throw new Error(`Unexpected fetch URL: ${normalizedUrl}`);
+  };
+
+  const context = await createApiTestContext({
+    RUNPOD_API_KEY: "test-runpod-key",
+    RUNPOD_POD_NAME: "missing-name",
+    RUNPOD_POD_ID_OVERRIDE: "false",
+    RUNPOD_POD_ID: "pod_fallback_123"
+  });
+
+  t.after(async () => {
+    global.fetch = originalFetch;
+    await context.close();
+  });
+
+  const loginResponse = await context.agent
+    .post("/api/admin/login")
+    .set(context.mutationHeaders)
+    .send({
+      email: "admin@example.com",
+      password: "Admin123!"
+    });
+
+  assert.equal(loginResponse.status, 200);
+
+  const response = await context.agent.get("/api/admin/assistant/status");
+
+  assert.equal(response.status, 200);
+  assert.equal(response.body.remotePod.resolveSource, "id");
+  assert.equal(response.body.remotePod.configuredPodName, "missing-name");
+  assert.equal(response.body.remotePod.configuredPodId, "pod_fallback_123");
+  assert.equal(response.body.remotePod.podId, "pod_fallback_123");
+});
+
+test("remote AI pod status reports helpful errors for missing and duplicate runpod names", async (t) => {
+  const originalFetch = global.fetch;
+  let mode = "missing";
+
+  global.fetch = async (url) => {
+    const normalizedUrl = String(url);
+
+    if (normalizedUrl === "https://rest.runpod.io/v1/pods") {
+      return {
+        ok: true,
+        json: async () => ({
+          pods:
+            mode === "duplicate"
+              ? [
+                  {
+                    id: "pod_a",
+                    name: "duplicate-name",
+                    desiredStatus: "RUNNING"
+                  },
+                  {
+                    id: "pod_b",
+                    name: "duplicate-name",
+                    desiredStatus: "EXITED"
+                  }
+                ]
+              : []
+        })
+      };
+    }
+
+    if (normalizedUrl.endsWith("/api/tags")) {
+      return { ok: true, json: async () => ({ models: [] }) };
+    }
+
+    throw new Error(`Unexpected fetch URL: ${normalizedUrl}`);
+  };
+
+  const missingContext = await createApiTestContext({
+    RUNPOD_API_KEY: "test-runpod-key",
+    RUNPOD_POD_NAME: "missing-name",
+    RUNPOD_POD_ID: "",
+    RUNPOD_POD_ID_OVERRIDE: "false"
+  });
+
+  t.after(async () => {
+    global.fetch = originalFetch;
+    await missingContext.close();
+  });
+
+  const missingLoginResponse = await missingContext.agent
+    .post("/api/admin/login")
+    .set(missingContext.mutationHeaders)
+    .send({
+      email: "admin@example.com",
+      password: "Admin123!"
+    });
+
+  assert.equal(missingLoginResponse.status, 200);
+
+  const missingResponse = await missingContext.agent.get(
+    "/api/admin/assistant/status"
+  );
+
+  assert.equal(missingResponse.status, 200);
+  assert.equal(missingResponse.body.remotePod.runtimeStatus, "error");
+  assert.match(
+    missingResponse.body.remotePod.message,
+    /No RunPod pod found with name "missing-name"/
+  );
+
+  mode = "duplicate";
+  const duplicateContext = await createApiTestContext({
+    RUNPOD_API_KEY: "test-runpod-key",
+    RUNPOD_POD_NAME: "duplicate-name",
+    RUNPOD_POD_ID: "",
+    RUNPOD_POD_ID_OVERRIDE: "false"
+  });
+
+  t.after(async () => {
+    await duplicateContext.close();
+  });
+
+  const duplicateLoginResponse = await duplicateContext.agent
+    .post("/api/admin/login")
+    .set(duplicateContext.mutationHeaders)
+    .send({
+      email: "admin@example.com",
+      password: "Admin123!"
+    });
+
+  assert.equal(duplicateLoginResponse.status, 200);
+
+  const duplicateResponse = await duplicateContext.agent.get(
+    "/api/admin/assistant/status"
+  );
+
+  assert.equal(duplicateResponse.status, 200);
+  assert.equal(duplicateResponse.body.remotePod.runtimeStatus, "error");
+  assert.match(
+    duplicateResponse.body.remotePod.message,
+    /Multiple RunPod pods are named "duplicate-name"/
+  );
+});
+
 test("remote AI tunnel controls report and toggle tunnel state safely", async (t) => {
   const originalFetch = global.fetch;
   global.fetch = async (url) => {
@@ -643,6 +875,8 @@ test("remote AI tunnel controls report and toggle tunnel state safely", async (t
     REMOTE_AI_TUNNEL_TEST_MODE: "true",
     REMOTE_AI_TUNNEL_TEST_RUNNING: "false",
     RUNPOD_API_KEY: "test-runpod-key",
+    RUNPOD_POD_NAME: "",
+    RUNPOD_POD_ID_OVERRIDE: "false",
     RUNPOD_POD_ID: "pod_test_123",
     RUNPOD_SSH_USER: "root",
     RUNPOD_SSH_KEY_PATH: "~/.ssh/id_ed25519"
@@ -723,6 +957,8 @@ test("remote Ollama wake control starts ollama serve through ssh safely", async 
 
   const context = await createApiTestContext({
     RUNPOD_API_KEY: "test-runpod-key",
+    RUNPOD_POD_NAME: "",
+    RUNPOD_POD_ID_OVERRIDE: "false",
     RUNPOD_POD_ID: "pod_test_123",
     RUNPOD_SSH_KEY_PATH: "~/.ssh/id_ed25519"
   });

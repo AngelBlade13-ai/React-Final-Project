@@ -853,10 +853,11 @@ router.post("/assistant/remote-pod/start", async (req, res) => {
       action: "assistant.remote_pod_started",
       entityType: "assistant",
       entityId: remotePod.podId || "runpod",
-      entityLabel: remotePod.name || "Remote AI pod",
+      entityLabel: remotePod.podName || "Remote AI pod",
       details: {
         desiredStatus: remotePod.desiredStatus,
-        provider: remotePod.provider
+        provider: remotePod.provider,
+        resolveSource: remotePod.resolveSource
       }
     });
 
@@ -876,10 +877,11 @@ router.post("/assistant/remote-pod/stop", async (req, res) => {
       action: "assistant.remote_pod_stopped",
       entityType: "assistant",
       entityId: remotePod.podId || "runpod",
-      entityLabel: remotePod.name || "Remote AI pod",
+      entityLabel: remotePod.podName || "Remote AI pod",
       details: {
         desiredStatus: remotePod.desiredStatus,
-        provider: remotePod.provider
+        provider: remotePod.provider,
+        resolveSource: remotePod.resolveSource
       }
     });
 
