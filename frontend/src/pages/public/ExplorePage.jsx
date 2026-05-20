@@ -2,7 +2,8 @@ import { startTransition, useDeferredValue, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   PublicErrorState,
-  PublicLoadingState
+  PublicLoadingState,
+  PublicSkeletonGrid
 } from "../../components/PublicDataState";
 import { ReleaseCard } from "../../components/cards";
 import { usePublicCollections, usePublicPosts } from "../../hooks/usePublicApi";
@@ -357,14 +358,18 @@ export default function ExplorePage({ onPlayTrack }) {
             </section>
           ) : (
             <div className="results-grid">
-              {filteredPosts.map((post) => (
-                <ReleaseCard
-                  key={post.id}
-                  layout="horizontal"
-                  onPlayTrack={onPlayTrack}
-                  post={post}
-                />
-              ))}
+              {loading && !filteredPosts.length ? (
+                <PublicSkeletonGrid count={6} label="Loading search results" />
+              ) : (
+                filteredPosts.map((post) => (
+                  <ReleaseCard
+                    key={post.id}
+                    layout="horizontal"
+                    onPlayTrack={onPlayTrack}
+                    post={post}
+                  />
+                ))
+              )}
             </div>
           )}
         </section>

@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
 import {
   PublicErrorState,
-  PublicLoadingState
+  PublicLoadingState,
+  PublicSkeletonGrid
 } from "../../components/PublicDataState";
 import {
   usePublicCollections,
@@ -77,30 +78,34 @@ export default function GuidedPathsIndexPage() {
           />
         ) : null}
         <section className="guided-path-grid">
-          {paths.map((path) => (
-            <article
-              className="intro-card homepage-panel guided-path-card"
-              key={path.slug}
-            >
-              <p className="eyebrow">{path.eyebrow}</p>
-              <h2>{path.title}</h2>
-              <p>{path.intro}</p>
-              <p className="guided-path-note">{path.moodNote}</p>
-              <div className="tag-row">
-                <span className="meta-badge">
-                  {loading ? "..." : `${path.count} tracks`}
-                </span>
-                {path.posts.slice(0, 2).map((post) => (
-                  <span className="meta-badge subtle-badge" key={post.slug}>
-                    {post.title}
+          {loading && !paths.length ? (
+            <PublicSkeletonGrid count={3} label="Loading guided paths" />
+          ) : (
+            paths.map((path) => (
+              <article
+                className="intro-card homepage-panel guided-path-card"
+                key={path.slug}
+              >
+                <p className="eyebrow">{path.eyebrow}</p>
+                <h2>{path.title}</h2>
+                <p>{path.intro}</p>
+                <p className="guided-path-note">{path.moodNote}</p>
+                <div className="tag-row">
+                  <span className="meta-badge">
+                    {loading ? "..." : `${path.count} tracks`}
                   </span>
-                ))}
-              </div>
-              <Link className="card-link" to={`/paths/${path.slug}`}>
-                Enter Path
-              </Link>
-            </article>
-          ))}
+                  {path.posts.slice(0, 2).map((post) => (
+                    <span className="meta-badge subtle-badge" key={post.slug}>
+                      {post.title}
+                    </span>
+                  ))}
+                </div>
+                <Link className="card-link" to={`/paths/${path.slug}`}>
+                  Enter Path
+                </Link>
+              </article>
+            ))
+          )}
         </section>
       </main>
     </>

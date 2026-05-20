@@ -247,6 +247,64 @@
   animation: publicLoadingSweep 1.2s ease-in-out infinite;
 }
 
+.public-skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.public-skeleton-card {
+  overflow: hidden;
+  min-height: 100%;
+}
+
+.public-skeleton-media {
+  min-height: 160px;
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in srgb, var(--primary) 12%, transparent),
+      transparent
+    ),
+    color-mix(in srgb, var(--surface-alt) 76%, var(--surface) 24%);
+  background-size: 220% 100%;
+  animation: publicSkeletonSweep 1.5s ease-in-out infinite;
+}
+
+.public-skeleton-body {
+  display: grid;
+  gap: 0.7rem;
+  padding: 1rem;
+}
+
+.public-skeleton-body span,
+.public-skeleton-body strong,
+.public-skeleton-body p {
+  display: block;
+  height: 0.9rem;
+  margin: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-alt) 72%, var(--surface) 28%);
+}
+
+.public-skeleton-body span {
+  width: 34%;
+}
+
+.public-skeleton-body strong {
+  width: 72%;
+  height: 1.3rem;
+}
+
+.public-skeleton-body p {
+  width: 100%;
+}
+
+.public-skeleton-body p:last-child {
+  width: 58%;
+}
+
 .public-state-actions {
   display: flex;
   flex-wrap: wrap;
@@ -273,6 +331,27 @@
 
   100% {
     transform: translateX(250%);
+  }
+}
+
+@keyframes publicSkeletonSweep {
+  0% {
+    background-position: 120% 0;
+  }
+
+  100% {
+    background-position: -120% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .public-loading-bar::before,
+  .public-skeleton-media {
+    animation: none;
+  }
+
+  .public-skeleton-media {
+    background-position: 0 0;
   }
 }
 

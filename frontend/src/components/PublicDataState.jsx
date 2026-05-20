@@ -50,3 +50,28 @@ export function PublicLoadingState({
     </section>
   );
 }
+
+export function PublicSkeletonGrid({
+  count = 3,
+  label = "Loading archive cards"
+}) {
+  return (
+    <div aria-label={label} className="public-skeleton-grid" role="status">
+      {Array.from({ length: count }, (_, index) => (
+        <article
+          aria-hidden="true"
+          className="post-card homepage-post-card public-skeleton-card"
+          key={`public-skeleton-${index}`}
+        >
+          <div className="public-skeleton-media" />
+          <div className="public-skeleton-body">
+            <span />
+            <strong />
+            <p />
+            <p />
+          </div>
+        </article>
+      ))}
+    </div>
+  );
+}

@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
 import {
   PublicErrorState,
-  PublicLoadingState
+  PublicLoadingState,
+  PublicSkeletonGrid
 } from "../../components/PublicDataState";
 import WorldThresholdLink from "../../components/WorldThresholdLink";
 import ReleaseMedia from "../../components/ReleaseMedia";
@@ -315,9 +316,13 @@ export default function PublicHome({ onPlayTrack, siteContent }) {
             </span>
           </div>
           <div className="collection-grid collection-index-grid">
-            {featuredCollections.map((collection) => (
-              <CollectionCard key={collection.id} collection={collection} />
-            ))}
+            {loading && !featuredCollections.length ? (
+              <PublicSkeletonGrid count={4} label="Loading collections" />
+            ) : (
+              featuredCollections.map((collection) => (
+                <CollectionCard key={collection.id} collection={collection} />
+              ))
+            )}
           </div>
         </section>
 
@@ -350,14 +355,18 @@ export default function PublicHome({ onPlayTrack, siteContent }) {
             </section>
           ) : (
             <div className="post-grid latest-release-grid">
-              {latestPosts.map((post, index) => (
-                <ReleaseCard
-                  emphasis={index < 2}
-                  key={post.id}
-                  onPlayTrack={onPlayTrack}
-                  post={post}
-                />
-              ))}
+              {loading && !latestPosts.length ? (
+                <PublicSkeletonGrid count={4} label="Loading latest releases" />
+              ) : (
+                latestPosts.map((post, index) => (
+                  <ReleaseCard
+                    emphasis={index < 2}
+                    key={post.id}
+                    onPlayTrack={onPlayTrack}
+                    post={post}
+                  />
+                ))
+              )}
             </div>
           )}
         </section>

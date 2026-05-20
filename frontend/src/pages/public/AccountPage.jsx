@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { PublicLoadingState } from "../../components/PublicDataState";
 import { withMutationIntent } from "../../lib/api";
 import usePageMetadata from "../../hooks/usePageMetadata";
 import { apiBaseUrl } from "../../lib/site";
@@ -169,10 +170,10 @@ export default function AccountPage({
       </section>
 
       {!isUserSessionReady ? (
-        <section className="intro-card homepage-panel">
-          <p className="eyebrow">Loading</p>
-          <h2>Checking your session.</h2>
-        </section>
+        <PublicLoadingState
+          message="Checking whether this browser already has a public account session."
+          title="Checking your session"
+        />
       ) : hasAdminSession && !currentUser ? (
         <section className="auth-card auth-login-card account-panel">
           <div className="auth-form-intro">
@@ -227,7 +228,7 @@ export default function AccountPage({
             {error ? <p className="error-text">{error}</p> : null}
             {success ? <p className="success-text">{success}</p> : null}
             <div className="account-action-row">
-              <button type="submit">
+              <button disabled={submitting} type="submit">
                 {submitting ? "Saving..." : "Update Account"}
               </button>
               <button
@@ -293,7 +294,7 @@ export default function AccountPage({
             {error ? <p className="error-text">{error}</p> : null}
             {success ? <p className="success-text">{success}</p> : null}
             <div className="account-action-row">
-              <button type="submit">
+              <button disabled={submitting} type="submit">
                 {submitting
                   ? "Working..."
                   : mode === "register"

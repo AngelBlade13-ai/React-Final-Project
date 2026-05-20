@@ -17,12 +17,15 @@ Use this checklist before promoting the portfolio site or sending it to reviewer
 - Release detail pages have loading, error, and bad-slug recovery states.
 - Unmatched routes render a designed 404 page with recovery links.
 - Public shell includes a footer, skip link, stronger keyboard focus states, and route focus reset.
+- Listing-heavy public pages use card-shaped skeleton states instead of only generic loading panels.
+- Public account forms disable duplicate submissions while requests are in flight.
 
 ## Admin UX
 
 - Admin shell shows a compact protected workspace status strip.
 - Unknown protected admin routes render a recovery page instead of a blank dashboard.
 - Browser smoke coverage verifies authenticated admin route recovery.
+- Browser smoke coverage verifies bad public route, release slug, and collection slug recovery.
 
 ## Metadata
 
@@ -99,5 +102,7 @@ After deploy:
 - Open `/paths` and one guided path.
 - Open `/account`.
 - Open `/not-a-real-route` and confirm the 404 recovery page appears.
+- Open `/release/not-a-real-release` and confirm the release recovery page appears.
+- Open `/collections/not-a-real-collection` and confirm the collection recovery page appears.
 - Sign into `/admin/login`, open `/admin/unknown-surface`, and confirm the admin recovery page appears.
 - Open `/api/health` and confirm database status is connected.

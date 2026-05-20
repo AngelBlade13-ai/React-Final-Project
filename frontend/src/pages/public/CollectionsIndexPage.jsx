@@ -1,6 +1,7 @@
 import {
   PublicErrorState,
-  PublicLoadingState
+  PublicLoadingState,
+  PublicSkeletonGrid
 } from "../../components/PublicDataState";
 import { CollectionCard } from "../../components/cards";
 import { usePublicCollections } from "../../hooks/usePublicApi";
@@ -96,13 +97,17 @@ export default function CollectionsIndexPage() {
             </section>
           ) : (
             <div className="collection-grid collection-index-grid">
-              {worldCollections.map((collection) => (
-                <CollectionCard
-                  key={collection.id}
-                  collection={collection}
-                  showFeatured
-                />
-              ))}
+              {loading && !worldCollections.length ? (
+                <PublicSkeletonGrid count={2} label="Loading world collections" />
+              ) : (
+                worldCollections.map((collection) => (
+                  <CollectionCard
+                    key={collection.id}
+                    collection={collection}
+                    showFeatured
+                  />
+                ))
+              )}
             </div>
           )}
         </section>

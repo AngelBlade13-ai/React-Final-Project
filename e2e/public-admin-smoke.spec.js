@@ -84,4 +84,26 @@ test("public shell has recovery navigation for unknown routes", async ({
       name: /search the archive by title, release notes, and collection/i
     })
   ).toBeVisible();
+
+  await page.goto("/release/not-a-real-release");
+  await expect(
+    page.getByRole("heading", { name: /this release could not be opened/i })
+  ).toBeVisible();
+  await page.getByRole("link", { name: "Search archive" }).click();
+  await expect(
+    page.getByRole("heading", {
+      name: /search the archive by title, release notes, and collection/i
+    })
+  ).toBeVisible();
+
+  await page.goto("/collections/not-a-real-collection");
+  await expect(
+    page.getByRole("heading", { name: /this collection could not be opened/i })
+  ).toBeVisible();
+  await page.getByRole("link", { name: "Browse collections" }).click();
+  await expect(
+    page.getByRole("heading", {
+      name: /curated entry points into the archive/i
+    })
+  ).toBeVisible();
 });
