@@ -24,7 +24,6 @@ const AdminCollectionsPage = lazy(
   () => import("./pages/admin/AdminCollectionsPage")
 );
 const AdminInsightsPage = lazy(() => import("./pages/admin/AdminInsightsPage"));
-const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
 const AdminNotFoundPage = lazy(() => import("./pages/admin/AdminNotFoundPage"));
 const AdminPathsPage = lazy(() => import("./pages/admin/AdminPathsPage"));
 const AdminPostsPage = lazy(() => import("./pages/admin/AdminPostsPage"));
@@ -110,8 +109,6 @@ function App() {
   });
   const [forcedTheme, setForcedTheme] = useState(null);
   const [activeCollectionTheme, setActiveCollectionTheme] = useState("");
-  const [hasAdminSession, setHasAdminSession] = useState(false);
-  const [isAdminSessionReady, setIsAdminSessionReady] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [isUserSessionReady, setIsUserSessionReady] = useState(false);
   const [playerQueue, setPlayerQueue] = useState([]);
@@ -126,6 +123,8 @@ function App() {
   const playerStateRef = useRef({ queue: [], index: -1 });
   const currentTrack =
     currentQueueIndex >= 0 ? playerQueue[currentQueueIndex] || null : null;
+  const hasAdminSession = currentUser?.role === "admin";
+  const isAdminSessionReady = isUserSessionReady;
   const { siteContent } = useSiteContent();
   const siteName =
     String(siteContent?.branding?.siteName || "").trim() ||
@@ -235,42 +234,6 @@ function App() {
 
     setIsUserSessionReady(false);
     loadCurrentUser();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    let isCancelled = false;
-
-    async function loadAdminSession() {
-      try {
-        const response = await fetch(`${apiBaseUrl}/admin/session`, {
-          credentials: "include"
-        });
-        const data = await response.json().catch(() => ({}));
-
-        if (!response.ok) {
-          throw new Error(data.message || "Admin session unavailable.");
-        }
-
-        if (!isCancelled) {
-          setHasAdminSession(Boolean(data.admin));
-        }
-      } catch {
-        if (!isCancelled) {
-          setHasAdminSession(false);
-        }
-      } finally {
-        if (!isCancelled) {
-          setIsAdminSessionReady(true);
-        }
-      }
-    }
-
-    setIsAdminSessionReady(false);
-    loadAdminSession();
 
     return () => {
       isCancelled = true;
@@ -565,8 +528,6 @@ function App() {
   }
 
   function handleUserAuthSuccess(payload) {
-    setHasAdminSession(false);
-    setIsAdminSessionReady(true);
     setCurrentUser(payload?.user || null);
     setIsUserSessionReady(true);
   }
@@ -584,28 +545,6 @@ function App() {
 
     setCurrentUser(null);
     setIsUserSessionReady(true);
-  }
-
-  function handleAdminAuthSuccess() {
-    setCurrentUser(null);
-    setIsUserSessionReady(true);
-    setHasAdminSession(true);
-    setIsAdminSessionReady(true);
-  }
-
-  async function handleAdminLogout() {
-    try {
-      await fetch(`${apiBaseUrl}/admin/logout`, {
-        method: "POST",
-        credentials: "include",
-        headers: withMutationIntent()
-      });
-    } catch {
-      // Ignore logout transport failures and still clear local session state.
-    }
-
-    setHasAdminSession(false);
-    setIsAdminSessionReady(true);
   }
 
   const previousQueueIndex = findAdjacentPlayableIndex(
@@ -633,7 +572,6 @@ function App() {
                 element={
                   <PublicLayout
                     currentUser={currentUser}
-                    hasAdminSession={hasAdminSession}
                     isThemeLocked={Boolean(forcedTheme)}
                     isUserSessionReady={isUserSessionReady}
                     onUserLogout={handleUserLogout}
@@ -687,7 +625,6 @@ function App() {
                   element={
                     <AccountPage
                       currentUser={currentUser}
-                      hasAdminSession={hasAdminSession}
                       isUserSessionReady={isUserSessionReady}
                       onUserAuthSuccess={handleUserAuthSuccess}
                       onUserLogout={handleUserLogout}
@@ -715,13 +652,7 @@ function App() {
               </Route>
               <Route
                 path="/admin/login"
-                element={
-                  <AdminLogin
-                    onAdminAuthSuccess={handleAdminAuthSuccess}
-                    theme={theme}
-                    setTheme={setTheme}
-                  />
-                }
+                element={<Navigate replace to="/account" />}
               />
               <Route
                 path="/admin"
@@ -731,7 +662,7 @@ function App() {
                     isAdminSessionReady={isAdminSessionReady}
                   >
                     <AdminLayout
-                      onAdminLogout={handleAdminLogout}
+                      onAdminLogout={handleUserLogout}
                       theme={theme}
                       setTheme={setTheme}
                     />

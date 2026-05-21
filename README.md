@@ -167,30 +167,21 @@ Current quality gate notes:
 
 ### Admin flow
 
-1. Open `/admin/login`
+1. Open `/account`
 2. Sign in with the configured admin credentials
-3. Access the protected `/admin` dashboard
+3. Use `Open Admin Studio` from the account page
 4. Create, edit, and delete posts and collections
 5. Update About page content
 6. Open `/admin/insights` for archive health, runtime status, and the admin audit trail
 7. Open `/admin/comments` for moderation
 8. Use `Open Importer` to launch the local Python importer from the admin shell
 
-### Hidden admin access
-
-The public navigation does not show a permanent admin login link.
-
-Admin access can be reached in either of these ways:
-
-1. Visit `/admin/login` directly
-2. Click the site mark in the public header 5 times quickly to reveal `Admin Access`
-
 ## Authentication
 
-The project includes two authentication flows:
+The project uses one account login surface:
 
-- Admin authentication for protected dashboard pages
-- Public user authentication for account management and comments
+- standard users can manage their public account, comments, library, and reactions
+- admin users are normal accounts with `role: "admin"` and access to the protected dashboard
 
 Security measures currently in code:
 
@@ -209,9 +200,13 @@ Security measures currently in code:
 
 ## API Documentation
 
-### Admin authentication
+### Admin authentication compatibility
 
 `POST /api/admin/login`
+
+This compatibility endpoint signs in the configured admin as a normal user
+session with `role: "admin"`. The public UI uses `/account` as the only login
+page.
 
 Example request:
 
@@ -227,6 +222,10 @@ Example response:
 ```json
 {
   "token": "jwt-token",
+  "user": {
+    "email": "admin@example.com",
+    "role": "admin"
+  },
   "admin": {
     "email": "admin@example.com",
     "role": "admin"

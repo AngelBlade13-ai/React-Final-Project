@@ -6,7 +6,6 @@ const { readStore, insertUser, replaceUser } = require("../data/store");
 const { requireUser } = require("../middleware/auth");
 const { loginLimiter, userAuthLimiter } = require("../middleware/rateLimiters");
 const {
-  issueAdminToken,
   issueAuthToken,
   normalizeUserInput,
   sanitizeUser
@@ -14,7 +13,6 @@ const {
 const {
   clearAdminSessionCookie,
   clearUserSessionCookie,
-  setAdminSessionCookie,
   setUserSessionCookie
 } = require("../services/sessionCookieService");
 const { recordAdminAuditEvent } = require("../services/adminAuditService");
@@ -37,12 +35,58 @@ const VALID_REACTIONS = new Set([
   "soft-place"
 ]);
 
+async function findOrCreateAdminUser(store) {
+  const normalizedEmail = String(config.adminEmail || "")
+    .trim()
+    .toLowerCase();
+  const existingUser = store.users.find((entry) => entry.email === normalizedEmail);
+
+  if (existingUser) {
+    if (existingUser.role === "admin" && existingUser.status === "active") {
+      return existingUser;
+    }
+
+    const nextUser = {
+      ...existingUser,
+      role: "admin",
+      status: "active",
+      updatedAt: new Date().toISOString()
+    };
+
+    await replaceUser(nextUser);
+    return nextUser;
+  }
+
+  const timestamp = new Date().toISOString();
+  const adminUser = {
+    id: crypto.randomUUID(),
+    displayName: "Archive Admin",
+    email: normalizedEmail,
+    passwordHash: config.adminPasswordHash
+      ? config.adminPasswordHash
+      : await bcrypt.hash(config.adminPassword, 12),
+    role: "admin",
+    status: "active",
+    savedReleaseSlugs: [],
+    recentReleaseSlugs: [],
+    releaseReactions: {},
+    createdAt: timestamp,
+    updatedAt: timestamp
+  };
+
+  await insertUser(adminUser);
+  return adminUser;
+}
+
 router.post("/admin/login", loginLimiter, async (req, res, next) => {
   try {
+    const store = await readStore();
     const { email, password } = req.body;
     const normalizedEmail = String(email || "").trim();
     const suppliedPassword = String(password || "");
-    const isEmailMatch = normalizedEmail === config.adminEmail;
+    const isEmailMatch =
+      normalizedEmail.toLowerCase() ===
+      String(config.adminEmail || "").trim().toLowerCase();
     const isPasswordMatch = config.adminPasswordHash
       ? await bcrypt.compare(suppliedPassword, config.adminPasswordHash)
       : suppliedPassword === config.adminPassword;
@@ -51,26 +95,25 @@ router.post("/admin/login", loginLimiter, async (req, res, next) => {
       return res.status(401).json({ message: "Invalid admin credentials." });
     }
 
-    const token = issueAdminToken();
-    clearUserSessionCookie(res);
-    setAdminSessionCookie(res, token);
+    const adminUser = await findOrCreateAdminUser(store);
+    const token = issueAuthToken(adminUser);
+    clearAdminSessionCookie(res);
+    setUserSessionCookie(res, token);
     await recordAdminAuditEvent(req, {
       action: "session.login",
-      actorEmail: config.adminEmail,
+      actorEmail: adminUser.email,
       entityType: "session",
-      entityId: config.adminEmail,
+      entityId: adminUser.id,
       entityLabel: "Admin session",
       details: {
-        source: "admin_login"
+        source: "unified_admin_login"
       }
     });
 
     return res.json({
       token,
-      admin: {
-        email: config.adminEmail,
-        role: "admin"
-      }
+      user: sanitizeUser(adminUser),
+      admin: sanitizeUser(adminUser)
     });
   } catch (error) {
     next(error);
@@ -129,7 +172,20 @@ router.post("/auth/login", userAuthLimiter, async (req, res, next) => {
       .trim()
       .toLowerCase();
     const password = String(req.body.password || "");
-    const user = store.users.find((entry) => entry.email === email);
+    let user = store.users.find((entry) => entry.email === email);
+
+    if (
+      !user &&
+      email === String(config.adminEmail || "").trim().toLowerCase()
+    ) {
+      const isAdminPasswordMatch = config.adminPasswordHash
+        ? await bcrypt.compare(password, config.adminPasswordHash)
+        : password === config.adminPassword;
+
+      if (isAdminPasswordMatch) {
+        user = await findOrCreateAdminUser(store);
+      }
+    }
 
     if (!user || user.status !== "active") {
       return res.status(401).json({ message: "Invalid email or password." });
@@ -155,22 +211,18 @@ router.post("/auth/login", userAuthLimiter, async (req, res, next) => {
 
 router.post("/auth/logout", (req, res) => {
   clearUserSessionCookie(res);
+  clearAdminSessionCookie(res);
   return res.json({ message: "Signed out." });
 });
 
 router.post("/admin/logout", (req, res) => {
   clearAdminSessionCookie(res);
+  clearUserSessionCookie(res);
   return res.json({ message: "Signed out." });
 });
 
 router.get("/auth/me", requireUser, async (req, res, next) => {
   try {
-    if (req.auth.role === "admin") {
-      return res
-        .status(403)
-        .json({ message: "Admin sessions are managed separately." });
-    }
-
     const store = await readStore();
     const user = store.users.find((entry) => entry.id === req.auth.sub);
 

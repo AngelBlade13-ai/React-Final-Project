@@ -7,7 +7,6 @@ import { apiBaseUrl } from "../../lib/site";
 
 export default function AccountPage({
   currentUser,
-  hasAdminSession,
   isUserSessionReady,
   onUserAuthSuccess,
   onUserLogout
@@ -218,12 +217,12 @@ export default function AccountPage({
         </div>
         <p className="eyebrow">Community Access</p>
         <h1>
-          Create an account, keep your place, and speak inside the archive.
+          Sign in once, keep your place, and unlock the right workspace.
         </h1>
         <p className="hero-copy">
-          User accounts unlock public interaction. Right now that means comments
-          on release pages, plus a basic account profile you can update without
-          touching the admin workspace.
+          Public accounts can comment, save releases, react to songs, and keep
+          recent listens. Admin accounts use the same login, with an extra role
+          flag that opens the studio and moderation tools.
         </p>
       </section>
 
@@ -232,25 +231,6 @@ export default function AccountPage({
           message="Checking whether this browser already has a public account session."
           title="Checking your session"
         />
-      ) : hasAdminSession && !currentUser ? (
-        <section className="auth-card auth-login-card account-panel">
-          <div className="auth-form-intro">
-            <p className="eyebrow">Admin Session Active</p>
-            <h2>User accounts are separate from admin access.</h2>
-            <p>
-              You are currently signed in as an admin. Public user accounts are
-              used for comments and community actions, not for site management.
-            </p>
-          </div>
-          <div className="account-action-row">
-            <Link className="hero-link" to="/admin">
-              Return to Admin
-            </Link>
-            <Link className="secondary-button" to="/">
-              Back to Site
-            </Link>
-          </div>
-        </section>
       ) : currentUser ? (
         <>
           <section className="auth-card auth-login-card account-panel">
@@ -287,6 +267,11 @@ export default function AccountPage({
               {error ? <p className="error-text">{error}</p> : null}
               {success ? <p className="success-text">{success}</p> : null}
               <div className="account-action-row">
+                {currentUser.role === "admin" ? (
+                  <Link className="hero-link" to="/admin">
+                    Open Admin Studio
+                  </Link>
+                ) : null}
                 <button disabled={submitting} type="submit">
                   {submitting ? "Saving..." : "Update Account"}
                 </button>
@@ -360,8 +345,8 @@ export default function AccountPage({
             <h2>{mode === "register" ? "Join the archive" : "User Sign In"}</h2>
             <p>
               {mode === "register"
-                ? "Create an account to comment on releases."
-                : "Sign in to manage your comments."}
+                ? "Create an account to comment, save releases, and build a library."
+                : "Sign in to manage your library, comments, and any studio access tied to your account."}
             </p>
           </div>
           <form className="account-form-grid" onSubmit={handleAuthSubmit}>

@@ -40,7 +40,7 @@ export function ProtectedRoute({
   }
 
   if (!hasAdminSession) {
-    return <Navigate replace to="/admin/login" />;
+    return <Navigate replace to="/account" />;
   }
 
   return children;
@@ -86,7 +86,7 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
 
   const handleSessionExpired = useCallback(async () => {
     await Promise.resolve(onAdminLogout?.());
-    navigate("/admin/login");
+    navigate("/account");
   }, [navigate, onAdminLogout]);
 
   const adminFetch = useCallback(
@@ -668,7 +668,7 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
 
   async function handleLogout() {
     await Promise.resolve(onAdminLogout?.());
-    navigate("/admin/login");
+    navigate("/account");
   }
 
   async function handleOpenImporter() {

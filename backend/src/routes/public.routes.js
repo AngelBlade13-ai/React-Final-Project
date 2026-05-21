@@ -73,10 +73,6 @@ router.get("/posts/:slug/comments", async (req, res, next) => {
 
 router.post("/posts/:slug/comments", commentWriteLimiter, requireUser, async (req, res, next) => {
   try {
-    if (req.user.role === "admin") {
-      return res.status(403).json({ message: "Use a user account to comment publicly." });
-    }
-
     const store = await readStore();
     const { entry: post, redirectSlug } = resolvePublishedPost(store, req.params.slug);
 

@@ -88,7 +88,10 @@ function authenticate(req, res, next) {
 }
 
 function requireAdmin(req, res, next) {
-  const { token, source } = getTokenFromRequest(req, { allowAdminCookie: true, allowUserCookie: false });
+  const { token, source } = getTokenFromRequest(req, {
+    allowAdminCookie: true,
+    allowUserCookie: true
+  });
 
   if (!token) {
     return res.status(401).json({ message: "Authentication required." });

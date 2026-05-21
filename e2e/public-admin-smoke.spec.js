@@ -33,10 +33,11 @@ test("public account and admin smoke paths work against the test stack", async (
   const adminContext = await browser.newContext();
   const adminPage = await adminContext.newPage();
 
-  await adminPage.goto("/admin/login");
+  await adminPage.goto("/account");
   await adminPage.getByLabel("Email").fill("admin@example.com");
   await adminPage.getByLabel("Password").fill("Admin123!");
-  await adminPage.getByRole("button", { name: "Login" }).click();
+  await adminPage.getByRole("button", { name: "Sign In" }).first().click();
+  await adminPage.getByRole("link", { name: "Open Admin Studio" }).click();
 
   await expect(
     adminPage.getByRole("heading", { name: "Manage Site Content" })

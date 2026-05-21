@@ -1,11 +1,9 @@
-import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet } from "react-router-dom";
 import ThemeToggle from "../components/ThemeToggle";
 import { emptySiteSettings } from "../lib/site";
 
 export default function PublicLayout({
   currentUser,
-  hasAdminSession,
   isThemeLocked = false,
   isUserSessionReady = true,
   onUserLogout,
@@ -13,52 +11,10 @@ export default function PublicLayout({
   theme,
   setTheme
 }) {
-  const [siteMarkPressCount, setSiteMarkPressCount] = useState(0);
-  const [showAdminAccess, setShowAdminAccess] = useState(hasAdminSession);
   const branding = {
     ...emptySiteSettings.branding,
     ...(siteContent?.branding || {})
   };
-
-  useEffect(() => {
-    if (hasAdminSession) {
-      setShowAdminAccess(true);
-      return undefined;
-    }
-
-    if (!siteMarkPressCount) {
-      return undefined;
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      setSiteMarkPressCount(0);
-    }, 1800);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
-  }, [hasAdminSession, siteMarkPressCount]);
-
-  useEffect(() => {
-    if (siteMarkPressCount >= 5) {
-      setShowAdminAccess(true);
-      setSiteMarkPressCount(0);
-    }
-  }, [siteMarkPressCount]);
-
-  useEffect(() => {
-    if (hasAdminSession || !showAdminAccess) {
-      return undefined;
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      setShowAdminAccess(false);
-    }, 8000);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
-  }, [hasAdminSession, showAdminAccess]);
 
   return (
     <div className="page-shell">
@@ -70,11 +26,6 @@ export default function PublicLayout({
         <div className="public-header-brand">
           <Link
             className="site-mark"
-            onClick={() => {
-              if (!hasAdminSession) {
-                setSiteMarkPressCount((current) => current + 1);
-              }
-            }}
             to="/"
           >
             <span className="eyebrow">{branding.siteName}</span>
@@ -123,16 +74,14 @@ export default function PublicLayout({
             >
               About
             </NavLink>
-            {!hasAdminSession ? (
-              <NavLink
-                className={({ isActive }) =>
-                  `site-nav-link${isActive ? " active" : ""}`
-                }
-                to="/account"
-              >
-                {currentUser ? "Account" : "Join"}
-              </NavLink>
-            ) : null}
+            <NavLink
+              className={({ isActive }) =>
+                `site-nav-link${isActive ? " active" : ""}`
+              }
+              to="/account"
+            >
+              {currentUser ? "Account" : "Join"}
+            </NavLink>
           </nav>
         </div>
         <div className="public-header-utility">
@@ -152,19 +101,9 @@ export default function PublicLayout({
                 Sign Out
               </button>
             </div>
-          ) : isUserSessionReady && !hasAdminSession ? (
+          ) : isUserSessionReady ? (
             <Link className="site-account-link" to="/account">
               Sign In
-            </Link>
-          ) : null}
-          {!hasAdminSession ? (
-            <Link className="site-utility-link quiet" to="/admin/login">
-              Admin
-            </Link>
-          ) : null}
-          {showAdminAccess ? (
-            <Link className="site-admin-link" to="/admin">
-              {hasAdminSession ? "Manage Posts" : "Admin Access"}
             </Link>
           ) : null}
         </div>
