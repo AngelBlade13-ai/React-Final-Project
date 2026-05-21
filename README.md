@@ -25,12 +25,13 @@ Useful public routes:
 - `/explore` - searchable release archive
 - `/paths` - guided listening paths
 - `/about` - project and artist context
-- `/account` - public user account flow
+- `/login` - sign in and registration
+- `/account` - signed-in public profile and library
 
 Operational routes:
 
 - `/api/health` - backend health and runtime status
-- `/admin/login` - protected admin entry
+- `/admin/login` - compatibility redirect to `/login`
 
 ## Project Structure
 
@@ -159,15 +160,15 @@ Current quality gate notes:
 
 ### Public user flow
 
-1. Open `/account`
+1. Open `/login`
 2. Create an account with display name, email, and password
-3. Sign in and open any release page
+3. Open `/account` to manage the profile and library
 4. Add, edit, or delete your own comments
 5. Use the account page to update your display name or password
 
 ### Admin flow
 
-1. Open `/account`
+1. Open `/login`
 2. Sign in with the configured admin credentials
 3. Use `Open Admin Studio` from the account page
 4. Create, edit, and delete posts and collections
@@ -205,8 +206,8 @@ Security measures currently in code:
 `POST /api/admin/login`
 
 This compatibility endpoint signs in the configured admin as a normal user
-session with `role: "admin"`. The public UI uses `/account` as the only login
-page.
+session with `role: "admin"`. The public UI uses `/login` for authentication
+and `/account` for the signed-in profile.
 
 Example request:
 

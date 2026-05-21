@@ -24,10 +24,7 @@ export default function PublicLayout({
       <div aria-hidden="true" className="threshold-overlay" />
       <header className="public-site-header">
         <div className="public-header-brand">
-          <Link
-            className="site-mark"
-            to="/"
-          >
+          <Link className="site-mark" to="/">
             <span className="eyebrow">{branding.siteName}</span>
             <strong>{branding.siteTagline}</strong>
           </Link>
@@ -78,7 +75,7 @@ export default function PublicLayout({
               className={({ isActive }) =>
                 `site-nav-link${isActive ? " active" : ""}`
               }
-              to="/account"
+              to={currentUser ? "/account" : "/login"}
             >
               {currentUser ? "Account" : "Join"}
             </NavLink>
@@ -102,7 +99,7 @@ export default function PublicLayout({
               </button>
             </div>
           ) : isUserSessionReady ? (
-            <Link className="site-account-link" to="/account">
+            <Link className="site-account-link" to="/login">
               Sign In
             </Link>
           ) : null}

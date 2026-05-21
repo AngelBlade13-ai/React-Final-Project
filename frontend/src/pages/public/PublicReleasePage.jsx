@@ -313,9 +313,8 @@ export default function PublicReleasePage({
         return;
       }
 
-      eldoriaScrollFrameRef.current = window.requestAnimationFrame(
-        applyScrollDepth
-      );
+      eldoriaScrollFrameRef.current =
+        window.requestAnimationFrame(applyScrollDepth);
     }
 
     applyScrollDepth();
@@ -601,8 +600,8 @@ export default function PublicReleasePage({
                 </div>
               ) : (
                 <p className="release-engagement-prompt">
-                  <Link to="/account">Sign in</Link> to save this release or
-                  mark how it hit you.
+                  <Link to="/login">Sign in</Link> to save this release or mark
+                  how it hit you.
                 </p>
               )}
               {isFractureverse ? (

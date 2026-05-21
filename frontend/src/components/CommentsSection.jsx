@@ -3,7 +3,11 @@ import { Link } from "react-router-dom";
 import { withMutationIntent } from "../lib/api";
 import { apiBaseUrl } from "../lib/site";
 
-export default function CommentsSection({ currentUser, onUserLogout, postSlug }) {
+export default function CommentsSection({
+  currentUser,
+  onUserLogout,
+  postSlug
+}) {
   const [comments, setComments] = useState([]);
   const [draft, setDraft] = useState("");
   const [editingId, setEditingId] = useState("");
@@ -21,7 +25,9 @@ export default function CommentsSection({ currentUser, onUserLogout, postSlug })
       setError("");
 
       try {
-        const response = await fetch(`${apiBaseUrl}/posts/${postSlug}/comments`);
+        const response = await fetch(
+          `${apiBaseUrl}/posts/${postSlug}/comments`
+        );
         const data = await response.json();
 
         if (!response.ok) {
@@ -108,7 +114,11 @@ export default function CommentsSection({ currentUser, onUserLogout, postSlug })
         throw new Error(data.message || "Failed to update comment.");
       }
 
-      setComments((current) => current.map((comment) => (comment.id === commentId ? data.comment : comment)));
+      setComments((current) =>
+        current.map((comment) =>
+          comment.id === commentId ? data.comment : comment
+        )
+      );
       setEditingId("");
       setEditingBody("");
       setSuccess("Comment updated.");
@@ -146,7 +156,9 @@ export default function CommentsSection({ currentUser, onUserLogout, postSlug })
         throw new Error(data.message || "Failed to delete comment.");
       }
 
-      setComments((current) => current.filter((comment) => comment.id !== commentId));
+      setComments((current) =>
+        current.filter((comment) => comment.id !== commentId)
+      );
       setSuccess("Comment deleted.");
     } catch (apiError) {
       setError(apiError.message);
@@ -165,7 +177,9 @@ export default function CommentsSection({ currentUser, onUserLogout, postSlug })
       {currentUser ? (
         <form className="comment-composer" onSubmit={handleCreateComment}>
           <label>
-            <span className="comment-composer-label">Commenting as {currentUser.displayName}</span>
+            <span className="comment-composer-label">
+              Commenting as {currentUser.displayName}
+            </span>
             <textarea
               onChange={(event) => setDraft(event.target.value)}
               placeholder="Leave a response to this release."
@@ -174,7 +188,10 @@ export default function CommentsSection({ currentUser, onUserLogout, postSlug })
             />
           </label>
           <div className="comment-form-actions">
-            <button disabled={submitting || draft.trim().length < 2} type="submit">
+            <button
+              disabled={submitting || draft.trim().length < 2}
+              type="submit"
+            >
               {submitting ? "Posting..." : "Post Comment"}
             </button>
           </div>
@@ -182,7 +199,7 @@ export default function CommentsSection({ currentUser, onUserLogout, postSlug })
       ) : (
         <div className="comments-auth-prompt">
           <p>Want to join the conversation?</p>
-          <Link className="hero-link" to="/account">
+          <Link className="hero-link" to="/login">
             Create an account or sign in
           </Link>
         </div>
@@ -203,9 +220,13 @@ export default function CommentsSection({ currentUser, onUserLogout, postSlug })
               <article className="comment-card" key={comment.id}>
                 <div className="comment-card-head">
                   <div>
-                    <strong>{comment.author?.displayName || "Archive Reader"}</strong>
+                    <strong>
+                      {comment.author?.displayName || "Archive Reader"}
+                    </strong>
                     <p className="comment-meta">
-                      {new Date(comment.updatedAt || comment.createdAt).toLocaleString()}
+                      {new Date(
+                        comment.updatedAt || comment.createdAt
+                      ).toLocaleString()}
                     </p>
                   </div>
                   {isOwner ? (
@@ -220,7 +241,11 @@ export default function CommentsSection({ currentUser, onUserLogout, postSlug })
                       >
                         Edit
                       </button>
-                      <button className="secondary-button" onClick={() => handleDeleteComment(comment.id)} type="button">
+                      <button
+                        className="secondary-button"
+                        onClick={() => handleDeleteComment(comment.id)}
+                        type="button"
+                      >
                         Delete
                       </button>
                     </div>
@@ -229,9 +254,17 @@ export default function CommentsSection({ currentUser, onUserLogout, postSlug })
 
                 {isEditing ? (
                   <div className="comment-edit-shell">
-                    <textarea onChange={(event) => setEditingBody(event.target.value)} rows="4" value={editingBody} />
+                    <textarea
+                      onChange={(event) => setEditingBody(event.target.value)}
+                      rows="4"
+                      value={editingBody}
+                    />
                     <div className="comment-form-actions">
-                      <button disabled={submitting || editingBody.trim().length < 2} onClick={() => handleSaveComment(comment.id)} type="button">
+                      <button
+                        disabled={submitting || editingBody.trim().length < 2}
+                        onClick={() => handleSaveComment(comment.id)}
+                        type="button"
+                      >
                         Save
                       </button>
                       <button
@@ -254,7 +287,9 @@ export default function CommentsSection({ currentUser, onUserLogout, postSlug })
           })}
         </div>
       ) : (
-        <p className="lyrics-placeholder">No comments yet. Be the first person to leave one.</p>
+        <p className="lyrics-placeholder">
+          No comments yet. Be the first person to leave one.
+        </p>
       )}
     </section>
   );

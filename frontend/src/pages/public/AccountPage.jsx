@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { PublicLoadingState } from "../../components/PublicDataState";
 import { withMutationIntent } from "../../lib/api";
 import usePageMetadata from "../../hooks/usePageMetadata";
@@ -12,15 +12,10 @@ export default function AccountPage({
   onUserLogout
 }) {
   usePageMetadata({
-    description: currentUser
-      ? "Manage your public account and stay connected to the archive conversation."
-      : "Create an account, sign in, and join the public conversation around each release.",
-    title: currentUser ? "Account" : "Sign In"
+    description:
+      "Manage your public account, library, comments, and role-based archive access.",
+    title: "Account"
   });
-  const [mode, setMode] = useState("login");
-  const [displayName, setDisplayName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [profileName, setProfileName] = useState(
     currentUser?.displayName || ""
   );
@@ -41,26 +36,6 @@ export default function AccountPage({
       .trim()
       .slice(0, 1)
       .toUpperCase() || "A";
-
-  function validateAuthForm() {
-    if (mode === "register" && displayName.trim().length < 2) {
-      return "Display name must be at least 2 characters.";
-    }
-
-    if (!email.trim()) {
-      return "Email is required.";
-    }
-
-    if (mode === "register" && password.length < 8) {
-      return "Password must be at least 8 characters.";
-    }
-
-    if (mode === "login" && !password) {
-      return "Password is required.";
-    }
-
-    return "";
-  }
 
   useEffect(() => {
     setProfileName(currentUser?.displayName || "");
@@ -118,55 +93,6 @@ export default function AccountPage({
     };
   }, [currentUser]);
 
-  async function handleAuthSubmit(event) {
-    event.preventDefault();
-    setSubmitting(true);
-    setError("");
-    setSuccess("");
-
-    const validationError = validateAuthForm();
-
-    if (validationError) {
-      setError(validationError);
-      setSubmitting(false);
-      return;
-    }
-
-    try {
-      const response = await fetch(
-        `${apiBaseUrl}/auth/${mode === "register" ? "register" : "login"}`,
-        {
-          method: "POST",
-          credentials: "include",
-          headers: withMutationIntent({
-            "Content-Type": "application/json"
-          }),
-          body: JSON.stringify({
-            displayName,
-            email,
-            password
-          })
-        }
-      );
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Authentication failed.");
-      }
-
-      onUserAuthSuccess(data);
-      setProfileName(data.user?.displayName || "");
-      setDisplayName("");
-      setEmail("");
-      setPassword("");
-      setSuccess(mode === "register" ? "Account created." : "Signed in.");
-    } catch (apiError) {
-      setError(apiError.message);
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
   async function handleProfileSubmit(event) {
     event.preventDefault();
     setSubmitting(true);
@@ -213,6 +139,21 @@ export default function AccountPage({
     }
   }
 
+  if (!isUserSessionReady) {
+    return (
+      <div className="content-grid">
+        <PublicLoadingState
+          message="Checking whether this browser already has a public account session."
+          title="Checking your session"
+        />
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return <Navigate replace to="/login" />;
+  }
+
   return (
     <div className="content-grid">
       <section className="hero homepage-hero account-hero">
@@ -221,267 +162,179 @@ export default function AccountPage({
             Back to site
           </Link>
         </div>
-        <p className="eyebrow">Community Access</p>
-        <h1>
-          Sign in once, keep your place, and unlock the right workspace.
-        </h1>
+        <p className="eyebrow">Archive Profile</p>
+        <h1>Your account, library, and archive trail.</h1>
         <p className="hero-copy">
-          Public accounts can comment, save releases, react to songs, and keep
-          recent listens. Admin accounts use the same login, with an extra role
-          flag that opens the studio and moderation tools.
+          Manage your listener identity, return to saved releases, and open any
+          role-based tools connected to this account.
         </p>
       </section>
 
-      {!isUserSessionReady ? (
-        <PublicLoadingState
-          message="Checking whether this browser already has a public account session."
-          title="Checking your session"
-        />
-      ) : currentUser ? (
-        <>
-          <section className="profile-hero-card">
-            <div className="profile-avatar" aria-hidden="true">
-              {profileInitial}
-            </div>
-            <div className="profile-identity">
-              <p className="eyebrow">
-                {currentUser.role === "admin"
-                  ? "Admin Profile"
-                  : "Listener Profile"}
-              </p>
-              <h2>{currentUser.displayName}</h2>
-              <p>{currentUser.email}</p>
-              <div className="profile-pill-row">
-                <span>
-                  {currentUser.role === "admin"
-                    ? "Studio access"
-                    : "Public account"}
-                </span>
-                <span>{currentUser.status || "active"}</span>
-              </div>
-            </div>
-            <div className="profile-action-stack">
-              <div className="profile-stat-grid">
-                <article>
-                  <strong>{library.savedReleases.length}</strong>
-                  <span>Saved</span>
-                </article>
-                <article>
-                  <strong>{library.recentReleases.length}</strong>
-                  <span>Recent</span>
-                </article>
-                <article>
-                  <strong>{reactionCount}</strong>
-                  <span>Reactions</span>
-                </article>
-              </div>
-              <div className="account-action-row">
-                {currentUser.role === "admin" ? (
-                  <Link className="hero-link" to="/admin">
-                    Open Admin Studio
-                  </Link>
-                ) : null}
-                <button
-                  className="secondary-button"
-                  onClick={onUserLogout}
-                  type="button"
-                >
-                  Sign Out
-                </button>
-              </div>
-            </div>
-          </section>
-          <section className="profile-dashboard-grid">
-            <article className="intro-card homepage-panel profile-feature-card">
-              <p className="eyebrow">Current Shelf</p>
-              <h2>
-                {library.savedReleases[0]?.title ||
-                  library.recentReleases[0]?.title ||
-                  "Start building your archive trail."}
-              </h2>
-              <p>
-                {library.savedReleases[0]
-                  ? "Your latest saved release is waiting here whenever you come back."
-                  : library.recentReleases[0]
-                    ? "Your most recent listen is ready to continue."
-                    : "Save a release or press play while signed in to shape this profile."}
-              </p>
-              {(library.savedReleases[0] || library.recentReleases[0]) ? (
-                <Link
-                  className="card-link"
-                  to={`/release/${(library.savedReleases[0] || library.recentReleases[0]).slug}`}
-                >
-                  Open Release
-                </Link>
-              ) : (
-                <Link className="card-link" to="/explore">
-                  Explore Releases
-                </Link>
-              )}
-            </article>
-            <article className="intro-card homepage-panel profile-settings-card">
-              <p className="eyebrow">Profile Settings</p>
-              <h2>Account details</h2>
-              <form className="account-form-grid" onSubmit={handleProfileSubmit}>
-                <label>
-                  Display Name
-                  <input
-                    minLength="2"
-                    onChange={(event) => setProfileName(event.target.value)}
-                    required
-                    type="text"
-                    value={profileName}
-                  />
-                </label>
-                <label>
-                  New Password
-                  <input
-                    minLength="8"
-                    onChange={(event) => setProfilePassword(event.target.value)}
-                    placeholder="Leave blank to keep current password"
-                    type="password"
-                    value={profilePassword}
-                  />
-                </label>
-                <p className="form-helper-text">
-                  Leave the password blank to keep the current one.
-                </p>
-                {error ? <p className="error-text">{error}</p> : null}
-                {success ? <p className="success-text">{success}</p> : null}
-                <button disabled={submitting} type="submit">
-                  {submitting ? "Saving..." : "Update Profile"}
-                </button>
-              </form>
-            </article>
-          </section>
-          <section className="intro-card homepage-panel account-library-panel">
-            <div className="section-head">
-              <h2>Your Library</h2>
-              <span>{libraryLoading ? "Loading..." : "Saved + recent"}</span>
-            </div>
-            {libraryError ? <p className="error-text">{libraryError}</p> : null}
-            <div className="account-library-grid">
-              <article className="account-library-list">
-                <p className="eyebrow">Saved Releases</p>
-                {library.savedReleases.length ? (
-                  library.savedReleases.map((release) => (
-                    <Link
-                      className="account-library-link"
-                      key={release.slug}
-                      to={`/release/${release.slug}`}
-                    >
-                      <strong>{release.title}</strong>
-                      <span>
-                        {library.releaseReactions[release.slug] ||
-                          "Saved for later"}
-                      </span>
-                    </Link>
-                  ))
-                ) : (
-                  <p className="form-helper-text">
-                    Save releases from their pages to build your library.
-                  </p>
-                )}
-              </article>
-              <article className="account-library-list">
-                <p className="eyebrow">Recently Played</p>
-                {library.recentReleases.length ? (
-                  library.recentReleases.map((release) => (
-                    <Link
-                      className="account-library-link"
-                      key={release.slug}
-                      to={`/release/${release.slug}`}
-                    >
-                      <strong>{release.title}</strong>
-                      <span>Continue listening</span>
-                    </Link>
-                  ))
-                ) : (
-                  <p className="form-helper-text">
-                    Play a release while signed in and it will appear here.
-                  </p>
-                )}
-              </article>
-            </div>
-          </section>
-        </>
-      ) : (
-        <section className="auth-card auth-login-card account-panel">
-          <div className="auth-form-intro">
-            <p className="eyebrow">
-              {mode === "register" ? "Create Account" : "Welcome Back"}
-            </p>
-            <h2>{mode === "register" ? "Join the archive" : "User Sign In"}</h2>
-            <p>
-              {mode === "register"
-                ? "Create an account to comment, save releases, and build a library."
-                : "Sign in to manage your library, comments, and any studio access tied to your account."}
-            </p>
+      <section className="profile-hero-card">
+        <div className="profile-avatar" aria-hidden="true">
+          {profileInitial}
+        </div>
+        <div className="profile-identity">
+          <p className="eyebrow">
+            {currentUser.role === "admin"
+              ? "Admin Profile"
+              : "Listener Profile"}
+          </p>
+          <h2>{currentUser.displayName}</h2>
+          <p>{currentUser.email}</p>
+          <div className="profile-pill-row">
+            <span>
+              {currentUser.role === "admin"
+                ? "Studio access"
+                : "Public account"}
+            </span>
+            <span>{currentUser.status || "active"}</span>
           </div>
-          <form className="account-form-grid" onSubmit={handleAuthSubmit}>
-            {mode === "register" ? (
-              <label>
-                Display Name
-                <input
-                  minLength="2"
-                  onChange={(event) => setDisplayName(event.target.value)}
-                  required
-                  type="text"
-                  value={displayName}
-                />
-              </label>
+        </div>
+        <div className="profile-action-stack">
+          <div className="profile-stat-grid">
+            <article>
+              <strong>{library.savedReleases.length}</strong>
+              <span>Saved</span>
+            </article>
+            <article>
+              <strong>{library.recentReleases.length}</strong>
+              <span>Recent</span>
+            </article>
+            <article>
+              <strong>{reactionCount}</strong>
+              <span>Reactions</span>
+            </article>
+          </div>
+          <div className="account-action-row">
+            {currentUser.role === "admin" ? (
+              <Link className="hero-link" to="/admin">
+                Open Admin Studio
+              </Link>
             ) : null}
+            <button
+              className="secondary-button"
+              onClick={onUserLogout}
+              type="button"
+            >
+              Sign Out
+            </button>
+          </div>
+        </div>
+      </section>
+      <section className="profile-dashboard-grid">
+        <article className="intro-card homepage-panel profile-feature-card">
+          <p className="eyebrow">Current Shelf</p>
+          <h2>
+            {library.savedReleases[0]?.title ||
+              library.recentReleases[0]?.title ||
+              "Start building your archive trail."}
+          </h2>
+          <p>
+            {library.savedReleases[0]
+              ? "Your latest saved release is waiting here whenever you come back."
+              : library.recentReleases[0]
+                ? "Your most recent listen is ready to continue."
+                : "Save a release or press play while signed in to shape this profile."}
+          </p>
+          {library.savedReleases[0] || library.recentReleases[0] ? (
+            <Link
+              className="card-link"
+              to={`/release/${(library.savedReleases[0] || library.recentReleases[0]).slug}`}
+            >
+              Open Release
+            </Link>
+          ) : (
+            <Link className="card-link" to="/explore">
+              Explore Releases
+            </Link>
+          )}
+        </article>
+        <article className="intro-card homepage-panel profile-settings-card">
+          <p className="eyebrow">Profile Settings</p>
+          <h2>Account details</h2>
+          <form className="account-form-grid" onSubmit={handleProfileSubmit}>
             <label>
-              Email
+              Display Name
               <input
-                onChange={(event) => setEmail(event.target.value)}
+                minLength="2"
+                onChange={(event) => setProfileName(event.target.value)}
                 required
-                type="email"
-                value={email}
+                type="text"
+                value={profileName}
               />
             </label>
             <label>
-              Password
+              New Password
               <input
-                minLength={mode === "register" ? 8 : undefined}
-                onChange={(event) => setPassword(event.target.value)}
-                required
+                minLength="8"
+                onChange={(event) => setProfilePassword(event.target.value)}
+                placeholder="Leave blank to keep current password"
                 type="password"
-                value={password}
+                value={profilePassword}
               />
             </label>
-            {mode === "register" ? (
-              <p className="form-helper-text">
-                Use at least 8 characters for account passwords.
-              </p>
-            ) : null}
+            <p className="form-helper-text">
+              Leave the password blank to keep the current one.
+            </p>
             {error ? <p className="error-text">{error}</p> : null}
             {success ? <p className="success-text">{success}</p> : null}
-            <div className="account-action-row">
-              <button disabled={submitting} type="submit">
-                {submitting
-                  ? "Working..."
-                  : mode === "register"
-                    ? "Create Account"
-                    : "Sign In"}
-              </button>
-              <button
-                className="secondary-button"
-                onClick={() => {
-                  setMode((current) =>
-                    current === "register" ? "login" : "register"
-                  );
-                  setError("");
-                  setSuccess("");
-                }}
-                type="button"
-              >
-                {mode === "register" ? "Use Sign In" : "Create Account"}
-              </button>
-            </div>
+            <button disabled={submitting} type="submit">
+              {submitting ? "Saving..." : "Update Profile"}
+            </button>
           </form>
-        </section>
-      )}
+        </article>
+      </section>
+      <section className="intro-card homepage-panel account-library-panel">
+        <div className="section-head">
+          <h2>Your Library</h2>
+          <span>{libraryLoading ? "Loading..." : "Saved + recent"}</span>
+        </div>
+        {libraryError ? <p className="error-text">{libraryError}</p> : null}
+        <div className="account-library-grid">
+          <article className="account-library-list">
+            <p className="eyebrow">Saved Releases</p>
+            {library.savedReleases.length ? (
+              library.savedReleases.map((release) => (
+                <Link
+                  className="account-library-link"
+                  key={release.slug}
+                  to={`/release/${release.slug}`}
+                >
+                  <strong>{release.title}</strong>
+                  <span>
+                    {library.releaseReactions[release.slug] ||
+                      "Saved for later"}
+                  </span>
+                </Link>
+              ))
+            ) : (
+              <p className="form-helper-text">
+                Save releases from their pages to build your library.
+              </p>
+            )}
+          </article>
+          <article className="account-library-list">
+            <p className="eyebrow">Recently Played</p>
+            {library.recentReleases.length ? (
+              library.recentReleases.map((release) => (
+                <Link
+                  className="account-library-link"
+                  key={release.slug}
+                  to={`/release/${release.slug}`}
+                >
+                  <strong>{release.title}</strong>
+                  <span>Continue listening</span>
+                </Link>
+              ))
+            ) : (
+              <p className="form-helper-text">
+                Play a release while signed in and it will appear here.
+              </p>
+            )}
+          </article>
+        </div>
+      </section>
     </div>
   );
 }

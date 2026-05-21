@@ -14,7 +14,7 @@ test("public account and admin smoke paths work against the test stack", async (
     page.getByRole("heading", { name: "This Is My Light" })
   ).toBeVisible();
 
-  await page.goto("/account");
+  await page.goto("/login");
   await page.getByRole("button", { name: "Create Account" }).click();
   await page.getByLabel("Display Name").fill("Quality Gate User");
   await page.getByLabel("Email").fill("quality@example.com");
@@ -33,7 +33,7 @@ test("public account and admin smoke paths work against the test stack", async (
   const adminContext = await browser.newContext();
   const adminPage = await adminContext.newPage();
 
-  await adminPage.goto("/account");
+  await adminPage.goto("/login");
   await adminPage.getByLabel("Email").fill("admin@example.com");
   await adminPage.getByLabel("Password").fill("Admin123!");
   await adminPage.getByRole("button", { name: "Sign In" }).first().click();

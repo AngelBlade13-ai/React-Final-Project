@@ -31,6 +31,7 @@ const AdminSitePage = lazy(() => import("./pages/admin/AdminSitePage"));
 const AdminUsersPage = lazy(() => import("./pages/admin/AdminUsersPage"));
 const AboutPage = lazy(() => import("./pages/public/AboutPage"));
 const AccountPage = lazy(() => import("./pages/public/AccountPage"));
+const LoginPage = lazy(() => import("./pages/public/LoginPage"));
 const CollectionDetailPage = lazy(
   () => import("./pages/public/CollectionDetailPage")
 );
@@ -632,6 +633,16 @@ function App() {
                     />
                   }
                 />
+                <Route
+                  path="/login"
+                  element={
+                    <LoginPage
+                      currentUser={currentUser}
+                      isUserSessionReady={isUserSessionReady}
+                      onUserAuthSuccess={handleUserAuthSuccess}
+                    />
+                  }
+                />
                 <Route path="/about" element={<AboutPage />} />
                 <Route
                   path="/release/:slug"
@@ -653,7 +664,7 @@ function App() {
               </Route>
               <Route
                 path="/admin/login"
-                element={<Navigate replace to="/account" />}
+                element={<Navigate replace to="/login" />}
               />
               <Route
                 path="/admin"

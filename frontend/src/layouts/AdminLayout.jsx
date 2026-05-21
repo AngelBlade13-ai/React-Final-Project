@@ -40,7 +40,7 @@ export function ProtectedRoute({
   }
 
   if (!hasAdminSession) {
-    return <Navigate replace to="/account" />;
+    return <Navigate replace to="/login" />;
   }
 
   return children;
@@ -86,7 +86,7 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
 
   const handleSessionExpired = useCallback(async () => {
     await Promise.resolve(onAdminLogout?.());
-    navigate("/account");
+    navigate("/login");
   }, [navigate, onAdminLogout]);
 
   const adminFetch = useCallback(
@@ -668,7 +668,7 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
 
   async function handleLogout() {
     await Promise.resolve(onAdminLogout?.());
-    navigate("/account");
+    navigate("/login");
   }
 
   async function handleOpenImporter() {
@@ -763,10 +763,15 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
         </NavLink>
       </nav>
 
-      <section className="admin-status-strip" aria-label="Admin workspace status">
+      <section
+        className="admin-status-strip"
+        aria-label="Admin workspace status"
+      >
         <div>
           <span className="eyebrow">Catalog</span>
-          <strong>{loading ? "Loading" : `${publishedPostCount} published`}</strong>
+          <strong>
+            {loading ? "Loading" : `${publishedPostCount} published`}
+          </strong>
         </div>
         <div>
           <span className="eyebrow">Collections</span>
