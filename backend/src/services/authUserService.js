@@ -12,6 +12,16 @@ function sanitizeUser(user) {
     displayName: user.displayName,
     role: user.role,
     status: user.status,
+    savedReleaseSlugs: Array.isArray(user.savedReleaseSlugs)
+      ? user.savedReleaseSlugs
+      : [],
+    recentReleaseSlugs: Array.isArray(user.recentReleaseSlugs)
+      ? user.recentReleaseSlugs
+      : [],
+    releaseReactions:
+      user.releaseReactions && typeof user.releaseReactions === "object"
+        ? user.releaseReactions
+        : {},
     createdAt: user.createdAt,
     updatedAt: user.updatedAt
   };

@@ -12,8 +12,10 @@ import {
   usePublicRelease
 } from "../../hooks/usePublicApi";
 import usePageMetadata from "../../hooks/usePageMetadata";
+import { withMutationIntent } from "../../lib/api";
 import { formatPostDate } from "../../lib/formatters";
 import {
+  apiBaseUrl,
   getCanonicalCollectionSurfacePosts,
   getCollectionDerivedContent,
   getEldoriaMeta,
@@ -59,6 +61,8 @@ export default function PublicReleasePage({
   const eldoriaScrollFrameRef = useRef(0);
   const eldoriaPointerFrameRef = useRef(0);
   const eldoriaPointerRef = useRef({ x: 52, y: 30 });
+  const [engagementError, setEngagementError] = useState("");
+  const [engagementLoading, setEngagementLoading] = useState("");
   usePageMetadata({
     canonicalPath: `/release/${redirectSlug || post?.slug || slug}`,
     description:
@@ -84,6 +88,16 @@ export default function PublicReleasePage({
   const isEldoria = primaryTheme === "eldoria";
   const isThemedSequence = isFractureverse || isEldoria;
   const playbackCopy = getPlaybackStateCopy(post, primaryTheme);
+  const savedReleaseSlugs = Array.isArray(currentUser?.savedReleaseSlugs)
+    ? currentUser.savedReleaseSlugs
+    : [];
+  const releaseReactions =
+    currentUser?.releaseReactions &&
+    typeof currentUser.releaseReactions === "object"
+      ? currentUser.releaseReactions
+      : {};
+  const isSavedRelease = post ? savedReleaseSlugs.includes(post.slug) : false;
+  const activeReaction = post ? releaseReactions[post.slug] || "" : "";
   const fractureMeta = getFractureverseMeta(
     post,
     sequencePosts.length ? sequencePosts : post ? [post] : []
@@ -204,6 +218,41 @@ export default function PublicReleasePage({
                 : [post].filter(Boolean)
       }
     : null;
+
+  async function updateReleaseEngagement(path, body, loadingKey) {
+    if (!post) {
+      return;
+    }
+
+    try {
+      setEngagementLoading(loadingKey);
+      setEngagementError("");
+
+      const response = await fetch(`${apiBaseUrl}${path}`, {
+        method: "PUT",
+        credentials: "include",
+        headers: withMutationIntent({
+          "Content-Type": "application/json"
+        }),
+        body: JSON.stringify(body)
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.message || "Could not update your library.");
+      }
+
+      if (data.user) {
+        window.dispatchEvent(
+          new CustomEvent("suno:user-updated", { detail: data.user })
+        );
+      }
+    } catch (apiError) {
+      setEngagementError(apiError.message);
+    } finally {
+      setEngagementLoading("");
+    }
+  }
 
   useEffect(() => {
     if (redirectSlug && redirectSlug !== slug) {
@@ -504,6 +553,58 @@ export default function PublicReleasePage({
                   </Link>
                 ) : null}
               </div>
+              {currentUser ? (
+                <div className="release-engagement-panel">
+                  <button
+                    className={`secondary-button${isSavedRelease ? " is-active" : ""}`}
+                    disabled={engagementLoading === "save"}
+                    onClick={() =>
+                      updateReleaseEngagement(
+                        `/auth/library/releases/${post.slug}/save`,
+                        { saved: !isSavedRelease },
+                        "save"
+                      )
+                    }
+                    type="button"
+                  >
+                    {isSavedRelease ? "Saved To Library" : "Save To Library"}
+                  </button>
+                  <div className="release-reaction-row">
+                    {[
+                      ["haunted-me", "Haunted me"],
+                      ["made-me-cry", "Made me cry"],
+                      ["on-repeat", "On repeat"]
+                    ].map(([reaction, label]) => (
+                      <button
+                        className={`reaction-chip${activeReaction === reaction ? " active" : ""}`}
+                        disabled={engagementLoading === reaction}
+                        key={reaction}
+                        onClick={() =>
+                          updateReleaseEngagement(
+                            `/auth/library/releases/${post.slug}/reaction`,
+                            {
+                              reaction:
+                                activeReaction === reaction ? "" : reaction
+                            },
+                            reaction
+                          )
+                        }
+                        type="button"
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  {engagementError ? (
+                    <p className="error-text">{engagementError}</p>
+                  ) : null}
+                </div>
+              ) : (
+                <p className="release-engagement-prompt">
+                  <Link to="/account">Sign in</Link> to save this release or
+                  mark how it hit you.
+                </p>
+              )}
               {isFractureverse ? (
                 <p className="fracture-system-voice">
                   Observation log updated. Fragment link stability fluctuating.

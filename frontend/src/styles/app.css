@@ -2209,6 +2209,54 @@ select:focus {
   margin-top: 0.25rem;
 }
 
+.release-engagement-panel {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: 0.75rem;
+  padding: 0.9rem;
+  border-radius: 22px;
+  border: 1px solid color-mix(in srgb, var(--border) 72%, var(--primary) 28%);
+  background: color-mix(in srgb, var(--surface) 78%, var(--primary) 22%);
+}
+
+.release-engagement-panel .secondary-button.is-active {
+  background: linear-gradient(135deg, var(--primary), var(--primary-strong));
+  color: var(--background);
+  border-color: transparent;
+}
+
+.release-reaction-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.reaction-chip {
+  min-height: 2.25rem;
+  margin-top: 0;
+  padding: 0.45rem 0.75rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-alt) 78%, var(--surface) 22%);
+  color: var(--text);
+  font-size: 0.86rem;
+}
+
+.reaction-chip.active {
+  background: color-mix(in srgb, var(--primary) 76%, white 24%);
+  color: #2f081b;
+}
+
+.release-engagement-prompt {
+  margin: 0.65rem 0 0;
+  color: var(--muted-text);
+}
+
+.release-engagement-prompt a {
+  color: var(--primary-strong);
+  font-weight: 800;
+  text-decoration: none;
+}
+
 .admin-form {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3626,6 +3674,40 @@ select:focus {
   width: min(100%, 760px);
 }
 
+.account-library-panel {
+  display: grid;
+  gap: 1rem;
+  max-width: 980px;
+}
+
+.account-library-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.account-library-list {
+  display: grid;
+  gap: 0.65rem;
+  align-content: start;
+}
+
+.account-library-link {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.8rem 0.9rem;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--border) 78%, var(--primary) 22%);
+  background: color-mix(in srgb, var(--surface-alt) 78%, var(--surface) 22%);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.account-library-link span {
+  color: var(--muted-text);
+  font-size: 0.88rem;
+}
+
 .comments-panel {
   gap: 1rem;
 }
@@ -4129,6 +4211,7 @@ select:focus {
 
   .compact-hero,
   .about-hero,
+  .account-library-grid,
   .hero-header-row,
   .homepage-hero-grid,
   .admin-form,

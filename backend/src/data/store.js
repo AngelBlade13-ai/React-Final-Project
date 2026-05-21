@@ -855,6 +855,36 @@ function normalizeUser(user) {
     return null;
   }
 
+  const savedReleaseSlugs = Array.isArray(user.savedReleaseSlugs)
+    ? [
+        ...new Set(
+          user.savedReleaseSlugs
+            .map((slug) => String(slug || "").trim())
+            .filter(Boolean)
+        )
+      ]
+    : [];
+  const recentReleaseSlugs = Array.isArray(user.recentReleaseSlugs)
+    ? [
+        ...new Set(
+          user.recentReleaseSlugs
+            .map((slug) => String(slug || "").trim())
+            .filter(Boolean)
+        )
+      ].slice(0, 12)
+    : [];
+  const releaseReactions =
+    user.releaseReactions && typeof user.releaseReactions === "object"
+      ? Object.fromEntries(
+          Object.entries(user.releaseReactions)
+            .map(([slug, reaction]) => [
+              String(slug || "").trim(),
+              String(reaction || "").trim()
+            ])
+            .filter(([slug, reaction]) => slug && reaction)
+        )
+      : {};
+
   return {
     id: user.id || crypto.randomUUID(),
     email: String(user.email || "")
@@ -864,6 +894,9 @@ function normalizeUser(user) {
     passwordHash: String(user.passwordHash || "").trim(),
     role: String(user.role || "user").trim() || "user",
     status: String(user.status || "active").trim() || "active",
+    savedReleaseSlugs,
+    recentReleaseSlugs,
+    releaseReactions,
     createdAt: user.createdAt || new Date().toISOString(),
     updatedAt: user.updatedAt || user.createdAt || new Date().toISOString()
   };

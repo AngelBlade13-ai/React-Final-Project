@@ -116,3 +116,62 @@ test("public posts smoke endpoint returns the seeded release catalog", async (t)
   assert.ok(Array.isArray(postsResponse.body.posts));
   assert.ok(postsResponse.body.posts.length >= 1);
 });
+
+test("user library saves releases, reactions, and recent listens", async (t) => {
+  const context = await createApiTestContext();
+  t.after(async () => {
+    await context.close();
+  });
+
+  const postsResponse = await context.client.get("/api/posts");
+  const targetPost = postsResponse.body.posts[0];
+
+  assert.ok(targetPost?.slug);
+
+  const registerResponse = await context.agent
+    .post("/api/auth/register")
+    .send({
+      displayName: "Library User",
+      email: "library@example.com",
+      password: "Password123!"
+    })
+    .set(context.mutationHeaders);
+
+  assert.equal(registerResponse.status, 201);
+
+  const saveResponse = await context.agent
+    .put(`/api/auth/library/releases/${targetPost.slug}/save`)
+    .send({ saved: true })
+    .set(context.mutationHeaders);
+
+  assert.equal(saveResponse.status, 200);
+  assert.deepEqual(saveResponse.body.savedReleaseSlugs, [targetPost.slug]);
+
+  const reactionResponse = await context.agent
+    .put(`/api/auth/library/releases/${targetPost.slug}/reaction`)
+    .send({ reaction: "haunted-me" })
+    .set(context.mutationHeaders);
+
+  assert.equal(reactionResponse.status, 200);
+  assert.equal(
+    reactionResponse.body.releaseReactions[targetPost.slug],
+    "haunted-me"
+  );
+
+  const listenResponse = await context.agent
+    .post(`/api/auth/library/releases/${targetPost.slug}/listen`)
+    .set(context.mutationHeaders);
+
+  assert.equal(listenResponse.status, 200);
+  assert.deepEqual(listenResponse.body.recentReleaseSlugs, [targetPost.slug]);
+
+  const libraryResponse = await context.agent.get("/api/auth/library");
+
+  assert.equal(libraryResponse.status, 200);
+  assert.equal(libraryResponse.body.savedReleases[0].slug, targetPost.slug);
+  assert.equal(libraryResponse.body.recentReleases[0].slug, targetPost.slug);
+  assert.equal(
+    libraryResponse.body.releaseReactions[targetPost.slug],
+    "haunted-me"
+  );
+});

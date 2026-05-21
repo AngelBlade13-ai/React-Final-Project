@@ -29,6 +29,13 @@ export default function AccountPage({
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [library, setLibrary] = useState({
+    savedReleases: [],
+    recentReleases: [],
+    releaseReactions: {}
+  });
+  const [libraryError, setLibraryError] = useState("");
+  const [libraryLoading, setLibraryLoading] = useState(false);
 
   function validateAuthForm() {
     if (mode === "register" && displayName.trim().length < 2) {
@@ -53,6 +60,57 @@ export default function AccountPage({
   useEffect(() => {
     setProfileName(currentUser?.displayName || "");
     setProfilePassword("");
+  }, [currentUser]);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function loadLibrary() {
+      if (!currentUser) {
+        setLibrary({
+          savedReleases: [],
+          recentReleases: [],
+          releaseReactions: {}
+        });
+        return;
+      }
+
+      try {
+        setLibraryLoading(true);
+        setLibraryError("");
+
+        const response = await fetch(`${apiBaseUrl}/auth/library`, {
+          credentials: "include"
+        });
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(data.message || "Could not load your library.");
+        }
+
+        if (!isCancelled) {
+          setLibrary({
+            savedReleases: data.savedReleases || [],
+            recentReleases: data.recentReleases || [],
+            releaseReactions: data.releaseReactions || {}
+          });
+        }
+      } catch (apiError) {
+        if (!isCancelled) {
+          setLibraryError(apiError.message);
+        }
+      } finally {
+        if (!isCancelled) {
+          setLibraryLoading(false);
+        }
+      }
+    }
+
+    loadLibrary();
+
+    return () => {
+      isCancelled = true;
+    };
   }, [currentUser]);
 
   async function handleAuthSubmit(event) {
@@ -194,53 +252,105 @@ export default function AccountPage({
           </div>
         </section>
       ) : currentUser ? (
-        <section className="auth-card auth-login-card account-panel">
-          <div className="auth-form-intro">
-            <p className="eyebrow">Signed In</p>
-            <h2>{currentUser.displayName}</h2>
-            <p>{currentUser.email}</p>
-          </div>
-          <form className="account-form-grid" onSubmit={handleProfileSubmit}>
-            <label>
-              Display Name
-              <input
-                minLength="2"
-                onChange={(event) => setProfileName(event.target.value)}
-                required
-                type="text"
-                value={profileName}
-              />
-            </label>
-            <label>
-              New Password
-              <input
-                minLength="8"
-                onChange={(event) => setProfilePassword(event.target.value)}
-                placeholder="Leave blank to keep current password"
-                type="password"
-                value={profilePassword}
-              />
-            </label>
-            <p className="form-helper-text">
-              Leave the password blank to keep the current one. New passwords
-              must be at least 8 characters.
-            </p>
-            {error ? <p className="error-text">{error}</p> : null}
-            {success ? <p className="success-text">{success}</p> : null}
-            <div className="account-action-row">
-              <button disabled={submitting} type="submit">
-                {submitting ? "Saving..." : "Update Account"}
-              </button>
-              <button
-                className="secondary-button"
-                onClick={onUserLogout}
-                type="button"
-              >
-                Sign Out
-              </button>
+        <>
+          <section className="auth-card auth-login-card account-panel">
+            <div className="auth-form-intro">
+              <p className="eyebrow">Signed In</p>
+              <h2>{currentUser.displayName}</h2>
+              <p>{currentUser.email}</p>
             </div>
-          </form>
-        </section>
+            <form className="account-form-grid" onSubmit={handleProfileSubmit}>
+              <label>
+                Display Name
+                <input
+                  minLength="2"
+                  onChange={(event) => setProfileName(event.target.value)}
+                  required
+                  type="text"
+                  value={profileName}
+                />
+              </label>
+              <label>
+                New Password
+                <input
+                  minLength="8"
+                  onChange={(event) => setProfilePassword(event.target.value)}
+                  placeholder="Leave blank to keep current password"
+                  type="password"
+                  value={profilePassword}
+                />
+              </label>
+              <p className="form-helper-text">
+                Leave the password blank to keep the current one. New passwords
+                must be at least 8 characters.
+              </p>
+              {error ? <p className="error-text">{error}</p> : null}
+              {success ? <p className="success-text">{success}</p> : null}
+              <div className="account-action-row">
+                <button disabled={submitting} type="submit">
+                  {submitting ? "Saving..." : "Update Account"}
+                </button>
+                <button
+                  className="secondary-button"
+                  onClick={onUserLogout}
+                  type="button"
+                >
+                  Sign Out
+                </button>
+              </div>
+            </form>
+          </section>
+          <section className="intro-card homepage-panel account-library-panel">
+            <div className="section-head">
+              <h2>Your Library</h2>
+              <span>{libraryLoading ? "Loading..." : "Saved + recent"}</span>
+            </div>
+            {libraryError ? <p className="error-text">{libraryError}</p> : null}
+            <div className="account-library-grid">
+              <article className="account-library-list">
+                <p className="eyebrow">Saved Releases</p>
+                {library.savedReleases.length ? (
+                  library.savedReleases.map((release) => (
+                    <Link
+                      className="account-library-link"
+                      key={release.slug}
+                      to={`/release/${release.slug}`}
+                    >
+                      <strong>{release.title}</strong>
+                      <span>
+                        {library.releaseReactions[release.slug] ||
+                          "Saved for later"}
+                      </span>
+                    </Link>
+                  ))
+                ) : (
+                  <p className="form-helper-text">
+                    Save releases from their pages to build your library.
+                  </p>
+                )}
+              </article>
+              <article className="account-library-list">
+                <p className="eyebrow">Recently Played</p>
+                {library.recentReleases.length ? (
+                  library.recentReleases.map((release) => (
+                    <Link
+                      className="account-library-link"
+                      key={release.slug}
+                      to={`/release/${release.slug}`}
+                    >
+                      <strong>{release.title}</strong>
+                      <span>Continue listening</span>
+                    </Link>
+                  ))
+                ) : (
+                  <p className="form-helper-text">
+                    Play a release while signed in and it will appear here.
+                  </p>
+                )}
+              </article>
+            </div>
+          </section>
+        </>
       ) : (
         <section className="auth-card auth-login-card account-panel">
           <div className="auth-form-intro">

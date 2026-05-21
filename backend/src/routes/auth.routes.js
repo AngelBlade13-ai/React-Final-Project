@@ -22,8 +22,20 @@ const {
   validateProfileUpdateInput,
   validateRegistrationInput
 } = require("../validators/contentValidators");
+const {
+  attachCollectionDetails,
+  isPostPubliclyVisible,
+  resolvePublishedPost
+} = require("../services/catalogService");
 
 const router = express.Router();
+const VALID_REACTIONS = new Set([
+  "haunted-me",
+  "made-me-cry",
+  "on-repeat",
+  "cinematic",
+  "soft-place"
+]);
 
 router.post("/admin/login", loginLimiter, async (req, res, next) => {
   try {
@@ -90,6 +102,9 @@ router.post("/auth/register", userAuthLimiter, async (req, res, next) => {
       passwordHash: await bcrypt.hash(password, 12),
       role: "user",
       status: "active",
+      savedReleaseSlugs: [],
+      recentReleaseSlugs: [],
+      releaseReactions: {},
       createdAt: timestamp,
       updatedAt: timestamp
     };
@@ -210,6 +225,161 @@ router.put("/auth/me", requireUser, async (req, res, next) => {
     return res.json({
       token: issueAuthToken(nextUser),
       user: sanitizeUser(nextUser)
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+function getActivePublicUser(store, req) {
+  return store.users.find(
+    (entry) => entry.id === req.user.sub && entry.status === "active"
+  );
+}
+
+function resolveLibraryPosts(store, slugs = []) {
+  const postsBySlug = new Map(
+    store.posts
+      .filter((post) => isPostPubliclyVisible(post))
+      .map((post) => [post.slug, attachCollectionDetails(post, store.collections)])
+  );
+
+  return slugs.map((slug) => postsBySlug.get(slug)).filter(Boolean);
+}
+
+router.get("/auth/library", requireUser, async (req, res, next) => {
+  try {
+    const store = await readStore();
+    const user = getActivePublicUser(store, req);
+
+    if (!user) {
+      return res.status(401).json({ message: "User session is no longer valid." });
+    }
+
+    return res.json({
+      savedReleases: resolveLibraryPosts(store, user.savedReleaseSlugs),
+      recentReleases: resolveLibraryPosts(store, user.recentReleaseSlugs),
+      releaseReactions: user.releaseReactions || {}
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.put("/auth/library/releases/:slug/save", requireUser, async (req, res, next) => {
+  try {
+    const store = await readStore();
+    const user = getActivePublicUser(store, req);
+    const { entry: post } = resolvePublishedPost(store, req.params.slug);
+
+    if (!user) {
+      return res.status(401).json({ message: "User session is no longer valid." });
+    }
+
+    if (!post) {
+      return res.status(404).json({ message: "Release not found." });
+    }
+
+    const shouldSave = req.body.saved !== false;
+    const currentSlugs = Array.isArray(user.savedReleaseSlugs)
+      ? user.savedReleaseSlugs
+      : [];
+    const nextSavedReleaseSlugs = shouldSave
+      ? [post.slug, ...currentSlugs.filter((slug) => slug !== post.slug)]
+      : currentSlugs.filter((slug) => slug !== post.slug);
+    const nextUser = {
+      ...user,
+      savedReleaseSlugs: nextSavedReleaseSlugs,
+      updatedAt: new Date().toISOString()
+    };
+
+    await replaceUser(nextUser);
+
+    return res.json({
+      user: sanitizeUser(nextUser),
+      saved: shouldSave,
+      savedReleaseSlugs: nextSavedReleaseSlugs
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.put("/auth/library/releases/:slug/reaction", requireUser, async (req, res, next) => {
+  try {
+    const store = await readStore();
+    const user = getActivePublicUser(store, req);
+    const { entry: post } = resolvePublishedPost(store, req.params.slug);
+    const reaction = String(req.body.reaction || "").trim();
+
+    if (!user) {
+      return res.status(401).json({ message: "User session is no longer valid." });
+    }
+
+    if (!post) {
+      return res.status(404).json({ message: "Release not found." });
+    }
+
+    if (reaction && !VALID_REACTIONS.has(reaction)) {
+      return res.status(400).json({ message: "Choose a supported reaction." });
+    }
+
+    const releaseReactions = { ...(user.releaseReactions || {}) };
+
+    if (reaction) {
+      releaseReactions[post.slug] = reaction;
+    } else {
+      delete releaseReactions[post.slug];
+    }
+
+    const nextUser = {
+      ...user,
+      releaseReactions,
+      updatedAt: new Date().toISOString()
+    };
+
+    await replaceUser(nextUser);
+
+    return res.json({
+      user: sanitizeUser(nextUser),
+      releaseReactions
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/auth/library/releases/:slug/listen", requireUser, async (req, res, next) => {
+  try {
+    const store = await readStore();
+    const user = getActivePublicUser(store, req);
+    const { entry: post } = resolvePublishedPost(store, req.params.slug);
+
+    if (!user) {
+      return res.status(401).json({ message: "User session is no longer valid." });
+    }
+
+    if (!post) {
+      return res.status(404).json({ message: "Release not found." });
+    }
+
+    const recentReleaseSlugs = [
+      post.slug,
+      ...(Array.isArray(user.recentReleaseSlugs)
+        ? user.recentReleaseSlugs.filter((slug) => slug !== post.slug)
+        : [])
+    ].slice(0, 12);
+    const nextUser = {
+      ...user,
+      recentReleaseSlugs,
+      updatedAt: new Date().toISOString()
+    };
+
+    await replaceUser(nextUser);
+
+    return res.json({
+      user: sanitizeUser(nextUser),
+      recentReleaseSlugs
     });
   } catch (error) {
     next(error);

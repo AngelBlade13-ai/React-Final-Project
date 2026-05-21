@@ -193,6 +193,19 @@ function App() {
   }, [theme]);
 
   useEffect(() => {
+    function handleUserUpdated(event) {
+      setCurrentUser(event.detail || null);
+      setIsUserSessionReady(true);
+    }
+
+    window.addEventListener("suno:user-updated", handleUserUpdated);
+
+    return () => {
+      window.removeEventListener("suno:user-updated", handleUserUpdated);
+    };
+  }, []);
+
+  useEffect(() => {
     let isCancelled = false;
 
     async function loadCurrentUser() {
@@ -441,6 +454,21 @@ function App() {
     setPlayerProgress(0);
     setPlayerDuration(0);
     setIsMiniPlayerPlaying(hasVideo(track.videoUrl));
+
+    if (currentUser && track?.slug) {
+      fetch(`${apiBaseUrl}/auth/library/releases/${track.slug}/listen`, {
+        method: "POST",
+        credentials: "include",
+        headers: withMutationIntent()
+      })
+        .then((response) => response.json().catch(() => ({})))
+        .then((data) => {
+          if (data.user) {
+            setCurrentUser(data.user);
+          }
+        })
+        .catch(() => {});
+    }
   }
 
   function toggleMiniPlayer() {
