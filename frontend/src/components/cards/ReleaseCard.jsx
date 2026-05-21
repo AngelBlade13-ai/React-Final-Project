@@ -12,10 +12,16 @@ export default function ReleaseCard({ emphasis = false, post, onPlayTrack, layou
   const playbackCopy = getPlaybackStateCopy(post, primaryTheme);
   const visibleCollections = getVisibleCollectionsForPost(post);
   const emphasisClass = emphasis ? " release-feed-card-emphasis" : "";
+  const layoutClass =
+    layout === "horizontal"
+      ? " result-card"
+      : layout === "compact"
+        ? " compact-release-card"
+        : "";
   const releasePath = `/release/${post.slug}`;
 
   return (
-    <article className={`release-card-link post-card homepage-post-card release-feed-card${emphasisClass} ${layout === "horizontal" ? "result-card" : ""}`}>
+    <article className={`release-card-link post-card homepage-post-card release-feed-card${emphasisClass}${layoutClass}`}>
       <Link className="release-card-surface" to={releasePath}>
         <div className="release-card-media">
           <ReleaseMedia
@@ -58,7 +64,7 @@ export default function ReleaseCard({ emphasis = false, post, onPlayTrack, layou
           >
             {playbackCopy.compactActionLabel}
           </button>
-          {layout === "horizontal" ? (
+          {layout === "horizontal" || layout === "compact" ? (
             <Link className="result-card-cta" to={releasePath}>
               Open release
             </Link>

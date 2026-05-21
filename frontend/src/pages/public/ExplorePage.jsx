@@ -8,21 +8,9 @@ import {
 import { ReleaseCard } from "../../components/cards";
 import { usePublicCollections, usePublicPosts } from "../../hooks/usePublicApi";
 import usePageMetadata from "../../hooks/usePageMetadata";
-import {
-  getReleaseStatus,
-  partitionCollectionsForExplore
-} from "../../lib/site";
+import { partitionCollectionsForExplore } from "../../lib/site";
 
 const DEFAULT_COLLECTION_FILTER = "all";
-const DEFAULT_STATUS_FILTER = "public";
-const STATUS_FILTERS = [
-  { key: "public", label: "Public surface" },
-  { key: "canon", label: "Canon only" },
-  { key: "alternate", label: "Alternates" },
-  { key: "working", label: "Working versions" },
-  { key: "all", label: "All statuses" }
-];
-const VALID_STATUS_FILTERS = new Set(STATUS_FILTERS.map((option) => option.key));
 
 export default function ExplorePage({ onPlayTrack }) {
   usePageMetadata({
@@ -52,16 +40,11 @@ export default function ExplorePage({ onPlayTrack }) {
   const queryParam = searchParams.get("q") || "";
   const requestedCollection =
     searchParams.get("collection") || DEFAULT_COLLECTION_FILTER;
-  const requestedStatus =
-    searchParams.get("status") || DEFAULT_STATUS_FILTER;
   const selectedCollection =
     requestedCollection === DEFAULT_COLLECTION_FILTER ||
     collections.some((collection) => collection.slug === requestedCollection)
       ? requestedCollection
       : DEFAULT_COLLECTION_FILTER;
-  const selectedStatus = VALID_STATUS_FILTERS.has(requestedStatus)
-    ? requestedStatus
-    : DEFAULT_STATUS_FILTER;
 
   useEffect(() => {
     setQuery(queryParam);
@@ -73,7 +56,6 @@ export default function ExplorePage({ onPlayTrack }) {
       : query;
     const nextCollection =
       nextState.collection || selectedCollection;
-    const nextStatus = nextState.status || selectedStatus;
     const nextParams = new URLSearchParams();
     const trimmedQuery = String(nextQuery || "").trim();
 
@@ -83,10 +65,6 @@ export default function ExplorePage({ onPlayTrack }) {
 
     if (nextCollection !== DEFAULT_COLLECTION_FILTER) {
       nextParams.set("collection", nextCollection);
-    }
-
-    if (nextStatus !== DEFAULT_STATUS_FILTER) {
-      nextParams.set("status", nextStatus);
     }
 
     startTransition(() => {
@@ -103,15 +81,8 @@ export default function ExplorePage({ onPlayTrack }) {
       .toLowerCase();
     const matchesQuery =
       !normalizedQuery || searchHaystack.includes(normalizedQuery);
-    const releaseStatus = getReleaseStatus(post);
-    const matchesReleaseStatus =
-      selectedStatus === "all"
-        ? true
-        : selectedStatus === DEFAULT_STATUS_FILTER
-          ? releaseStatus !== "working"
-          : releaseStatus === selectedStatus;
 
-    return matchesCollection && matchesQuery && matchesReleaseStatus;
+    return matchesCollection && matchesQuery;
   });
   const { primaryCollections, internalCollections } =
     partitionCollectionsForExplore(collections);
@@ -121,28 +92,17 @@ export default function ExplorePage({ onPlayTrack }) {
       : collections.find(
           (collection) => collection.slug === selectedCollection
         )?.title || "Filtered";
-  const selectedStatusLabel =
-    STATUS_FILTERS.find((option) => option.key === selectedStatus)?.label ||
-    "Public surface";
-  const statusCounts = {
-    public: posts.filter((post) => getReleaseStatus(post) !== "working").length,
-    canon: posts.filter((post) => getReleaseStatus(post) === "canon").length,
-    alternate: posts.filter((post) => getReleaseStatus(post) === "alternate").length,
-    working: posts.filter((post) => getReleaseStatus(post) === "working").length,
-    all: posts.length
-  };
   const hasActiveFilters =
     Boolean(query.trim()) ||
-    selectedCollection !== DEFAULT_COLLECTION_FILTER ||
-    selectedStatus !== DEFAULT_STATUS_FILTER;
+    selectedCollection !== DEFAULT_COLLECTION_FILTER;
   const utilitySignals = [
     {
       label: "Current lane",
       value: selectedCollectionTitle
     },
     {
-      label: "Surface",
-      value: selectedStatusLabel
+      label: "Catalog surface",
+      value: `${posts.length} public songs`
     },
     {
       label: "Search phrase",
@@ -150,7 +110,7 @@ export default function ExplorePage({ onPlayTrack }) {
     }
   ];
   const resultsLaneSummary = hasActiveFilters
-    ? `${selectedCollectionTitle} / ${selectedStatusLabel} / ${filteredPosts.length} matches`
+    ? `${selectedCollectionTitle} / ${filteredPosts.length} matches`
     : `${filteredPosts.length} releases across the broad archive`;
 
   return (
@@ -195,9 +155,6 @@ export default function ExplorePage({ onPlayTrack }) {
               <span className="meta-badge subtle-badge">
                 {selectedCollectionTitle}
               </span>
-              <span className="meta-badge subtle-badge">
-                {selectedStatusLabel}
-              </span>
             </div>
           </div>
         </div>
@@ -230,8 +187,7 @@ export default function ExplorePage({ onPlayTrack }) {
                   setQuery("");
                   updateSearchState({
                     query: "",
-                    collection: DEFAULT_COLLECTION_FILTER,
-                    status: DEFAULT_STATUS_FILTER
+                    collection: DEFAULT_COLLECTION_FILTER
                   });
                 }}
                 type="button"
@@ -302,25 +258,6 @@ export default function ExplorePage({ onPlayTrack }) {
                 ) : null}
               </details>
             ) : null}
-          </div>
-          <div className="filter-field">
-            <p className="eyebrow">Filter By Release Status</p>
-            <p className="filter-field-copy">
-              Public surface keeps the main browsing layer clean while still
-              letting you open alternates or working versions when needed.
-            </p>
-            <div className="filter-chip-row">
-              {STATUS_FILTERS.map((option) => (
-                <button
-                  className={`filter-chip${selectedStatus === option.key ? " active" : ""}`}
-                  key={option.key}
-                  onClick={() => updateSearchState({ status: option.key })}
-                  type="button"
-                >
-                  {option.label} ({statusCounts[option.key]})
-                </button>
-              ))}
-            </div>
           </div>
         </section>
 

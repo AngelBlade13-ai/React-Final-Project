@@ -54,6 +54,13 @@ export default function PublicHome({ onPlayTrack, siteContent }) {
       ? curatedPosts.filter((post) => post.id !== featuredPost.id)
       : curatedPosts
   ).slice(0, 4);
+  const homepageSelectionPosts = curatedPosts
+    .filter(
+      (post) =>
+        post.id !== featuredPost?.id &&
+        !latestPosts.some((latestPost) => latestPost.id === post.id)
+    )
+    .slice(0, 6);
   const featuredCollections = sortCollectionsForPublicNavigation(
     collections
   ).slice(0, 4);
@@ -369,6 +376,29 @@ export default function PublicHome({ onPlayTrack, siteContent }) {
             </div>
           )}
         </section>
+
+        {homepageSelectionPosts.length ? (
+          <section className="homepage-selection-section">
+            <div className="section-head">
+              <h2>More Curated Starts</h2>
+              <span>{`${homepageSelectionPosts.length} homepage picks`}</span>
+            </div>
+            <p className="results-context-copy">
+              These are also marked for the homepage, so they get a lighter
+              surface here without crowding the lead release or latest row.
+            </p>
+            <div className="homepage-selection-grid">
+              {homepageSelectionPosts.map((post) => (
+                <ReleaseCard
+                  key={post.id}
+                  layout="compact"
+                  onPlayTrack={onPlayTrack}
+                  post={post}
+                />
+              ))}
+            </div>
+          </section>
+        ) : null}
       </main>
     </>
   );

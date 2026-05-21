@@ -17,10 +17,16 @@ export default function AboutPage() {
 
   return (
     <>
-      <header className="hero homepage-hero section-hero">
-        <p className="eyebrow">{about.heroEyebrow}</p>
-        <h1>{loading ? "Loading about page..." : about.heroTitle}</h1>
-        <p className="hero-copy">{about.heroText}</p>
+      <header className="hero homepage-hero section-hero about-hero">
+        <div className="about-hero-copy">
+          <p className="eyebrow">{about.heroEyebrow}</p>
+          <h1>{loading ? "Loading about page..." : about.heroTitle}</h1>
+          <p className="hero-copy">{about.heroText}</p>
+        </div>
+        <div className="about-hero-card" aria-hidden="true">
+          <span>Archive</span>
+          <strong>songs with rooms around them</strong>
+        </div>
       </header>
 
       <main className="content-grid about-grid">
@@ -37,16 +43,34 @@ export default function AboutPage() {
           />
         ) : null}
 
-        <section className="intro-card homepage-panel">
+        <section className="intro-card homepage-panel about-story-card about-artist-card">
           <p className="eyebrow">{about.artistEyebrow}</p>
           <h2>{about.artistTitle}</h2>
           <p>{about.artistText}</p>
         </section>
 
-        <section className="intro-card homepage-panel">
+        <section className="intro-card homepage-panel about-story-card about-site-card">
           <p className="eyebrow">{about.siteEyebrow}</p>
           <h2>{about.siteTitle}</h2>
           <p>{about.siteText}</p>
+        </section>
+
+        <section className="about-principle-grid">
+          <article className="about-principle-card">
+            <span>01</span>
+            <strong>Releases stay contextual.</strong>
+            <p>Each song can carry notes, collections, versions, and worlds.</p>
+          </article>
+          <article className="about-principle-card">
+            <span>02</span>
+            <strong>Discovery is authored.</strong>
+            <p>Paths and collections act like entrances, not database filters.</p>
+          </article>
+          <article className="about-principle-card">
+            <span>03</span>
+            <strong>The archive has atmosphere.</strong>
+            <p>The UI changes when a world deserves its own room.</p>
+          </article>
         </section>
 
         <section className="intro-card homepage-panel about-quote-card">

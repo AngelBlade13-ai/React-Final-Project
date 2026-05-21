@@ -2029,6 +2029,43 @@ select:focus {
   gap: 0.8rem;
 }
 
+.guided-path-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 100%;
+  border-color: color-mix(in srgb, var(--border) 70%, var(--primary) 30%);
+  background:
+    radial-gradient(
+      circle at 14% 0%,
+      color-mix(in srgb, var(--primary) 22%, transparent),
+      transparent 32%
+    ),
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--surface) 72%, var(--primary) 28%),
+      color-mix(in srgb, var(--surface-alt) 80%, var(--secondary) 20%)
+    );
+  box-shadow:
+    0 20px 44px color-mix(in srgb, var(--primary) 12%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--text) 5%, transparent);
+}
+
+:root[data-theme="light"] .guided-path-card {
+  border-color: color-mix(in srgb, var(--primary-strong) 26%, white 74%);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(213, 73, 146, 0.24), transparent 34%),
+    linear-gradient(145deg, #ffd7e9, #f8b9d7 52%, #f3d5de);
+  color: #321020;
+  box-shadow:
+    0 24px 48px rgba(155, 45, 93, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+:root[data-theme="light"] .guided-path-card .guided-path-note,
+:root[data-theme="light"] .guided-path-card p {
+  color: #4a1e32;
+}
+
 .guided-path-card h2,
 .guided-path-focus-copy h3 {
   margin: 0;
@@ -2941,14 +2978,16 @@ select:focus {
 
 .results-grid {
   display: grid;
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 0.85rem;
 }
 
 .result-card {
   display: grid;
-  grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+  grid-template-columns: minmax(128px, 170px) minmax(0, 1fr);
   align-items: stretch;
-  min-height: 280px;
+  min-height: 176px;
+  border-radius: 24px;
 }
 
 .result-card .release-card-media {
@@ -2956,24 +2995,213 @@ select:focus {
 }
 
 .result-card .post-body {
-  padding: 1.5rem 1.55rem 1.6rem;
+  padding: 0.95rem 1rem 1.05rem;
   align-content: center;
 }
 
 .result-card .post-body h3 {
-  font-size: 1.65rem;
+  font-size: 1.18rem;
+  margin-bottom: 0.15rem;
 }
 
 .result-card .post-body p {
-  max-width: 54ch;
+  max-width: 44ch;
+}
+
+.result-card .post-body > p:not(.meta) {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.result-card .compact-tag-row {
+  display: none;
+}
+
+.result-card .card-action-row {
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.result-card .mini-player-trigger,
+.result-card .result-card-cta {
+  min-height: 2.35rem;
+  padding: 0.58rem 0.8rem;
+  font-size: 0.86rem;
+}
+
+.compact-release-card {
+  border-radius: 24px;
+}
+
+.compact-release-card .release-card-media {
+  aspect-ratio: 16 / 6.5;
+}
+
+.compact-release-card .post-body {
+  padding: 0.95rem 1rem 1.05rem;
+}
+
+.compact-release-card .post-body h3 {
+  font-size: 1.1rem;
+}
+
+.compact-release-card .post-body > p:not(.meta) {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.homepage-selection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0.9rem;
 }
 
 .about-grid {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  align-items: stretch;
+}
+
+.about-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.65fr);
+  gap: 1.2rem;
+  align-items: stretch;
+  background:
+    radial-gradient(circle at 82% 20%, rgba(218, 67, 143, 0.22), transparent 30%),
+    radial-gradient(circle at 12% 10%, rgba(255, 196, 222, 0.22), transparent 26%),
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--surface) 72%, var(--primary) 28%),
+      color-mix(in srgb, var(--surface-alt) 78%, var(--secondary) 22%)
+    );
+}
+
+.about-hero-copy {
+  align-self: center;
+}
+
+.about-hero-card {
+  min-height: 260px;
+  display: grid;
+  align-content: end;
+  gap: 0.65rem;
+  padding: 1.4rem;
+  border-radius: 30px;
+  border: 1px solid color-mix(in srgb, var(--border) 70%, var(--primary) 30%);
+  background:
+    linear-gradient(180deg, transparent, color-mix(in srgb, var(--primary) 18%, transparent)),
+    color-mix(in srgb, var(--surface) 68%, var(--primary) 32%);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text) 5%, transparent);
+}
+
+.about-hero-card span {
+  color: var(--primary-strong);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.about-hero-card strong {
+  max-width: 12ch;
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  line-height: 0.92;
+  letter-spacing: -0.07em;
+}
+
+.about-story-card {
+  grid-column: span 3;
+  min-height: 100%;
+  border-color: color-mix(in srgb, var(--border) 72%, var(--primary) 28%);
+}
+
+.about-artist-card {
+  background:
+    radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--primary) 18%, transparent), transparent 34%),
+    color-mix(in srgb, var(--surface) 82%, var(--primary) 18%);
+}
+
+.about-site-card {
+  background:
+    radial-gradient(circle at 86% 10%, color-mix(in srgb, var(--secondary) 18%, transparent), transparent 34%),
+    color-mix(in srgb, var(--surface-alt) 82%, var(--surface) 18%);
+}
+
+.about-principle-grid {
+  grid-column: 1 / -1;
+  display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.about-principle-card {
+  display: grid;
+  gap: 0.45rem;
+  padding: 1rem;
+  border-radius: 24px;
+  border: 1px solid color-mix(in srgb, var(--border) 76%, var(--primary) 24%);
+  background: color-mix(in srgb, var(--surface-alt) 72%, var(--primary) 28%);
+}
+
+.about-principle-card span {
+  color: var(--primary-strong);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.about-principle-card strong,
+.about-principle-card p {
+  margin: 0;
+}
+
+.about-principle-card p {
+  color: var(--muted-text);
 }
 
 .about-quote-card {
+  grid-column: 1 / -1;
   justify-content: center;
+  min-height: 240px;
+  background:
+    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--primary) 20%, transparent), transparent 34%),
+    linear-gradient(135deg, color-mix(in srgb, var(--surface) 70%, var(--primary) 30%), var(--surface-alt));
+}
+
+:root[data-theme="light"] .about-hero,
+:root[data-theme="light"] .about-story-card,
+:root[data-theme="light"] .about-principle-card,
+:root[data-theme="light"] .about-quote-card {
+  border-color: color-mix(in srgb, var(--primary-strong) 24%, white 76%);
+  color: #321020;
+  box-shadow:
+    0 22px 44px rgba(155, 45, 93, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.42);
+}
+
+:root[data-theme="light"] .about-hero,
+:root[data-theme="light"] .about-story-card,
+:root[data-theme="light"] .about-principle-card,
+:root[data-theme="light"] .about-quote-card {
+  background:
+    radial-gradient(circle at 14% 0%, rgba(214, 76, 148, 0.2), transparent 32%),
+    linear-gradient(145deg, #ffddea, #f7c2dc 54%, #f5dbe3);
+}
+
+:root[data-theme="light"] .about-hero-card {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.24), rgba(172, 42, 100, 0.18)),
+    #f6b7d5;
+  color: #2e0b1c;
+}
+
+:root[data-theme="light"] .about-principle-card p,
+:root[data-theme="light"] .about-story-card p,
+:root[data-theme="light"] .about-quote-card p {
+  color: #4a1e32;
 }
 
 .release-prose p {
@@ -3886,6 +4114,7 @@ select:focus {
   }
 
   .compact-hero,
+  .about-hero,
   .hero-header-row,
   .homepage-hero-grid,
   .admin-form,
@@ -3908,6 +4137,26 @@ select:focus {
   .conversation-grid {
     grid-template-columns: 1fr;
     display: grid;
+  }
+
+  .about-story-card,
+  .about-quote-card,
+  .about-principle-grid {
+    grid-column: 1;
+  }
+
+  .about-principle-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .result-card {
+    grid-template-columns: minmax(112px, 34%) minmax(0, 1fr);
+    min-height: 150px;
+  }
+
+  .result-card .release-card-arrow,
+  .result-card .compact-tag-row {
+    display: none;
   }
 
   .world-header-layout,
