@@ -35,6 +35,12 @@ export default function AccountPage({
   });
   const [libraryError, setLibraryError] = useState("");
   const [libraryLoading, setLibraryLoading] = useState(false);
+  const reactionCount = Object.keys(library.releaseReactions || {}).length;
+  const profileInitial =
+    String(currentUser?.displayName || currentUser?.email || "A")
+      .trim()
+      .slice(0, 1)
+      .toUpperCase() || "A";
 
   function validateAuthForm() {
     if (mode === "register" && displayName.trim().length < 2) {
@@ -233,48 +239,48 @@ export default function AccountPage({
         />
       ) : currentUser ? (
         <>
-          <section className="auth-card auth-login-card account-panel">
-            <div className="auth-form-intro">
-              <p className="eyebrow">Signed In</p>
+          <section className="profile-hero-card">
+            <div className="profile-avatar" aria-hidden="true">
+              {profileInitial}
+            </div>
+            <div className="profile-identity">
+              <p className="eyebrow">
+                {currentUser.role === "admin"
+                  ? "Admin Profile"
+                  : "Listener Profile"}
+              </p>
               <h2>{currentUser.displayName}</h2>
               <p>{currentUser.email}</p>
+              <div className="profile-pill-row">
+                <span>
+                  {currentUser.role === "admin"
+                    ? "Studio access"
+                    : "Public account"}
+                </span>
+                <span>{currentUser.status || "active"}</span>
+              </div>
             </div>
-            <form className="account-form-grid" onSubmit={handleProfileSubmit}>
-              <label>
-                Display Name
-                <input
-                  minLength="2"
-                  onChange={(event) => setProfileName(event.target.value)}
-                  required
-                  type="text"
-                  value={profileName}
-                />
-              </label>
-              <label>
-                New Password
-                <input
-                  minLength="8"
-                  onChange={(event) => setProfilePassword(event.target.value)}
-                  placeholder="Leave blank to keep current password"
-                  type="password"
-                  value={profilePassword}
-                />
-              </label>
-              <p className="form-helper-text">
-                Leave the password blank to keep the current one. New passwords
-                must be at least 8 characters.
-              </p>
-              {error ? <p className="error-text">{error}</p> : null}
-              {success ? <p className="success-text">{success}</p> : null}
+            <div className="profile-action-stack">
+              <div className="profile-stat-grid">
+                <article>
+                  <strong>{library.savedReleases.length}</strong>
+                  <span>Saved</span>
+                </article>
+                <article>
+                  <strong>{library.recentReleases.length}</strong>
+                  <span>Recent</span>
+                </article>
+                <article>
+                  <strong>{reactionCount}</strong>
+                  <span>Reactions</span>
+                </article>
+              </div>
               <div className="account-action-row">
                 {currentUser.role === "admin" ? (
                   <Link className="hero-link" to="/admin">
                     Open Admin Studio
                   </Link>
                 ) : null}
-                <button disabled={submitting} type="submit">
-                  {submitting ? "Saving..." : "Update Account"}
-                </button>
                 <button
                   className="secondary-button"
                   onClick={onUserLogout}
@@ -283,7 +289,70 @@ export default function AccountPage({
                   Sign Out
                 </button>
               </div>
-            </form>
+            </div>
+          </section>
+          <section className="profile-dashboard-grid">
+            <article className="intro-card homepage-panel profile-feature-card">
+              <p className="eyebrow">Current Shelf</p>
+              <h2>
+                {library.savedReleases[0]?.title ||
+                  library.recentReleases[0]?.title ||
+                  "Start building your archive trail."}
+              </h2>
+              <p>
+                {library.savedReleases[0]
+                  ? "Your latest saved release is waiting here whenever you come back."
+                  : library.recentReleases[0]
+                    ? "Your most recent listen is ready to continue."
+                    : "Save a release or press play while signed in to shape this profile."}
+              </p>
+              {(library.savedReleases[0] || library.recentReleases[0]) ? (
+                <Link
+                  className="card-link"
+                  to={`/release/${(library.savedReleases[0] || library.recentReleases[0]).slug}`}
+                >
+                  Open Release
+                </Link>
+              ) : (
+                <Link className="card-link" to="/explore">
+                  Explore Releases
+                </Link>
+              )}
+            </article>
+            <article className="intro-card homepage-panel profile-settings-card">
+              <p className="eyebrow">Profile Settings</p>
+              <h2>Account details</h2>
+              <form className="account-form-grid" onSubmit={handleProfileSubmit}>
+                <label>
+                  Display Name
+                  <input
+                    minLength="2"
+                    onChange={(event) => setProfileName(event.target.value)}
+                    required
+                    type="text"
+                    value={profileName}
+                  />
+                </label>
+                <label>
+                  New Password
+                  <input
+                    minLength="8"
+                    onChange={(event) => setProfilePassword(event.target.value)}
+                    placeholder="Leave blank to keep current password"
+                    type="password"
+                    value={profilePassword}
+                  />
+                </label>
+                <p className="form-helper-text">
+                  Leave the password blank to keep the current one.
+                </p>
+                {error ? <p className="error-text">{error}</p> : null}
+                {success ? <p className="success-text">{success}</p> : null}
+                <button disabled={submitting} type="submit">
+                  {submitting ? "Saving..." : "Update Profile"}
+                </button>
+              </form>
+            </article>
           </section>
           <section className="intro-card homepage-panel account-library-panel">
             <div className="section-head">

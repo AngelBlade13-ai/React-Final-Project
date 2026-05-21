@@ -3663,6 +3663,161 @@ select:focus {
   max-width: 760px;
 }
 
+.profile-hero-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) minmax(280px, 0.72fr);
+  gap: 1.2rem;
+  align-items: center;
+  padding: 1.4rem;
+  border-radius: 34px;
+  border: 1px solid color-mix(in srgb, var(--border) 72%, var(--primary) 28%);
+  background:
+    radial-gradient(
+      circle at 8% 0%,
+      color-mix(in srgb, var(--primary) 28%, transparent),
+      transparent 32%
+    ),
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--surface) 70%, var(--primary) 30%),
+      color-mix(in srgb, var(--surface-alt) 76%, var(--secondary) 24%)
+    );
+  box-shadow:
+    0 24px 52px color-mix(in srgb, var(--primary) 16%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--text) 5%, transparent);
+}
+
+.profile-avatar {
+  width: clamp(5.5rem, 12vw, 8rem);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 32px;
+  background:
+    radial-gradient(circle at 28% 20%, rgba(255, 255, 255, 0.5), transparent 28%),
+    linear-gradient(135deg, var(--primary), var(--primary-strong));
+  color: #fff7fb;
+  font-size: clamp(2.4rem, 6vw, 4.5rem);
+  font-weight: 900;
+  letter-spacing: -0.08em;
+  box-shadow: 0 18px 34px color-mix(in srgb, var(--primary) 26%, transparent);
+}
+
+.profile-identity {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.profile-identity h2 {
+  margin: 0;
+  font-size: clamp(2.2rem, 5vw, 4rem);
+  line-height: 0.92;
+  letter-spacing: -0.06em;
+}
+
+.profile-identity p {
+  margin: 0;
+}
+
+.profile-pill-row {
+  display: flex;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.profile-pill-row span {
+  padding: 0.45rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border) 74%, var(--primary) 26%);
+  background: color-mix(in srgb, var(--surface) 72%, white 8%);
+  font-weight: 800;
+  font-size: 0.86rem;
+}
+
+.profile-action-stack {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.profile-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.profile-stat-grid article {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.85rem;
+  border-radius: 22px;
+  border: 1px solid color-mix(in srgb, var(--border) 78%, var(--primary) 22%);
+  background: color-mix(in srgb, var(--surface) 78%, var(--surface-alt) 22%);
+}
+
+.profile-stat-grid strong {
+  font-size: 1.8rem;
+  line-height: 1;
+  letter-spacing: -0.05em;
+}
+
+.profile-stat-grid span {
+  color: var(--muted-text);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.profile-dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(300px, 0.85fr);
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.profile-feature-card,
+.profile-settings-card {
+  min-height: 100%;
+}
+
+.profile-feature-card {
+  display: grid;
+  align-content: end;
+  gap: 0.7rem;
+  min-height: 320px;
+  background:
+    radial-gradient(circle at 82% 12%, color-mix(in srgb, var(--primary) 22%, transparent), transparent 34%),
+    linear-gradient(145deg, color-mix(in srgb, var(--surface) 72%, var(--primary) 28%), var(--surface-alt));
+}
+
+.profile-feature-card h2 {
+  margin: 0;
+  max-width: 13ch;
+  font-size: clamp(2rem, 4vw, 3.4rem);
+  line-height: 0.94;
+  letter-spacing: -0.06em;
+}
+
+.profile-settings-card {
+  display: grid;
+  gap: 0.8rem;
+}
+
+:root[data-theme="light"] .profile-hero-card,
+:root[data-theme="light"] .profile-feature-card,
+:root[data-theme="light"] .profile-settings-card {
+  border-color: color-mix(in srgb, var(--primary-strong) 24%, white 76%);
+  background:
+    radial-gradient(circle at 10% 0%, rgba(214, 76, 148, 0.24), transparent 34%),
+    linear-gradient(145deg, #ffddeb, #f8bfd9 54%, #f5dce5);
+  color: #321020;
+  box-shadow:
+    0 24px 48px rgba(155, 45, 93, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+.profile-hero-card .secondary-button {
+  margin-top: 0;
+}
+
 .account-form-grid,
 .comment-list {
   display: grid;
@@ -4211,6 +4366,8 @@ select:focus {
 
   .compact-hero,
   .about-hero,
+  .profile-hero-card,
+  .profile-dashboard-grid,
   .account-library-grid,
   .hero-header-row,
   .homepage-hero-grid,
@@ -4254,6 +4411,15 @@ select:focus {
   .result-card .release-card-arrow,
   .result-card .compact-tag-row {
     display: none;
+  }
+
+  .profile-avatar {
+    width: 5rem;
+    border-radius: 24px;
+  }
+
+  .profile-stat-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .world-header-layout,
