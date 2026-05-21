@@ -1,0 +1,278 @@
+.mini-player-shell {
+  right: 1.15rem;
+  bottom: 0.85rem;
+  left: 1.15rem;
+}
+
+.mini-player-card {
+  width: min(100%, 920px);
+  gap: 0.7rem;
+  padding: 0.62rem 0.74rem 0.62rem 0.82rem;
+  border-radius: 22px;
+  border: 1px solid color-mix(in srgb, var(--border) 74%, transparent);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--surface-raised) 90%, white 10%),
+      color-mix(in srgb, var(--surface-raised) 97%, var(--surface) 3%)
+    ),
+    var(--surface-raised);
+  box-shadow:
+    0 8px 18px color-mix(in srgb, black 12%, transparent),
+    0 2px 8px color-mix(in srgb, var(--primary) 5%, transparent);
+}
+
+.mini-player-copy h2 {
+  font-size: 0.96rem;
+}
+
+.mini-player-world,
+.mini-player-meta,
+.mini-player-flavor,
+.mini-player-next-title {
+  font-size: 0.76rem;
+}
+
+.mini-player-chip {
+  padding: 0.28rem 0.55rem;
+  font-size: 0.68rem;
+}
+
+.mini-player-transport {
+  gap: 0.55rem;
+}
+
+.mini-player-progress-shell {
+  height: 12px;
+}
+
+.mini-player-progress-track,
+.mini-player-progress-fill {
+  height: 5px;
+}
+
+.mini-player-button,
+.mini-player-nav,
+.mini-player-close {
+  min-height: 36px;
+  padding: 0.54rem 0.78rem;
+}
+
+.mini-player-actions {
+  gap: 0.22rem;
+}
+
+.mini-player-up-next {
+  max-width: 150px;
+}
+
+.world-header {
+  min-height: 280px;
+  padding: 2.35rem 1.45rem 1.55rem;
+}
+
+.world-header::before {
+  opacity: 0.82;
+  filter: blur(5px);
+}
+
+.world-header::after {
+  opacity: 0.55;
+}
+
+.world-header-layout {
+  gap: 1.45rem;
+}
+
+.world-header h1 {
+  font-size: clamp(2.55rem, 4.4vw, 4.25rem);
+}
+
+.world-header-copy {
+  max-width: 34ch;
+  line-height: 1.7;
+}
+
+.world-status-bar {
+  gap: 0.85rem;
+  padding: 0.85rem 1rem;
+}
+
+.fracture-sequence-panel::before {
+  opacity: 0.18;
+}
+
+.fracture-sequence-strip {
+  gap: 0.7rem;
+}
+
+.fracture-sequence-node {
+  min-height: 132px;
+}
+
+.release-hero {
+  padding-bottom: 1.1rem;
+}
+
+.release-hero-layout {
+  gap: 1.1rem;
+}
+
+.release-hero-actions {
+  gap: 0.65rem;
+}
+
+.release-hero-copy {
+  gap: 0.55rem;
+  max-width: 600px;
+}
+
+.release-hero-copy h1 {
+  font-size: clamp(1.85rem, 3.2vw, 2.8rem);
+}
+
+.release-hero-intro,
+.release-panel-intro {
+  max-width: 48ch;
+  line-height: 1.58;
+}
+
+.release-detail-grid {
+  gap: 1rem;
+}
+
+.release-video {
+  width: min(100%, 420px);
+  max-height: 560px;
+  border-radius: 22px;
+}
+
+.journey-rail-card,
+.version-family-panel {
+  gap: 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--border) 76%, transparent);
+  box-shadow:
+    0 14px 28px color-mix(in srgb, black 10%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 4%, transparent);
+}
+
+.journey-rail-card,
+.version-family-panel {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--surface-raised) 84%, white 16%),
+      color-mix(in srgb, var(--surface-raised) 96%, var(--surface) 4%)
+    ),
+    var(--surface-raised);
+}
+
+.journey-rail-grid {
+  gap: 0.7rem;
+}
+
+.journey-summary-card,
+.linked-echo-card {
+  padding: 0.9rem 0.95rem;
+}
+
+.linked-echo-card {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--surface-raised) 86%, white 14%),
+      color-mix(in srgb, var(--surface-raised) 96%, var(--surface) 4%)
+    ),
+    var(--surface-raised);
+  border-color: color-mix(in srgb, var(--border) 76%, transparent);
+}
+
+.version-family-summary {
+  gap: 0.8rem;
+}
+
+.eldoria-song-cycle,
+.linked-echo-grid {
+  gap: 0.75rem;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-release-hero {
+  padding-bottom: 1.5rem;
+  background:
+    radial-gradient(circle at var(--eldoria-mouse-x, 52%) var(--eldoria-mouse-y, 30%), rgba(245, 230, 184, 0.11), transparent 20%),
+    radial-gradient(circle at 18% 16%, rgba(245, 230, 184, 0.06), transparent 24%),
+    radial-gradient(circle at 82% 18%, rgba(170, 191, 200, 0.08), transparent 20%),
+    linear-gradient(180deg, color-mix(in srgb, #121911 58%, var(--surface) 42%), color-mix(in srgb, #1d2a1f 18%, var(--surface-alt) 82%));
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-release-hero::after,
+:root[data-collection-theme="eldoria"] .eldoria-release-detail-grid::before {
+  opacity: 0.45;
+  animation-duration: 52s;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-release-media::before {
+  inset: -0.7rem;
+  filter: blur(16px);
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-release-media-ornament {
+  top: -0.7rem;
+  right: 0.15rem;
+  width: 96px;
+  height: 96px;
+  opacity: 0.72;
+}
+
+:root[data-collection-theme="eldoria"] .eldoria-release-copy h1 {
+  text-shadow: 0 0 14px rgba(245, 230, 184, 0.05);
+}
+
+:root[data-collection-theme="fractureverse"] .journey-rail-card,
+:root[data-collection-theme="fractureverse"] .version-family-panel {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--surface-raised) 86%, var(--primary) 14%),
+      color-mix(in srgb, var(--surface-raised) 96%, var(--surface) 4%)
+    ),
+    var(--surface-raised);
+}
+
+:root[data-collection-theme="eldoria"] .journey-rail-card,
+:root[data-collection-theme="eldoria"] .version-family-panel {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--surface-raised) 86%, var(--secondary) 14%),
+      color-mix(in srgb, var(--surface-raised) 96%, var(--surface) 4%)
+    ),
+    var(--surface-raised);
+}
+
+:root[data-collection-theme="fractureverse"] .fracture-sequence-panel {
+  box-shadow:
+    0 14px 28px color-mix(in srgb, black 14%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 4%, transparent);
+}
+
+@media (max-width: 760px) {
+  .mini-player-shell {
+    right: 0.65rem;
+    bottom: 0.55rem;
+    left: 0.65rem;
+  }
+
+  .mini-player-card {
+    padding: 0.72rem 0.74rem 0.76rem;
+  }
+
+  .world-header {
+    min-height: 0;
+    padding: 1.85rem 1rem 1.3rem;
+  }
+
+  .release-video {
+    width: 100%;
+  }
+}

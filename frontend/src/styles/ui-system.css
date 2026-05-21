@@ -1,0 +1,230 @@
+:root:not([data-collection-theme]) {
+  color-scheme: dark;
+}
+
+:root[data-theme="light"]:not([data-collection-theme]) {
+  color-scheme: light;
+}
+
+html {
+  background:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--primary) 12%, transparent), transparent 28rem),
+    radial-gradient(circle at 82% 12%, color-mix(in srgb, var(--secondary) 14%, transparent), transparent 24rem),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--background) 92%, black 8%) 0%,
+      color-mix(in srgb, var(--background) 84%, var(--surface) 16%) 44%,
+      var(--background) 100%
+    );
+}
+
+body {
+  text-rendering: optimizeLegibility;
+}
+
+.page-shell {
+  width: min(1180px, calc(100% - 2rem));
+  padding: 1.5rem 0 7.5rem;
+}
+
+.hero,
+.intro-card,
+.post-card,
+.auth-card {
+  border-color: color-mix(in srgb, var(--border) 78%, var(--primary) 22%);
+  box-shadow:
+    0 18px 42px color-mix(in srgb, black 16%, transparent),
+    0 1px 0 color-mix(in srgb, white 6%, transparent) inset;
+}
+
+.hero,
+.auth-card {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--shell-surface) 90%, white 10%),
+      color-mix(in srgb, var(--shell-surface) 96%, var(--surface-alt) 4%)
+    ),
+    var(--shell-surface);
+}
+
+.homepage-panel {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--editorial-surface) 88%, white 12%),
+      color-mix(in srgb, var(--shell-surface) 94%, var(--surface-alt) 6%)
+    ),
+    var(--editorial-surface);
+  box-shadow:
+    0 16px 32px color-mix(in srgb, black 12%, transparent),
+    0 1px 0 color-mix(in srgb, white 6%, transparent) inset;
+}
+
+.hero {
+  border-radius: 30px;
+}
+
+.hero h1,
+.featured-release-copy h3,
+.collection-card h3,
+.auth-form-intro h2,
+.section-head h2 {
+  text-wrap: balance;
+}
+
+.section-head {
+  align-items: end;
+  gap: 0.75rem;
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+}
+
+.section-head h2,
+.section-head h3 {
+  letter-spacing: -0.03em;
+}
+
+.section-head span {
+  font-size: 0.8rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.hero-link,
+.card-link,
+button,
+.secondary-button,
+.secondary-link,
+.theme-toggle,
+.site-account-link,
+.site-user-logout,
+.site-admin-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: 0.78rem 1.15rem;
+  border-radius: 999px;
+  line-height: 1;
+  transition:
+    transform 160ms ease,
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.hero-link,
+button {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--primary) 86%, white 14%),
+    color-mix(in srgb, var(--primary-strong) 76%, var(--secondary) 24%)
+  );
+  color: #fff7fb;
+}
+
+:root[data-theme="light"] .hero-link,
+:root[data-theme="light"] button {
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--primary) 86%, white 14%),
+      var(--primary-strong)
+    );
+  border-color: color-mix(in srgb, var(--primary-strong) 64%, white 36%);
+  color: #2f081b;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.24);
+}
+
+.secondary-link,
+.secondary-button,
+.theme-toggle,
+.site-account-link,
+.site-user-logout,
+.site-admin-link {
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--primary) 74%, var(--surface) 26%),
+      color-mix(in srgb, var(--primary-strong) 72%, var(--secondary) 28%)
+    );
+  border-color: color-mix(in srgb, var(--primary-strong) 60%, var(--border) 40%);
+  color: #fff7fb;
+}
+
+:root[data-theme="light"] .secondary-link,
+:root[data-theme="light"] .secondary-button,
+:root[data-theme="light"] .theme-toggle,
+:root[data-theme="light"] .site-account-link,
+:root[data-theme="light"] .site-user-logout,
+:root[data-theme="light"] .site-admin-link {
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--primary) 82%, white 18%),
+      var(--primary-strong)
+    );
+  border-color: color-mix(in srgb, var(--primary-strong) 62%, white 38%);
+  color: var(--text);
+}
+
+.hero-link:hover,
+.card-link:hover,
+button:hover,
+.secondary-button:hover,
+.secondary-link:hover,
+.theme-toggle:hover,
+.site-account-link:hover,
+.site-user-logout:hover,
+.site-admin-link:hover,
+.hero-link:focus-visible,
+.card-link:focus-visible,
+button:focus-visible,
+.secondary-button:focus-visible,
+.secondary-link:focus-visible,
+.theme-toggle:focus-visible,
+.site-account-link:focus-visible,
+.site-user-logout:focus-visible,
+.site-admin-link:focus-visible {
+  transform: translateY(-1px);
+  box-shadow:
+    0 14px 28px color-mix(in srgb, black 14%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--primary) 24%, transparent) inset;
+}
+
+.meta-badge,
+.collection-chip {
+  border-color: color-mix(in srgb, var(--border) 68%, var(--quiet-accent) 32%);
+  background: color-mix(in srgb, var(--surface-raised) 72%, var(--secondary) 10%, var(--primary) 18%);
+}
+
+.hero-note-card {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--utility-surface) 84%, white 16%),
+      color-mix(in srgb, var(--utility-surface) 96%, var(--surface-alt) 4%)
+    ),
+    var(--utility-surface);
+  border: 1px solid color-mix(in srgb, var(--border) 74%, var(--secondary) 26%);
+  box-shadow:
+    0 16px 28px color-mix(in srgb, black 10%, transparent),
+    0 1px 0 color-mix(in srgb, white 6%, transparent) inset;
+}
+
+.search-field,
+.filter-field,
+.catalog-tools-panel,
+.catalog-bulk-panel,
+.catalog-bulk-messages {
+  border-radius: 24px;
+}
+
+@media (max-width: 960px) {
+  .page-shell {
+    width: min(100%, calc(100% - 1.2rem));
+    padding-top: 1rem;
+  }
+}

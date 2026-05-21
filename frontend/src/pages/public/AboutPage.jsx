@@ -1,47 +1,80 @@
-import { useEffect, useState } from "react";
-import useDocumentTitle from "../../hooks/useDocumentTitle";
-import { apiBaseUrl, emptyAbout } from "../../lib/site";
+import {
+  PublicErrorState,
+  PublicLoadingState
+} from "../../components/PublicDataState";
+import { useAboutContent } from "../../hooks/usePublicApi";
+import usePageMetadata from "../../hooks/usePageMetadata";
 
 export default function AboutPage() {
-  useDocumentTitle("About");
-  const [about, setAbout] = useState(emptyAbout);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function loadAbout() {
-      try {
-        const response = await fetch(`${apiBaseUrl}/about`);
-        const data = await response.json();
-        setAbout({ ...emptyAbout, ...(data.about || {}) });
-      } catch (error) {
-        console.error("Failed to load about content", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadAbout();
-  }, []);
+  const { about, error, isLoading: loading, retry } = useAboutContent();
+  usePageMetadata({
+    description:
+      about.heroText ||
+      about.siteText ||
+      "Learn about the artist and the archive behind the songs.",
+    title: "About"
+  });
 
   return (
     <>
-      <header className="hero homepage-hero section-hero">
-        <p className="eyebrow">{about.heroEyebrow}</p>
-        <h1>{loading ? "Loading about page..." : about.heroTitle}</h1>
-        <p className="hero-copy">{about.heroText}</p>
+      <header className="hero homepage-hero section-hero about-hero">
+        <div className="about-hero-copy">
+          <p className="eyebrow">{about.heroEyebrow}</p>
+          <h1>{loading ? "Loading about page..." : about.heroTitle}</h1>
+          <p className="hero-copy">{about.heroText}</p>
+        </div>
+        <div className="about-hero-card" aria-hidden="true">
+          <span>Archive</span>
+          <strong>songs with rooms around them</strong>
+        </div>
       </header>
 
       <main className="content-grid about-grid">
-        <section className="intro-card homepage-panel">
+        {error ? (
+          <PublicErrorState
+            message={error.message}
+            onRetry={retry}
+            title="About content could not load"
+          />
+        ) : loading ? (
+          <PublicLoadingState
+            message="The artist and archive notes are being loaded."
+            title="Loading about page"
+          />
+        ) : null}
+
+        <section className="intro-card homepage-panel about-story-card about-artist-card">
           <p className="eyebrow">{about.artistEyebrow}</p>
           <h2>{about.artistTitle}</h2>
           <p>{about.artistText}</p>
         </section>
 
-        <section className="intro-card homepage-panel">
+        <section className="intro-card homepage-panel about-story-card about-site-card">
           <p className="eyebrow">{about.siteEyebrow}</p>
           <h2>{about.siteTitle}</h2>
           <p>{about.siteText}</p>
+        </section>
+
+        <section className="about-principle-grid">
+          <article className="about-principle-card">
+            <span>01</span>
+            <strong>Songs keep their stories.</strong>
+            <p>
+              Each song can carry notes, versions, and the feelings around it.
+            </p>
+          </article>
+          <article className="about-principle-card">
+            <span>02</span>
+            <strong>Listening can start anywhere.</strong>
+            <p>
+              Collections and paths help you choose by mood, world, or theme.
+            </p>
+          </article>
+          <article className="about-principle-card">
+            <span>03</span>
+            <strong>The archive has atmosphere.</strong>
+            <p>The UI changes when a world deserves its own room.</p>
+          </article>
         </section>
 
         <section className="intro-card homepage-panel about-quote-card">

@@ -1,7 +1,12 @@
-require("dotenv").config({ quiet: true });
+const path = require("node:path");
+require("dotenv").config({
+  path: path.resolve(__dirname, "..", ".env"),
+  quiet: true
+});
 const app = require("./app");
 const config = require("./config");
 const { ensureStore } = require("./data/store");
+const { logInfo, reportError } = require("./lib/logger");
 const { connectToDatabase } = require("./lib/mongo");
 
 async function startServer() {
@@ -10,11 +15,20 @@ async function startServer() {
   await ensureStore();
 
   app.listen(config.port, () => {
-    console.log(`API listening on http://localhost:${config.port}`);
+    logInfo("server.started", {
+      clientUrl: config.clientUrl,
+      mongoDbName: config.mongoDbName,
+      port: config.port
+    });
   });
 }
 
 startServer().catch((error) => {
-  console.error("Failed to start API", error);
-  process.exit(1);
+  reportError(error, {
+    event: "server.start_failed"
+  })
+    .catch(() => {})
+    .finally(() => {
+      process.exit(1);
+    });
 });

@@ -1,20 +1,101 @@
-import { useEffect, useRef, useState } from "react";
+import { Component, lazy, Suspense, useEffect, useRef, useState } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import MiniPlayer from "./components/MiniPlayer";
+import RouteAnnouncer from "./components/RouteAnnouncer";
+import {
+  SiteMetadataProvider,
+  defaultSiteMetadata
+} from "./contexts/SiteMetadataContext";
 import PublicLayout from "./layouts/PublicLayout";
 import AdminLayout, { ProtectedRoute } from "./layouts/AdminLayout";
-import { apiBaseUrl, hasVideo, themeKey, tokenKey, userTokenKey } from "./lib/site";
-import AdminAboutPage from "./pages/admin/AdminAboutPage";
-import AdminCollectionsPage from "./pages/admin/AdminCollectionsPage";
-import AdminLogin from "./pages/admin/AdminLogin";
-import AdminPostsPage from "./pages/admin/AdminPostsPage";
-import AboutPage from "./pages/public/AboutPage";
-import AccountPage from "./pages/public/AccountPage";
-import CollectionDetailPage from "./pages/public/CollectionDetailPage";
-import CollectionsIndexPage from "./pages/public/CollectionsIndexPage";
-import ExplorePage from "./pages/public/ExplorePage";
-import PublicHome from "./pages/public/PublicHome";
-import PublicReleasePage from "./pages/public/PublicReleasePage";
+import { useSiteContent } from "./hooks/usePublicApi";
+import {
+  apiBaseUrl,
+  getPreferredCollectionForPost,
+  getThemeCssVariables,
+  hasVideo,
+  themeKey
+} from "./lib/site";
+import { withMutationIntent } from "./lib/api";
+
+const AdminAboutPage = lazy(() => import("./pages/admin/AdminAboutPage"));
+const AdminCommentsPage = lazy(() => import("./pages/admin/AdminCommentsPage"));
+const AdminCollectionsPage = lazy(
+  () => import("./pages/admin/AdminCollectionsPage")
+);
+const AdminInsightsPage = lazy(() => import("./pages/admin/AdminInsightsPage"));
+const AdminNotFoundPage = lazy(() => import("./pages/admin/AdminNotFoundPage"));
+const AdminPathsPage = lazy(() => import("./pages/admin/AdminPathsPage"));
+const AdminPostsPage = lazy(() => import("./pages/admin/AdminPostsPage"));
+const AdminSitePage = lazy(() => import("./pages/admin/AdminSitePage"));
+const AdminUsersPage = lazy(() => import("./pages/admin/AdminUsersPage"));
+const AboutPage = lazy(() => import("./pages/public/AboutPage"));
+const AccountPage = lazy(() => import("./pages/public/AccountPage"));
+const LoginPage = lazy(() => import("./pages/public/LoginPage"));
+const CollectionDetailPage = lazy(
+  () => import("./pages/public/CollectionDetailPage")
+);
+const CollectionsIndexPage = lazy(
+  () => import("./pages/public/CollectionsIndexPage")
+);
+const ExplorePage = lazy(() => import("./pages/public/ExplorePage"));
+const GuidedPathPage = lazy(() => import("./pages/public/GuidedPathPage"));
+const GuidedPathsIndexPage = lazy(
+  () => import("./pages/public/GuidedPathsIndexPage")
+);
+const NotFoundPage = lazy(() => import("./pages/public/NotFoundPage"));
+const PublicHome = lazy(() => import("./pages/public/PublicHome"));
+const PublicReleasePage = lazy(
+  () => import("./pages/public/PublicReleasePage")
+);
+
+class RouteErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <main className="content-grid route-loading-shell" role="alert">
+          <section className="intro-card homepage-panel">
+            <p className="eyebrow">Route Unavailable</p>
+            <h2>This archive surface could not load.</h2>
+            <p>
+              Refresh the page to request the latest route files from the
+              server.
+            </p>
+            <button
+              className="hero-link"
+              onClick={() => window.location.reload()}
+              type="button"
+            >
+              Refresh Page
+            </button>
+          </section>
+        </main>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+function RouteFallback() {
+  return (
+    <main className="content-grid route-loading-shell" aria-live="polite">
+      <section className="intro-card homepage-panel">
+        <p className="eyebrow">Loading</p>
+        <h2>Opening the next archive surface.</h2>
+      </section>
+    </main>
+  );
+}
 
 function App() {
   const [theme, setTheme] = useState(() => {
@@ -29,10 +110,7 @@ function App() {
       : "dark";
   });
   const [forcedTheme, setForcedTheme] = useState(null);
-  const [hasAdminSession, setHasAdminSession] = useState(() =>
-    Boolean(localStorage.getItem("suno-blog-admin-token")),
-  );
-  const [userToken, setUserToken] = useState(() => localStorage.getItem(userTokenKey) || "");
+  const [activeCollectionTheme, setActiveCollectionTheme] = useState("");
   const [currentUser, setCurrentUser] = useState(null);
   const [isUserSessionReady, setIsUserSessionReady] = useState(false);
   const [playerQueue, setPlayerQueue] = useState([]);
@@ -45,7 +123,17 @@ function App() {
   const [playerVolume, setPlayerVolume] = useState(0.78);
   const audioRef = useRef(null);
   const playerStateRef = useRef({ queue: [], index: -1 });
-  const currentTrack = currentQueueIndex >= 0 ? playerQueue[currentQueueIndex] || null : null;
+  const currentTrack =
+    currentQueueIndex >= 0 ? playerQueue[currentQueueIndex] || null : null;
+  const hasAdminSession = currentUser?.role === "admin";
+  const isAdminSessionReady = isUserSessionReady;
+  const { siteContent } = useSiteContent();
+  const siteName =
+    String(siteContent?.branding?.siteName || "").trim() ||
+    defaultSiteMetadata.siteName;
+  const siteDescription =
+    String(siteContent?.home?.heroText || "").trim() ||
+    defaultSiteMetadata.siteDescription;
 
   useEffect(() => {
     playerStateRef.current = { queue: playerQueue, index: currentQueueIndex };
@@ -54,41 +142,79 @@ function App() {
   const activeTheme = forcedTheme || theme;
 
   useEffect(() => {
-    document.documentElement.setAttribute("data-theme", activeTheme);
-  }, [activeTheme]);
+    const root = document.documentElement;
+    root.setAttribute("data-theme", activeTheme);
+
+    if (activeCollectionTheme) {
+      root.setAttribute("data-collection-theme", activeCollectionTheme);
+    } else {
+      root.removeAttribute("data-collection-theme");
+    }
+
+    const themeVars = getThemeCssVariables(
+      activeCollectionTheme,
+      activeTheme,
+      siteContent
+    );
+    const knownVars = [
+      "--background",
+      "--surface",
+      "--surface-alt",
+      "--text",
+      "--muted-text",
+      "--border",
+      "--primary",
+      "--primary-strong",
+      "--secondary",
+      "--player-progress-start",
+      "--player-progress-mid",
+      "--player-progress-end",
+      "--player-progress-glow",
+      "--player-progress-glow-strong",
+      "--player-thumb",
+      "--player-track",
+      "--player-volume-track",
+      "--player-volume-fill-start",
+      "--player-volume-fill-end",
+      "--player-volume-thumb",
+      "--player-volume-thumb-glow"
+    ];
+
+    knownVars.forEach((cssVar) => {
+      if (themeVars[cssVar]) {
+        root.style.setProperty(cssVar, themeVars[cssVar]);
+      } else {
+        root.style.removeProperty(cssVar);
+      }
+    });
+  }, [activeCollectionTheme, activeTheme, siteContent]);
 
   useEffect(() => {
     localStorage.setItem(themeKey, theme);
   }, [theme]);
 
   useEffect(() => {
-    if (userToken) {
-      localStorage.setItem(userTokenKey, userToken);
-      return;
+    function handleUserUpdated(event) {
+      setCurrentUser(event.detail || null);
+      setIsUserSessionReady(true);
     }
 
-    localStorage.removeItem(userTokenKey);
-  }, [userToken]);
+    window.addEventListener("suno:user-updated", handleUserUpdated);
+
+    return () => {
+      window.removeEventListener("suno:user-updated", handleUserUpdated);
+    };
+  }, []);
 
   useEffect(() => {
     let isCancelled = false;
 
     async function loadCurrentUser() {
-      if (!userToken) {
-        if (!isCancelled) {
-          setCurrentUser(null);
-          setIsUserSessionReady(true);
-        }
-        return;
-      }
-
       try {
         const response = await fetch(`${apiBaseUrl}/auth/me`, {
-          headers: {
-            Authorization: `Bearer ${userToken}`
-          }
+          credentials: "include"
         });
-        const data = await response.json();
+        const data = await response.json().catch(() => ({}));
 
         if (!response.ok) {
           throw new Error(data.message || "Session expired.");
@@ -99,7 +225,6 @@ function App() {
         }
       } catch {
         if (!isCancelled) {
-          setUserToken("");
           setCurrentUser(null);
         }
       } finally {
@@ -115,7 +240,7 @@ function App() {
     return () => {
       isCancelled = true;
     };
-  }, [userToken]);
+  }, []);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -130,7 +255,11 @@ function App() {
     }
 
     function findAdjacentPlayableIndex(queue, startIndex, step) {
-      for (let index = startIndex + step; index >= 0 && index < queue.length; index += step) {
+      for (
+        let index = startIndex + step;
+        index >= 0 && index < queue.length;
+        index += step
+      ) {
         if (hasVideo(queue[index]?.videoUrl)) {
           return index;
         }
@@ -204,7 +333,11 @@ function App() {
   }, [currentTrack, isMiniPlayerPlaying]);
 
   function findAdjacentPlayableIndex(queue, startIndex, step) {
-    for (let index = startIndex + step; index >= 0 && index < queue.length; index += step) {
+    for (
+      let index = startIndex + step;
+      index >= 0 && index < queue.length;
+      index += step
+    ) {
       if (hasVideo(queue[index]?.videoUrl)) {
         return index;
       }
@@ -232,11 +365,15 @@ function App() {
     let queue = normalizeQueue(options.queue || []);
     let collectionId = options.collectionId || "";
     let collectionName = options.collectionName || "";
-    const requestedCollectionSlug = options.collectionSlug || track.collections?.[0]?.slug || "";
+    const preferredCollection = getPreferredCollectionForPost(track);
+    const requestedCollectionSlug =
+      options.collectionSlug || preferredCollection?.slug || "";
 
     if (requestedCollectionSlug && queue.length <= 1) {
       try {
-        const response = await fetch(`${apiBaseUrl}/collections/${requestedCollectionSlug}`);
+        const response = await fetch(
+          `${apiBaseUrl}/collections/${requestedCollectionSlug}`
+        );
         const data = await response.json();
 
         if (response.ok) {
@@ -259,8 +396,12 @@ function App() {
 
     return {
       queue,
-      collectionId: collectionId || track.collections?.[0]?.id || requestedCollectionSlug || track.slug,
-      collectionName: collectionName || track.collections?.[0]?.title || ""
+      collectionId:
+        collectionId ||
+        preferredCollection?.id ||
+        requestedCollectionSlug ||
+        track.slug,
+      collectionName: collectionName || preferredCollection?.title || ""
     };
   }
 
@@ -268,7 +409,7 @@ function App() {
     const context = await resolvePlaybackContext(track, options);
     const trackIndex = Math.max(
       0,
-      context.queue.findIndex((entry) => entry.slug === track.slug),
+      context.queue.findIndex((entry) => entry.slug === track.slug)
     );
 
     setPlayerQueue(context.queue);
@@ -278,6 +419,21 @@ function App() {
     setPlayerProgress(0);
     setPlayerDuration(0);
     setIsMiniPlayerPlaying(hasVideo(track.videoUrl));
+
+    if (currentUser && track?.slug) {
+      fetch(`${apiBaseUrl}/auth/library/releases/${track.slug}/listen`, {
+        method: "POST",
+        credentials: "include",
+        headers: withMutationIntent()
+      })
+        .then((response) => response.json().catch(() => ({})))
+        .then((data) => {
+          if (data.user) {
+            setCurrentUser(data.user);
+          }
+        })
+        .catch(() => {});
+    }
   }
 
   function toggleMiniPlayer() {
@@ -311,7 +467,11 @@ function App() {
       return;
     }
 
-    const previousIndex = findAdjacentPlayableIndex(playerQueue, currentQueueIndex, -1);
+    const previousIndex = findAdjacentPlayableIndex(
+      playerQueue,
+      currentQueueIndex,
+      -1
+    );
 
     if (previousIndex !== -1) {
       playQueueIndex(previousIndex);
@@ -323,7 +483,11 @@ function App() {
       return;
     }
 
-    const nextIndex = findAdjacentPlayableIndex(playerQueue, currentQueueIndex, 1);
+    const nextIndex = findAdjacentPlayableIndex(
+      playerQueue,
+      currentQueueIndex,
+      1
+    );
 
     if (nextIndex !== -1) {
       playQueueIndex(nextIndex);
@@ -366,156 +530,198 @@ function App() {
   }
 
   function handleUserAuthSuccess(payload) {
-    localStorage.removeItem(tokenKey);
-    setHasAdminSession(false);
-    setUserToken(payload?.token || "");
     setCurrentUser(payload?.user || null);
     setIsUserSessionReady(true);
   }
 
-  function handleUserLogout() {
-    setUserToken("");
+  async function handleUserLogout() {
+    try {
+      await fetch(`${apiBaseUrl}/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+        headers: withMutationIntent()
+      });
+    } catch {
+      // Ignore logout transport failures and still clear local session state.
+    }
+
     setCurrentUser(null);
     setIsUserSessionReady(true);
   }
 
-  function handleAdminAuthSuccess() {
-    localStorage.removeItem(userTokenKey);
-    setUserToken("");
-    setCurrentUser(null);
-    setIsUserSessionReady(true);
-    setHasAdminSession(true);
-  }
-
-  function handleAdminLogout() {
-    localStorage.removeItem(tokenKey);
-    setHasAdminSession(false);
-  }
-
-  const previousQueueIndex = findAdjacentPlayableIndex(playerQueue, currentQueueIndex, -1);
-  const nextQueueIndex = findAdjacentPlayableIndex(playerQueue, currentQueueIndex, 1);
-  const nextQueueTrack = nextQueueIndex !== -1 ? playerQueue[nextQueueIndex] : null;
+  const previousQueueIndex = findAdjacentPlayableIndex(
+    playerQueue,
+    currentQueueIndex,
+    -1
+  );
+  const nextQueueIndex = findAdjacentPlayableIndex(
+    playerQueue,
+    currentQueueIndex,
+    1
+  );
+  const nextQueueTrack =
+    nextQueueIndex !== -1 ? playerQueue[nextQueueIndex] : null;
 
   return (
-    <BrowserRouter>
-      <audio ref={audioRef} preload="metadata" />
-      <Routes>
-        <Route
-          element={
-            <PublicLayout
-              currentUser={currentUser}
-              hasAdminSession={hasAdminSession}
-              isThemeLocked={Boolean(forcedTheme)}
-              isUserSessionReady={isUserSessionReady}
-              onUserLogout={handleUserLogout}
-              theme={theme}
-              setTheme={setTheme}
-            />
+    <SiteMetadataProvider siteDescription={siteDescription} siteName={siteName}>
+      <BrowserRouter>
+        <RouteAnnouncer />
+        <audio ref={audioRef} preload="metadata" />
+        <RouteErrorBoundary>
+          <Suspense fallback={<RouteFallback />}>
+            <Routes>
+              <Route
+                element={
+                  <PublicLayout
+                    currentUser={currentUser}
+                    isThemeLocked={Boolean(forcedTheme)}
+                    isUserSessionReady={isUserSessionReady}
+                    onUserLogout={handleUserLogout}
+                    siteContent={siteContent}
+                    theme={theme}
+                    setTheme={setTheme}
+                  />
+                }
+              >
+                <Route
+                  index
+                  element={
+                    <PublicHome
+                      hasAdminSession={hasAdminSession}
+                      onPlayTrack={playTrack}
+                      siteContent={siteContent}
+                    />
+                  }
+                />
+                <Route path="/collections" element={<CollectionsIndexPage />} />
+                <Route
+                  path="/collections/:slug"
+                  element={
+                    <CollectionDetailPage
+                      currentTrack={currentTrack}
+                      isPlayerActive={isMiniPlayerPlaying}
+                      onPlayTrack={playTrack}
+                      setActiveCollectionTheme={setActiveCollectionTheme}
+                      setForcedTheme={setForcedTheme}
+                      siteContent={siteContent}
+                    />
+                  }
+                />
+                <Route
+                  path="/explore"
+                  element={<ExplorePage onPlayTrack={playTrack} />}
+                />
+                <Route path="/paths" element={<GuidedPathsIndexPage />} />
+                <Route
+                  path="/paths/:slug"
+                  element={
+                    <GuidedPathPage
+                      onPlayTrack={playTrack}
+                      setActiveCollectionTheme={setActiveCollectionTheme}
+                      setForcedTheme={setForcedTheme}
+                    />
+                  }
+                />
+                <Route
+                  path="/account"
+                  element={
+                    <AccountPage
+                      currentUser={currentUser}
+                      isUserSessionReady={isUserSessionReady}
+                      onUserAuthSuccess={handleUserAuthSuccess}
+                      onUserLogout={handleUserLogout}
+                    />
+                  }
+                />
+                <Route
+                  path="/login"
+                  element={
+                    <LoginPage
+                      currentUser={currentUser}
+                      isUserSessionReady={isUserSessionReady}
+                      onUserAuthSuccess={handleUserAuthSuccess}
+                    />
+                  }
+                />
+                <Route path="/about" element={<AboutPage />} />
+                <Route
+                  path="/release/:slug"
+                  element={
+                    <PublicReleasePage
+                      currentUser={currentUser}
+                      currentTrack={currentTrack}
+                      hasAdminSession={hasAdminSession}
+                      isPlayerActive={isMiniPlayerPlaying}
+                      onPlayTrack={playTrack}
+                      onUserLogout={handleUserLogout}
+                      setActiveCollectionTheme={setActiveCollectionTheme}
+                      setForcedTheme={setForcedTheme}
+                      siteContent={siteContent}
+                    />
+                  }
+                />
+                <Route path="*" element={<NotFoundPage />} />
+              </Route>
+              <Route
+                path="/admin/login"
+                element={<Navigate replace to="/login" />}
+              />
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute
+                    hasAdminSession={hasAdminSession}
+                    isAdminSessionReady={isAdminSessionReady}
+                  >
+                    <AdminLayout
+                      onAdminLogout={handleUserLogout}
+                      theme={theme}
+                      setTheme={setTheme}
+                    />
+                  </ProtectedRoute>
+                }
+              >
+                <Route
+                  index
+                  element={<Navigate replace to="/admin/insights" />}
+                />
+                <Route path="insights" element={<AdminInsightsPage />} />
+                <Route path="posts" element={<AdminPostsPage />} />
+                <Route path="comments" element={<AdminCommentsPage />} />
+                <Route path="users" element={<AdminUsersPage />} />
+                <Route path="collections" element={<AdminCollectionsPage />} />
+                <Route path="paths" element={<AdminPathsPage />} />
+                <Route path="about" element={<AdminAboutPage />} />
+                <Route path="site" element={<AdminSitePage />} />
+                <Route path="*" element={<AdminNotFoundPage />} />
+              </Route>
+            </Routes>
+          </Suspense>
+        </RouteErrorBoundary>
+        <MiniPlayer
+          currentTrack={currentTrack}
+          collectionId={playerCollectionId}
+          collectionName={playerCollectionName}
+          currentIndex={currentQueueIndex}
+          duration={playerDuration}
+          isPlaying={isMiniPlayerPlaying}
+          nextTrack={nextQueueTrack}
+          onClose={closeMiniPlayer}
+          onNext={playNextTrack}
+          onPrevious={playPreviousTrack}
+          onScrub={scrubMiniPlayer}
+          onTogglePlay={toggleMiniPlayer}
+          onVolumeChange={adjustMiniPlayerVolume}
+          previousTrack={
+            previousQueueIndex !== -1 ? playerQueue[previousQueueIndex] : null
           }
-        >
-          <Route
-            index
-            element={
-              <PublicHome
-                hasAdminSession={hasAdminSession}
-                onPlayTrack={playTrack}
-              />
-            }
-          />
-          <Route path="/collections" element={<CollectionsIndexPage />} />
-          <Route
-            path="/collections/:slug"
-            element={
-              <CollectionDetailPage
-                currentTrack={currentTrack}
-                isPlayerActive={isMiniPlayerPlaying}
-                onPlayTrack={playTrack}
-                setForcedTheme={setForcedTheme}
-              />
-            }
-          />
-          <Route
-            path="/explore"
-            element={<ExplorePage onPlayTrack={playTrack} />}
-          />
-          <Route
-            path="/account"
-            element={
-              <AccountPage
-                currentUser={currentUser}
-                hasAdminSession={hasAdminSession}
-                isUserSessionReady={isUserSessionReady}
-                onUserAuthSuccess={handleUserAuthSuccess}
-                onUserLogout={handleUserLogout}
-              />
-            }
-          />
-          <Route path="/about" element={<AboutPage />} />
-          <Route
-            path="/release/:slug"
-            element={
-              <PublicReleasePage
-                currentUser={currentUser}
-                currentTrack={currentTrack}
-                hasAdminSession={hasAdminSession}
-                isPlayerActive={isMiniPlayerPlaying}
-                onPlayTrack={playTrack}
-                onUserAuthSuccess={handleUserAuthSuccess}
-                onUserLogout={handleUserLogout}
-                setForcedTheme={setForcedTheme}
-                userToken={userToken}
-              />
-            }
-          />
-        </Route>
-        <Route
-          path="/admin/login"
-          element={
-            <AdminLogin
-              onAdminAuthSuccess={handleAdminAuthSuccess}
-              theme={theme}
-              setTheme={setTheme}
-            />
-          }
+          progress={playerProgress}
+          queueLength={playerQueue.length}
+          siteContent={siteContent}
+          volume={playerVolume}
         />
-        <Route
-          path="/admin"
-          element={
-            <ProtectedRoute>
-              <AdminLayout
-                onAdminLogout={handleAdminLogout}
-                theme={theme}
-                setTheme={setTheme}
-              />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<Navigate replace to="/admin/posts" />} />
-          <Route path="posts" element={<AdminPostsPage />} />
-          <Route path="collections" element={<AdminCollectionsPage />} />
-          <Route path="about" element={<AdminAboutPage />} />
-        </Route>
-      </Routes>
-      <MiniPlayer
-        currentTrack={currentTrack}
-        collectionId={playerCollectionId}
-        collectionName={playerCollectionName}
-        currentIndex={currentQueueIndex}
-        duration={playerDuration}
-        isPlaying={isMiniPlayerPlaying}
-        nextTrack={nextQueueTrack}
-        onClose={closeMiniPlayer}
-        onNext={playNextTrack}
-        onPrevious={playPreviousTrack}
-        onScrub={scrubMiniPlayer}
-        onTogglePlay={toggleMiniPlayer}
-        onVolumeChange={adjustMiniPlayerVolume}
-        previousTrack={previousQueueIndex !== -1 ? playerQueue[previousQueueIndex] : null}
-        progress={playerProgress}
-        queueLength={playerQueue.length}
-        volume={playerVolume}
-      />
-    </BrowserRouter>
+      </BrowserRouter>
+    </SiteMetadataProvider>
   );
 }
 

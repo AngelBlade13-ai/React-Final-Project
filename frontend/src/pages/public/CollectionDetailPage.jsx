@@ -1,25 +1,48 @@
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import {
+  PublicErrorState,
+  PublicLoadingState
+} from "../../components/PublicDataState";
 import EldoriaSigil from "../../components/EldoriaSigil";
 import EldoriaWorldMap from "../../components/EldoriaWorldMap";
 import ReleaseMedia from "../../components/ReleaseMedia";
 import { FractureFragmentCard, TimelineCard } from "../../components/cards";
-import useDocumentTitle from "../../hooks/useDocumentTitle";
+import { usePublicCollection } from "../../hooks/usePublicApi";
+import usePageMetadata from "../../hooks/usePageMetadata";
 import {
-  apiBaseUrl,
   FRACTUREVERSE_FEATURED_SLUG,
   FRACTUREVERSE_ORDER,
   FRACTUREVERSE_WORLD,
+  getCanonicalCollectionSurfacePosts,
   getCollectionThemeHint,
   getCollectionDerivedContent,
   getEldoriaMapEntries,
   getEldoriaMeta,
   getFractureverseMeta,
+  getPlaybackStateCopy,
+  getPrimaryCollectionSurfacePosts,
+  getPublicCollectionPosts,
+  getSecondaryVersionPosts,
   getThemeConfig,
-  hasVideo,
+  getVisibleCollectionsForPost,
+  groupOriginalPersonalPosts,
+  getVideoPosterUrl,
   sortEldoriaPosts,
   sortFractureversePosts
 } from "../../lib/site";
+import {
+  clearThresholdState,
+  consumePendingWorldEntry,
+  isImmersiveTheme,
+  prefersReducedMotion,
+  readPendingWorldEntry
+} from "../../lib/worldTransition";
+
+const WORLD_ENTRY_DURATIONS_MS = {
+  eldoria: 2200,
+  fractureverse: 1350
+};
 
 const FRACTURE_LINE_LAYOUT = {
   anchor: { x: 50, y: 6 },
@@ -47,7 +70,10 @@ function buildFractureConnections({ featuredMeta, gridMetas, interaction }) {
 
   gridMetas.forEach((meta) => {
     meta.linkedTo.forEach((linkedId) => {
-      if (linkedId !== featuredMeta?.fragmentId && FRACTURE_LINE_LAYOUT.nodes[linkedId]) {
+      if (
+        linkedId !== featuredMeta?.fragmentId &&
+        FRACTURE_LINE_LAYOUT.nodes[linkedId]
+      ) {
         addPair(meta.fragmentId, linkedId);
       }
     });
@@ -55,10 +81,21 @@ function buildFractureConnections({ featuredMeta, gridMetas, interaction }) {
 
   return [...pairs.values()].map((connection) => {
     if (!interaction.hasInteraction) {
-      return { ...connection, emphasized: false, connected: false, dimmed: false, anchorGlow: false };
+      return {
+        ...connection,
+        emphasized: false,
+        connected: false,
+        dimmed: false,
+        anchorGlow: false
+      };
     }
 
-    const nonAnchorId = connection.from === "ANCHOR" ? connection.to : connection.to === "ANCHOR" ? connection.from : null;
+    const nonAnchorId =
+      connection.from === "ANCHOR"
+        ? connection.to
+        : connection.to === "ANCHOR"
+          ? connection.from
+          : null;
     const touchesActive =
       connection.from === interaction.activeId ||
       connection.to === interaction.activeId ||
@@ -67,7 +104,9 @@ function buildFractureConnections({ featuredMeta, gridMetas, interaction }) {
       ? true
       : connection.from === "ANCHOR" || connection.to === "ANCHOR"
         ? interaction.connectedIds.has(nonAnchorId)
-        : touchesActive && interaction.connectedIds.has(connection.from) && interaction.connectedIds.has(connection.to);
+        : touchesActive &&
+          interaction.connectedIds.has(connection.from) &&
+          interaction.connectedIds.has(connection.to);
 
     return {
       ...connection,
@@ -90,7 +129,10 @@ function buildFractureInteraction(activeSlug, featuredSlug, releases) {
     };
   }
 
-  const activeMeta = getFractureverseMeta(releases.find((post) => post.slug === activeSlug), releases);
+  const activeMeta = getFractureverseMeta(
+    releases.find((post) => post.slug === activeSlug),
+    releases
+  );
   if (!activeMeta) {
     return {
       activeId: "",
@@ -110,104 +152,303 @@ function buildFractureInteraction(activeSlug, featuredSlug, releases) {
   };
 }
 
-export default function CollectionDetailPage({ currentTrack, isPlayerActive, onPlayTrack, setForcedTheme }) {
+export default function CollectionDetailPage({
+  currentTrack,
+  isPlayerActive,
+  onPlayTrack,
+  setActiveCollectionTheme,
+  setForcedTheme,
+  siteContent
+}) {
   const { slug } = useParams();
   const navigate = useNavigate();
-  const [collection, setCollection] = useState(null);
-  const [releases, setReleases] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const {
+    collection,
+    releases,
+    redirectSlug,
+    error: collectionError,
+    isLoading: loading,
+    retry
+  } = usePublicCollection(slug);
   const [activeFragmentSlug, setActiveFragmentSlug] = useState("");
-  const [eldoriaMousePosition, setEldoriaMousePosition] = useState({ x: 50, y: 34 });
-  const [eldoriaScrollDepth, setEldoriaScrollDepth] = useState(0);
+  const worldHeaderRef = useRef(null);
+  const worldContentRef = useRef(null);
+  const eldoriaScrollFrameRef = useRef(0);
+  const eldoriaPointerFrameRef = useRef(0);
+  const eldoriaPointerRef = useRef({ x: 50, y: 34 });
   const [eldoriaTransitionSlug, setEldoriaTransitionSlug] = useState("");
-  useDocumentTitle(collection?.title || "Collection");
+  const [worldEntryMode, setWorldEntryMode] = useState("");
+  const worldEntryStartedAtRef = useRef(0);
+  const error = collectionError?.message || "";
+  usePageMetadata({
+    canonicalPath: `/collections/${redirectSlug || collection?.slug || slug}`,
+    description:
+      collection?.description ||
+      "Explore the songs gathered inside this collection.",
+    image: getVideoPosterUrl(collection?.featuredRelease?.videoUrl),
+    title: collection?.title || "Collection"
+  });
 
   useEffect(() => {
-    async function loadCollection() {
-      try {
-        const response = await fetch(`${apiBaseUrl}/collections/${slug}`);
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.message || "Failed to load collection.");
-        }
-
-        setCollection(data.collection);
-        setReleases(data.releases || []);
-      } catch (apiError) {
-        setError(apiError.message);
-      } finally {
-        setLoading(false);
-      }
+    if (redirectSlug && redirectSlug !== slug) {
+      navigate(`/collections/${redirectSlug}`, { replace: true });
     }
+  }, [navigate, redirectSlug, slug]);
 
-    loadCollection();
-  }, [slug]);
-
-  const featuredRelease = collection?.featuredRelease || null;
-  const themeConfig = getThemeConfig(collection?.theme);
+  const publicReleases = getPublicCollectionPosts(releases);
+  const themeConfig = getThemeConfig(collection?.theme, siteContent);
   const isFractureverse = collection?.theme === "fractureverse";
   const isEldoria = collection?.theme === "eldoria";
+  const isOriginalPersonal = collection?.slug === "original-personal";
   const isImmersiveCollection = isFractureverse || isEldoria;
-  const eldoriaReleases = isEldoria ? sortEldoriaPosts(releases) : [];
-  const baseReleases = isEldoria ? eldoriaReleases : releases;
-  const otherReleases = featuredRelease ? baseReleases.filter((post) => post.slug !== featuredRelease.slug) : baseReleases;
-  const timelineReleases = featuredRelease ? [featuredRelease, ...otherReleases] : baseReleases;
+  const primarySurfaceReleases = isFractureverse
+    ? getCanonicalCollectionSurfacePosts(publicReleases, {
+        collection,
+        surface: "collection"
+      })
+    : getPrimaryCollectionSurfacePosts(publicReleases, {
+        collection,
+        surface: "collection"
+      });
+  const featuredRelease =
+    primarySurfaceReleases.find(
+      (post) =>
+        post.slug === collection?.featuredRelease?.slug ||
+        post.slug === collection?.featuredReleaseSlug
+    ) ||
+    primarySurfaceReleases[0] ||
+    null;
+  const eldoriaReleases = isEldoria
+    ? sortEldoriaPosts(primarySurfaceReleases)
+    : [];
+  const baseReleases = isEldoria ? eldoriaReleases : primarySurfaceReleases;
+  const otherReleases = featuredRelease
+    ? baseReleases.filter((post) => post.slug !== featuredRelease.slug)
+    : baseReleases;
+  const timelineReleases = featuredRelease
+    ? [featuredRelease, ...otherReleases]
+    : baseReleases;
+  const displayTimelineReleases = timelineReleases;
   const fractureverseReleases = isFractureverse
     ? sortFractureversePosts(
-        FRACTUREVERSE_ORDER.map((entrySlug) => releases.find((post) => post.slug === entrySlug))
+        FRACTUREVERSE_ORDER.map((entrySlug) =>
+          primarySurfaceReleases.find((post) => post.slug === entrySlug)
+        )
           .filter(Boolean)
-          .concat(releases.filter((post) => !FRACTUREVERSE_ORDER.includes(post.slug)))
+          .concat(
+            primarySurfaceReleases.filter(
+              (post) => !FRACTUREVERSE_ORDER.includes(post.slug)
+            )
+          )
       )
     : [];
+  const fractureverseTimelineReleases = fractureverseReleases.filter((post) =>
+    getFractureverseMeta(post, fractureverseReleases)
+  );
+  const fractureverseSupplementalReleases = fractureverseReleases.filter(
+    (post) => !getFractureverseMeta(post, fractureverseReleases)
+  );
+  const secondaryVersionReleases = getSecondaryVersionPosts(
+    publicReleases,
+    baseReleases,
+    { collection, surface: "collection" }
+  );
   const fractureverseFeatured =
-    fractureverseReleases.find((post) => post.slug === FRACTUREVERSE_FEATURED_SLUG) || featuredRelease;
-  const fractureverseGrid = fractureverseReleases.filter((post) => post.slug !== fractureverseFeatured?.slug);
+    fractureverseTimelineReleases.find(
+      (post) => post.slug === FRACTUREVERSE_FEATURED_SLUG
+    ) ||
+    fractureverseTimelineReleases[0] ||
+    featuredRelease;
+  const fractureverseGrid = fractureverseTimelineReleases.filter(
+    (post) => post.slug !== fractureverseFeatured?.slug
+  );
   const playbackContext = collection
     ? {
         collectionId: collection.id,
         collectionName: collection.title,
         collectionSlug: collection.slug,
-        queue: isFractureverse ? fractureverseReleases : isEldoria ? eldoriaReleases : timelineReleases
+        queue: isFractureverse
+          ? fractureverseTimelineReleases
+          : isEldoria
+            ? eldoriaReleases
+            : displayTimelineReleases
       }
     : null;
-  const featuredFragmentMeta = getFractureverseMeta(fractureverseFeatured, fractureverseReleases);
+  const featuredFragmentMeta = getFractureverseMeta(
+    fractureverseFeatured,
+    fractureverseTimelineReleases
+  );
+  const fractureverseFeaturedPlaybackCopy = getPlaybackStateCopy(
+    fractureverseFeatured,
+    "fractureverse"
+  );
+  const featuredPlaybackCopy = getPlaybackStateCopy(
+    featuredRelease,
+    collection?.theme || ""
+  );
   const displayFragmentMeta =
-    getFractureverseMeta(fractureverseReleases.find((post) => post.slug === activeFragmentSlug), fractureverseReleases) ||
-    featuredFragmentMeta;
-  const fractureInteraction = buildFractureInteraction(activeFragmentSlug, fractureverseFeatured?.slug, fractureverseReleases);
+    getFractureverseMeta(
+      fractureverseTimelineReleases.find(
+        (post) => post.slug === activeFragmentSlug
+      ),
+      fractureverseTimelineReleases
+    ) || featuredFragmentMeta;
+  const fractureInteraction = buildFractureInteraction(
+    activeFragmentSlug,
+    fractureverseFeatured?.slug,
+    fractureverseTimelineReleases
+  );
   const fractureDominantState = "Collapsed";
-  const fractureIntegrity = Math.max(24, 64 - fractureverseReleases.length * 4);
+  const fractureIntegrity = Math.max(
+    24,
+    64 - fractureverseTimelineReleases.length * 4
+  );
   const fractureConnections = buildFractureConnections({
     featuredMeta: featuredFragmentMeta,
-    gridMetas: fractureverseGrid.map((post) => getFractureverseMeta(post, fractureverseReleases)).filter(Boolean),
+    gridMetas: fractureverseGrid
+      .map((post) => getFractureverseMeta(post, fractureverseTimelineReleases))
+      .filter(Boolean),
     interaction: fractureInteraction
   });
-  const derivedContent = getCollectionDerivedContent(collection, timelineReleases);
+  const derivedContent = getCollectionDerivedContent(
+    collection,
+    displayTimelineReleases,
+    siteContent
+  );
+  const journeySequence = isFractureverse
+    ? fractureverseTimelineReleases
+    : displayTimelineReleases;
+  const collectionJourneyStops = [
+    journeySequence[0]
+      ? {
+          label: isFractureverse
+            ? "Start With The First Fragment"
+            : isEldoria
+              ? "Begin With The Opening Ballad"
+              : "Start Here",
+          post: journeySequence[0]
+        }
+      : null,
+    featuredRelease
+      ? {
+          label: isFractureverse
+            ? "Primary Anchor"
+            : isEldoria
+              ? "Lead Ballad"
+              : "Featured Entry",
+          post: featuredRelease
+        }
+      : null,
+    journeySequence.length > 1
+      ? {
+          label: isFractureverse
+            ? "Latest Observed Fragment"
+            : isEldoria
+              ? "Most Recent Chapter"
+              : "Continue Deeper",
+          post: journeySequence[journeySequence.length - 1]
+        }
+      : null
+  ]
+    .filter(Boolean)
+    .filter(
+      (entry, index, entries) =>
+        entries.findIndex(
+          (candidate) => candidate.post.slug === entry.post.slug
+        ) === index
+    );
   const eldoriaFeaturedMeta = getEldoriaMeta(featuredRelease);
+  const featuredCollections = getVisibleCollectionsForPost(featuredRelease);
+  const originalPersonalSections = isOriginalPersonal
+    ? groupOriginalPersonalPosts(displayTimelineReleases)
+    : [];
   const eldoriaAudioActive = Boolean(
     isEldoria &&
-      isPlayerActive &&
-      currentTrack?.collections?.some((entry) => entry.slug === collection?.slug)
+    isPlayerActive &&
+    currentTrack?.collections?.some((entry) => entry.slug === collection?.slug)
   );
   const hintedTheme = collection?.theme || getCollectionThemeHint(slug);
+  const worldEntryActive = Boolean(worldEntryMode);
 
-  useLayoutEffect(() => {
-    const root = document.documentElement;
+  useEffect(() => {
+    clearThresholdState();
+  }, []);
 
-    if (hintedTheme) {
-      root.setAttribute("data-collection-theme", hintedTheme);
-      return () => {
-        root.removeAttribute("data-collection-theme");
-      };
+  useEffect(() => {
+    if (prefersReducedMotion()) {
+      return;
     }
 
-    root.removeAttribute("data-collection-theme");
+    const pendingEntry = readPendingWorldEntry();
+
+    if (
+      !pendingEntry ||
+      pendingEntry.slug !== slug ||
+      !isImmersiveTheme(pendingEntry.theme)
+    ) {
+      return;
+    }
+
+    const consumedEntry = consumePendingWorldEntry({
+      slug,
+      theme: pendingEntry.theme
+    });
+
+    if (!consumedEntry) {
+      return;
+    }
+
+    worldEntryStartedAtRef.current = Date.now();
+    setWorldEntryMode(consumedEntry.theme);
+  }, [slug]);
+
+  useEffect(() => {
+    if (!collection?.slug || !collection?.theme || !isImmersiveCollection) {
+      return undefined;
+    }
+
+    const pendingEntry = consumePendingWorldEntry({
+      slug: collection.slug,
+      theme: collection.theme
+    });
+
+    if (!pendingEntry || !isImmersiveTheme(collection.theme)) {
+      return undefined;
+    }
+
+    if (prefersReducedMotion()) {
+      return undefined;
+    }
+
+    worldEntryStartedAtRef.current = Date.now();
+    setWorldEntryMode(collection.theme);
+    return undefined;
+  }, [collection?.slug, collection?.theme, isImmersiveCollection]);
+
+  useEffect(() => {
+    if (!worldEntryMode || !collection?.slug) {
+      return undefined;
+    }
+
+    const startedAt = worldEntryStartedAtRef.current || Date.now();
+    const durationMs = WORLD_ENTRY_DURATIONS_MS[worldEntryMode] ?? 1350;
+    const elapsedMs = Date.now() - startedAt;
+    const remainingMs = Math.max(0, durationMs - elapsedMs);
+    const timeoutId = window.setTimeout(() => {
+      setWorldEntryMode("");
+    }, remainingMs);
+
     return () => {
-      root.removeAttribute("data-collection-theme");
+      window.clearTimeout(timeoutId);
     };
-  }, [hintedTheme]);
+  }, [collection?.slug, worldEntryMode]);
+
+  useEffect(() => {
+    setActiveCollectionTheme?.(hintedTheme || "");
+    return () => {
+      setActiveCollectionTheme?.("");
+    };
+  }, [hintedTheme, setActiveCollectionTheme]);
 
   useEffect(() => {
     if (!setForcedTheme) {
@@ -229,19 +470,46 @@ export default function CollectionDetailPage({ currentTrack, isPlayerActive, onP
 
   useEffect(() => {
     if (!isEldoria) {
-      setEldoriaScrollDepth(0);
+      [worldHeaderRef.current, worldContentRef.current].forEach((element) => {
+        if (!element) {
+          return;
+        }
+
+        element.style.setProperty("--eldoria-scroll-depth", "0px");
+        element.style.setProperty("--eldoria-mouse-x", "50%");
+        element.style.setProperty("--eldoria-mouse-y", "34%");
+      });
       return undefined;
     }
 
-    function updateScrollDepth() {
-      setEldoriaScrollDepth(window.scrollY || 0);
+    function applyScrollDepth() {
+      eldoriaScrollFrameRef.current = 0;
+      const nextDepth = `${window.scrollY || 0}px`;
+
+      [worldHeaderRef.current, worldContentRef.current].forEach((element) => {
+        element?.style.setProperty("--eldoria-scroll-depth", nextDepth);
+      });
     }
 
-    updateScrollDepth();
+    function updateScrollDepth() {
+      if (eldoriaScrollFrameRef.current) {
+        return;
+      }
+
+      eldoriaScrollFrameRef.current =
+        window.requestAnimationFrame(applyScrollDepth);
+    }
+
+    applyScrollDepth();
     window.addEventListener("scroll", updateScrollDepth, { passive: true });
 
     return () => {
       window.removeEventListener("scroll", updateScrollDepth);
+
+      if (eldoriaScrollFrameRef.current) {
+        window.cancelAnimationFrame(eldoriaScrollFrameRef.current);
+        eldoriaScrollFrameRef.current = 0;
+      }
     };
   }, [isEldoria]);
 
@@ -268,9 +536,28 @@ export default function CollectionDetailPage({ currentTrack, isPlayerActive, onP
     const x = ((event.clientX - bounds.left) / bounds.width) * 100;
     const y = ((event.clientY - bounds.top) / bounds.height) * 100;
 
-    setEldoriaMousePosition({
+    eldoriaPointerRef.current = {
       x: Number.isFinite(x) ? x : 50,
       y: Number.isFinite(y) ? y : 34
+    };
+
+    if (eldoriaPointerFrameRef.current) {
+      return;
+    }
+
+    eldoriaPointerFrameRef.current = window.requestAnimationFrame(() => {
+      eldoriaPointerFrameRef.current = 0;
+      const nextMouseX = `${eldoriaPointerRef.current.x}%`;
+      const nextMouseY = `${eldoriaPointerRef.current.y}%`;
+
+      [worldHeaderRef.current, worldContentRef.current].forEach((element) => {
+        if (!element) {
+          return;
+        }
+
+        element.style.setProperty("--eldoria-mouse-x", nextMouseX);
+        element.style.setProperty("--eldoria-mouse-y", nextMouseY);
+      });
     });
   }
 
@@ -283,54 +570,76 @@ export default function CollectionDetailPage({ currentTrack, isPlayerActive, onP
   }
 
   const eldoriaPlaceholderEntries = isEldoria
-    ? Array.from({ length: Math.max(0, 3 - timelineReleases.length) }, (_, index) => ({
-        id: `eldoria-placeholder-${index + 1}`,
-        state: index === 0 ? "unwritten" : "hidden",
-        title: index === 0 ? "Yet To Be Recorded" : "Sealed Entry",
-        copy:
-          index === 0
-            ? "The next voice has not reached the chronicle yet, but the page has already been left waiting for it."
-            : "Some parts of Eldoria remain sealed until the world is ready to remember them aloud."
-      }))
+    ? Array.from(
+        { length: Math.max(0, 3 - timelineReleases.length) },
+        (_, index) => ({
+          id: `eldoria-placeholder-${index + 1}`,
+          state: index === 0 ? "unwritten" : "hidden",
+          title: index === 0 ? "Yet To Be Recorded" : "Sealed Entry",
+          copy:
+            index === 0
+              ? "The next voice has not reached the chronicle yet, but the page has already been left waiting for it."
+              : "Some parts of Eldoria remain sealed until the world is ready to remember them aloud."
+        })
+      )
     : [];
-  const eldoriaMapEntries = isEldoria ? getEldoriaMapEntries(eldoriaReleases, featuredRelease?.slug || "") : [];
+  const eldoriaMapEntries = isEldoria
+    ? getEldoriaMapEntries(eldoriaReleases, featuredRelease?.slug || "")
+    : [];
 
   return (
     <>
       <header
+        ref={worldHeaderRef}
         className={`section-hero world-header ${collection?.theme ? `world-header-${collection.theme}` : ""}${
           isEldoria ? " eldoria-world-header" : ""
-        }${isEldoria && eldoriaAudioActive ? " eldoria-world-awake" : ""}`}
+        }${isEldoria && eldoriaAudioActive ? " eldoria-world-awake" : ""}${worldEntryActive ? " world-entry-pending" : ""}`}
         onMouseMove={handleEldoriaPointerMove}
         style={
           isEldoria
             ? {
-                "--eldoria-mouse-x": `${eldoriaMousePosition.x}%`,
-                "--eldoria-mouse-y": `${eldoriaMousePosition.y}%`
+                "--eldoria-mouse-x": "50%",
+                "--eldoria-mouse-y": "34%",
+                "--eldoria-scroll-depth": "0px"
               }
             : undefined
         }
       >
-        {loading ? <h1>Loading collection...</h1> : null}
-        {error ? <p className="error-text">{error}</p> : null}
+        {loading && !collection ? <h1>Loading collection...</h1> : null}
         {collection ? (
           <div className="world-header-layout">
             <div className="world-header-inner">
-              <p className="eyebrow">{isFractureverse ? FRACTUREVERSE_WORLD.headerEyebrow : themeConfig.worldEyebrow}</p>
+              <p className="eyebrow">
+                {isFractureverse
+                  ? FRACTUREVERSE_WORLD.headerEyebrow
+                  : themeConfig.worldEyebrow}
+              </p>
               <h1>{collection.title}</h1>
-              {isEldoria ? <p className="eldoria-whisper-line">The world remembers its queen.</p> : null}
+              {isEldoria ? (
+                <p className="eldoria-whisper-line">
+                  The world remembers its queen.
+                </p>
+              ) : null}
               <p className="hero-copy world-header-copy">
-                {isFractureverse ? FRACTUREVERSE_WORLD.description : collection.description}
+                {isFractureverse
+                  ? FRACTUREVERSE_WORLD.description
+                  : collection.description}
               </p>
               {isImmersiveCollection ? (
-                <p className="world-mode-lock-note">This world is experienced in Midnight Mode.</p>
+                <p className="world-mode-lock-note">
+                  This world is experienced in Midnight Mode.
+                </p>
               ) : null}
               {isFractureverse ? (
                 <div className="world-status-bar world-header-status-bar">
                   {FRACTUREVERSE_WORLD.stats.map((item) => (
                     <div className="world-status-item" key={item.label}>
                       <span className="world-status-label">{item.label}</span>
-                      <strong>{item.label === "Observed Fragments" ? fractureverseReleases.length : item.value}</strong>
+                      <strong>
+                        {item.label === "Observed Fragments"
+                          ? fractureverseTimelineReleases.length
+                          : item.value}
+                      </strong>
                     </div>
                   ))}
                 </div>
@@ -345,9 +654,14 @@ export default function CollectionDetailPage({ currentTrack, isPlayerActive, onP
                 </div>
               ) : (
                 <div className="collection-meta-row world-header-meta">
-                  <span className="meta-badge">{collection.releaseCount} releases</span>
+                  <span className="meta-badge">
+                    {collection.releaseCount} songs
+                  </span>
                   {collection.featuredRelease ? (
-                    <Link className="collection-chip" to={`/release/${collection.featuredRelease.slug}`}>
+                    <Link
+                      className="collection-chip"
+                      to={`/release/${collection.featuredRelease.slug}`}
+                    >
                       Featured: {collection.featuredRelease.title}
                     </Link>
                   ) : null}
@@ -355,11 +669,17 @@ export default function CollectionDetailPage({ currentTrack, isPlayerActive, onP
               )}
             </div>
             {isFractureverse ? (
-              <div aria-hidden="true" className="world-header-aside fracture-aside">
+              <div
+                aria-hidden="true"
+                className="world-header-aside fracture-aside"
+              >
                 <div className="fracture-line" />
               </div>
             ) : isEldoria ? (
-              <div aria-hidden="true" className="world-header-aside eldoria-aside">
+              <div
+                aria-hidden="true"
+                className="world-header-aside eldoria-aside"
+              >
                 <div className="eldoria-ambient-dust" />
                 <EldoriaSigil awake={eldoriaAudioActive} />
               </div>
@@ -372,19 +692,57 @@ export default function CollectionDetailPage({ currentTrack, isPlayerActive, onP
           <p>The world remembers you.</p>
         </div>
       ) : null}
+      {worldEntryActive ? (
+        <div
+          aria-hidden="true"
+          className={`world-entry-screen world-entry-screen-${worldEntryMode}`}
+        >
+          <div className="world-entry-copy">
+            <p className="eyebrow">
+              {worldEntryMode === "eldoria"
+                ? "Chronicle Entry"
+                : "Signal Reconstruction"}
+            </p>
+            <h2>
+              {worldEntryMode === "eldoria"
+                ? "The world remembers you."
+                : "Reconstructing observed sequence..."}
+            </h2>
+          </div>
+        </div>
+      ) : null}
 
-      {collection ? (
+      {!collection && error ? (
+        <main className="content-grid">
+          <PublicErrorState
+            eyebrow="Collection"
+            message={error}
+            onRetry={retry}
+            secondaryHref="/collections"
+            secondaryLabel="Browse collections"
+            title="This collection could not be opened"
+          />
+        </main>
+      ) : !collection && loading ? (
+        <main className="content-grid">
+          <PublicLoadingState
+            message="The collection page is waiting on songs and world details."
+            title="Opening collection"
+          />
+        </main>
+      ) : collection ? (
         <main
+          ref={worldContentRef}
           className={`content-grid collection-world-page${isFractureverse ? " fractureverse-page" : ""}${isEldoria ? " eldoria-page" : ""}${
             fractureInteraction.primaryEngaged ? " fracture-anchor-engaged" : ""
-          }${isEldoria && eldoriaAudioActive ? " eldoria-world-awake" : ""}`}
+          }${isEldoria && eldoriaAudioActive ? " eldoria-world-awake" : ""}${worldEntryActive ? " world-entry-pending" : ""}`}
           onMouseMove={handleEldoriaPointerMove}
           style={
             isEldoria
               ? {
-                  "--eldoria-mouse-x": `${eldoriaMousePosition.x}%`,
-                  "--eldoria-mouse-y": `${eldoriaMousePosition.y}%`,
-                  "--eldoria-scroll-depth": `${eldoriaScrollDepth}px`
+                  "--eldoria-mouse-x": "50%",
+                  "--eldoria-mouse-y": "34%",
+                  "--eldoria-scroll-depth": "0px"
                 }
               : undefined
           }
@@ -398,7 +756,9 @@ export default function CollectionDetailPage({ currentTrack, isPlayerActive, onP
                 </div>
                 <div className="fracture-analysis-grid">
                   <div className="fracture-analysis-item">
-                    <span className="world-status-label">Timeline Integrity</span>
+                    <span className="world-status-label">
+                      Timeline Integrity
+                    </span>
                     <strong>{fractureIntegrity}%</strong>
                   </div>
                   <div className="fracture-analysis-item">
@@ -407,7 +767,9 @@ export default function CollectionDetailPage({ currentTrack, isPlayerActive, onP
                   </div>
                   <div className="fracture-analysis-item">
                     <span className="world-status-label">Primary Anchor</span>
-                    <strong>{featuredFragmentMeta?.fragmentId || "F-03"}</strong>
+                    <strong>
+                      {featuredFragmentMeta?.fragmentId || "F-03"}
+                    </strong>
                   </div>
                   <div className="fracture-analysis-item">
                     <span className="world-status-label">Emotional Load</span>
@@ -421,17 +783,29 @@ export default function CollectionDetailPage({ currentTrack, isPlayerActive, onP
                   <h2>Observed Sequence</h2>
                   <span>Timeline divergence detected</span>
                 </div>
-                <div className="fracture-sequence-strip" onMouseLeave={() => setActiveFragmentSlug("")}>
-                  {fractureverseReleases.map((post) => {
-                    const meta = getFractureverseMeta(post, fractureverseReleases);
-                    const isActive = fractureInteraction.activeSlug === post.slug;
-                    const isConnected = fractureInteraction.connectedIds.has(meta.fragmentId);
-                    const hasActive = fractureInteraction.hasInteraction;
-                    const isDimmed = hasActive && !isConnected && !fractureInteraction.primaryEngaged;
-
+                <div
+                  className="fracture-sequence-strip"
+                  onMouseLeave={() => setActiveFragmentSlug("")}
+                >
+                  {fractureverseTimelineReleases.map((post) => {
+                    const meta = getFractureverseMeta(
+                      post,
+                      fractureverseTimelineReleases
+                    );
                     if (!meta) {
                       return null;
                     }
+
+                    const isActive =
+                      fractureInteraction.activeSlug === post.slug;
+                    const isConnected = fractureInteraction.connectedIds.has(
+                      meta.fragmentId
+                    );
+                    const hasActive = fractureInteraction.hasInteraction;
+                    const isDimmed =
+                      hasActive &&
+                      !isConnected &&
+                      !fractureInteraction.primaryEngaged;
 
                     return (
                       <Link
@@ -443,8 +817,12 @@ export default function CollectionDetailPage({ currentTrack, isPlayerActive, onP
                         onMouseEnter={() => setActiveFragmentSlug(post.slug)}
                         to={`/release/${post.slug}`}
                       >
-                        <span className="fracture-sequence-id">{meta.fragmentId}</span>
-                        <span className="fracture-sequence-state">{meta.state}</span>
+                        <span className="fracture-sequence-id">
+                          {meta.fragmentId}
+                        </span>
+                        <span className="fracture-sequence-state">
+                          {meta.state}
+                        </span>
                         <strong>{meta.title}</strong>
                       </Link>
                     );
@@ -452,8 +830,9 @@ export default function CollectionDetailPage({ currentTrack, isPlayerActive, onP
                 </div>
                 {displayFragmentMeta ? (
                   <p className="fracture-sequence-note">
-                    {displayFragmentMeta.fragmentId} / {displayFragmentMeta.signalType} / Fragment link unstable / Linked echoes:{" "}
-                    {displayFragmentMeta.linkedTo.join(", ")}
+                    {displayFragmentMeta.fragmentId} /{" "}
+                    {displayFragmentMeta.signalType} / Fragment link unstable /
+                    Linked echoes: {displayFragmentMeta.linkedTo.join(", ")}
                   </p>
                 ) : null}
               </section>
@@ -464,62 +843,95 @@ export default function CollectionDetailPage({ currentTrack, isPlayerActive, onP
             <section className="collection-fragment-shell">
               <div className="section-head fractureverse-featured-head">
                 <h2>Primary Fragment</h2>
-                <span>{featuredFragmentMeta?.fragmentId || "F-03"} / flagship record</span>
+                <span>
+                  {featuredFragmentMeta?.fragmentId || "F-03"} / flagship record
+                </span>
               </div>
               <article
                 className={`intro-card homepage-panel collection-fragment-card fracture-primary-card${
-                  fractureInteraction.primaryEngaged ? " active" : fractureInteraction.hasInteraction ? " dimmed" : ""
+                  fractureInteraction.primaryEngaged
+                    ? " active"
+                    : fractureInteraction.hasInteraction
+                      ? " dimmed"
+                      : ""
                 }`}
-                onFocus={() => setActiveFragmentSlug(fractureverseFeatured.slug)}
-                onMouseEnter={() => setActiveFragmentSlug(fractureverseFeatured.slug)}
+                onFocus={() =>
+                  setActiveFragmentSlug(fractureverseFeatured.slug)
+                }
+                onMouseEnter={() =>
+                  setActiveFragmentSlug(fractureverseFeatured.slug)
+                }
                 onMouseLeave={() => setActiveFragmentSlug("")}
               >
                 <div className="collection-fragment-media fracture-primary-media">
                   <ReleaseMedia
                     className="featured-release-video"
                     compact
-                    eyebrow={hasVideo(fractureverseFeatured.videoUrl) ? "Primary Fragment" : "Data Corrupted"}
+                    eyebrow={
+                      fractureverseFeaturedPlaybackCopy.playable
+                        ? "Primary Fragment"
+                        : fractureverseFeaturedPlaybackCopy.mediaEyebrow
+                    }
                     muted
                     text={
-                      hasVideo(fractureverseFeatured.videoUrl)
+                      fractureverseFeaturedPlaybackCopy.playable
                         ? "Observation log updated. Primary anchor available for playback."
-                        : "Visual record lost. Playback unavailable. Emotional imprint preserved."
+                        : fractureverseFeaturedPlaybackCopy.mediaText
                     }
                     title={fractureverseFeatured.title}
                     videoUrl={fractureverseFeatured.videoUrl}
                   />
                   <div className="release-card-overlay" />
                   <div className="play-pill featured-play-pill">
-                    {hasVideo(fractureverseFeatured.videoUrl) ? "Primary Fragment" : "Primary Fragment / Video Pending"}
+                    {fractureverseFeaturedPlaybackCopy.playable
+                      ? "Primary Fragment"
+                      : fractureverseFeaturedPlaybackCopy.pillLabel}
                   </div>
                 </div>
                 <div className="collection-fragment-copy fracture-primary-copy">
                   <p className="eyebrow">Primary Fragment</p>
                   <p className="fracture-fragment-meta">
-                    {featuredFragmentMeta?.fragmentId} / {featuredFragmentMeta?.state} / {featuredFragmentMeta?.perspective} /{" "}
+                    {featuredFragmentMeta?.fragmentId} /{" "}
+                    {featuredFragmentMeta?.state} /{" "}
+                    {featuredFragmentMeta?.perspective} /{" "}
                     {featuredFragmentMeta?.signalType}
                   </p>
-                  <h2>{featuredFragmentMeta?.title || fractureverseFeatured.title}</h2>
+                  <h2>
+                    {featuredFragmentMeta?.title || fractureverseFeatured.title}
+                  </h2>
                   <p className="collection-fragment-excerpt">
-                    {featuredFragmentMeta?.description || fractureverseFeatured.excerpt}
+                    {featuredFragmentMeta?.description ||
+                      fractureverseFeatured.excerpt}
                   </p>
                   <p className="collection-fragment-context">
-                    {featuredFragmentMeta?.systemNote || "Collapse event stabilized through force of will. Structural integrity compromised."}
+                    {featuredFragmentMeta?.systemNote ||
+                      "Collapse event stabilized through force of will. Structural integrity compromised."}
                   </p>
-                  <p className="fracture-system-voice">Observation log updated. Primary anchor remains unstable but reachable.</p>
+                  <p className="fracture-system-voice">
+                    Observation log updated. Primary anchor remains unstable but
+                    reachable.
+                  </p>
                   <div className="featured-release-actions">
                     <button
                       className="secondary-button mini-player-trigger"
-                      disabled={!hasVideo(fractureverseFeatured.videoUrl)}
-                      onClick={() => onPlayTrack(fractureverseFeatured, playbackContext)}
+                      disabled={!fractureverseFeaturedPlaybackCopy.playable}
+                      onClick={() =>
+                        onPlayTrack(fractureverseFeatured, playbackContext)
+                      }
                       type="button"
                     >
-                      {hasVideo(fractureverseFeatured.videoUrl) ? "Begin Playback" : "Signal Unavailable"}
+                      {fractureverseFeaturedPlaybackCopy.actionLabel}
                     </button>
-                    <Link className="hero-link" to={`/release/${fractureverseFeatured.slug}`}>
+                    <Link
+                      className="hero-link"
+                      to={`/release/${fractureverseFeatured.slug}`}
+                    >
                       Enter Fragment
                     </Link>
-                    <Link className="hero-link secondary-link" to={`/release/${fractureverseFeatured.slug}`}>
+                    <Link
+                      className="hero-link secondary-link"
+                      to={`/release/${fractureverseFeatured.slug}`}
+                    >
                       View Record
                     </Link>
                   </div>
@@ -529,55 +941,70 @@ export default function CollectionDetailPage({ currentTrack, isPlayerActive, onP
           ) : null}
 
           {isEldoria ? (
-            <EldoriaWorldMap currentSlug={featuredRelease?.slug || ""} entries={eldoriaMapEntries} onEnterChronicle={enterEldoriaChronicle} />
+            <EldoriaWorldMap
+              currentSlug={featuredRelease?.slug || ""}
+              entries={eldoriaMapEntries}
+              onEnterChronicle={enterEldoriaChronicle}
+            />
           ) : null}
 
           {!isFractureverse && featuredRelease ? (
             <section className="collection-fragment-shell">
-              <div className={`section-head${isEldoria ? " eldoria-featured-head" : ""}`}>
+              <div
+                className={`section-head${isEldoria ? " eldoria-featured-head" : ""}`}
+              >
                 <h2>{themeConfig.featuredLabel}</h2>
-                <span>{isEldoria ? "A leading ballad from this chronicle" : "Featured collection entry"}</span>
+                <span>
+                  {isEldoria
+                    ? "A leading ballad from this chronicle"
+                    : "Featured collection entry"}
+                </span>
               </div>
-              <article className={`intro-card homepage-panel collection-fragment-card${isEldoria ? " eldoria-featured-card" : ""}`}>
+              <article
+                className={`intro-card homepage-panel collection-fragment-card${isEldoria ? " eldoria-featured-card" : ""}`}
+              >
                 <div className="collection-fragment-media">
                   <ReleaseMedia
                     className="featured-release-video"
                     compact
                     muted
-                    text={
-                      isEldoria
-                        ? "This ballad is already part of the chronicle in written form. Its visual can arrive when the telling is ready."
-                        : "This fragment is live as a written record first. Its video can arrive later."
-                    }
+                    text={featuredPlaybackCopy.mediaText}
                     title={featuredRelease.title}
                     videoUrl={featuredRelease.videoUrl}
                   />
                   <div className="release-card-overlay" />
                   <div className="play-pill featured-play-pill">
-                    {hasVideo(featuredRelease.videoUrl)
+                    {featuredPlaybackCopy.playable
                       ? eldoriaFeaturedMeta?.chapterNumber === "1"
                         ? "First Chronicle Entry"
                         : themeConfig.featuredLabel
-                      : "Video Pending"}
+                      : featuredPlaybackCopy.pillLabel}
                   </div>
                 </div>
                 <div className="collection-fragment-copy">
                   <p className="eyebrow">{themeConfig.featuredLabel}</p>
                   {isEldoria && eldoriaFeaturedMeta?.identityLine ? (
-                    <p className="fracture-fragment-meta eldoria-entry-meta">{eldoriaFeaturedMeta.identityLine}</p>
+                    <p className="fracture-fragment-meta eldoria-entry-meta">
+                      {eldoriaFeaturedMeta.identityLine}
+                    </p>
                   ) : null}
                   <h2>{featuredRelease.title}</h2>
-                  <p className="collection-fragment-excerpt">{featuredRelease.excerpt}</p>
+                  <p className="collection-fragment-excerpt">
+                    {featuredRelease.excerpt}
+                  </p>
                   <p className="collection-fragment-context">
                     {isEldoria
                       ? derivedContent.featuredContext
                       : collection.theme === "fractureverse"
-                      ? "An anchor point inside the fracture: a record that holds one possible version of the world in place."
-                      : derivedContent.featuredContext}
+                        ? "An anchor point inside the fracture: a record that holds one possible version of the world in place."
+                        : derivedContent.featuredContext}
                   </p>
                   <div className="tag-row">
-                    {(featuredRelease.collections || []).map((entry) => (
-                      <span className="collection-chip static-chip" key={entry.slug}>
+                    {featuredCollections.map((entry) => (
+                      <span
+                        className="collection-chip static-chip"
+                        key={entry.slug}
+                      >
                         {entry.title}
                       </span>
                     ))}
@@ -585,15 +1012,13 @@ export default function CollectionDetailPage({ currentTrack, isPlayerActive, onP
                   <div className="featured-release-actions">
                     <button
                       className="secondary-button mini-player-trigger"
-                      disabled={!hasVideo(featuredRelease.videoUrl)}
-                      onClick={() => onPlayTrack(featuredRelease, playbackContext)}
+                      disabled={!featuredPlaybackCopy.playable}
+                      onClick={() =>
+                        onPlayTrack(featuredRelease, playbackContext)
+                      }
                       type="button"
                     >
-                      {hasVideo(featuredRelease.videoUrl)
-                        ? collection.theme === "eldoria"
-                          ? "Listen to Ballad"
-                          : "Play in Mini Player"
-                        : "Video Pending"}
+                      {featuredPlaybackCopy.actionLabel}
                     </button>
                     <Link
                       className="hero-link"
@@ -615,20 +1040,100 @@ export default function CollectionDetailPage({ currentTrack, isPlayerActive, onP
             </section>
           ) : null}
 
-            <section className={isEldoria ? "eldoria-chronicle-section" : ""}>
-              <div className={`section-head timeline-section-head${isFractureverse ? " fractureverse-timeline-head" : ""}${isEldoria ? " eldoria-chronicle-head" : ""}`}>
-                <h2>{themeConfig.listLabel}</h2>
-                <span>
+          {collectionJourneyStops.length ? (
+            <section className="intro-card homepage-panel journey-rail-card">
+              <div className="section-head">
+                <h2>
                   {isFractureverse
-                    ? derivedContent.collectionCountLabel
+                    ? "Continue Through The Sequence"
+                    : isEldoria
+                      ? "Continue Through The Chronicle"
+                      : "Continue Through This Collection"}
+                </h2>
+                <span>
+                  {journeySequence.length
+                    ? derivedContent.releaseSequenceLabel
+                    : derivedContent.collectionCountLabel}
+                </span>
+              </div>
+              <div className="journey-rail-grid">
+                <article className="journey-summary-card">
+                  <p className="eyebrow">
+                    {isFractureverse
+                      ? "World Guide"
+                      : isEldoria
+                        ? "Chronicle Guide"
+                        : "Collection Guide"}
+                  </p>
+                  <h3>{collection.title}</h3>
+                  <p>
+                    {isFractureverse
+                      ? "Move from the earliest stable anchor through the primary fragment and out toward the most recent observed collapse."
+                      : isEldoria
+                        ? "Treat the world like a guided chronicle: begin at the opening, pass through the lead ballad, and continue toward the latest recorded chapter."
+                        : "Use this rail to start at the clearest entry point, then continue toward the collection's later songs without losing the thread."}
+                  </p>
+                </article>
+                {collectionJourneyStops.map((entry) => {
+                  const entryMeta = isFractureverse
+                    ? getFractureverseMeta(entry.post, journeySequence)
+                    : isEldoria
+                      ? getEldoriaMeta(entry.post)
+                      : null;
+
+                  return (
+                    <Link
+                      className="linked-echo-card journey-rail-link"
+                      key={`${entry.label}-${entry.post.slug}`}
+                      to={`/release/${entry.post.slug}`}
+                    >
+                      <span className="fracture-sequence-state">
+                        {entry.label}
+                      </span>
+                      <strong>{entry.post.title}</strong>
+                      <p>
+                        {isFractureverse
+                          ? [
+                              entryMeta?.fragmentId,
+                              entryMeta?.state,
+                              entryMeta?.signalType
+                            ]
+                              .filter(Boolean)
+                              .join(" / ")
+                          : isEldoria
+                            ? entryMeta?.chapterLabel ||
+                              entryMeta?.openingPassage ||
+                              entry.post.excerpt
+                            : entry.post.excerpt}
+                      </p>
+                    </Link>
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
+
+          <section className={isEldoria ? "eldoria-chronicle-section" : ""}>
+            <div
+              className={`section-head timeline-section-head${isFractureverse ? " fractureverse-timeline-head" : ""}${isEldoria ? " eldoria-chronicle-head" : ""}`}
+            >
+              <h2>{themeConfig.listLabel}</h2>
+              <span>
+                {isFractureverse
+                  ? derivedContent.collectionCountLabel
                   : isEldoria
                     ? derivedContent.collectionCountLabel
                     : derivedContent.collectionCountLabel}
               </span>
-              </div>
-              {isEldoria ? <p className="eldoria-chronicle-intro">The royal archive remains below as a written record, but the map above is now the truest way into the world.</p> : null}
-              {isFractureverse ? (
-              fractureverseReleases.length === 0 ? (
+            </div>
+            {isEldoria ? (
+              <p className="eldoria-chronicle-intro">
+                The royal archive remains below as a written record, but the map
+                above is now the truest way into the world.
+              </p>
+            ) : null}
+            {isFractureverse ? (
+              fractureverseTimelineReleases.length === 0 ? (
                 <section className="intro-card homepage-panel empty-state-card fracture-empty-state">
                   <p className="eyebrow">{themeConfig.noItemsEyebrow}</p>
                   <h3>{themeConfig.noItemsTitle}</h3>
@@ -636,13 +1141,38 @@ export default function CollectionDetailPage({ currentTrack, isPlayerActive, onP
                 </section>
               ) : (
                 <div className="timeline-grid fracture-fragment-grid-shell">
-                  <div aria-hidden="true" className={`fracture-link-layer${fractureInteraction.primaryEngaged ? " primary-influenced" : ""}`}>
-                    <svg className="fracture-link-svg" preserveAspectRatio="none" viewBox="0 0 100 100">
+                  <div
+                    aria-hidden="true"
+                    className={`fracture-link-layer${fractureInteraction.primaryEngaged ? " primary-influenced" : ""}`}
+                  >
+                    <svg
+                      className="fracture-link-svg"
+                      preserveAspectRatio="none"
+                      viewBox="0 0 100 100"
+                    >
                       <defs>
-                        <linearGradient id="fracture-link-gradient" x1="0%" x2="100%" y1="0%" y2="0%">
-                          <stop offset="0%" stopColor="currentColor" stopOpacity="0.12" />
-                          <stop offset="50%" stopColor="currentColor" stopOpacity="0.42" />
-                          <stop offset="100%" stopColor="currentColor" stopOpacity="0.12" />
+                        <linearGradient
+                          id="fracture-link-gradient"
+                          x1="0%"
+                          x2="100%"
+                          y1="0%"
+                          y2="0%"
+                        >
+                          <stop
+                            offset="0%"
+                            stopColor="currentColor"
+                            stopOpacity="0.12"
+                          />
+                          <stop
+                            offset="50%"
+                            stopColor="currentColor"
+                            stopOpacity="0.42"
+                          />
+                          <stop
+                            offset="100%"
+                            stopColor="currentColor"
+                            stopOpacity="0.12"
+                          />
                         </linearGradient>
                       </defs>
                       {fractureConnections.map((connection) => {
@@ -701,45 +1231,81 @@ export default function CollectionDetailPage({ currentTrack, isPlayerActive, onP
                       />
                     </svg>
                   </div>
-                  <div className="timeline-grid fracture-fragment-grid" onMouseLeave={() => setActiveFragmentSlug("")}>
-                  {fractureverseGrid.map((post) => {
-                    const meta = getFractureverseMeta(post, fractureverseReleases);
-                    const isActive = fractureInteraction.activeSlug === post.slug;
-                    const isLinked = meta && fractureInteraction.connectedIds.has(meta.fragmentId);
-                    const isDimmed = fractureInteraction.hasInteraction && !isLinked && !fractureInteraction.primaryEngaged;
+                  <div
+                    className="timeline-grid fracture-fragment-grid"
+                    onMouseLeave={() => setActiveFragmentSlug("")}
+                  >
+                    {fractureverseGrid.map((post) => {
+                      const meta = getFractureverseMeta(
+                        post,
+                        fractureverseTimelineReleases
+                      );
+                      const isActive =
+                        fractureInteraction.activeSlug === post.slug;
+                      const isLinked =
+                        meta &&
+                        fractureInteraction.connectedIds.has(meta.fragmentId);
+                      const isDimmed =
+                        fractureInteraction.hasInteraction &&
+                        !isLinked &&
+                        !fractureInteraction.primaryEngaged;
 
-                    if (!meta) {
-                      return null;
-                    }
+                      if (!meta) {
+                        return null;
+                      }
 
-                    return (
-                      <FractureFragmentCard
-                        active={isActive}
-                        dimmed={isDimmed}
-                        highlighted={isLinked}
-                        key={post.id}
-                        meta={meta}
-                        onFocusFragment={setActiveFragmentSlug}
-                        onPlayTrack={onPlayTrack}
-                        playbackContext={playbackContext}
-                        primaryInfluenced={fractureInteraction.primaryEngaged}
-                        post={post}
-                      />
-                    );
-                  })}
+                      return (
+                        <FractureFragmentCard
+                          active={isActive}
+                          dimmed={isDimmed}
+                          highlighted={isLinked}
+                          key={post.id}
+                          meta={meta}
+                          onFocusFragment={setActiveFragmentSlug}
+                          onPlayTrack={onPlayTrack}
+                          playbackContext={playbackContext}
+                          primaryInfluenced={fractureInteraction.primaryEngaged}
+                          post={post}
+                        />
+                      );
+                    })}
                   </div>
                 </div>
               )
-            ) : timelineReleases.length === 0 ? (
+            ) : displayTimelineReleases.length === 0 ? (
               <section className="intro-card homepage-panel empty-state-card">
                 <p className="eyebrow">{themeConfig.noItemsEyebrow}</p>
                 <h3>{themeConfig.noItemsTitle}</h3>
                 <p>{themeConfig.noItemsText}</p>
               </section>
-            ) : timelineReleases.length === 1 ? (
+            ) : isOriginalPersonal ? (
+              <div className="collection-section-stack">
+                {originalPersonalSections.map((section) => (
+                  <section key={section.key}>
+                    <div className="section-head">
+                      <h3>{section.label}</h3>
+                      <span>{section.posts.length} songs</span>
+                    </div>
+                    <div className="timeline-grid">
+                      {section.posts.map((post, index) => (
+                        <TimelineCard
+                          index={index}
+                          key={post.id}
+                          onEnterChronicle={enterEldoriaChronicle}
+                          onPlayTrack={onPlayTrack}
+                          playbackContext={playbackContext}
+                          post={post}
+                          themeConfig={themeConfig}
+                        />
+                      ))}
+                    </div>
+                  </section>
+                ))}
+              </div>
+            ) : displayTimelineReleases.length === 1 ? (
               isEldoria ? (
                 <div className="timeline-grid eldoria-chronicle-grid eldoria-chronicle-grid-sparse">
-                  {timelineReleases.map((post, index) => (
+                  {displayTimelineReleases.map((post, index) => (
                     <TimelineCard
                       index={index}
                       key={post.id}
@@ -760,26 +1326,36 @@ export default function CollectionDetailPage({ currentTrack, isPlayerActive, onP
                       </div>
                       <div className="post-body timeline-card-body">
                         <p className="meta">Chronicle Reserve / Eldoria</p>
-                        <p className="eldoria-entry-state">{entry.state === "unwritten" ? "Yet To Be Recorded" : "Sealed"}</p>
+                        <p className="eldoria-entry-state">
+                          {entry.state === "unwritten"
+                            ? "Yet To Be Recorded"
+                            : "Sealed"}
+                        </p>
                         <h3>{entry.title}</h3>
                         <p>{entry.copy}</p>
                         <div className="card-action-row">
-                          <span className="result-card-cta">Awaiting Chronicle</span>
+                          <span className="result-card-cta">
+                            Awaiting Chronicle
+                          </span>
                         </div>
                       </div>
                     </article>
                   ))}
                 </div>
               ) : (
-                <section className={`intro-card homepage-panel collection-archive-note${isEldoria ? " eldoria-archive-note" : ""}`}>
+                <section
+                  className={`intro-card homepage-panel collection-archive-note${isEldoria ? " eldoria-archive-note" : ""}`}
+                >
                   <p className="eyebrow">{themeConfig.singleItemEyebrow}</p>
                   <h3>{themeConfig.singleItemTitle}</h3>
                   <p>{themeConfig.singleItemText}</p>
                 </section>
               )
             ) : (
-              <div className={`timeline-grid${isEldoria ? " eldoria-chronicle-grid" : ""}`}>
-                {timelineReleases.map((post, index) => (
+              <div
+                className={`timeline-grid${isEldoria ? " eldoria-chronicle-grid" : ""}`}
+              >
+                {displayTimelineReleases.map((post, index) => (
                   <TimelineCard
                     index={index}
                     key={post.id}
@@ -794,13 +1370,66 @@ export default function CollectionDetailPage({ currentTrack, isPlayerActive, onP
             )}
           </section>
 
+          {isFractureverse && fractureverseSupplementalReleases.length ? (
+            <section className="intro-card homepage-panel">
+              <div className="section-head">
+                <h2>Supplemental Fragments</h2>
+                <span>{fractureverseSupplementalReleases.length} entries</span>
+              </div>
+              <div className="timeline-grid">
+                {fractureverseSupplementalReleases.map((post, index) => (
+                  <TimelineCard
+                    index={index}
+                    key={post.id}
+                    onPlayTrack={onPlayTrack}
+                    playbackContext={playbackContext}
+                    post={post}
+                    themeConfig={themeConfig}
+                  />
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          {secondaryVersionReleases.length ? (
+            <section className="intro-card homepage-panel">
+              <details className="archive-link-picker">
+                <summary>Version Family Branches</summary>
+                <div className="collection-section-stack secondary-version-stack">
+                  <p className="hero-copy">
+                    The main list keeps one clear version of each song family.
+                    Alternate public branches stay here when you want to follow
+                    the wider family tree.
+                  </p>
+                  <div
+                    className={`timeline-grid${isEldoria ? " eldoria-chronicle-grid" : ""}`}
+                  >
+                    {secondaryVersionReleases.map((post, index) => (
+                      <TimelineCard
+                        index={index}
+                        key={post.id}
+                        onEnterChronicle={enterEldoriaChronicle}
+                        onPlayTrack={onPlayTrack}
+                        playbackContext={playbackContext}
+                        post={post}
+                        themeConfig={themeConfig}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </details>
+            </section>
+          ) : null}
+
           {isFractureverse ? (
             <section className="intro-card homepage-panel world-note-card fracture-echo-card">
               <p className="eyebrow">Residual Echo</p>
               <h3>{FRACTUREVERSE_WORLD.residualEcho}</h3>
             </section>
           ) : (
-            <section className={`intro-card homepage-panel world-note-card${isEldoria ? " eldoria-world-note" : ""}`}>
+            <section
+              className={`intro-card homepage-panel world-note-card${isEldoria ? " eldoria-world-note" : ""}`}
+            >
               <p className="eyebrow">{themeConfig.worldNoteTitle}</p>
               <h3>{derivedContent.worldNote || themeConfig.worldNoteText}</h3>
             </section>
