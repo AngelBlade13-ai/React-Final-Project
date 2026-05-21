@@ -28,6 +28,7 @@ const AdminNotFoundPage = lazy(() => import("./pages/admin/AdminNotFoundPage"));
 const AdminPathsPage = lazy(() => import("./pages/admin/AdminPathsPage"));
 const AdminPostsPage = lazy(() => import("./pages/admin/AdminPostsPage"));
 const AdminSitePage = lazy(() => import("./pages/admin/AdminSitePage"));
+const AdminUsersPage = lazy(() => import("./pages/admin/AdminUsersPage"));
 const AboutPage = lazy(() => import("./pages/public/AboutPage"));
 const AccountPage = lazy(() => import("./pages/public/AccountPage"));
 const CollectionDetailPage = lazy(
@@ -676,6 +677,7 @@ function App() {
                 <Route path="insights" element={<AdminInsightsPage />} />
                 <Route path="posts" element={<AdminPostsPage />} />
                 <Route path="comments" element={<AdminCommentsPage />} />
+                <Route path="users" element={<AdminUsersPage />} />
                 <Route path="collections" element={<AdminCollectionsPage />} />
                 <Route path="paths" element={<AdminPathsPage />} />
                 <Route path="about" element={<AdminAboutPage />} />

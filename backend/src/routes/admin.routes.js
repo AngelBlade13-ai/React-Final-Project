@@ -7,7 +7,9 @@ const {
 } = require("../middleware/mutationProtection");
 const {
   deleteCollectionById,
+  deleteCommentsByAuthorId,
   deleteCommentsByPostSlug,
+  deleteUserById,
   deletePostById,
   insertCollection,
   insertPost,
@@ -16,12 +18,13 @@ const {
   renameCommentsForPostSlug,
   replaceCollections,
   replaceComment,
+  replaceUser,
   replacePosts,
   runStoreTransaction,
   writeSiteContent
 } = require("../data/store");
 const { buildArchiveInsights } = require("../services/archiveInsights");
-const { attachCommentDetails } = require("../services/authUserService");
+const { attachCommentDetails, sanitizeUser } = require("../services/authUserService");
 const {
   applyLiveStoreSync,
   previewLiveStoreSync
@@ -96,10 +99,138 @@ router.use(requireAdmin);
 router.get("/session", (req, res) => {
   return res.json({
     admin: {
+      id: req.admin.sub || "",
       email: req.admin.email,
       role: "admin"
     }
   });
+});
+
+router.get("/users", async (req, res, next) => {
+  try {
+    const store = await readStore();
+    const commentCounts = store.comments.reduce((counts, comment) => {
+      counts.set(comment.authorId, (counts.get(comment.authorId) || 0) + 1);
+      return counts;
+    }, new Map());
+
+    const users = store.users
+      .map((user) => ({
+        ...sanitizeUser(user),
+        commentCount: commentCounts.get(user.id) || 0,
+        savedReleaseCount: Array.isArray(user.savedReleaseSlugs)
+          ? user.savedReleaseSlugs.length
+          : 0,
+        recentReleaseCount: Array.isArray(user.recentReleaseSlugs)
+          ? user.recentReleaseSlugs.length
+          : 0,
+        reactionCount:
+          user.releaseReactions && typeof user.releaseReactions === "object"
+            ? Object.keys(user.releaseReactions).length
+            : 0
+      }))
+      .sort((left, right) =>
+        String(right.createdAt || "").localeCompare(String(left.createdAt || ""))
+      );
+
+    return res.json({ users });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.put("/users/:id", async (req, res, next) => {
+  try {
+    const store = await readStore();
+    const existingUser = store.users.find((user) => user.id === req.params.id);
+
+    if (!existingUser) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    const nextRole = String(req.body.role || existingUser.role).trim();
+    const nextStatus = String(req.body.status || existingUser.status).trim();
+
+    if (!["user", "admin"].includes(nextRole)) {
+      return res.status(400).json({ message: "User role must be user or admin." });
+    }
+
+    if (!["active", "disabled"].includes(nextStatus)) {
+      return res.status(400).json({ message: "User status must be active or disabled." });
+    }
+
+    if (existingUser.id === req.admin.sub && (nextRole !== "admin" || nextStatus !== "active")) {
+      return res.status(400).json({ message: "You cannot remove your own admin access." });
+    }
+
+    const nextUser = {
+      ...existingUser,
+      role: nextRole,
+      status: nextStatus,
+      updatedAt: new Date().toISOString()
+    };
+
+    await replaceUser(nextUser);
+
+    await recordAdminAuditEvent(req, {
+      action: "user.updated",
+      entityType: "user",
+      entityId: nextUser.id,
+      entityLabel: nextUser.email,
+      details: {
+        previousRole: existingUser.role,
+        nextRole: nextUser.role,
+        previousStatus: existingUser.status,
+        nextStatus: nextUser.status
+      }
+    });
+
+    return res.json({ user: sanitizeUser(nextUser) });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.delete("/users/:id", async (req, res, next) => {
+  try {
+    const store = await readStore();
+    const user = store.users.find((entry) => entry.id === req.params.id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    if (user.id === req.admin.sub) {
+      return res.status(400).json({ message: "You cannot delete your own account while signed in." });
+    }
+
+    if (user.role === "admin") {
+      return res.status(400).json({ message: "Demote admin users before deleting them." });
+    }
+
+    const deletedCommentCount = store.comments.filter(
+      (comment) => comment.authorId === user.id
+    ).length;
+
+    await runStoreTransaction(async (session) => {
+      await deleteUserById(user.id, { session });
+      await deleteCommentsByAuthorId(user.id, { session });
+    });
+
+    await recordAdminAuditEvent(req, {
+      action: "user.deleted",
+      entityType: "user",
+      entityId: user.id,
+      entityLabel: user.email,
+      details: {
+        deletedCommentCount
+      }
+    });
+
+    return res.json({ message: "User deleted." });
+  } catch (error) {
+    next(error);
+  }
 });
 
 router.get("/audit-logs", async (req, res, next) => {

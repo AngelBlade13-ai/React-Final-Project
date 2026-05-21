@@ -1372,6 +1372,11 @@ async function replaceUser(user, options = {}) {
   return replaceNormalizedDocumentById("users", normalizeUser(user), options);
 }
 
+async function deleteUserById(id, options = {}) {
+  await ensureStore();
+  return deleteDocumentById("users", String(id || "").trim(), options);
+}
+
 async function insertComment(comment, options = {}) {
   await ensureStore();
   return insertNormalizedDocument(
@@ -1424,6 +1429,15 @@ async function deleteCommentsByPostSlug(postSlug, options = {}) {
   return deleteDocuments(
     "comments",
     { postSlug: String(postSlug || "").trim() },
+    options
+  );
+}
+
+async function deleteCommentsByAuthorId(authorId, options = {}) {
+  await ensureStore();
+  return deleteDocuments(
+    "comments",
+    { authorId: String(authorId || "").trim() },
     options
   );
 }
@@ -1488,12 +1502,14 @@ module.exports = {
   writeSiteContent,
   insertUser,
   replaceUser,
+  deleteUserById,
   insertComment,
   insertAdminAuditLog,
   replaceComment,
   deleteCommentById,
   renameCommentsForPostSlug,
   deleteCommentsByPostSlug,
+  deleteCommentsByAuthorId,
   insertPost,
   replacePosts,
   deletePostById,

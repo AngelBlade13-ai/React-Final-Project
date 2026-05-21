@@ -746,6 +746,9 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
         <NavLink className="admin-subnav-link" to="/admin/comments">
           Comments
         </NavLink>
+        <NavLink className="admin-subnav-link" to="/admin/users">
+          Users
+        </NavLink>
         <NavLink className="admin-subnav-link" to="/admin/collections">
           Collections
         </NavLink>

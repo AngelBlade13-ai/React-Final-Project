@@ -172,12 +172,9 @@ router.post("/auth/login", userAuthLimiter, async (req, res, next) => {
       .trim()
       .toLowerCase();
     const password = String(req.body.password || "");
-    let user = store.users.find((entry) => entry.email === email);
+    let user = null;
 
-    if (
-      !user &&
-      email === String(config.adminEmail || "").trim().toLowerCase()
-    ) {
+    if (email === String(config.adminEmail || "").trim().toLowerCase()) {
       const isAdminPasswordMatch = config.adminPasswordHash
         ? await bcrypt.compare(password, config.adminPasswordHash)
         : password === config.adminPassword;
@@ -185,6 +182,10 @@ router.post("/auth/login", userAuthLimiter, async (req, res, next) => {
       if (isAdminPasswordMatch) {
         user = await findOrCreateAdminUser(store);
       }
+    }
+
+    if (!user) {
+      user = store.users.find((entry) => entry.email === email);
     }
 
     if (!user || user.status !== "active") {

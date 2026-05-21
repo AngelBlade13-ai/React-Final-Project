@@ -73,6 +73,47 @@ test("admin login sets a cookie-backed session that the admin shell endpoint val
   assert.equal(afterLogoutResponse.status, 401);
 });
 
+test("configured admin email is promoted even when a public account already exists", async (t) => {
+  const context = await createApiTestContext();
+  t.after(async () => {
+    await context.close();
+  });
+
+  const registerResponse = await context.agent
+    .post("/api/auth/register")
+    .send({
+      displayName: "Old Public Admin",
+      email: "admin@example.com",
+      password: "Admin123!"
+    })
+    .set(context.mutationHeaders);
+
+  assert.equal(registerResponse.status, 201);
+  assert.equal(registerResponse.body.user.role, "user");
+
+  const logoutResponse = await context.agent
+    .post("/api/auth/logout")
+    .set(context.mutationHeaders);
+
+  assert.equal(logoutResponse.status, 200);
+
+  const loginResponse = await context.agent
+    .post("/api/auth/login")
+    .send({
+      email: "admin@example.com",
+      password: "Admin123!"
+    })
+    .set(context.mutationHeaders);
+
+  assert.equal(loginResponse.status, 200);
+  assert.equal(loginResponse.body.user.role, "admin");
+
+  const sessionResponse = await context.agent.get("/api/admin/session");
+
+  assert.equal(sessionResponse.status, 200);
+  assert.equal(sessionResponse.body.admin.role, "admin");
+});
+
 test("admin activity refreshes the cookie-backed admin session", async (t) => {
   const context = await createApiTestContext();
   t.after(async () => {
@@ -169,5 +210,67 @@ test("user library saves releases, reactions, and recent listens", async (t) => 
   assert.equal(
     libraryResponse.body.releaseReactions[targetPost.slug],
     "haunted-me"
+  );
+});
+
+test("admin can disable and delete public users from user management", async (t) => {
+  const context = await createApiTestContext();
+  t.after(async () => {
+    await context.close();
+  });
+
+  const publicRegisterResponse = await context.client
+    .post("/api/auth/register")
+    .send({
+      displayName: "Delete Me",
+      email: "delete-me@example.com",
+      password: "Password123!"
+    })
+    .set(context.mutationHeaders);
+
+  assert.equal(publicRegisterResponse.status, 201);
+
+  const loginResponse = await context.agent
+    .post("/api/auth/login")
+    .send({
+      email: "admin@example.com",
+      password: "Admin123!"
+    })
+    .set(context.mutationHeaders);
+
+  assert.equal(loginResponse.status, 200);
+  assert.equal(loginResponse.body.user.role, "admin");
+
+  const usersResponse = await context.agent.get("/api/admin/users");
+
+  assert.equal(usersResponse.status, 200);
+  const targetUser = usersResponse.body.users.find(
+    (user) => user.email === "delete-me@example.com"
+  );
+
+  assert.ok(targetUser);
+
+  const disableResponse = await context.agent
+    .put(`/api/admin/users/${targetUser.id}`)
+    .send({ status: "disabled" })
+    .set(context.mutationHeaders);
+
+  assert.equal(disableResponse.status, 200);
+  assert.equal(disableResponse.body.user.status, "disabled");
+
+  const deleteResponse = await context.agent
+    .delete(`/api/admin/users/${targetUser.id}`)
+    .set(context.mutationHeaders);
+
+  assert.equal(deleteResponse.status, 200);
+
+  const afterDeleteResponse = await context.agent.get("/api/admin/users");
+
+  assert.equal(afterDeleteResponse.status, 200);
+  assert.equal(
+    afterDeleteResponse.body.users.some(
+      (user) => user.email === "delete-me@example.com"
+    ),
+    false
   );
 });
