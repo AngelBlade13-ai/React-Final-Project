@@ -12,7 +12,7 @@ export default function LoginPage({
 }) {
   usePageMetadata({
     description:
-      "Sign in or create an account to save releases, comment, react, and access any role-based studio tools.",
+      "Sign in or create an account to save songs, comment, react, and access any role-based studio tools.",
     title: "Sign In"
   });
   const navigate = useNavigate();
@@ -119,9 +119,9 @@ export default function LoginPage({
         <p className="eyebrow">Community Access</p>
         <h1>Sign in to your archive account.</h1>
         <p className="hero-copy">
-          Public accounts can comment, save releases, react to songs, and keep
-          recent listens. Admin accounts use the same login, with a role flag
-          that opens the studio and moderation tools after sign-in.
+          Public accounts can comment, save songs, react, and keep recent
+          listens. Admin accounts use the same login, with a role flag that
+          opens the studio and moderation tools after sign-in.
         </p>
       </section>
       <section className="auth-card auth-login-card account-panel">
@@ -132,7 +132,7 @@ export default function LoginPage({
           <h2>{mode === "register" ? "Join the archive" : "User Sign In"}</h2>
           <p>
             {mode === "register"
-              ? "Create an account to comment, save releases, and build a library."
+              ? "Create an account to comment, save songs, and build a library."
               : "Sign in to manage your library, comments, and any studio access tied to your account."}
           </p>
         </div>

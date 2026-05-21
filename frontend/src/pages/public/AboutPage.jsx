@@ -58,13 +58,17 @@ export default function AboutPage() {
         <section className="about-principle-grid">
           <article className="about-principle-card">
             <span>01</span>
-            <strong>Releases stay contextual.</strong>
-            <p>Each song can carry notes, collections, versions, and worlds.</p>
+            <strong>Songs keep their stories.</strong>
+            <p>
+              Each song can carry notes, versions, and the feelings around it.
+            </p>
           </article>
           <article className="about-principle-card">
             <span>02</span>
-            <strong>Discovery is authored.</strong>
-            <p>Paths and collections act like entrances, not database filters.</p>
+            <strong>Listening can start anywhere.</strong>
+            <p>
+              Collections and paths help you choose by mood, world, or theme.
+            </p>
           </article>
           <article className="about-principle-card">
             <span>03</span>

@@ -68,7 +68,7 @@ test("public shell has recovery navigation for unknown routes", async ({
   await page.goto("/not-a-real-threshold");
 
   await expect(
-    page.getByRole("heading", { name: /this threshold does not open/i })
+    page.getByRole("heading", { name: /this page is not here/i })
   ).toBeVisible();
   await expect(
     page.getByRole("link", { name: "Search Archive" })
@@ -82,7 +82,7 @@ test("public shell has recovery navigation for unknown routes", async ({
   await page.getByRole("link", { name: "Search Archive" }).click();
   await expect(
     page.getByRole("heading", {
-      name: /search the archive by title, release notes, and collection/i
+      name: /search the songs/i
     })
   ).toBeVisible();
 
@@ -93,7 +93,7 @@ test("public shell has recovery navigation for unknown routes", async ({
   await page.getByRole("link", { name: "Search archive" }).click();
   await expect(
     page.getByRole("heading", {
-      name: /search the archive by title, release notes, and collection/i
+      name: /search the songs/i
     })
   ).toBeVisible();
 
@@ -104,7 +104,7 @@ test("public shell has recovery navigation for unknown routes", async ({
   await page.getByRole("link", { name: "Browse collections" }).click();
   await expect(
     page.getByRole("heading", {
-      name: /curated entry points into the archive/i
+      name: /browse by world, mood, and theme/i
     })
   ).toBeVisible();
 });

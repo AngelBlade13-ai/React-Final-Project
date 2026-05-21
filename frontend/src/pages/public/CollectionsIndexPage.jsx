@@ -9,8 +9,7 @@ import usePageMetadata from "../../hooks/usePageMetadata";
 
 export default function CollectionsIndexPage() {
   usePageMetadata({
-    description:
-      "Browse the archive by collection, world, and curated entry point.",
+    description: "Browse songs by collection, story world, mood, and theme.",
     title: "Collections"
   });
   const {
@@ -24,11 +23,12 @@ export default function CollectionsIndexPage() {
       collection.theme === "fractureverse" || collection.theme === "eldoria"
   );
   const archiveCollections = collections.filter(
-    (collection) => !worldCollections.some((entry) => entry.id === collection.id)
+    (collection) =>
+      !worldCollections.some((entry) => entry.id === collection.id)
   );
   const atlasSummary = loading
-    ? "Reading atlas..."
-    : `${worldCollections.length} worlds / ${archiveCollections.length} shelves / ${collections.length} total collections`;
+    ? "Loading collections..."
+    : `${worldCollections.length} story worlds / ${archiveCollections.length} other collections / ${collections.length} total`;
 
   return (
     <>
@@ -36,27 +36,26 @@ export default function CollectionsIndexPage() {
         <div className="collection-index-hero-grid">
           <div>
             <p className="eyebrow">Collections</p>
-            <h1>Curated entry points into the archive.</h1>
+            <h1>Browse by world, mood, and theme.</h1>
             <p className="hero-copy">
-              The public collection layer stays focused on the main paths
-              through the catalog while the deeper taxonomy remains available
-              behind the scenes.
+              Collections group songs that belong together, whether they share a
+              story world, a feeling, or the same emotional language.
             </p>
           </div>
           <div className="hero-note-card collection-index-note-card">
-            <p className="note-label">Atlas View</p>
-            <h2>Worlds first, shelves second.</h2>
+            <p className="note-label">Where To Begin</p>
+            <h2>Start with a story world, or follow a feeling.</h2>
             <p>
-              Start with the major worlds if you want atmosphere and authored
-              progression, or move into the library collections if you want to
-              browse by shelf.
+              Choose Fractureverse or Eldoria when you want atmosphere and
+              story. Choose another collection when you want a mood, theme, or
+              kind of song.
             </p>
             <div className="collection-meta-row">
               <span className="meta-badge">
-                {loading ? "..." : `${worldCollections.length} world thresholds`}
+                {loading ? "..." : `${worldCollections.length} story worlds`}
               </span>
               <span className="meta-badge subtle-badge">
-                {loading ? "..." : `${archiveCollections.length} archive shelves`}
+                {loading ? "..." : `${archiveCollections.length} collections`}
               </span>
             </div>
             <p className="collection-index-summary">{atlasSummary}</p>
@@ -74,20 +73,20 @@ export default function CollectionsIndexPage() {
         ) : loading && !collections.length ? (
           <PublicLoadingState
             message="Worlds and shelves are being requested from the API."
-            title="Reading the atlas"
+            title="Loading collections"
           />
         ) : null}
 
         <section className="collection-index-section">
           <div className="section-head">
-            <h2>World Thresholds</h2>
+            <h2>Story Worlds</h2>
             <span>
               {loading ? "Loading..." : `${collections.length} collections`}
             </span>
           </div>
           <p className="results-context-copy">
-            These are the strongest authored entry points. Start here if you
-            want progression, atmosphere, and a more guided sense of arrival.
+            Start here if you want songs that feel like they belong to a larger
+            world.
           </p>
           {collections.length === 0 && !loading ? (
             <section className="intro-card homepage-panel empty-state-card">
@@ -98,7 +97,10 @@ export default function CollectionsIndexPage() {
           ) : (
             <div className="collection-grid collection-index-grid">
               {loading && !worldCollections.length ? (
-                <PublicSkeletonGrid count={2} label="Loading world collections" />
+                <PublicSkeletonGrid
+                  count={2}
+                  label="Loading world collections"
+                />
               ) : (
                 worldCollections.map((collection) => (
                   <CollectionCard
@@ -115,12 +117,12 @@ export default function CollectionsIndexPage() {
         {archiveCollections.length ? (
           <section className="collection-index-section">
             <div className="section-head">
-              <h2>Libraries And Paths</h2>
-              <span>Browse by shelf</span>
+              <h2>Collections</h2>
+              <span>Browse by feeling</span>
             </div>
             <p className="results-context-copy">
-              These collections are better for catalog browsing once you already
-              know the mood, subject, or archive lane you want.
+              These groups are for browsing by mood, subject, genre color, or
+              emotional thread.
             </p>
             <div className="collection-grid collection-index-grid">
               {archiveCollections.map((collection) => (

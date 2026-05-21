@@ -16,8 +16,8 @@ export default function GuidedPathsIndexPage() {
   usePageMetadata({
     canonicalPath: "/paths",
     description:
-      "Enter the archive through authored routes built around worlds, moods, and recurring themes.",
-    title: "Guided Paths"
+      "Follow listening paths built around worlds, moods, and recurring themes.",
+    title: "Listening Paths"
   });
   const {
     posts,
@@ -49,18 +49,18 @@ export default function GuidedPathsIndexPage() {
   return (
     <>
       <header className="hero section-hero guided-paths-hero">
-        <p className="eyebrow">Guided Listening Paths</p>
-        <h1>Enter the archive through authored routes.</h1>
+        <p className="eyebrow">Listening Paths</p>
+        <h1>Start with a mood and follow the songs from there.</h1>
         <p className="hero-copy">
-          These are not generic filters. Each path is meant to feel like a
-          chosen doorway into a mood, world, or thread of identity.
+          Each path is a suggested listening order for a world, feeling, or
+          recurring theme.
         </p>
       </header>
 
       <main className="content-grid">
         {error ? (
           <PublicErrorState
-            eyebrow="Guided Paths"
+            eyebrow="Listening Paths"
             message={error}
             onRetry={() => {
               retryPosts();
@@ -69,17 +69,17 @@ export default function GuidedPathsIndexPage() {
             }}
             secondaryHref="/explore"
             secondaryLabel="Search archive"
-            title="Guided paths could not load"
+            title="Listening paths could not load"
           />
         ) : loading && !paths.length ? (
           <PublicLoadingState
-            message="The route list is being assembled from releases, collections, and site settings."
-            title="Preparing guided paths"
+            message="The listening paths are being gathered from songs and collections."
+            title="Preparing listening paths"
           />
         ) : null}
         <section className="guided-path-grid">
           {loading && !paths.length ? (
-            <PublicSkeletonGrid count={3} label="Loading guided paths" />
+            <PublicSkeletonGrid count={3} label="Loading listening paths" />
           ) : (
             paths.map((path) => (
               <article
@@ -92,7 +92,7 @@ export default function GuidedPathsIndexPage() {
                 <p className="guided-path-note">{path.moodNote}</p>
                 <div className="tag-row">
                   <span className="meta-badge">
-                    {loading ? "..." : `${path.count} tracks`}
+                    {loading ? "..." : `${path.count} songs`}
                   </span>
                   {path.posts.slice(0, 2).map((post) => (
                     <span className="meta-badge subtle-badge" key={post.slug}>
@@ -101,7 +101,7 @@ export default function GuidedPathsIndexPage() {
                   ))}
                 </div>
                 <Link className="card-link" to={`/paths/${path.slug}`}>
-                  Enter Path
+                  Start Path
                 </Link>
               </article>
             ))

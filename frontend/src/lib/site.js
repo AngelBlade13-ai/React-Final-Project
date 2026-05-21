@@ -1,5 +1,7 @@
-export const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
-export const importerBaseUrl = import.meta.env.VITE_IMPORTER_URL || "http://127.0.0.1:8765";
+export const apiBaseUrl =
+  import.meta.env.VITE_API_URL || "http://localhost:4000/api";
+export const importerBaseUrl =
+  import.meta.env.VITE_IMPORTER_URL || "http://127.0.0.1:8765";
 export const themeKey = "suno-blog-theme";
 
 export const emptyPost = {
@@ -65,10 +67,23 @@ export const emptyCollection = {
   isPublicPrimary: false
 };
 
-export const PUBLIC_PRIMARY_COLLECTION_SLUGS = ["fractureverse", "eldoria", "original-personal", "standalone"];
+export const PUBLIC_PRIMARY_COLLECTION_SLUGS = [
+  "fractureverse",
+  "eldoria",
+  "original-personal",
+  "standalone"
+];
 export const RELEASE_STATUSES = ["canon", "alternate", "working"];
 export const SOURCE_TAG_OPTIONS = ["", "donna-era", "claude-enhanced"];
-export const WORLD_LAYER_OPTIONS = ["", "core", "author-layer", "meta-memory", "proto", "inspired", "villain"];
+export const WORLD_LAYER_OPTIONS = [
+  "",
+  "core",
+  "author-layer",
+  "meta-memory",
+  "proto",
+  "inspired",
+  "villain"
+];
 
 export const ORIGINAL_PERSONAL_SECTION_CONFIG = [
   {
@@ -97,7 +112,11 @@ export const ORIGINAL_PERSONAL_SECTION_CONFIG = [
   {
     key: "princess-motif",
     label: "Princess Motif",
-    collectionSlugs: ["princess-arc", "personal-identity-princess-arc", "personal-identity-princess-arc-symbolic-layer"]
+    collectionSlugs: [
+      "princess-arc",
+      "personal-identity-princess-arc",
+      "personal-identity-princess-arc-symbolic-layer"
+    ]
   },
   {
     key: "empowerment",
@@ -107,7 +126,10 @@ export const ORIGINAL_PERSONAL_SECTION_CONFIG = [
   {
     key: "community",
     label: "Community",
-    collectionSlugs: ["community-pride", "personal-identity-community-and-pride"]
+    collectionSlugs: [
+      "community-pride",
+      "personal-identity-community-and-pride"
+    ]
   },
   {
     key: "quiet-survivor",
@@ -132,7 +154,11 @@ export const ORIGINAL_PERSONAL_SECTION_CONFIG = [
   {
     key: "dnd-campaign",
     label: "D&D / Campaign",
-    collectionSlugs: ["campaign-stories-one-shots", "d-and-d-character-arcs", "dnd"]
+    collectionSlugs: [
+      "campaign-stories-one-shots",
+      "d-and-d-character-arcs",
+      "dnd"
+    ]
   },
   {
     key: "archive",
@@ -193,7 +219,9 @@ export function isPublicPrimaryCollection(collectionOrSlug) {
     return collectionOrSlug.isPublicPrimary;
   }
 
-  return PUBLIC_PRIMARY_COLLECTION_SLUGS.includes(String(collectionOrSlug.slug || "").trim());
+  return PUBLIC_PRIMARY_COLLECTION_SLUGS.includes(
+    String(collectionOrSlug.slug || "").trim()
+  );
 }
 
 export function sortCollectionsForPublicNavigation(collections = []) {
@@ -202,7 +230,10 @@ export function sortCollectionsForPublicNavigation(collections = []) {
     const rightIndex = PUBLIC_PRIMARY_COLLECTION_SLUGS.indexOf(right.slug);
 
     if (leftIndex !== rightIndex) {
-      return (leftIndex === -1 ? Number.MAX_SAFE_INTEGER : leftIndex) - (rightIndex === -1 ? Number.MAX_SAFE_INTEGER : rightIndex);
+      return (
+        (leftIndex === -1 ? Number.MAX_SAFE_INTEGER : leftIndex) -
+        (rightIndex === -1 ? Number.MAX_SAFE_INTEGER : rightIndex)
+      );
     }
 
     return String(left.title || "").localeCompare(String(right.title || ""));
@@ -213,26 +244,42 @@ export function partitionCollectionsForExplore(collections = []) {
   const orderedCollections = sortCollectionsForPublicNavigation(collections);
 
   return {
-    primaryCollections: orderedCollections.filter((collection) => isPublicPrimaryCollection(collection)),
-    internalCollections: orderedCollections.filter((collection) => !isPublicPrimaryCollection(collection))
+    primaryCollections: orderedCollections.filter((collection) =>
+      isPublicPrimaryCollection(collection)
+    ),
+    internalCollections: orderedCollections.filter(
+      (collection) => !isPublicPrimaryCollection(collection)
+    )
   };
 }
 
 export function getVisibleCollectionsForPost(post) {
-  return (post?.collections || []).filter((collection) => isPublicPrimaryCollection(collection));
+  return (post?.collections || []).filter((collection) =>
+    isPublicPrimaryCollection(collection)
+  );
 }
 
 export function getPreferredCollectionForPost(post) {
-  return getVisibleCollectionsForPost(post)[0] || post?.collections?.[0] || null;
+  return (
+    getVisibleCollectionsForPost(post)[0] || post?.collections?.[0] || null
+  );
 }
 
-export function inferOriginalPersonalSubCategoryFromCollections(collectionSlugs = []) {
-  const normalizedSlugs = Array.isArray(collectionSlugs) ? collectionSlugs.map((slug) => String(slug).trim()) : [];
+export function inferOriginalPersonalSubCategoryFromCollections(
+  collectionSlugs = []
+) {
+  const normalizedSlugs = Array.isArray(collectionSlugs)
+    ? collectionSlugs.map((slug) => String(slug).trim())
+    : [];
 
   for (const sectionKey of ORIGINAL_PERSONAL_SECTION_PRECEDENCE) {
-    const section = ORIGINAL_PERSONAL_SECTION_CONFIG.find((entry) => entry.key === sectionKey);
+    const section = ORIGINAL_PERSONAL_SECTION_CONFIG.find(
+      (entry) => entry.key === sectionKey
+    );
 
-    if (section?.collectionSlugs.some((slug) => normalizedSlugs.includes(slug))) {
+    if (
+      section?.collectionSlugs.some((slug) => normalizedSlugs.includes(slug))
+    ) {
       return section.key;
     }
   }
@@ -242,22 +289,33 @@ export function inferOriginalPersonalSubCategoryFromCollections(collectionSlugs 
 
 export function getOriginalPersonalSection(post) {
   const normalizedSubCategory =
-    ORIGINAL_PERSONAL_SECTION_ALIASES[String(post?.subCategory || "").trim()] || String(post?.subCategory || "").trim();
+    ORIGINAL_PERSONAL_SECTION_ALIASES[String(post?.subCategory || "").trim()] ||
+    String(post?.subCategory || "").trim();
   const configuredSection =
-    ORIGINAL_PERSONAL_SECTION_CONFIG.find((section) => section.key === normalizedSubCategory) || null;
+    ORIGINAL_PERSONAL_SECTION_CONFIG.find(
+      (section) => section.key === normalizedSubCategory
+    ) || null;
 
   if (configuredSection && configuredSection.key !== "other") {
     return configuredSection;
   }
 
-  const fallbackKey = inferOriginalPersonalSubCategoryFromCollections(post?.collectionSlugs || []);
-  return ORIGINAL_PERSONAL_SECTION_CONFIG.find((section) => section.key === fallbackKey) || ORIGINAL_PERSONAL_SECTION_CONFIG.at(-1);
+  const fallbackKey = inferOriginalPersonalSubCategoryFromCollections(
+    post?.collectionSlugs || []
+  );
+  return (
+    ORIGINAL_PERSONAL_SECTION_CONFIG.find(
+      (section) => section.key === fallbackKey
+    ) || ORIGINAL_PERSONAL_SECTION_CONFIG.at(-1)
+  );
 }
 
 export function groupOriginalPersonalPosts(posts = []) {
   return ORIGINAL_PERSONAL_SECTION_CONFIG.map((section) => ({
     ...section,
-    posts: posts.filter((post) => getOriginalPersonalSection(post)?.key === section.key)
+    posts: posts.filter(
+      (post) => getOriginalPersonalSection(post)?.key === section.key
+    )
   })).filter((section) => section.posts.length > 0);
 }
 
@@ -275,17 +333,26 @@ function normalizeSongGroupingTitle(title = "") {
 }
 
 export function getPostVersionKey(post) {
-  const explicitFamily = String(post?.versionFamily || "").trim().toLowerCase();
+  const explicitFamily = String(post?.versionFamily || "")
+    .trim()
+    .toLowerCase();
 
   if (explicitFamily) {
     return explicitFamily;
   }
 
-  return normalizeSongGroupingTitle(post?.title || "") || String(post?.slug || post?.id || "").trim().toLowerCase();
+  return (
+    normalizeSongGroupingTitle(post?.title || "") ||
+    String(post?.slug || post?.id || "")
+      .trim()
+      .toLowerCase()
+  );
 }
 
 export function getReleaseStatus(post) {
-  const status = String(post?.releaseStatus || "").trim().toLowerCase();
+  const status = String(post?.releaseStatus || "")
+    .trim()
+    .toLowerCase();
   return RELEASE_STATUSES.includes(status) ? status : "canon";
 }
 
@@ -293,7 +360,10 @@ export function isPostPubliclyVisible(post) {
   return post?.isPubliclyVisible !== false;
 }
 
-function getPrimarySurfaceStatusRank(post, { allowAlternateFallback = true, includeWorking = false } = {}) {
+function getPrimarySurfaceStatusRank(
+  post,
+  { allowAlternateFallback = true, includeWorking = false } = {}
+) {
   const status = getReleaseStatus(post);
 
   if (status === "canon") {
@@ -312,13 +382,22 @@ function getPrimarySurfaceStatusRank(post, { allowAlternateFallback = true, incl
 }
 
 function pickPreferredVersion(posts = []) {
-  return [...posts].sort((left, right) => {
-    if (Boolean(right?.isPrimaryVersion) !== Boolean(left?.isPrimaryVersion)) {
-      return Number(Boolean(right?.isPrimaryVersion)) - Number(Boolean(left?.isPrimaryVersion));
-    }
+  return (
+    [...posts].sort((left, right) => {
+      if (
+        Boolean(right?.isPrimaryVersion) !== Boolean(left?.isPrimaryVersion)
+      ) {
+        return (
+          Number(Boolean(right?.isPrimaryVersion)) -
+          Number(Boolean(left?.isPrimaryVersion))
+        );
+      }
 
-    return String(right?.createdAt || "").localeCompare(String(left?.createdAt || ""));
-  })[0] || null;
+      return String(right?.createdAt || "").localeCompare(
+        String(left?.createdAt || "")
+      );
+    })[0] || null
+  );
 }
 
 export function getHomepageEligiblePosts(posts = []) {
@@ -350,25 +429,38 @@ export function dedupePostsByVersionKey(posts = []) {
 }
 
 function pickPrimarySurfaceVersion(posts = [], options = {}) {
-  return [...posts].sort((left, right) => {
-    const statusDelta = getPrimarySurfaceStatusRank(right, options) - getPrimarySurfaceStatusRank(left, options);
+  return (
+    [...posts].sort((left, right) => {
+      const statusDelta =
+        getPrimarySurfaceStatusRank(right, options) -
+        getPrimarySurfaceStatusRank(left, options);
 
-    if (statusDelta !== 0) {
-      return statusDelta;
-    }
+      if (statusDelta !== 0) {
+        return statusDelta;
+      }
 
-    if (Boolean(right?.isPrimaryVersion) !== Boolean(left?.isPrimaryVersion)) {
-      return Number(Boolean(right?.isPrimaryVersion)) - Number(Boolean(left?.isPrimaryVersion));
-    }
+      if (
+        Boolean(right?.isPrimaryVersion) !== Boolean(left?.isPrimaryVersion)
+      ) {
+        return (
+          Number(Boolean(right?.isPrimaryVersion)) -
+          Number(Boolean(left?.isPrimaryVersion))
+        );
+      }
 
-    const scoreDelta = getCuratedPostScore(right, options) - getCuratedPostScore(left, options);
+      const scoreDelta =
+        getCuratedPostScore(right, options) -
+        getCuratedPostScore(left, options);
 
-    if (scoreDelta !== 0) {
-      return scoreDelta;
-    }
+      if (scoreDelta !== 0) {
+        return scoreDelta;
+      }
 
-    return String(right?.createdAt || "").localeCompare(String(left?.createdAt || ""));
-  })[0] || null;
+      return String(right?.createdAt || "").localeCompare(
+        String(left?.createdAt || "")
+      );
+    })[0] || null
+  );
 }
 
 export function collapsePostsByVersionFamily(posts = [], options = {}) {
@@ -398,10 +490,23 @@ export function collapsePostsByVersionFamily(posts = [], options = {}) {
 }
 
 function getCuratedPostScore(post, options = {}) {
-  const featuredReleaseSlug = String(options.featuredReleaseSlug || options.collection?.featuredReleaseSlug || "").trim();
-  const normalizedText = [post?.title, post?.excerpt, post?.content, post?.lyrics].join(" ").toLowerCase();
-  const hasPrimaryCollection = (post?.collections || []).some((collection) => isPublicPrimaryCollection(collection));
-  const hasDonnaCollection = (post?.collectionSlugs || []).includes("donna-era");
+  const featuredReleaseSlug = String(
+    options.featuredReleaseSlug || options.collection?.featuredReleaseSlug || ""
+  ).trim();
+  const normalizedText = [
+    post?.title,
+    post?.excerpt,
+    post?.content,
+    post?.lyrics
+  ]
+    .join(" ")
+    .toLowerCase();
+  const hasPrimaryCollection = (post?.collections || []).some((collection) =>
+    isPublicPrimaryCollection(collection)
+  );
+  const hasDonnaCollection = (post?.collectionSlugs || []).includes(
+    "donna-era"
+  );
   const sectionKey = getOriginalPersonalSection(post)?.key || "";
   let score = 0;
 
@@ -448,54 +553,73 @@ function getCuratedPostScore(post, options = {}) {
 
 export function sortCuratedPosts(posts = [], options = {}) {
   return [...posts].sort((left, right) => {
-    const scoreDelta = getCuratedPostScore(right, options) - getCuratedPostScore(left, options);
+    const scoreDelta =
+      getCuratedPostScore(right, options) - getCuratedPostScore(left, options);
 
     if (scoreDelta !== 0) {
       return scoreDelta;
     }
 
-    return String(right?.createdAt || "").localeCompare(String(left?.createdAt || ""));
+    return String(right?.createdAt || "").localeCompare(
+      String(left?.createdAt || "")
+    );
   });
 }
 
 export function sortCollectionPostsForDisplay(posts = [], options = {}) {
   return [...posts].sort((left, right) => {
     const releaseStatusOrder = { canon: 0, alternate: 1, working: 2 };
-    const statusDelta = releaseStatusOrder[getReleaseStatus(left)] - releaseStatusOrder[getReleaseStatus(right)];
+    const statusDelta =
+      releaseStatusOrder[getReleaseStatus(left)] -
+      releaseStatusOrder[getReleaseStatus(right)];
 
     if (statusDelta !== 0) {
       return statusDelta;
     }
 
     if (Boolean(right?.isPrimaryVersion) !== Boolean(left?.isPrimaryVersion)) {
-      return Number(Boolean(right?.isPrimaryVersion)) - Number(Boolean(left?.isPrimaryVersion));
+      return (
+        Number(Boolean(right?.isPrimaryVersion)) -
+        Number(Boolean(left?.isPrimaryVersion))
+      );
     }
 
     if (Boolean(left?.isArchive) !== Boolean(right?.isArchive)) {
-      return Number(Boolean(left?.isArchive)) - Number(Boolean(right?.isArchive));
+      return (
+        Number(Boolean(left?.isArchive)) - Number(Boolean(right?.isArchive))
+      );
     }
 
-    const scoreDelta = getCuratedPostScore(right, options) - getCuratedPostScore(left, options);
+    const scoreDelta =
+      getCuratedPostScore(right, options) - getCuratedPostScore(left, options);
 
     if (scoreDelta !== 0) {
       return scoreDelta;
     }
 
-    return String(right?.createdAt || "").localeCompare(String(left?.createdAt || ""));
+    return String(right?.createdAt || "").localeCompare(
+      String(left?.createdAt || "")
+    );
   });
 }
 
 export function getHomepageCuratedPosts(posts = [], options = {}) {
-  const dedupedPosts = collapsePostsByVersionFamily(getHomepageEligiblePosts(posts), {
-    ...options,
-    allowAlternateFallback: false,
-    includeWorking: false
-  });
+  const dedupedPosts = collapsePostsByVersionFamily(
+    getHomepageEligiblePosts(posts),
+    {
+      ...options,
+      allowAlternateFallback: false,
+      includeWorking: false
+    }
+  );
   return sortCuratedPosts(dedupedPosts, { ...options, surface: "home" });
 }
 
 export function getPublicCollectionPosts(posts = []) {
-  return posts.filter((post) => isPostPubliclyVisible(post) && getReleaseStatus(post) !== "working");
+  return posts.filter(
+    (post) =>
+      isPostPubliclyVisible(post) && getReleaseStatus(post) !== "working"
+  );
 }
 
 export function getPrimaryCollectionSurfacePosts(posts = [], options = {}) {
@@ -523,7 +647,11 @@ export function getCanonicalCollectionSurfacePosts(posts = [], options = {}) {
   );
 }
 
-export function getSecondaryVersionPosts(posts = [], primaryPosts = [], options = {}) {
+export function getSecondaryVersionPosts(
+  posts = [],
+  primaryPosts = [],
+  options = {}
+) {
   const primaryByFamily = new Map(
     primaryPosts
       .filter(Boolean)
@@ -549,7 +677,9 @@ export function getSiblingVersionPosts(posts = [], currentPost, options = {}) {
 
   return sortCollectionPostsForDisplay(
     getPublicCollectionPosts(posts).filter(
-      (post) => post?.slug !== currentPost?.slug && getPostVersionKey(post) === currentKey
+      (post) =>
+        post?.slug !== currentPost?.slug &&
+        getPostVersionKey(post) === currentKey
     ),
     options
   );
@@ -791,38 +921,42 @@ export const emptyThemeProfile = {
 export const emptySiteSettings = {
   branding: {
     siteName: "Suno Diary",
-    siteTagline: "Releases, collections, and notes in one place."
+    siteTagline: "Songs, worlds, and feelings I did not want to lose."
   },
   home: {
     heroEyebrow: "Suno Diary",
-    heroTitle: "A soft archive for releases, collections, and the stories that let each song keep breathing.",
+    heroTitle: "A soft archive for songs with stories behind them.",
     heroText:
-      "Browse curated groupings, move through release notes with more context, and treat the site less like a feed and more like a small world of connected songs.",
+      "Start with a song, choose a mood, or step into a story world. Some pieces are personal, some are theatrical, and some connect into bigger emotional arcs.",
     featuredReleaseSlug: "",
-    featuredCtaLabel: "Play Featured Release",
-    jumpCtaLabel: "Jump to Latest Releases",
-    noteEyebrow: "What Changed",
-    noteTitle: "Discovery is part of the identity now, not just a homepage feed.",
+    featuredCtaLabel: "Play Featured Song",
+    jumpCtaLabel: "Start Listening",
+    noteEyebrow: "Start Listening",
+    noteTitle: "Choose the way into the music that fits your mood.",
     noteText:
-      "Collections organize releases into verses, moods, and projects. Explore lets you search by title and written notes. About frames the artist, the site, and the reason this archive exists.",
+      "Collections gather songs by feeling, world, and theme. Search helps when you remember a phrase. Listening paths give you a guided way in when you do not know where to begin.",
     browseEyebrow: "Browse",
-    browseTitle: "Move through the archive by collection instead of only by chronology.",
+    browseTitle: "Find songs by world, mood, or theme.",
     browseText:
-      "Collections turn the catalog into verses, projects, moods, and small emotional shelves rather than one uninterrupted stream.",
-    browseLinkLabel: "See the collection shelves",
+      "Collections keep connected songs together, from personal identity pieces to fantasy ballads and darker theatrical arcs.",
+    browseLinkLabel: "Browse collections",
     exploreEyebrow: "Find",
-    exploreTitle: "Search inside release notes, titles, and lyrics when you know the feeling but not the page.",
+    exploreTitle:
+      "Search titles, lyrics, and notes when you remember the feeling but not the song.",
     exploreText:
-      "The explore view is built for rediscovery: search by phrase, narrow by collection, and jump straight into the release that fits.",
-    exploreLinkLabel: "Open explore",
-    identityEyebrow: "Site Identity",
-    identityTitle: "A personal home for releases, track stories, and the discovery paths between them",
+      "Type a title, lyric, mood, or phrase, then narrow by collection if the archive gets too wide.",
+    exploreLinkLabel: "Search songs",
+    identityEyebrow: "About The Archive",
+    identityTitle:
+      "A personal home for songs, stories, and the feelings between them.",
     identityText:
-      "Each page still keeps the music close, but now the archive has a stronger structure: releases can live in more than one collection, search can surface them by title or text, and the site has space to explain the artist voice behind the catalog.",
+      "Some songs are direct and autobiographical. Some become fantasy worlds, villain songs, anime-bright transformations, or quiet survival pieces. This site keeps those connections visible.",
     identityLine: "A collection of songs, stories, and moments in motion."
   },
   guidedPaths: [],
-  collectionThemes: DEFAULT_COLLECTION_THEME_PROFILES.map((profile) => JSON.parse(JSON.stringify(profile)))
+  collectionThemes: DEFAULT_COLLECTION_THEME_PROFILES.map((profile) =>
+    JSON.parse(JSON.stringify(profile))
+  )
 };
 
 export const COLLECTION_THEMES = {
@@ -830,23 +964,24 @@ export const COLLECTION_THEMES = {
     worldEyebrow: "Collection",
     worldTitlePrefix: "",
     worldDescriptionPrefix: "",
-    featuredLabel: "Primary Release",
-    featuredAction: "View Full Record",
-    listLabel: "Latest Releases",
-    releaseNote: "Release Note",
+    featuredLabel: "Featured Song",
+    featuredAction: "Open Song",
+    listLabel: "Songs",
+    releaseNote: "Song Note",
     lyrics: "Lyrics",
-    noItemsEyebrow: "No Published Releases",
+    noItemsEyebrow: "No Published Songs",
     noItemsTitle: "This collection exists, but nothing is live in it yet.",
-    noItemsText: "Add or publish a release to bring this lane of the archive to life.",
-    singleItemEyebrow: "Single Release Collection",
-    singleItemTitle: "This collection is currently anchored by one release.",
+    noItemsText: "Add or publish a song to bring this collection to life.",
+    singleItemEyebrow: "Single Song Collection",
+    singleItemTitle: "This collection is currently anchored by one song.",
     singleItemText:
       "As more entries are added, they will stack here beneath the spotlight instead of leaving the page feeling unfinished.",
     worldNoteTitle: "A note about this world",
-    worldNoteText: "Each collection is a different shelf in the archive, with its own tone and memory.",
-    itemName: "Release",
-    itemPlural: "Releases",
-    itemAction: "Open Release",
+    worldNoteText:
+      "Each collection is a different shelf in the archive, with its own tone and memory.",
+    itemName: "Song",
+    itemPlural: "Songs",
+    itemAction: "Open Song",
     playerLabel: "Now Playing",
     playerUpNextLabel: "Up Next"
   },
@@ -859,13 +994,15 @@ export const COLLECTION_THEMES = {
     lyrics: "Verses",
     noItemsEyebrow: "Empty Chronicle",
     noItemsTitle: "No ballads have been gathered into this chronicle yet.",
-    noItemsText: "When the first song is placed here, Eldoria will begin to read like a living tale instead of a waiting shelf.",
+    noItemsText:
+      "When the first song is placed here, Eldoria will begin to read like a living tale instead of a waiting shelf.",
     singleItemEyebrow: "First Ballad",
     singleItemTitle: "This chronicle is carried by a single voice - for now.",
     singleItemText:
-      "As more entries arrive, they will settle around it like pages in the same long-form tale rather than isolated releases.",
+      "As more entries arrive, they will settle around it like pages in the same long-form tale rather than isolated songs.",
     worldNoteTitle: "A note from Eldoria",
-    worldNoteText: "Some songs feel less like records and more like stories remembered beside a fire long after nightfall.",
+    worldNoteText:
+      "Some songs feel less like records and more like stories remembered beside a fire long after nightfall.",
     itemName: "Ballad",
     itemPlural: "Ballads",
     itemAction: "Enter Chronicle",
@@ -880,7 +1017,8 @@ export const COLLECTION_THEMES = {
     releaseNote: "Entry",
     lyrics: "Words",
     worldNoteTitle: "A note about this world",
-    worldNoteText: "Quiet songs do not need to be small. They just need enough room to stay gentle.",
+    worldNoteText:
+      "Quiet songs do not need to be small. They just need enough room to stay gentle.",
     itemName: "Entry",
     itemPlural: "Entries",
     itemAction: "Open Entry",
@@ -896,13 +1034,16 @@ export const COLLECTION_THEMES = {
     lyrics: "Recovered Dialogue",
     noItemsEyebrow: "No Fragments Detected",
     noItemsTitle: "No fragments detected.",
-    noItemsText: "Either this world is newly formed,\nor something erased what came before.",
+    noItemsText:
+      "Either this world is newly formed,\nor something erased what came before.",
     singleItemEyebrow: "Single Recorded Fragment",
-    singleItemTitle: "This world is currently anchored by one recorded fragment.",
+    singleItemTitle:
+      "This world is currently anchored by one recorded fragment.",
     singleItemText:
-      "As more releases enter the Fractureverse, they will appear here as additional observed entries beneath the first fracture.",
+      "As more songs enter the Fractureverse, they will appear here as additional observed entries beneath the first fracture.",
     worldNoteTitle: "Echo",
-    worldNoteText: "Some timelines collapse.\nSome repeat.\nSome are never meant to be found.",
+    worldNoteText:
+      "Some timelines collapse.\nSome repeat.\nSome are never meant to be found.",
     itemName: "Fragment",
     itemPlural: "Fragments",
     itemAction: "Open Fragment",
@@ -917,7 +1058,8 @@ export const COLLECTION_THEMES = {
     releaseNote: "Performance Notes",
     lyrics: "Script",
     worldNoteTitle: "A note about this world",
-    worldNoteText: "Some songs are meant to arrive like entrances, spotlights, and final bows.",
+    worldNoteText:
+      "Some songs are meant to arrive like entrances, spotlights, and final bows.",
     itemName: "Act",
     itemPlural: "Acts",
     itemAction: "Open Act",
@@ -932,7 +1074,8 @@ export const COLLECTION_THEMES = {
     releaseNote: "Transmission Log",
     lyrics: "Decoded Signal",
     worldNoteTitle: "A note about this world",
-    worldNoteText: "What survives here sounds like a message from somewhere distant, imperfect, and still reaching back.",
+    worldNoteText:
+      "What survives here sounds like a message from somewhere distant, imperfect, and still reaching back.",
     itemName: "Signal",
     itemPlural: "Signals",
     itemAction: "Open Signal",
@@ -978,11 +1121,12 @@ export const FRACTUREVERSE_WORLD = {
     { label: "Primary Subjects", value: "Angel, Grissom" },
     { label: "Current Condition", value: "Active recursion detected" }
   ],
-  residualEcho: "Some timelines collapse. Some repeat. Some never stop trying to become real."
+  residualEcho:
+    "Some timelines collapse. Some repeat. Some never stop trying to become real."
 };
 
 export const ELDORIA_MAP_LAYOUT = {
-  "1": {
+  1: {
     x: 22,
     y: 60,
     svgX: 220,
@@ -993,7 +1137,7 @@ export const ELDORIA_MAP_LAYOUT = {
     stateLabel: "Spawn / fracture point",
     type: "origin"
   },
-  "2": {
+  2: {
     x: 50,
     y: 19,
     svgX: 500,
@@ -1004,7 +1148,7 @@ export const ELDORIA_MAP_LAYOUT = {
     stateLabel: "Echo grove / unstable region",
     type: "echo"
   },
-  "3": {
+  3: {
     x: 78,
     y: 40,
     svgX: 780,
@@ -1015,7 +1159,7 @@ export const ELDORIA_MAP_LAYOUT = {
     stateLabel: "Castle hub / sovereign center",
     type: "ascension"
   },
-  "4": {
+  4: {
     x: 58,
     y: 77,
     svgX: 580,
@@ -1041,8 +1185,12 @@ export const FRACTUREVERSE_METADATA = {
     perspective: "Grissom",
     signalType: "Origin",
     title: "The One You Used to Be",
-    description: "A preserved fragment from before the fracture - where love existed without cost.",
-    linkedSlugs: ["still-breathing-in-a-dying-world-reimagined", "you-were-better-before-you-saved-the-world-reimagined"],
+    description:
+      "A preserved fragment from before the fracture - where love existed without cost.",
+    linkedSlugs: [
+      "still-breathing-in-a-dying-world-reimagined",
+      "you-were-better-before-you-saved-the-world-reimagined"
+    ],
     systemNote: "Reference timeline detected. Emotional imprint preserved."
   },
   "still-breathing-in-a-dying-world-reimagined": {
@@ -1053,8 +1201,12 @@ export const FRACTUREVERSE_METADATA = {
     title: "Still Breathing (In a Dying World)",
     description:
       "The moment she chose everything, knowing it would cost her the one thing she wanted to keep.",
-    linkedSlugs: ["the-one-you-used-to-be-reimagined", "shattered-trust-reimagined"],
-    systemNote: "Critical divergence detected. Global stability prioritized over personal attachment."
+    linkedSlugs: [
+      "the-one-you-used-to-be-reimagined",
+      "shattered-trust-reimagined"
+    ],
+    systemNote:
+      "Critical divergence detected. Global stability prioritized over personal attachment."
   },
   "shattered-trust-reimagined": {
     fragmentId: "F-03",
@@ -1064,8 +1216,12 @@ export const FRACTUREVERSE_METADATA = {
     title: "Shattered Trust (Reimagined)",
     description:
       "A post-collapse fragment where trust failed, and the cost of saving everything became permanent.",
-    linkedSlugs: ["the-one-you-used-to-be-reimagined", "still-breathing-in-a-dying-world-reimagined"],
-    systemNote: "Collapse event stabilized through force of will. Structural integrity compromised."
+    linkedSlugs: [
+      "the-one-you-used-to-be-reimagined",
+      "still-breathing-in-a-dying-world-reimagined"
+    ],
+    systemNote:
+      "Collapse event stabilized through force of will. Structural integrity compromised."
   },
   "you-were-better-before-you-saved-the-world-reimagined": {
     fragmentId: "F-04",
@@ -1075,8 +1231,12 @@ export const FRACTUREVERSE_METADATA = {
     title: "You Were Better Before You Saved the World",
     description:
       "A hostile fragment where loss becomes obsession, and one version of him refuses to accept the world she chose.",
-    linkedSlugs: ["still-breathing-in-a-dying-world-reimagined", "shattered-trust-reimagined"],
-    systemNote: "Hostile recursion detected. Subject actively destabilizing timelines."
+    linkedSlugs: [
+      "still-breathing-in-a-dying-world-reimagined",
+      "shattered-trust-reimagined"
+    ],
+    systemNote:
+      "Hostile recursion detected. Subject actively destabilizing timelines."
   },
   "we-were-never-meant-to-survive-reimagined-duet": {
     fragmentId: "F-05",
@@ -1096,7 +1256,9 @@ export const FRACTUREVERSE_METADATA = {
 };
 
 export function getThemeProfiles(siteContent) {
-  const storedProfiles = Array.isArray(siteContent?.collectionThemes) ? siteContent.collectionThemes : [];
+  const storedProfiles = Array.isArray(siteContent?.collectionThemes)
+    ? siteContent.collectionThemes
+    : [];
   const mergedProfiles = DEFAULT_COLLECTION_THEME_PROFILES.map((profile) => {
     const override = storedProfiles.find((entry) => entry?.key === profile.key);
     return {
@@ -1116,14 +1278,17 @@ export function getThemeProfiles(siteContent) {
   });
 
   const customProfiles = storedProfiles.filter(
-    (profile) => profile?.key && !mergedProfiles.some((entry) => entry.key === profile.key)
+    (profile) =>
+      profile?.key && !mergedProfiles.some((entry) => entry.key === profile.key)
   );
 
   return [...mergedProfiles, ...customProfiles];
 }
 
 export function getThemeProfile(theme, siteContent) {
-  return getThemeProfiles(siteContent).find((entry) => entry.key === theme) || null;
+  return (
+    getThemeProfiles(siteContent).find((entry) => entry.key === theme) || null
+  );
 }
 
 export function getThemeConfig(theme, siteContent) {
@@ -1184,7 +1349,10 @@ export function getThemeCssVariables(theme, mode, siteContent) {
 }
 
 export function getPrimaryThemeForPost(post) {
-  const themedCollection = [getPreferredCollectionForPost(post), ...(post?.collections || [])]
+  const themedCollection = [
+    getPreferredCollectionForPost(post),
+    ...(post?.collections || [])
+  ]
     .filter(Boolean)
     .find((collection) => collection.theme);
   return themedCollection?.theme || "default";
@@ -1202,8 +1370,12 @@ export function sortFractureversePosts(posts = []) {
   return [...posts].sort((left, right) => {
     const leftMeta = getFractureverseMeta(left, posts);
     const rightMeta = getFractureverseMeta(right, posts);
-    const leftIndex = leftMeta?.fragmentId ? Number(leftMeta.fragmentId.replace("F-", "")) : FRACTUREVERSE_ORDER.indexOf(left.slug) + 1 || 99;
-    const rightIndex = rightMeta?.fragmentId ? Number(rightMeta.fragmentId.replace("F-", "")) : FRACTUREVERSE_ORDER.indexOf(right.slug) + 1 || 99;
+    const leftIndex = leftMeta?.fragmentId
+      ? Number(leftMeta.fragmentId.replace("F-", ""))
+      : FRACTUREVERSE_ORDER.indexOf(left.slug) + 1 || 99;
+    const rightIndex = rightMeta?.fragmentId
+      ? Number(rightMeta.fragmentId.replace("F-", ""))
+      : FRACTUREVERSE_ORDER.indexOf(right.slug) + 1 || 99;
 
     return leftIndex - rightIndex;
   });
@@ -1222,7 +1394,9 @@ export function getFractureverseMeta(post, allPosts = []) {
     : Array.isArray(fallbackMeta?.linkedSlugs)
       ? fallbackMeta.linkedSlugs
       : [];
-  const linkedPosts = allPosts.filter((entry) => linkedSlugs.includes(entry.slug));
+  const linkedPosts = allPosts.filter((entry) =>
+    linkedSlugs.includes(entry.slug)
+  );
   const linkedTo = linkedPosts
     .map((entry) => {
       const linkedFallback = FRACTUREVERSE_METADATA[entry.slug] || null;
@@ -1237,7 +1411,11 @@ export function getFractureverseMeta(post, allPosts = []) {
     perspective: archiveMeta.perspective || fallbackMeta?.perspective || "",
     signalType: archiveMeta.signalType || fallbackMeta?.signalType || "",
     title: fallbackMeta?.title || post?.title || "",
-    description: archiveMeta.description || fallbackMeta?.description || post?.excerpt || "",
+    description:
+      archiveMeta.description ||
+      fallbackMeta?.description ||
+      post?.excerpt ||
+      "",
     systemNote: archiveMeta.systemNote || fallbackMeta?.systemNote || "",
     linkedSlugs,
     linkedPosts,
@@ -1285,12 +1463,12 @@ export function getPlaybackStateCopy(post, theme = "") {
     playable,
     mediaEyebrow: playable ? "Playback Available" : "Video Pending",
     mediaText: playable
-      ? "This release is live and ready for playback."
-      : "This release is live now. The video can be attached later.",
+      ? "This song is ready for playback."
+      : "This song is live now. The video can be attached later.",
     pillLabel: playable ? "Play" : "Video Pending",
     actionLabel: playable ? "Play in Mini Player" : "Video Pending",
     compactActionLabel: playable ? "Play in Mini Player" : "Video Pending",
-    openLabel: "Open Release"
+    openLabel: "Open Song"
   };
 }
 
@@ -1301,7 +1479,10 @@ export function getVideoPosterUrl(videoUrl) {
     return "";
   }
 
-  if (!normalizedUrl.includes("res.cloudinary.com") || !normalizedUrl.includes("/video/upload/")) {
+  if (
+    !normalizedUrl.includes("res.cloudinary.com") ||
+    !normalizedUrl.includes("/video/upload/")
+  ) {
     return "";
   }
 
@@ -1352,7 +1533,11 @@ function formatCountLabel(count, singular, plural) {
   return `${count} ${count === 1 ? singular : plural}`;
 }
 
-export function getCollectionDerivedContent(collection, releases = [], siteContent) {
+export function getCollectionDerivedContent(
+  collection,
+  releases = [],
+  siteContent
+) {
   const theme = collection?.theme || "default";
   const themeConfig = getThemeConfig(theme, siteContent);
   const count = releases.length;
@@ -1364,23 +1549,51 @@ export function getCollectionDerivedContent(collection, releases = [], siteConte
     return {
       stats: [
         { label: "Realm", value: collection?.title || "Eldoria" },
-        { label: "Chronicle Entries", value: formatCountLabel(count, "ballad", "ballads") },
+        {
+          label: "Chronicle Entries",
+          value: formatCountLabel(count, "ballad", "ballads")
+        },
         {
           label: "Featured Ballad",
-          value: featuredRelease?.title || (count === 0 ? "Awaiting a first telling" : count === 1 ? "A single tale remains" : "No leading ballad chosen")
+          value:
+            featuredRelease?.title ||
+            (count === 0
+              ? "Awaiting a first telling"
+              : count === 1
+                ? "A single tale remains"
+                : "No leading ballad chosen")
         },
         {
           label: "Current Season",
-          value: count === 0 ? "Quiet before the telling" : count === 1 ? "Opening chapter" : count < 4 ? "Stories gathering" : "World in full song"
+          value:
+            count === 0
+              ? "Quiet before the telling"
+              : count === 1
+                ? "Opening chapter"
+                : count < 4
+                  ? "Stories gathering"
+                  : "World in full song"
         }
       ],
       featuredContext:
         count <= 1
           ? "This royal record carries the chronicle on its own for now. As more entries arrive, it will shift from lone voice to remembered beginning."
           : "This ballad acts as the first doorway into the wider chronicle, giving the world a clear emotional entry point before the other songs continue the tale.",
-      collectionCountLabel: formatCountLabel(count, "entry recorded", "entries recorded"),
-      releaseSequenceLabel: formatCountLabel(count, "ballad in this chronicle", "ballads in this chronicle"),
-      companionLabel: formatCountLabel(Math.max(count - 1, 0), "nearby entry", "nearby entries"),
+      collectionCountLabel: formatCountLabel(
+        count,
+        "entry recorded",
+        "entries recorded"
+      ),
+      releaseSequenceLabel: formatCountLabel(
+        count,
+        "ballad in this chronicle",
+        "ballads in this chronicle"
+      ),
+      companionLabel: formatCountLabel(
+        Math.max(count - 1, 0),
+        "nearby entry",
+        "nearby entries"
+      ),
       worldNote:
         count === 0
           ? "A world can still feel present before its first ballad arrives."
@@ -1392,9 +1605,21 @@ export function getCollectionDerivedContent(collection, releases = [], siteConte
 
   if (theme === "fractureverse") {
     return {
-      collectionCountLabel: formatCountLabel(fractureverseVisibleCount(releases), "linked fragment", "linked fragments"),
-      releaseSequenceLabel: formatCountLabel(releases.length, "fragment in this sequence", "fragments in this sequence"),
-      companionLabel: formatCountLabel(Math.max(releases.length - 1, 0), "connected fragment", "connected fragments")
+      collectionCountLabel: formatCountLabel(
+        fractureverseVisibleCount(releases),
+        "linked fragment",
+        "linked fragments"
+      ),
+      releaseSequenceLabel: formatCountLabel(
+        releases.length,
+        "fragment in this sequence",
+        "fragments in this sequence"
+      ),
+      companionLabel: formatCountLabel(
+        Math.max(releases.length - 1, 0),
+        "connected fragment",
+        "connected fragments"
+      )
     };
   }
 
@@ -1403,9 +1628,21 @@ export function getCollectionDerivedContent(collection, releases = [], siteConte
       count <= 1
         ? `This ${itemName.toLowerCase()} is currently carrying the collection on its own.`
         : `The featured ${itemName.toLowerCase()} acts as the clearest entry point into this collection before the rest of the archive opens beneath it.`,
-    collectionCountLabel: formatCountLabel(count, `${itemName.toLowerCase()} entry`, `${itemName.toLowerCase()} entries`),
-    releaseSequenceLabel: formatCountLabel(count, itemName.toLowerCase(), itemPlural.toLowerCase()),
-    companionLabel: formatCountLabel(Math.max(count - 1, 0), `${itemName.toLowerCase()} nearby`, `${itemPlural.toLowerCase()} nearby`),
+    collectionCountLabel: formatCountLabel(
+      count,
+      `${itemName.toLowerCase()} entry`,
+      `${itemName.toLowerCase()} entries`
+    ),
+    releaseSequenceLabel: formatCountLabel(
+      count,
+      itemName.toLowerCase(),
+      itemPlural.toLowerCase()
+    ),
+    companionLabel: formatCountLabel(
+      Math.max(count - 1, 0),
+      `${itemName.toLowerCase()} nearby`,
+      `${itemPlural.toLowerCase()} nearby`
+    ),
     worldNote:
       count === 0
         ? `This ${itemName.toLowerCase()} world is still waiting for its first entry.`
@@ -1430,7 +1667,9 @@ export function sortEldoriaPosts(posts = []) {
       return leftIndex - rightIndex;
     }
 
-    return String(left?.createdAt || "").localeCompare(String(right?.createdAt || ""));
+    return String(left?.createdAt || "").localeCompare(
+      String(right?.createdAt || "")
+    );
   });
 }
 
@@ -1447,9 +1686,15 @@ export function getEldoriaMeta(post) {
   const openingPassage = String(archiveMeta.openingPassage || "").trim();
   const coreSituation = String(archiveMeta.coreSituation || "").trim();
   const coreTension = String(archiveMeta.coreTension || "").trim();
-  const chronicleObservation = String(archiveMeta.chronicleObservation || "").trim();
-  const chronicleContradiction = String(archiveMeta.chronicleContradiction || "").trim();
-  const chronicleConclusion = String(archiveMeta.chronicleConclusion || "").trim();
+  const chronicleObservation = String(
+    archiveMeta.chronicleObservation || ""
+  ).trim();
+  const chronicleContradiction = String(
+    archiveMeta.chronicleContradiction || ""
+  ).trim();
+  const chronicleConclusion = String(
+    archiveMeta.chronicleConclusion || ""
+  ).trim();
   const emotionalState = String(archiveMeta.emotionalState || "").trim();
   const coreConflict = String(archiveMeta.coreConflict || "").trim();
   const risk = String(archiveMeta.risk || "").trim();
@@ -1486,7 +1731,13 @@ export function getEldoriaMeta(post) {
     chapterNumber,
     chapterNumeral,
     chapterLabel: chapterNumeral ? `Chapter ${chapterNumeral}` : "",
-    identityLine: [chapterNumeral ? `CHAPTER ${chapterNumeral}` : "", entryType.toUpperCase(), "ELDORIA"].filter(Boolean).join(" / "),
+    identityLine: [
+      chapterNumeral ? `CHAPTER ${chapterNumeral}` : "",
+      entryType.toUpperCase(),
+      "ELDORIA"
+    ]
+      .filter(Boolean)
+      .join(" / "),
     entryType,
     subtitle,
     openingPassage,
@@ -1510,7 +1761,11 @@ export function getEldoriaMapEntries(posts = [], currentSlug = "") {
   const unlockedCount = Math.max(sortedPosts.length, 1);
 
   return Object.entries(ELDORIA_MAP_LAYOUT).map(([chapterNumber, layout]) => {
-    const post = sortedPosts.find((entry) => String(getEldoriaMeta(entry)?.chapterNumber || "") === chapterNumber) || null;
+    const post =
+      sortedPosts.find(
+        (entry) =>
+          String(getEldoriaMeta(entry)?.chapterNumber || "") === chapterNumber
+      ) || null;
     const meta = getEldoriaMeta(post);
     const chapterIndex = Number(chapterNumber);
     const isUnlocked = chapterIndex <= unlockedCount;
@@ -1528,7 +1783,9 @@ export function getEldoriaMapEntries(posts = [], currentSlug = "") {
       subtitle: meta?.subtitle || layout.mapSubtitle,
       mapTitle: layout.mapTitle,
       mapSubtitle: layout.mapSubtitle,
-      emotionalState: meta?.emotionalState || (isUnlocked ? "World state still forming" : "Yet to be revealed"),
+      emotionalState:
+        meta?.emotionalState ||
+        (isUnlocked ? "World state still forming" : "Yet to be revealed"),
       status: isActive ? "active" : isUnlocked ? "unlocked" : "locked",
       type: layout.type,
       region: layout.region,

@@ -50,7 +50,12 @@ export default function GuidedPathPage({
     siteContentError?.message ||
     "";
 
-  const path = resolveGuidedListeningPath(slug, posts, collections, siteContent);
+  const path = resolveGuidedListeningPath(
+    slug,
+    posts,
+    collections,
+    siteContent
+  );
   const activePost = path?.posts?.[activeIndex] || null;
   const activePlaybackCopy = getPlaybackStateCopy(
     activePost,
@@ -68,8 +73,8 @@ export default function GuidedPathPage({
 
   usePageMetadata({
     canonicalPath: `/paths/${slug}`,
-    description: path?.intro || "Follow an authored route through the archive.",
-    title: path?.title || "Guided Path"
+    description: path?.intro || "Follow a listening path through the archive.",
+    title: path?.title || "Listening Path"
   });
 
   useEffect(() => {
@@ -130,12 +135,12 @@ export default function GuidedPathPage({
             Collections
           </Link>
         </div>
-        <p className="eyebrow">{path?.eyebrow || "Guided Path"}</p>
+        <p className="eyebrow">{path?.eyebrow || "Listening Path"}</p>
         <h1>{path?.title || "Loading path..."}</h1>
         <p className="hero-copy">{path?.intro || "Building the path..."}</p>
         {path ? (
           <div className="hero-note-stats">
-            <span className="meta-badge">{path.posts.length} tracks</span>
+            <span className="meta-badge">{path.posts.length} songs</span>
             <span className="meta-badge subtle-badge">{path.moodNote}</span>
           </div>
         ) : null}
@@ -144,7 +149,7 @@ export default function GuidedPathPage({
       <main className="content-grid">
         {error ? (
           <PublicErrorState
-            eyebrow="Guided Path"
+            eyebrow="Listening Path"
             message={error}
             onRetry={() => {
               retryPosts();
@@ -153,7 +158,7 @@ export default function GuidedPathPage({
             }}
             secondaryHref="/paths"
             secondaryLabel="All paths"
-            title="This guided path could not load"
+            title="This listening path could not load"
           />
         ) : null}
         {path && activePost ? (
@@ -167,7 +172,7 @@ export default function GuidedPathPage({
               </div>
               <div className="guided-path-focus-layout">
                 <div className="guided-path-focus-copy">
-                  <p className="eyebrow">Path Focus</p>
+                  <p className="eyebrow">Now Listening</p>
                   <h3>{activePost.title}</h3>
                   <p>{activePost.excerpt}</p>
                   <p className="meta">{formatPostDate(activePost.createdAt)}</p>
@@ -190,14 +195,14 @@ export default function GuidedPathPage({
                       type="button"
                     >
                       {activePlaybackCopy.playable
-                        ? "Play In Path Queue"
+                        ? "Play This Path"
                         : activePlaybackCopy.actionLabel}
                     </button>
                     <Link
                       className="hero-link"
                       to={`/release/${activePost.slug}`}
                     >
-                      Open Release
+                      Open Song
                     </Link>
                   </div>
                 </div>
@@ -230,8 +235,8 @@ export default function GuidedPathPage({
 
             <section className="intro-card homepage-panel">
               <div className="section-head">
-                <h2>Path Sequence</h2>
-                <span>{path.posts.length} authored stops</span>
+                <h2>Song Sequence</h2>
+                <span>{path.posts.length} stops</span>
               </div>
               <div className="guided-path-sequence">
                 {path.posts.map((entry, index) => (
@@ -254,16 +259,18 @@ export default function GuidedPathPage({
         ) : path ? (
           <section className="intro-card homepage-panel empty-state-card">
             <p className="eyebrow">Path Needs Songs</p>
-            <h3>This guided path is saved, but no public songs resolve yet.</h3>
+            <h3>
+              This listening path is saved, but no public songs appear yet.
+            </h3>
             <p>
-              The path exists in the admin configuration. Add manual songs or
-              adjust its rules to make it playable.
+              Add songs to this path when you are ready for visitors to follow
+              it.
             </p>
           </section>
         ) : loading ? (
           <PublicLoadingState
-            message="The path is being assembled from the current public catalog."
-            title="Gathering the route"
+            message="The path is being assembled from the current public songs."
+            title="Gathering the songs"
           />
         ) : null}
       </main>

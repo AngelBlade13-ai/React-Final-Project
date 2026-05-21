@@ -7,7 +7,12 @@ import {
   getVisibleCollectionsForPost
 } from "../../lib/site";
 
-export default function ReleaseCard({ emphasis = false, post, onPlayTrack, layout = "card" }) {
+export default function ReleaseCard({
+  emphasis = false,
+  post,
+  onPlayTrack,
+  layout = "card"
+}) {
   const primaryTheme = getPrimaryThemeForPost(post);
   const playbackCopy = getPlaybackStateCopy(post, primaryTheme);
   const visibleCollections = getVisibleCollectionsForPost(post);
@@ -21,7 +26,9 @@ export default function ReleaseCard({ emphasis = false, post, onPlayTrack, layou
   const releasePath = `/release/${post.slug}`;
 
   return (
-    <article className={`release-card-link post-card homepage-post-card release-feed-card${emphasisClass}${layoutClass}`}>
+    <article
+      className={`release-card-link post-card homepage-post-card release-feed-card${emphasisClass}${layoutClass}`}
+    >
       <Link className="release-card-surface" to={releasePath}>
         <div className="release-card-media">
           <ReleaseMedia
@@ -66,7 +73,7 @@ export default function ReleaseCard({ emphasis = false, post, onPlayTrack, layou
           </button>
           {layout === "horizontal" || layout === "compact" ? (
             <Link className="result-card-cta" to={releasePath}>
-              Open release
+              Open song
             </Link>
           ) : null}
         </div>

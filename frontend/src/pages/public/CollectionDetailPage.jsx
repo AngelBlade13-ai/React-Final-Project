@@ -184,7 +184,7 @@ export default function CollectionDetailPage({
     canonicalPath: `/collections/${redirectSlug || collection?.slug || slug}`,
     description:
       collection?.description ||
-      "Explore the releases gathered inside this collection.",
+      "Explore the songs gathered inside this collection.",
     image: getVideoPosterUrl(collection?.featuredRelease?.videoUrl),
     title: collection?.title || "Collection"
   });
@@ -434,12 +434,9 @@ export default function CollectionDetailPage({
     const durationMs = WORLD_ENTRY_DURATIONS_MS[worldEntryMode] ?? 1350;
     const elapsedMs = Date.now() - startedAt;
     const remainingMs = Math.max(0, durationMs - elapsedMs);
-    const timeoutId = window.setTimeout(
-      () => {
-        setWorldEntryMode("");
-      },
-      remainingMs
-    );
+    const timeoutId = window.setTimeout(() => {
+      setWorldEntryMode("");
+    }, remainingMs);
 
     return () => {
       window.clearTimeout(timeoutId);
@@ -499,9 +496,8 @@ export default function CollectionDetailPage({
         return;
       }
 
-      eldoriaScrollFrameRef.current = window.requestAnimationFrame(
-        applyScrollDepth
-      );
+      eldoriaScrollFrameRef.current =
+        window.requestAnimationFrame(applyScrollDepth);
     }
 
     applyScrollDepth();
@@ -659,7 +655,7 @@ export default function CollectionDetailPage({
               ) : (
                 <div className="collection-meta-row world-header-meta">
                   <span className="meta-badge">
-                    {collection.releaseCount} releases
+                    {collection.releaseCount} songs
                   </span>
                   {collection.featuredRelease ? (
                     <Link
@@ -730,7 +726,7 @@ export default function CollectionDetailPage({
       ) : !collection && loading ? (
         <main className="content-grid">
           <PublicLoadingState
-            message="The collection page is waiting on releases and world metadata."
+            message="The collection page is waiting on songs and world details."
             title="Opening collection"
           />
         </main>
@@ -1075,7 +1071,7 @@ export default function CollectionDetailPage({
                       ? "Move from the earliest stable anchor through the primary fragment and out toward the most recent observed collapse."
                       : isEldoria
                         ? "Treat the world like a guided chronicle: begin at the opening, pass through the lead ballad, and continue toward the latest recorded chapter."
-                        : "Use this rail to start at the clearest entry point, then continue toward the collection's later releases without losing the thread."}
+                        : "Use this rail to start at the clearest entry point, then continue toward the collection's later songs without losing the thread."}
                   </p>
                 </article>
                 {collectionJourneyStops.map((entry) => {
@@ -1288,7 +1284,7 @@ export default function CollectionDetailPage({
                   <section key={section.key}>
                     <div className="section-head">
                       <h3>{section.label}</h3>
-                      <span>{section.posts.length} releases</span>
+                      <span>{section.posts.length} songs</span>
                     </div>
                     <div className="timeline-grid">
                       {section.posts.map((post, index) => (
@@ -1401,7 +1397,7 @@ export default function CollectionDetailPage({
                 <summary>Version Family Branches</summary>
                 <div className="collection-section-stack secondary-version-stack">
                   <p className="hero-copy">
-                    The main surface holds one lead record per song family.
+                    The main list keeps one clear version of each song family.
                     Alternate public branches stay here when you want to follow
                     the wider family tree.
                   </p>

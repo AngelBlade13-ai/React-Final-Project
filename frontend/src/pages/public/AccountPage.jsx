@@ -165,7 +165,7 @@ export default function AccountPage({
         <p className="eyebrow">Archive Profile</p>
         <h1>Your account, library, and archive trail.</h1>
         <p className="hero-copy">
-          Manage your listener identity, return to saved releases, and open any
+          Manage your listener identity, return to saved songs, and open any
           role-based tools connected to this account.
         </p>
       </section>
@@ -310,7 +310,7 @@ export default function AccountPage({
               ))
             ) : (
               <p className="form-helper-text">
-                Save releases from their pages to build your library.
+                Save songs from their pages to build your library.
               </p>
             )}
           </article>

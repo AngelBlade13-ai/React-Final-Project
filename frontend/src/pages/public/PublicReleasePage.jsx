@@ -728,7 +728,7 @@ export default function PublicReleasePage({
                         ? "There is no earlier observed fragment."
                         : isEldoria
                           ? "There is no earlier recorded ballad."
-                          : "There is no earlier collection release in the current surface order."}
+                          : "There is no earlier song in this collection."}
                     </p>
                   </div>
                 )}
@@ -771,7 +771,7 @@ export default function PublicReleasePage({
                         ? "No later fragment has been mapped in the main sequence yet."
                         : isEldoria
                           ? "No later ballad has been recorded in this chronicle yet."
-                          : "No later collection release appears after this one in the current surface order."}
+                          : "No later song appears after this one in the collection."}
                     </p>
                   </div>
                 )}
@@ -1052,8 +1052,8 @@ export default function PublicReleasePage({
                   <h3>{post.title}</h3>
                   <p>
                     {post.slug === primaryFamilyEntry?.slug
-                      ? "This release is currently the surface lead for its family."
-                      : "This release branches from a larger version family and sits beside the main surface lead."}
+                      ? "This is the main version currently featured for this song family."
+                      : "This version belongs to a larger song family and sits beside the main version."}
                   </p>
                   <div className="tag-row">
                     <span className="meta-badge">
@@ -1073,7 +1073,7 @@ export default function PublicReleasePage({
                     to={`/release/${primaryFamilyEntry.slug}`}
                   >
                     <span className="fracture-sequence-state">
-                      Surface Lead
+                      Main Version
                     </span>
                     <strong>{primaryFamilyEntry.title}</strong>
                     <p>{primaryFamilyEntry.excerpt}</p>

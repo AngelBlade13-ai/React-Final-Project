@@ -102,17 +102,17 @@ export default function PublicHome({ onPlayTrack, siteContent }) {
             <p>{homeContent.noteText}</p>
             <div className="hero-note-stats">
               <span className="meta-badge">
-                {loading ? "..." : `${posts.length} releases`}
+                {loading ? "..." : `${posts.length} songs`}
               </span>
               <span className="meta-badge subtle-badge">
-                {loading ? "..." : `${collections.length} curated paths`}
+                {loading ? "..." : `${collections.length} collections`}
               </span>
             </div>
             <div className="home-hero-threshold-note">
-              <strong>The threshold is curated.</strong>
+              <strong>Start where the feeling pulls you.</strong>
               <p>
-                Start with a release, enter a world, or choose a collection that
-                acts like an authored path instead of a pile of posts.
+                Play a song, enter a story world, or follow a listening path
+                when you want the next step chosen for you.
               </p>
             </div>
           </div>
@@ -131,8 +131,8 @@ export default function PublicHome({ onPlayTrack, siteContent }) {
           />
         ) : loading && !posts.length && !collections.length ? (
           <PublicLoadingState
-            message="Releases and collections are being requested from the API."
-            title="Opening the threshold"
+            message="Songs and collections are being loaded."
+            title="Opening the archive"
           />
         ) : null}
 
@@ -144,7 +144,7 @@ export default function PublicHome({ onPlayTrack, siteContent }) {
           <div className="home-doorway-grid">
             <Link className="home-doorway-link" to="/paths">
               <article className="intro-card homepage-panel home-doorway-card home-doorway-guided">
-                <p className="eyebrow">Guided Paths</p>
+                <p className="eyebrow">Listening Paths</p>
                 <h3>Choose by feeling, not chronology.</h3>
                 <p>
                   Follow a curated route through the archive when you want the
@@ -220,7 +220,7 @@ export default function PublicHome({ onPlayTrack, siteContent }) {
                   className="secondary-link home-doorway-secondary-link"
                   to="/paths"
                 >
-                  Guided Paths
+                  Listening Paths
                 </Link>
               </div>
             </article>
@@ -237,8 +237,8 @@ export default function PublicHome({ onPlayTrack, siteContent }) {
         {featuredPost ? (
           <section className="featured-release-section" id="featured-release">
             <div className="section-head">
-              <h2>Featured Release</h2>
-              <span>Lead entry</span>
+              <h2>Featured Song</h2>
+              <span>Start here</span>
             </div>
             <article className="featured-release-link intro-card homepage-panel featured-release-card">
               <Link
@@ -264,7 +264,7 @@ export default function PublicHome({ onPlayTrack, siteContent }) {
                 </div>
               </Link>
               <div className="featured-release-copy">
-                <p className="eyebrow">Threshold Lead</p>
+                <p className="eyebrow">Featured Song</p>
                 <h3>
                   <Link
                     className="card-title-link"
@@ -274,8 +274,8 @@ export default function PublicHome({ onPlayTrack, siteContent }) {
                   </Link>
                 </h3>
                 <p className="featured-release-intro">
-                  Start with the release itself, then let the archive widen from
-                  there into worlds, versions, and collections.
+                  Start with the song itself, then follow the connections into
+                  worlds, versions, and collections.
                 </p>
                 <p className="featured-release-excerpt">
                   {featuredPost.excerpt}
@@ -305,7 +305,7 @@ export default function PublicHome({ onPlayTrack, siteContent }) {
                     className="hero-link"
                     to={`/release/${featuredPost.slug}`}
                   >
-                    Enter Release
+                    Open Song
                   </Link>
                 </div>
               </div>
@@ -335,35 +335,30 @@ export default function PublicHome({ onPlayTrack, siteContent }) {
 
         <section id="latest-releases">
           <div className="section-head">
-            <h2>Latest at the Threshold</h2>
+            <h2>Recently Added</h2>
             <span>
-              {loading
-                ? "Loading..."
-                : `${latestPosts.length} recent selections`}
+              {loading ? "Loading..." : `${latestPosts.length} recent songs`}
             </span>
           </div>
           {!loading && posts.length === 0 ? (
             <section className="intro-card homepage-panel empty-state-card">
-              <p className="eyebrow">No Releases Yet</p>
+              <p className="eyebrow">No Songs Yet</p>
               <h3>Something is coming.</h3>
               <p>
-                No releases have been published yet. Check back soon for the
-                first threshold entry.
+                No songs have been published yet. Check back soon for the first
+                one.
               </p>
             </section>
           ) : !loading && latestPosts.length === 0 ? (
             <section className="intro-card homepage-panel empty-state-card">
               <p className="eyebrow">More Soon</p>
-              <h3>The lead release is live.</h3>
-              <p>
-                Additional curated entries will appear here as the archive
-                expands.
-              </p>
+              <h3>The featured song is live.</h3>
+              <p>More songs will appear here as the archive expands.</p>
             </section>
           ) : (
             <div className="post-grid latest-release-grid">
               {loading && !latestPosts.length ? (
-                <PublicSkeletonGrid count={4} label="Loading latest releases" />
+                <PublicSkeletonGrid count={4} label="Loading latest songs" />
               ) : (
                 latestPosts.map((post) => (
                   <ReleaseCard
@@ -384,8 +379,8 @@ export default function PublicHome({ onPlayTrack, siteContent }) {
               <span>{`${homepageSelectionPosts.length} homepage picks`}</span>
             </div>
             <p className="results-context-copy">
-              These are also marked for the homepage, so they get a lighter
-              surface here without crowding the lead release or latest row.
+              These songs are also good starting points if you want a different
+              mood before diving deeper.
             </p>
             <div className="homepage-selection-grid">
               {homepageSelectionPosts.map((post) => (
