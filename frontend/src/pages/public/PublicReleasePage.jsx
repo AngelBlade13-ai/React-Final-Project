@@ -66,9 +66,9 @@ export default function PublicReleasePage({
   usePageMetadata({
     canonicalPath: `/release/${redirectSlug || post?.slug || slug}`,
     description:
-      post?.excerpt || "Listen to the release and read the note behind it.",
+      post?.excerpt || "Listen to the song and read the note behind it.",
     image: getVideoPosterUrl(post?.videoUrl),
-    title: post?.title || "Release",
+    title: post?.title || "Song",
     type: "article"
   });
 
@@ -191,7 +191,7 @@ export default function PublicReleasePage({
       ? `${currentFragmentIndex + 1} of ${orderedSequence.length}`
       : primaryCollection
         ? derivedContent.releaseSequenceLabel
-        : "Standalone release";
+        : "Standalone song";
   const hintedTheme =
     (currentTrack?.slug === slug ? getPrimaryThemeForPost(currentTrack) : "") ||
     getReleaseThemeHint(slug) ||
@@ -397,7 +397,7 @@ export default function PublicReleasePage({
             ) : null}
           </div>
         </div>
-        {loading && !post ? <h1>Loading release...</h1> : null}
+        {loading && !post ? <h1>Loading song...</h1> : null}
         {post ? (
           <div className="release-hero-layout">
             <div
@@ -411,7 +411,7 @@ export default function PublicReleasePage({
                   isFractureverse
                     ? playbackCopy.playable
                       ? fractureMeta?.systemNote ||
-                        "Observation log updated. Fragment playback available."
+                        "This song is ready to play."
                       : playbackCopy.mediaText
                     : playbackCopy.mediaText
                 }
@@ -464,34 +464,39 @@ export default function PublicReleasePage({
               ) : null}
               <p className="release-hero-intro">
                 {isFractureverse
-                  ? "An in-world fragment view: playback, record, linked echoes, and the position this entry holds inside the larger fracture."
+                  ? "A song inside the Fractureverse—listen, read the note, and follow how it connects to the larger story."
                   : isEldoria
-                    ? "A story-forward view for the ballad, its place inside the chronicle, and the verses that keep the world feeling lived in."
-                    : "A focused listening view for the video, the note behind it, and the words that shaped the release."}
+                    ? "A ballad in the Eldoria chronicle—listen and follow where it sits in the larger tale."
+                    : "Listen to the song, read the note behind it, and explore how it connects to other pieces."}
               </p>
               <p className="hero-copy">{post.excerpt}</p>
               <p className="meta">{formatPostDate(post.createdAt)}</p>
               {isFractureverse && fractureMeta ? (
-                <div className="world-status-bar release-world-status">
+                <details className="world-status-details public-collapsible-section">
+                  <summary>Story details for this entry</summary>
+                  <div className="world-status-bar release-world-status">
                   <div className="world-status-item">
-                    <span className="world-status-label">Fragment</span>
+                    <span className="world-status-label">Entry</span>
                     <strong>{fractureMeta.fragmentId}</strong>
                   </div>
                   <div className="world-status-item">
-                    <span className="world-status-label">State</span>
+                    <span className="world-status-label">Mood</span>
                     <strong>{fractureMeta.state}</strong>
                   </div>
                   <div className="world-status-item">
-                    <span className="world-status-label">Perspective</span>
+                    <span className="world-status-label">Voice</span>
                     <strong>{fractureMeta.perspective}</strong>
                   </div>
                   <div className="world-status-item">
-                    <span className="world-status-label">Signal</span>
+                    <span className="world-status-label">Thread</span>
                     <strong>{fractureMeta.signalType}</strong>
                   </div>
                 </div>
+                </details>
               ) : isEldoria ? (
-                <div className="world-status-bar release-world-status eldoria-release-status">
+                <details className="world-status-details public-collapsible-section">
+                  <summary>Chronicle details</summary>
+                  <div className="world-status-bar release-world-status eldoria-release-status">
                   <div className="world-status-item">
                     <span className="world-status-label">World</span>
                     <strong>{primaryCollection?.title || "Eldoria"}</strong>
@@ -518,6 +523,7 @@ export default function PublicReleasePage({
                     </strong>
                   </div>
                 </div>
+                </details>
               ) : null}
               <div className="tag-row">
                 {visibleCollections.map((collection) => (
@@ -600,13 +606,14 @@ export default function PublicReleasePage({
                 </div>
               ) : (
                 <p className="release-engagement-prompt">
-                  <Link to="/login">Sign in</Link> to save this release or mark
+                  <Link to="/login">Sign in</Link> to save this song or mark
                   how it hit you.
                 </p>
               )}
               {isFractureverse ? (
                 <p className="fracture-system-voice">
-                  Observation log updated. Fragment link stability fluctuating.
+                  The story threads here are still shifting—follow the sequence when
+                  you are ready.
                 </p>
               ) : null}
               {isEldoria ? (
@@ -623,19 +630,19 @@ export default function PublicReleasePage({
       {!post && error ? (
         <main className="content-grid">
           <PublicErrorState
-            eyebrow="Release"
+            eyebrow="Song"
             message={error}
             onRetry={retryPost}
             secondaryHref="/explore"
-            secondaryLabel="Search archive"
-            title="This release could not be opened"
+            secondaryLabel="Search songs"
+            title="This song could not be opened"
           />
         </main>
       ) : !post && loading ? (
         <main className="content-grid">
           <PublicLoadingState
-            message="The release page is waiting on playback, notes, and collection context."
-            title="Opening release"
+            message="The song page is waiting on playback, notes, and collection context."
+            title="Opening song"
           />
         </main>
       ) : post ? (
@@ -654,11 +661,14 @@ export default function PublicReleasePage({
           }
         >
           {primaryCollection ? (
-            <section className="intro-card homepage-panel journey-rail-card">
-              <div className="section-head">
-                <h2>{journeyTitle}</h2>
-                <span>{journeyProgressLabel}</span>
-              </div>
+            <details className="intro-card homepage-panel journey-rail-card public-collapsible-section">
+              <summary>
+                <span className="section-head">
+                  <h2>{journeyTitle}</h2>
+                  <span>{journeyProgressLabel}</span>
+                </span>
+              </summary>
+              <div className="public-collapsible-body">
               <div className="journey-rail-grid">
                 <article className="journey-summary-card">
                   <p className="eyebrow">
@@ -673,8 +683,8 @@ export default function PublicReleasePage({
                     {isFractureverse
                       ? "Move through the fragments in observed order, then branch into linked echoes only after the main sequence has taken hold."
                       : isEldoria
-                        ? "Treat this release as one chapter inside a larger telling. Follow the previous and next ballads to keep the world coherent."
-                        : "Use the collection as the main thread, not just the single page, so each release keeps its context."}
+                        ? "Treat this song as one chapter inside a larger telling. Follow the previous and next ballads to keep the world coherent."
+                        : "Use the collection as the main thread, not just the single page, so each song keeps its context."}
                   </p>
                   <Link
                     className="card-link"
@@ -699,7 +709,7 @@ export default function PublicReleasePage({
                         ? "Previous Fragment"
                         : isEldoria
                           ? "Previous Ballad"
-                          : "Previous Release"}
+                          : "Previous Song"}
                     </span>
                     <strong>{previousFragment.post.title}</strong>
                     <p>
@@ -722,7 +732,7 @@ export default function PublicReleasePage({
                     <span className="fracture-sequence-state">
                       Start Of Path
                     </span>
-                    <strong>This release currently opens the sequence.</strong>
+                    <strong>This song currently opens the sequence.</strong>
                     <p>
                       {isFractureverse
                         ? "There is no earlier observed fragment."
@@ -743,7 +753,7 @@ export default function PublicReleasePage({
                         ? "Next Fragment"
                         : isEldoria
                           ? "Next Ballad"
-                          : "Next Release"}
+                          : "Next Song"}
                     </span>
                     <strong>{nextFragment.post.title}</strong>
                     <p>
@@ -765,7 +775,7 @@ export default function PublicReleasePage({
                     <span className="fracture-sequence-state">
                       Current Edge
                     </span>
-                    <strong>This release currently ends the path.</strong>
+                    <strong>This song currently ends the path.</strong>
                     <p>
                       {isFractureverse
                         ? "No later fragment has been mapped in the main sequence yet."
@@ -776,7 +786,8 @@ export default function PublicReleasePage({
                   </div>
                 )}
               </div>
-            </section>
+              </div>
+            </details>
           ) : null}
 
           <section

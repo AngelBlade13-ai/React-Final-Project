@@ -3,7 +3,7 @@ import { createContext, useContext } from "react";
 export const defaultSiteMetadata = {
   siteName: "Suno Diary",
   siteDescription:
-    "A soft archive for releases, collections, and the stories that let each song keep breathing."
+    "A soft archive for songs with stories behind them—worlds, moods, and listening paths to explore."
 };
 
 const SiteMetadataContext = createContext(defaultSiteMetadata);

@@ -72,7 +72,7 @@ export default function CollectionsIndexPage() {
           />
         ) : loading && !collections.length ? (
           <PublicLoadingState
-            message="Worlds and shelves are being requested from the API."
+            message="Story worlds and collections are loading."
             title="Loading collections"
           />
         ) : null}

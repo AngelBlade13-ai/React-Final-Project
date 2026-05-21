@@ -224,7 +224,7 @@ export default function AccountPage({
       </section>
       <section className="profile-dashboard-grid">
         <article className="intro-card homepage-panel profile-feature-card">
-          <p className="eyebrow">Current Shelf</p>
+          <p className="eyebrow">Latest In Your Library</p>
           <h2>
             {library.savedReleases[0]?.title ||
               library.recentReleases[0]?.title ||
@@ -232,21 +232,21 @@ export default function AccountPage({
           </h2>
           <p>
             {library.savedReleases[0]
-              ? "Your latest saved release is waiting here whenever you come back."
+              ? "Your latest saved song is waiting here whenever you come back."
               : library.recentReleases[0]
                 ? "Your most recent listen is ready to continue."
-                : "Save a release or press play while signed in to shape this profile."}
+                : "Save a song or press play while signed in to shape this profile."}
           </p>
           {library.savedReleases[0] || library.recentReleases[0] ? (
             <Link
               className="card-link"
               to={`/release/${(library.savedReleases[0] || library.recentReleases[0]).slug}`}
             >
-              Open Release
+              Open Song
             </Link>
           ) : (
             <Link className="card-link" to="/explore">
-              Explore Releases
+              Search Songs
             </Link>
           )}
         </article>
@@ -293,7 +293,7 @@ export default function AccountPage({
         {libraryError ? <p className="error-text">{libraryError}</p> : null}
         <div className="account-library-grid">
           <article className="account-library-list">
-            <p className="eyebrow">Saved Releases</p>
+            <p className="eyebrow">Saved Songs</p>
             {library.savedReleases.length ? (
               library.savedReleases.map((release) => (
                 <Link
@@ -329,7 +329,7 @@ export default function AccountPage({
               ))
             ) : (
               <p className="form-helper-text">
-                Play a release while signed in and it will appear here.
+                Play a song while signed in and it will appear here.
               </p>
             )}
           </article>

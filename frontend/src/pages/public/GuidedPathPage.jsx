@@ -165,7 +165,7 @@ export default function GuidedPathPage({
           <>
             <section className="intro-card homepage-panel guided-path-focus-card">
               <div className="section-head">
-                <h2>Current Step</h2>
+                <h2>Now Playing In This Path</h2>
                 <span>
                   {activeIndex + 1} / {path.posts.length}
                 </span>
@@ -235,7 +235,7 @@ export default function GuidedPathPage({
 
             <section className="intro-card homepage-panel">
               <div className="section-head">
-                <h2>Song Sequence</h2>
+                <h2>Full Path</h2>
                 <span>{path.posts.length} stops</span>
               </div>
               <div className="guided-path-sequence">

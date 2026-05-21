@@ -752,7 +752,7 @@ export default function CollectionDetailPage({
               <section className="intro-card homepage-panel fracture-analysis-panel">
                 <div className="section-head fracture-analysis-head">
                   <h2>Timeline Analysis</h2>
-                  <span>Observation log updated</span>
+                  <span>Story world</span>
                 </div>
                 <div className="fracture-analysis-grid">
                   <div className="fracture-analysis-item">
@@ -875,7 +875,7 @@ export default function CollectionDetailPage({
                     muted
                     text={
                       fractureverseFeaturedPlaybackCopy.playable
-                        ? "Observation log updated. Primary anchor available for playback."
+                        ? "Featured song is ready to play."
                         : fractureverseFeaturedPlaybackCopy.mediaText
                     }
                     title={fractureverseFeatured.title}
@@ -905,11 +905,11 @@ export default function CollectionDetailPage({
                   </p>
                   <p className="collection-fragment-context">
                     {featuredFragmentMeta?.systemNote ||
-                      "Collapse event stabilized through force of will. Structural integrity compromised."}
+                      "A fracture held open long enough to hear the first song clearly."}
                   </p>
                   <p className="fracture-system-voice">
-                    Observation log updated. Primary anchor remains unstable but
-                    reachable.
+                    Start with the featured entry, then follow the sequence in
+                    order.
                   </p>
                   <div className="featured-release-actions">
                     <button

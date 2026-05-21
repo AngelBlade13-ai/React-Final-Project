@@ -12,6 +12,7 @@ export default function CommentsSection({
   const [draft, setDraft] = useState("");
   const [editingId, setEditingId] = useState("");
   const [editingBody, setEditingBody] = useState("");
+  const [pendingDeleteId, setPendingDeleteId] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -130,12 +131,6 @@ export default function CommentsSection({
   }
 
   async function handleDeleteComment(commentId) {
-    const confirmed = window.confirm("Delete this comment?");
-
-    if (!confirmed) {
-      return;
-    }
-
     setSubmitting(true);
     setError("");
     setSuccess("");
@@ -159,6 +154,7 @@ export default function CommentsSection({
       setComments((current) =>
         current.filter((comment) => comment.id !== commentId)
       );
+      setPendingDeleteId("");
       setSuccess("Comment deleted.");
     } catch (apiError) {
       setError(apiError.message);
@@ -168,129 +164,166 @@ export default function CommentsSection({
   }
 
   return (
-    <section className="intro-card homepage-panel comments-panel">
-      <div className="section-head comments-head">
-        <h2>Comments</h2>
-        <span>{comments.length} visible</span>
-      </div>
+    <details className="intro-card homepage-panel comments-panel public-collapsible-section">
+      <summary>
+        <span className="section-head comments-head">
+          <h2>Comments</h2>
+          <span>{comments.length} visible</span>
+        </span>
+      </summary>
 
-      {currentUser ? (
-        <form className="comment-composer" onSubmit={handleCreateComment}>
-          <label>
-            <span className="comment-composer-label">
-              Commenting as {currentUser.displayName}
-            </span>
-            <textarea
-              onChange={(event) => setDraft(event.target.value)}
-              placeholder="Leave a response to this release."
-              rows="4"
-              value={draft}
-            />
-          </label>
-          <div className="comment-form-actions">
-            <button
-              disabled={submitting || draft.trim().length < 2}
-              type="submit"
-            >
-              {submitting ? "Posting..." : "Post Comment"}
-            </button>
-          </div>
-        </form>
-      ) : (
-        <div className="comments-auth-prompt">
-          <p>Want to join the conversation?</p>
-          <Link className="hero-link" to="/login">
-            Create an account or sign in
-          </Link>
-        </div>
-      )}
-
-      {error ? <p className="error-text">{error}</p> : null}
-      {success ? <p className="success-text">{success}</p> : null}
-
-      {loading ? (
-        <p className="lyrics-placeholder">Loading comments...</p>
-      ) : comments.length ? (
-        <div className="comment-list">
-          {comments.map((comment) => {
-            const isOwner = currentUser?.id === comment.author?.id;
-            const isEditing = editingId === comment.id;
-
-            return (
-              <article className="comment-card" key={comment.id}>
-                <div className="comment-card-head">
-                  <div>
-                    <strong>
-                      {comment.author?.displayName || "Archive Reader"}
-                    </strong>
-                    <p className="comment-meta">
-                      {new Date(
-                        comment.updatedAt || comment.createdAt
-                      ).toLocaleString()}
-                    </p>
-                  </div>
-                  {isOwner ? (
-                    <div className="comment-card-actions">
-                      <button
-                        className="secondary-button"
-                        onClick={() => {
-                          setEditingId(comment.id);
-                          setEditingBody(comment.body);
-                        }}
-                        type="button"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        className="secondary-button"
-                        onClick={() => handleDeleteComment(comment.id)}
-                        type="button"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  ) : null}
-                </div>
-
-                {isEditing ? (
-                  <div className="comment-edit-shell">
-                    <textarea
-                      onChange={(event) => setEditingBody(event.target.value)}
-                      rows="4"
-                      value={editingBody}
-                    />
-                    <div className="comment-form-actions">
-                      <button
-                        disabled={submitting || editingBody.trim().length < 2}
-                        onClick={() => handleSaveComment(comment.id)}
-                        type="button"
-                      >
-                        Save
-                      </button>
-                      <button
-                        className="secondary-button"
-                        onClick={() => {
-                          setEditingId("");
-                          setEditingBody("");
-                        }}
-                        type="button"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <p className="comment-body">{comment.body}</p>
-                )}
-              </article>
-            );
-          })}
-        </div>
-      ) : (
-        <p className="lyrics-placeholder">
-          No comments yet. Be the first person to leave one.
+      <div className="public-collapsible-body">
+        <p className="form-helper-text comments-guidelines">
+          Be kind and talk about the music. See{" "}
+          <Link to="/community">community guidelines</Link> for more.
         </p>
-      )}
-    </section>
+
+        {currentUser ? (
+          <form className="comment-composer" onSubmit={handleCreateComment}>
+            <label>
+              <span className="comment-composer-label">
+                Commenting as {currentUser.displayName}
+              </span>
+              <textarea
+                onChange={(event) => setDraft(event.target.value)}
+                placeholder="Share how this song lands for you."
+                rows="4"
+                value={draft}
+              />
+            </label>
+            <div className="comment-form-actions">
+              <button
+                disabled={submitting || draft.trim().length < 2}
+                type="submit"
+              >
+                {submitting ? "Posting..." : "Post Comment"}
+              </button>
+            </div>
+          </form>
+        ) : (
+          <div className="comments-auth-prompt">
+            <p>Want to join the conversation?</p>
+            <Link className="hero-link" to="/login">
+              Create an account or sign in
+            </Link>
+          </div>
+        )}
+
+        {error ? <p className="error-text">{error}</p> : null}
+        {success ? <p className="success-text">{success}</p> : null}
+
+        {loading ? (
+          <p className="lyrics-placeholder">Loading comments...</p>
+        ) : comments.length ? (
+          <div className="comment-list">
+            {comments.map((comment) => {
+              const isOwner = currentUser?.id === comment.author?.id;
+              const isEditing = editingId === comment.id;
+              const isPendingDelete = pendingDeleteId === comment.id;
+
+              return (
+                <article className="comment-card" key={comment.id}>
+                  <div className="comment-card-head">
+                    <div>
+                      <strong>
+                        {comment.author?.displayName || "Listener"}
+                      </strong>
+                      <p className="comment-meta">
+                        {new Date(
+                          comment.updatedAt || comment.createdAt
+                        ).toLocaleString()}
+                      </p>
+                    </div>
+                    {isOwner ? (
+                      <div className="comment-card-actions">
+                        <button
+                          className="secondary-button"
+                          onClick={() => {
+                            setEditingId(comment.id);
+                            setEditingBody(comment.body);
+                            setPendingDeleteId("");
+                          }}
+                          type="button"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="secondary-button"
+                          onClick={() => {
+                            setPendingDeleteId(comment.id);
+                            setEditingId("");
+                          }}
+                          type="button"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    ) : null}
+                  </div>
+
+                  {isPendingDelete ? (
+                    <div className="comment-delete-confirm">
+                      <p>Delete this comment?</p>
+                      <div className="comment-form-actions">
+                        <button
+                          className="secondary-button"
+                          disabled={submitting}
+                          onClick={() => handleDeleteComment(comment.id)}
+                          type="button"
+                        >
+                          Yes, delete
+                        </button>
+                        <button
+                          className="secondary-button"
+                          onClick={() => setPendingDeleteId("")}
+                          type="button"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : isEditing ? (
+                    <div className="comment-edit-shell">
+                      <textarea
+                        onChange={(event) => setEditingBody(event.target.value)}
+                        rows="4"
+                        value={editingBody}
+                      />
+                      <div className="comment-form-actions">
+                        <button
+                          disabled={
+                            submitting || editingBody.trim().length < 2
+                          }
+                          onClick={() => handleSaveComment(comment.id)}
+                          type="button"
+                        >
+                          Save
+                        </button>
+                        <button
+                          className="secondary-button"
+                          onClick={() => {
+                            setEditingId("");
+                            setEditingBody("");
+                          }}
+                          type="button"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="comment-body">{comment.body}</p>
+                  )}
+                </article>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="lyrics-placeholder">
+            No comments yet. Be the first person to leave one.
+          </p>
+        )}
+      </div>
+    </details>
   );
 }

@@ -3,12 +3,18 @@ const crypto = require("crypto");
 const { getDb, runWithTransaction } = require("../lib/mongo");
 const config = require("../config");
 const { slugify } = require("../utils/slugify");
+const {
+  PUBLIC_LISTENER_COPY,
+  applyPublicListenerCopy,
+  mapGuidedPathEyebrow,
+  siteContentNeedsLegacyUpgrade
+} = require("./publicListenerCopy");
 const VALID_RELEASE_STATUSES = new Set(["canon", "alternate", "working"]);
 const DEFAULT_GUIDED_PATHS = [
   {
     slug: "start-here",
     title: "Start Here",
-    eyebrow: "Guided Path",
+    eyebrow: "Listening Path",
     intro:
       "A concise first route through the clearest public entry points before the archive starts branching into deeper worlds and alternates.",
     moodNote: "Best for first contact with the site.",
@@ -52,7 +58,7 @@ const DEFAULT_GUIDED_PATHS = [
   {
     slug: "identity-becoming",
     title: "Identity / Becoming",
-    eyebrow: "Authored Path",
+    eyebrow: "Mood Path",
     intro:
       "A route through the songs that feel most tied to emergence, self-recognition, and the slow process of becoming legible to yourself.",
     moodNote: "Best for personal / reflective listening.",
@@ -67,9 +73,9 @@ const DEFAULT_GUIDED_PATHS = [
   {
     slug: "princess-anime",
     title: "Princess / Anime",
-    eyebrow: "Authored Path",
+    eyebrow: "Mood Path",
     intro:
-      "A brighter route through princess-symbolic, kawaii, and high-expression tracks where fantasy becomes a way of saying something real.",
+      "A brighter route through princess-symbolic, kawaii, and high-expression songs where fantasy becomes a way of saying something real.",
     moodNote: "Best for vivid, stylized listening.",
     themeHint: "",
     postSlugs: [],
@@ -84,7 +90,7 @@ const DEFAULT_GUIDED_PATHS = [
   {
     slug: "villain-catastrophe",
     title: "Villain / Catastrophe",
-    eyebrow: "Authored Path",
+    eyebrow: "Mood Path",
     intro:
       "A harsher route through villain voices, necessary monsters, and the songs where damage, power, or collapse take center stage.",
     moodNote: "Best for darker, confrontational listening.",
@@ -169,41 +175,11 @@ const seedPosts = [
 
 const seedSiteContent = {
   branding: {
-    siteName: "Suno Diary",
-    siteTagline: "Releases, collections, and notes in one place."
+    ...PUBLIC_LISTENER_COPY.branding
   },
   home: {
-    heroEyebrow: "Suno Diary",
-    heroTitle:
-      "A soft archive for releases, collections, and the stories that let each song keep breathing.",
-    heroText:
-      "Browse curated groupings, move through release notes with more context, and treat the site less like a feed and more like a small world of connected songs.",
-    featuredReleaseSlug: "",
-    featuredCtaLabel: "Play Featured Release",
-    jumpCtaLabel: "Jump to Latest Releases",
-    noteEyebrow: "What Changed",
-    noteTitle:
-      "Discovery is part of the identity now, not just a homepage feed.",
-    noteText:
-      "Collections organize releases into verses, moods, and projects. Explore lets you search by title and written notes. About frames the artist, the site, and the reason this archive exists.",
-    browseEyebrow: "Browse",
-    browseTitle:
-      "Move through the archive by collection instead of only by chronology.",
-    browseText:
-      "Collections turn the catalog into verses, projects, moods, and small emotional shelves rather than one uninterrupted stream.",
-    browseLinkLabel: "See the collection shelves",
-    exploreEyebrow: "Find",
-    exploreTitle:
-      "Search inside release notes, titles, and lyrics when you know the feeling but not the page.",
-    exploreText:
-      "The explore view is built for rediscovery: search by phrase, narrow by collection, and jump straight into the release that fits.",
-    exploreLinkLabel: "Open explore",
-    identityEyebrow: "Site Identity",
-    identityTitle:
-      "A personal home for releases, track stories, and the discovery paths between them",
-    identityText:
-      "Each page still keeps the music close, but now the archive has a stronger structure: releases can live in more than one collection, search can surface them by title or text, and the site has space to explain the artist voice behind the catalog.",
-    identityLine: "A collection of songs, stories, and moments in motion."
+    ...PUBLIC_LISTENER_COPY.home,
+    featuredReleaseSlug: ""
   },
   guidedPaths: DEFAULT_GUIDED_PATHS,
   collectionThemes: [
@@ -383,25 +359,7 @@ const seedSiteContent = {
     }
   ],
   about: {
-    heroEyebrow: "About",
-    heroTitle:
-      "A small artist archive for releases that want more room than a single post can hold.",
-    heroText:
-      "The site is part release feed, part notebook, part identity statement: a place where the songs, their notes, and the worlds around them can stay connected.",
-    artistEyebrow: "The Artist",
-    artistTitle:
-      "Emotion first, then atmosphere, then the details that make a release feel lived in.",
-    artistText:
-      "This archive frames the artist as someone building songs through feeling, imagery, and narrative context. The music leans toward cinematic emotion, reflective notes, and releases that carry a clear inner voice.",
-    siteEyebrow: "The Site",
-    siteTitle:
-      "Built for listening, reading, and finding connections between songs.",
-    siteText:
-      "Release pages keep the music close. Collections create repeatable paths through the catalog. Explore turns the written notes into something searchable. Together they make the archive feel intentional instead of accidental.",
-    quoteEyebrow: "Why It Exists",
-    quoteTitle: "Some songs need a room around them.",
-    quoteText:
-      "This site gives each release its own atmosphere, then links those atmospheres together into a larger story."
+    ...PUBLIC_LISTENER_COPY.about
   }
 };
 
@@ -733,7 +691,7 @@ function normalizeSiteContent(siteContent = {}) {
         .slice(-100)
     : [];
 
-  return {
+  const normalized = {
     branding: {
       ...seedSiteContent.branding,
       ...(siteContent.branding || {})
@@ -807,7 +765,7 @@ function normalizeSiteContent(siteContent = {}) {
             .map((path) => ({
               slug: slugify(path?.slug || path?.title || ""),
               title: String(path?.title || "").trim(),
-              eyebrow: String(path?.eyebrow || "Guided Path").trim(),
+              eyebrow: mapGuidedPathEyebrow(path?.eyebrow || "Listening Path"),
               intro: String(path?.intro || "").trim(),
               moodNote: String(path?.moodNote || "").trim(),
               themeHint: slugify(path?.themeHint || ""),
@@ -848,6 +806,8 @@ function normalizeSiteContent(siteContent = {}) {
     },
     assistantFindingDecisions
   };
+
+  return applyPublicListenerCopy(normalized);
 }
 
 function normalizeUser(user) {
@@ -1133,8 +1093,19 @@ async function readStore() {
       .filter(Boolean),
     users: users.map(sanitizeDoc).map(normalizeUser).filter(Boolean),
     comments: comments.map(sanitizeDoc).map(normalizeComment).filter(Boolean),
-    siteContent: normalizeSiteContent(sanitizeDoc(siteContentDoc))
+    siteContent: await resolveSiteContentForRead(sanitizeDoc(siteContentDoc))
   };
+}
+
+async function resolveSiteContentForRead(siteContentDoc = {}) {
+  const siteContent = normalizeSiteContent(siteContentDoc);
+
+  if (!siteContentNeedsLegacyUpgrade(siteContentDoc)) {
+    return siteContent;
+  }
+
+  await writeSiteContent(siteContent);
+  return siteContent;
 }
 
 function getSessionOptions(options = {}) {

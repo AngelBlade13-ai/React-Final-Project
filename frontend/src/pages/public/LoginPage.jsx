@@ -12,7 +12,7 @@ export default function LoginPage({
 }) {
   usePageMetadata({
     description:
-      "Sign in or create an account to save songs, comment, react, and access any role-based studio tools.",
+      "Sign in or create an account to save songs, leave comments, and build your listening library.",
     title: "Sign In"
   });
   const navigate = useNavigate();

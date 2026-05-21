@@ -30,6 +30,7 @@ const AdminPostsPage = lazy(() => import("./pages/admin/AdminPostsPage"));
 const AdminSitePage = lazy(() => import("./pages/admin/AdminSitePage"));
 const AdminUsersPage = lazy(() => import("./pages/admin/AdminUsersPage"));
 const AboutPage = lazy(() => import("./pages/public/AboutPage"));
+const PublicTrustPage = lazy(() => import("./pages/public/PublicTrustPage"));
 const AccountPage = lazy(() => import("./pages/public/AccountPage"));
 const LoginPage = lazy(() => import("./pages/public/LoginPage"));
 const CollectionDetailPage = lazy(
@@ -64,12 +65,9 @@ class RouteErrorBoundary extends Component {
       return (
         <main className="content-grid route-loading-shell" role="alert">
           <section className="intro-card homepage-panel">
-            <p className="eyebrow">Route Unavailable</p>
-            <h2>This archive surface could not load.</h2>
-            <p>
-              Refresh the page to request the latest route files from the
-              server.
-            </p>
+            <p className="eyebrow">Page Unavailable</p>
+            <h2>This page could not load.</h2>
+            <p>Refresh the page to try again.</p>
             <button
               className="hero-link"
               onClick={() => window.location.reload()}
@@ -91,7 +89,7 @@ function RouteFallback() {
     <main className="content-grid route-loading-shell" aria-live="polite">
       <section className="intro-card homepage-panel">
         <p className="eyebrow">Loading</p>
-        <h2>Opening the next archive surface.</h2>
+        <h2>Opening the next page.</h2>
       </section>
     </main>
   );
@@ -566,7 +564,12 @@ function App() {
     <SiteMetadataProvider siteDescription={siteDescription} siteName={siteName}>
       <BrowserRouter>
         <RouteAnnouncer />
-        <audio ref={audioRef} preload="metadata" />
+        <video
+          className="visually-hidden-media"
+          playsInline
+          preload="metadata"
+          ref={audioRef}
+        />
         <RouteErrorBoundary>
           <Suspense fallback={<RouteFallback />}>
             <Routes>
@@ -644,6 +647,7 @@ function App() {
                   }
                 />
                 <Route path="/about" element={<AboutPage />} />
+                <Route path="/community" element={<PublicTrustPage />} />
                 <Route
                   path="/release/:slug"
                   element={

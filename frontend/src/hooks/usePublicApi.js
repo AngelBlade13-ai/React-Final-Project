@@ -1,4 +1,8 @@
 import useSWR from "swr";
+import {
+  applyPublicAboutCopy,
+  applyPublicListenerCopy
+} from "../lib/publicListenerCopy";
 import { apiBaseUrl, emptyAbout, emptySiteSettings } from "../lib/site";
 
 async function fetchJson(url) {
@@ -22,7 +26,7 @@ export function useSiteContent() {
   );
 
   return {
-    siteContent: {
+    siteContent: applyPublicListenerCopy({
       ...emptySiteSettings,
       ...(data?.siteContent || {}),
       branding: {
@@ -33,13 +37,17 @@ export function useSiteContent() {
         ...emptySiteSettings.home,
         ...(data?.siteContent?.home || {})
       },
+      about: {
+        ...emptyAbout,
+        ...(data?.siteContent?.about || {})
+      },
       collectionThemes: Array.isArray(data?.siteContent?.collectionThemes)
         ? data.siteContent.collectionThemes
         : emptySiteSettings.collectionThemes,
       guidedPaths: Array.isArray(data?.siteContent?.guidedPaths)
         ? data.siteContent.guidedPaths
         : emptySiteSettings.guidedPaths
-    },
+    }),
     error,
     isLoading,
     retry: mutate
@@ -110,10 +118,10 @@ export function useAboutContent() {
   );
 
   return {
-    about: {
+    about: applyPublicAboutCopy({
       ...emptyAbout,
       ...(data?.about || {})
-    },
+    }),
     error,
     isLoading,
     retry: mutate

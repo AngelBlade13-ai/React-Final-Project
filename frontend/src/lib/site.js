@@ -687,17 +687,22 @@ export function getSiblingVersionPosts(posts = [], currentPost, options = {}) {
 
 export const emptyAbout = {
   heroEyebrow: "About",
-  heroTitle: "",
-  heroText: "",
+  heroTitle: "I make music to understand things I do not know how to say out loud.",
+  heroText:
+    "This site is where I keep those songs connected: the personal ones, the fantasy worlds, and the pieces that turned into something larger than a single feeling.",
   artistEyebrow: "The Artist",
-  artistTitle: "",
-  artistText: "",
+  artistTitle:
+    "Feeling first, then atmosphere, then the details that make a song feel lived in.",
+  artistText:
+    "I make songs from feelings that are hard to explain directly. Some are personal. Some become fantasy worlds. Some turn into villain songs, anime openings, or quiet survival pieces.",
   siteEyebrow: "The Site",
-  siteTitle: "",
-  siteText: "",
+  siteTitle: "Built for listening, reading, and finding connections between songs.",
+  siteText:
+    "Each song can carry notes, versions, and the mood around it. Collections help you browse by world or theme. Listening paths give you a guided way through the archive when you do not know where to start.",
   quoteEyebrow: "Why It Exists",
-  quoteTitle: "",
-  quoteText: ""
+  quoteTitle: "Some feelings do not go away until you turn them into something.",
+  quoteText:
+    "This archive gives each song room to breathe, then links those rooms together into a larger story."
 };
 
 export const DEFAULT_COLLECTION_THEME_PROFILES = [
@@ -1427,6 +1432,42 @@ export function hasVideo(videoUrl) {
   return Boolean(String(videoUrl || "").trim());
 }
 
+const PUBLIC_COLLECTION_DESCRIPTION_OVERRIDES = {
+  fractureverse:
+    "A broken story world of love, consequence, and songs that keep fracturing into new versions.",
+  eldoria:
+    "A fantasy chronicle told as ballads—awakening, memory, and belonging in a world that should not know you.",
+  "original-personal":
+    "Direct, personal songs—identity, grief, becoming, and the feelings that do not fit anywhere else.",
+  standalone: "Individual songs that stand on their own outside a larger world.",
+  "kawaii-adventure": "Bright, adventurous songs with princess-symbolic and anime-bright energy.",
+  "kawaii-magical": "Magical, expressive songs where fantasy says something real.",
+  "villain-anthology": "Darker voices—villain songs, power, damage, and necessary monsters.",
+  "late-night-drafts": "Quieter sketches and after-hours songs still finding their shape."
+};
+
+const LEGACY_COLLECTION_DESCRIPTION_PATTERN =
+  /catalog|taxonomy|utility|threshold|surface|release archive|public collection layer|verses, moods, and projects/i;
+
+export function getPublicCollectionDescription(collection = {}) {
+  const slug = String(collection.slug || "").trim();
+  const override = PUBLIC_COLLECTION_DESCRIPTION_OVERRIDES[slug];
+
+  if (override) {
+    return override;
+  }
+
+  const raw = String(collection.description || "").trim();
+
+  if (!raw || LEGACY_COLLECTION_DESCRIPTION_PATTERN.test(raw)) {
+    return collection.title
+      ? `Songs grouped under ${collection.title}.`
+      : "";
+  }
+
+  return raw;
+}
+
 export function getPlaybackStateCopy(post, theme = "") {
   const resolvedTheme = theme || getPrimaryThemeForPost(post);
   const playable = hasVideo(post?.videoUrl);
@@ -1434,14 +1475,14 @@ export function getPlaybackStateCopy(post, theme = "") {
   if (resolvedTheme === "fractureverse") {
     return {
       playable,
-      mediaEyebrow: playable ? "Playback Available" : "Fragment Unrecorded",
+      mediaEyebrow: playable ? "Ready To Play" : "Unrecorded In This World",
       mediaText: playable
-        ? "Observation log updated. Fragment playback available."
-        : "Signal trace detected. Playback unavailable. Emotional imprint preserved.",
-      pillLabel: playable ? "Signal Live" : "Fragment Unrecorded",
-      actionLabel: playable ? "Begin Playback" : "Signal Unavailable",
-      compactActionLabel: playable ? "Play Signal" : "Signal Unavailable",
-      openLabel: "Enter Fragment"
+        ? "This fracture entry is ready to play."
+        : "No recording yet—the song still lives here in words and story.",
+      pillLabel: playable ? "Play" : "Unrecorded",
+      actionLabel: playable ? "Play Song" : "Read The Entry",
+      compactActionLabel: playable ? "Play" : "Unrecorded",
+      openLabel: "Open Song"
     };
   }
 
@@ -1461,13 +1502,13 @@ export function getPlaybackStateCopy(post, theme = "") {
 
   return {
     playable,
-    mediaEyebrow: playable ? "Playback Available" : "Video Pending",
+    mediaEyebrow: playable ? "Ready To Play" : "No Video Yet",
     mediaText: playable
       ? "This song is ready for playback."
-      : "This song is live now. The video can be attached later.",
-    pillLabel: playable ? "Play" : "Video Pending",
-    actionLabel: playable ? "Play in Mini Player" : "Video Pending",
-    compactActionLabel: playable ? "Play in Mini Player" : "Video Pending",
+      : "This song is here in words and notes. Video can be added later.",
+    pillLabel: playable ? "Play" : "No Video Yet",
+    actionLabel: playable ? "Play Song" : "No Video Yet",
+    compactActionLabel: playable ? "Play Song" : "No Video Yet",
     openLabel: "Open Song"
   };
 }

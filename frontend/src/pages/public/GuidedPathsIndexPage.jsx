@@ -44,7 +44,13 @@ export default function GuidedPathsIndexPage() {
     siteContentError?.message ||
     "";
 
-  const paths = resolveGuidedListeningPaths(posts, collections, siteContent);
+  const paths = resolveGuidedListeningPaths(posts, collections, siteContent).sort(
+    (left, right) => {
+      if (left.slug === "start-here") return -1;
+      if (right.slug === "start-here") return 1;
+      return 0;
+    }
+  );
 
   return (
     <>
@@ -53,8 +59,13 @@ export default function GuidedPathsIndexPage() {
         <h1>Start with a mood and follow the songs from there.</h1>
         <p className="hero-copy">
           Each path is a suggested listening order for a world, feeling, or
-          recurring theme.
+          recurring theme. New here? Begin with <strong>Start Here</strong>.
         </p>
+        <div className="hero-links-row">
+          <Link className="hero-link" to="/paths/start-here">
+            Start Here path
+          </Link>
+        </div>
       </header>
 
       <main className="content-grid">
@@ -68,7 +79,7 @@ export default function GuidedPathsIndexPage() {
               retrySiteContent();
             }}
             secondaryHref="/explore"
-            secondaryLabel="Search archive"
+            secondaryLabel="Search songs"
             title="Listening paths could not load"
           />
         ) : loading && !paths.length ? (

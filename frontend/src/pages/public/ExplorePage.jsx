@@ -15,7 +15,7 @@ const DEFAULT_COLLECTION_FILTER = "all";
 export default function ExplorePage({ onPlayTrack }) {
   usePageMetadata({
     description: "Search songs, lyrics, notes, moods, and collections.",
-    title: "Explore"
+    title: "Search"
   });
   const {
     posts,
@@ -91,20 +91,6 @@ export default function ExplorePage({ onPlayTrack }) {
           ?.title || "Filtered";
   const hasActiveFilters =
     Boolean(query.trim()) || selectedCollection !== DEFAULT_COLLECTION_FILTER;
-  const utilitySignals = [
-    {
-      label: "Collection",
-      value: selectedCollectionTitle
-    },
-    {
-      label: "Songs",
-      value: `${posts.length} public songs`
-    },
-    {
-      label: "Search phrase",
-      value: query.trim() || "No search yet"
-    }
-  ];
   const resultsLaneSummary = hasActiveFilters
     ? `${selectedCollectionTitle} / ${filteredPosts.length} matches`
     : `${filteredPosts.length} songs across the archive`;
@@ -114,7 +100,7 @@ export default function ExplorePage({ onPlayTrack }) {
       <header className="hero homepage-hero section-hero">
         <div className="explore-hero-grid">
           <div>
-            <p className="eyebrow">Explore</p>
+            <p className="eyebrow">Search</p>
             <h1>Search the songs.</h1>
             <p className="hero-copy">
               Type a title, lyric, mood, or phrase you remember. Use collections
@@ -125,9 +111,9 @@ export default function ExplorePage({ onPlayTrack }) {
             <p className="note-label">Search</p>
             <h2>Use phrase first, filters second.</h2>
             <p>
-              Explore works best when you begin with a lyric fragment, title
-              memory, mood, or phrase, then narrow the archive only if the first
-              pass is too wide.
+              Search works best when you begin with a lyric fragment, title,
+              mood, or phrase, then narrow by collection only if the first pass
+              is too wide.
             </p>
             <label className="search-field">
               Find a song
@@ -163,7 +149,7 @@ export default function ExplorePage({ onPlayTrack }) {
               retryPosts();
               retryCollections();
             }}
-            title="Explore could not reach the archive"
+            title="Search could not load"
           />
         ) : loading && !posts.length && !collections.length ? (
           <PublicLoadingState
@@ -190,14 +176,14 @@ export default function ExplorePage({ onPlayTrack }) {
                 Clear filters
               </button>
             ) : (
-              <span>Search stays in the URL</span>
+              <span>Shareable search link</span>
             )}
           </div>
           <div className="filter-field">
             <p className="eyebrow">Filter By Collection</p>
             <p className="filter-field-copy">
-              Keep the search wide, or step into a specific world or shelf once
-              you know the kind of song you want.
+              Keep the search wide, or step into a specific collection once you
+              know the kind of song you want.
             </p>
             <div className="filter-chip-row">
               <button
@@ -256,14 +242,15 @@ export default function ExplorePage({ onPlayTrack }) {
           </div>
         </section>
 
-        <section className="explore-utility-board">
-          {utilitySignals.map((signal) => (
-            <article className="explore-utility-card" key={signal.label}>
-              <p className="eyebrow">{signal.label}</p>
-              <strong>{signal.value}</strong>
-            </article>
-          ))}
-        </section>
+        {hasActiveFilters ? (
+          <section className="explore-filter-summary" aria-label="Active filters">
+            <p className="results-context-copy">
+              {selectedCollectionTitle}
+              {query.trim() ? ` · “${query.trim()}”` : ""} · {filteredPosts.length}{" "}
+              {filteredPosts.length === 1 ? "match" : "matches"}
+            </p>
+          </section>
+        ) : null}
 
         <section>
           <div className="section-head">
@@ -275,8 +262,8 @@ export default function ExplorePage({ onPlayTrack }) {
           <p className="results-lane-summary">{resultsLaneSummary}</p>
           <p className="results-context-copy">
             {hasActiveFilters
-              ? "This result set is already narrowed. Clear filters if you want to move back to a wider discovery view."
-              : "Start with a phrase, then narrow only when the archive gets too wide."}
+              ? "This list is already narrowed. Clear filters if you want a wider search again."
+              : "Start with a phrase, then narrow by collection only when there are too many matches."}
           </p>
 
           {!loading && filteredPosts.length === 0 ? (
@@ -287,6 +274,14 @@ export default function ExplorePage({ onPlayTrack }) {
                 Try a broader phrase or switch the collection filter back to all
                 collections.
               </p>
+              <div className="hero-links-row">
+                <Link className="hero-link" to="/paths/start-here">
+                  Start Here path
+                </Link>
+                <Link className="hero-link secondary-link" to="/collections">
+                  Browse collections
+                </Link>
+              </div>
             </section>
           ) : (
             <div className="results-grid">

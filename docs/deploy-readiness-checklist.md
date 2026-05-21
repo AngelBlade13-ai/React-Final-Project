@@ -46,7 +46,10 @@ npm run test:api
 npm run verify
 npm run test:e2e
 python tools/content_audit.py --format markdown
+cd backend && npm run site:refresh-public-copy
 ```
+
+Run `site:refresh-public-copy` against production MongoDB when the live site still shows legacy homepage/about copy from earlier admin language.
 
 Known repository note:
 

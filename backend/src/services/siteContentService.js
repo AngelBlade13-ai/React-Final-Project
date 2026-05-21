@@ -170,7 +170,7 @@ function normalizeGuidedPathInput(input = {}, existingPath = {}) {
   return {
     slug,
     title: String(input.title || existingPath.title || fallbackTitle).trim(),
-    eyebrow: String(input.eyebrow || existingPath.eyebrow || "Guided Path").trim(),
+    eyebrow: String(input.eyebrow || existingPath.eyebrow || "Listening Path").trim(),
     intro: String(input.intro || existingPath.intro || "").trim(),
     moodNote: String(input.moodNote || existingPath.moodNote || "").trim(),
     themeHint: slugify(input.themeHint || existingPath.themeHint || ""),

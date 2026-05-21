@@ -48,9 +48,11 @@ export default function PublicLayout({
               Collections
             </NavLink>
             <NavLink
+              aria-label="Listening Paths"
               className={({ isActive }) =>
                 `site-nav-link${isActive ? " active" : ""}`
               }
+              title="Listening Paths"
               to="/paths"
             >
               Paths
@@ -61,7 +63,7 @@ export default function PublicLayout({
               }
               to="/explore"
             >
-              Explore
+              Search
             </NavLink>
             <NavLink
               className={({ isActive }) =>
@@ -113,15 +115,17 @@ export default function PublicLayout({
           <p className="eyebrow">{branding.siteName}</p>
           <strong>{branding.siteTagline}</strong>
           <p>
-            A curated release archive with worlds, listening paths, comments,
-            and an admin studio behind the public surface.
+            A personal music archive with story worlds, listening paths, and
+            songs I did not want to lose.
           </p>
         </div>
         <nav aria-label="Footer" className="footer-link-row">
+          <Link to="/paths/start-here">Start Here</Link>
           <Link to="/collections">Collections</Link>
           <Link to="/paths">Paths</Link>
-          <Link to="/explore">Explore</Link>
+          <Link to="/explore">Search</Link>
           <Link to="/about">About</Link>
+          <Link to="/community">Community</Link>
         </nav>
       </footer>
     </div>

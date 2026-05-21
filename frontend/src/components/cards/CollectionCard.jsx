@@ -1,4 +1,5 @@
 import WorldThresholdLink from "../WorldThresholdLink";
+import { getPublicCollectionDescription } from "../../lib/site";
 
 export default function CollectionCard({ collection, showFeatured = false }) {
   const isEldoria = collection.theme === "eldoria";
@@ -35,7 +36,7 @@ export default function CollectionCard({ collection, showFeatured = false }) {
           <span className="meta-badge subtle-badge">{songCountLabel}</span>
         </div>
         <h3>{collection.title}</h3>
-        <p>{collection.description}</p>
+        <p>{getPublicCollectionDescription(collection)}</p>
         <div className="collection-meta-row">
           {collection.featuredRelease ? (
             <span className="meta-badge subtle-badge">

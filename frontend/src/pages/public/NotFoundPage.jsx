@@ -14,7 +14,7 @@ export default function NotFoundPage() {
   return (
     <>
       <header className="hero homepage-hero section-hero not-found-hero">
-        <p className="eyebrow">404 / Lost Signal</p>
+        <p className="eyebrow">404</p>
         <h1>This page is not here.</h1>
         <p className="hero-copy">
           The link may have moved, the slug may have changed, or this part of
@@ -25,33 +25,32 @@ export default function NotFoundPage() {
             Return Home
           </Link>
           <Link className="hero-link secondary-link" to="/explore">
-            Search Archive
+            Search Songs
           </Link>
         </div>
       </header>
 
       <main className="content-grid">
         <section className="intro-card homepage-panel not-found-panel">
-          <p className="eyebrow">Useful Doorways</p>
+          <p className="eyebrow">Ways Back In</p>
           <h2>Try another way in.</h2>
           <p>
-            Use collections if you want curated worlds, explore if you remember
-            a title or lyric fragment, or about if you want the context behind
-            the project.
+            Browse collections for story worlds and moods, search if you remember
+            a title or lyric, or read about the artist behind the archive.
           </p>
           <div className="not-found-link-grid">
             <Link className="linked-echo-card" to="/collections">
-              <span className="fracture-sequence-state">Worlds</span>
+              <span className="fracture-sequence-state">Collections</span>
               <strong>Browse collections</strong>
               <p>Open story worlds, mood groups, and connected songs.</p>
             </Link>
             <Link className="linked-echo-card" to="/paths">
-              <span className="fracture-sequence-state">Guides</span>
-              <strong>Follow listening paths</strong>
-              <p>Use a curated listening path instead of browsing cold.</p>
+              <span className="fracture-sequence-state">Paths</span>
+              <strong>Follow a listening path</strong>
+              <p>Let a suggested order choose the next song for you.</p>
             </Link>
             <Link className="linked-echo-card" to="/about">
-              <span className="fracture-sequence-state">Context</span>
+              <span className="fracture-sequence-state">About</span>
               <strong>Read about the archive</strong>
               <p>Learn what this project is trying to preserve.</p>
             </Link>

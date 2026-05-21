@@ -14,6 +14,7 @@ import {
   emptySiteSettings,
   getHomepageCuratedPosts,
   getPlaybackStateCopy,
+  getPublicCollectionDescription,
   getVisibleCollectionsForPost,
   sortCollectionsForPublicNavigation
 } from "../../lib/site";
@@ -108,13 +109,6 @@ export default function PublicHome({ onPlayTrack, siteContent }) {
                 {loading ? "..." : `${collections.length} collections`}
               </span>
             </div>
-            <div className="home-hero-threshold-note">
-              <strong>Start where the feeling pulls you.</strong>
-              <p>
-                Play a song, enter a story world, or follow a listening path
-                when you want the next step chosen for you.
-              </p>
-            </div>
           </div>
         </div>
       </header>
@@ -127,7 +121,7 @@ export default function PublicHome({ onPlayTrack, siteContent }) {
               retryPosts();
               retryCollections();
             }}
-            title="The public archive could not load"
+            title="The homepage could not load"
           />
         ) : loading && !posts.length && !collections.length ? (
           <PublicLoadingState
@@ -138,20 +132,37 @@ export default function PublicHome({ onPlayTrack, siteContent }) {
 
         <section className="home-doorway-section" id="home-doorways">
           <div className="section-head">
-            <h2>Choose a Doorway</h2>
-            <span>Start here</span>
+            <h2>Start Listening</h2>
+            <span>Pick a way in</span>
           </div>
           <div className="home-doorway-grid">
+            <Link className="home-doorway-link" to="/paths/start-here">
+              <article className="intro-card homepage-panel home-doorway-card home-doorway-start">
+                <p className="eyebrow">New Here?</p>
+                <h3>Start Here</h3>
+                <p>
+                  A short listening path through the clearest entry points
+                  before the archive branches into deeper worlds.
+                </p>
+                <div className="home-doorway-footer">
+                  <span className="home-doorway-stat">Guided first listen</span>
+                  <span className="home-doorway-cta">
+                    Begin path <span aria-hidden="true">-&gt;</span>
+                  </span>
+                </div>
+              </article>
+            </Link>
+
             <Link className="home-doorway-link" to="/paths">
               <article className="intro-card homepage-panel home-doorway-card home-doorway-guided">
                 <p className="eyebrow">Listening Paths</p>
                 <h3>Choose by feeling, not chronology.</h3>
                 <p>
-                  Follow a curated route through the archive when you want the
-                  next song chosen by mood, world, or emotional thread.
+                  Follow a suggested order through the songs when you want the
+                  next listen chosen by mood, world, or emotional thread.
                 </p>
                 <div className="home-doorway-footer">
-                  <span className="home-doorway-stat">Curated routes</span>
+                  <span className="home-doorway-stat">Listening paths</span>
                   <span className="home-doorway-cta">
                     Browse paths <span aria-hidden="true">-&gt;</span>
                   </span>
@@ -168,7 +179,9 @@ export default function PublicHome({ onPlayTrack, siteContent }) {
                 <article className="intro-card homepage-panel home-doorway-card home-doorway-fractureverse">
                   <p className="eyebrow">World</p>
                   <h3>{fractureverseCollection.title}</h3>
-                  <p>{fractureverseCollection.description}</p>
+                  <p>
+                    {getPublicCollectionDescription(fractureverseCollection)}
+                  </p>
                   <div className="home-doorway-footer">
                     <span className="home-doorway-stat">
                       {fractureverseCollection.releaseCount} fragments
@@ -190,7 +203,7 @@ export default function PublicHome({ onPlayTrack, siteContent }) {
                 <article className="intro-card homepage-panel home-doorway-card home-doorway-eldoria">
                   <p className="eyebrow">World</p>
                   <h3>{eldoriaCollection.title}</h3>
-                  <p>{eldoriaCollection.description}</p>
+                  <p>{getPublicCollectionDescription(eldoriaCollection)}</p>
                   <div className="home-doorway-footer">
                     <span className="home-doorway-stat">
                       {eldoriaCollection.releaseCount} ballads
@@ -225,13 +238,6 @@ export default function PublicHome({ onPlayTrack, siteContent }) {
               </div>
             </article>
           </div>
-        </section>
-
-        <section className="intro-card homepage-panel home-identity-panel">
-          <p className="eyebrow">{homeContent.identityEyebrow}</p>
-          <h2>{homeContent.identityTitle}</h2>
-          <p>{homeContent.identityText}</p>
-          <p className="identity-line">{homeContent.identityLine}</p>
         </section>
 
         {featuredPost ? (
@@ -319,7 +325,7 @@ export default function PublicHome({ onPlayTrack, siteContent }) {
             <span>
               {loading
                 ? "Loading..."
-                : `${featuredCollections.length} curated entries`}
+                : `${featuredCollections.length} collections`}
             </span>
           </div>
           <div className="collection-grid collection-index-grid">
@@ -373,14 +379,18 @@ export default function PublicHome({ onPlayTrack, siteContent }) {
         </section>
 
         {homepageSelectionPosts.length ? (
-          <section className="homepage-selection-section">
-            <div className="section-head">
-              <h2>More Curated Starts</h2>
-              <span>{`${homepageSelectionPosts.length} homepage picks`}</span>
-            </div>
+          <details className="intro-card homepage-panel homepage-selection-section public-collapsible-section">
+            <summary>
+              <span className="section-head">
+                <h2>More Ways To Begin</h2>
+                <span>{`${homepageSelectionPosts.length} starting points`}</span>
+              </span>
+            </summary>
             <p className="results-context-copy">
-              These songs are also good starting points if you want a different
-              mood before diving deeper.
+              Other good entry songs if you want a different mood before diving
+              deeper.{" "}
+              <Link to="/about">Read about the archive</Link> for the full
+              story behind the project.
             </p>
             <div className="homepage-selection-grid">
               {homepageSelectionPosts.map((post) => (
@@ -392,7 +402,7 @@ export default function PublicHome({ onPlayTrack, siteContent }) {
                 />
               ))}
             </div>
-          </section>
+          </details>
         ) : null}
       </main>
     </>

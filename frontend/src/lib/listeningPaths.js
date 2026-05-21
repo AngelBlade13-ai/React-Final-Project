@@ -10,6 +10,17 @@ import {
   sortFractureversePosts
 } from "./site";
 
+const PUBLIC_PATH_EYEBROW_MAP = {
+  "Guided Path": "Listening Path",
+  "Authored Path": "Mood Path",
+  "World Path": "Story World"
+};
+
+export function mapPublicPathEyebrow(eyebrow = "") {
+  const trimmed = String(eyebrow || "").trim();
+  return PUBLIC_PATH_EYEBROW_MAP[trimmed] || trimmed || "Listening Path";
+}
+
 const VILLAIN_COLLECTION_SLUGS = [
   "villain-anthology",
   "villain-monologues",
@@ -21,7 +32,7 @@ export const DEFAULT_GUIDED_PATHS = [
   {
     slug: "start-here",
     title: "Start Here",
-    eyebrow: "Guided Path",
+    eyebrow: "Listening Path",
     intro:
       "A concise first route through the clearest public entry points before the archive starts branching into deeper worlds and alternates.",
     moodNote: "Best for first contact with the site.",
@@ -61,7 +72,7 @@ export const DEFAULT_GUIDED_PATHS = [
   {
     slug: "identity-becoming",
     title: "Identity / Becoming",
-    eyebrow: "Authored Path",
+    eyebrow: "Mood Path",
     intro:
       "A route through the songs that feel most tied to emergence, self-recognition, and the slow process of becoming legible to yourself.",
     moodNote: "Best for personal / reflective listening.",
@@ -75,9 +86,9 @@ export const DEFAULT_GUIDED_PATHS = [
   {
     slug: "princess-anime",
     title: "Princess / Anime",
-    eyebrow: "Authored Path",
+    eyebrow: "Mood Path",
     intro:
-      "A brighter route through princess-symbolic, kawaii, and high-expression tracks where fantasy becomes a way of saying something real.",
+      "A brighter route through princess-symbolic, kawaii, and high-expression songs where fantasy becomes a way of saying something real.",
     moodNote: "Best for vivid, stylized listening.",
     themeHint: "",
     algorithm: {
@@ -91,7 +102,7 @@ export const DEFAULT_GUIDED_PATHS = [
   {
     slug: "villain-catastrophe",
     title: "Villain / Catastrophe",
-    eyebrow: "Authored Path",
+    eyebrow: "Mood Path",
     intro:
       "A harsher route through villain voices, necessary monsters, and the songs where damage, power, or collapse take center stage.",
     moodNote: "Best for darker, confrontational listening.",
@@ -118,7 +129,7 @@ function normalizePathConfig(path = {}) {
   return {
     slug: String(path.slug || "").trim(),
     title: String(path.title || "").trim(),
-    eyebrow: String(path.eyebrow || "Guided Path").trim(),
+    eyebrow: mapPublicPathEyebrow(path.eyebrow),
     intro: String(path.intro || "").trim(),
     moodNote: String(path.moodNote || "").trim(),
     themeHint: String(path.themeHint || "").trim(),
