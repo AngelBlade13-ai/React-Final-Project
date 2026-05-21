@@ -2997,6 +2997,9 @@ select:focus {
 .result-card .post-body {
   padding: 0.95rem 1rem 1.05rem;
   align-content: center;
+  grid-template-rows: auto auto auto auto;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .result-card .post-body h3 {
@@ -3011,8 +3014,12 @@ select:focus {
 .result-card .post-body > p:not(.meta) {
   display: -webkit-box;
   overflow: hidden;
+  line-height: 1.35;
+  max-height: 2.7em;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+  word-break: normal;
+  overflow-wrap: normal;
 }
 
 .result-card .compact-tag-row {
@@ -3041,6 +3048,9 @@ select:focus {
 
 .compact-release-card .post-body {
   padding: 0.95rem 1rem 1.05rem;
+  grid-template-rows: auto auto auto auto;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .compact-release-card .post-body h3 {
@@ -3050,8 +3060,12 @@ select:focus {
 .compact-release-card .post-body > p:not(.meta) {
   display: -webkit-box;
   overflow: hidden;
+  line-height: 1.35;
+  max-height: 2.7em;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+  word-break: normal;
+  overflow-wrap: normal;
 }
 
 .homepage-selection-grid {
