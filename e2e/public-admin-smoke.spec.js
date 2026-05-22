@@ -70,16 +70,14 @@ test("public shell has recovery navigation for unknown routes", async ({
   await expect(
     page.getByRole("heading", { name: /this page is not here/i })
   ).toBeVisible();
-  await expect(
-    page.getByRole("link", { name: "Search Songs" })
-  ).toBeVisible();
+  await expect(page.getByRole("link", { name: "Search Songs" })).toBeVisible();
   await expect(
     page.getByRole("navigation", { name: "Footer" }).getByRole("link", {
       name: "Collections"
     })
   ).toBeVisible();
 
-  await page.getByRole("link", { name: "Search Archive" }).click();
+  await page.getByRole("link", { name: "Search Songs" }).click();
   await expect(
     page.getByRole("heading", {
       name: /search the songs/i
@@ -88,9 +86,9 @@ test("public shell has recovery navigation for unknown routes", async ({
 
   await page.goto("/release/not-a-real-release");
   await expect(
-    page.getByRole("heading", { name: /this release could not be opened/i })
+    page.getByRole("heading", { name: /this song could not be opened/i })
   ).toBeVisible();
-  await page.getByRole("link", { name: "Search archive" }).click();
+  await page.getByRole("link", { name: "Search songs" }).click();
   await expect(
     page.getByRole("heading", {
       name: /search the songs/i

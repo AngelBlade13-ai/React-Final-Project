@@ -1,5 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const { PassThrough } = require("node:stream");
 const { createApiTestContext } = require("../helpers/createApiTestContext");
 
 test("user registration sets a cookie-backed session that auth/me can restore", async (t) => {
@@ -210,6 +211,176 @@ test("user library saves releases, reactions, and recent listens", async (t) => 
   assert.equal(
     libraryResponse.body.releaseReactions[targetPost.slug],
     "haunted-me"
+  );
+});
+
+test("user can upload an avatar and receive the updated profile", async (t) => {
+  const context = await createApiTestContext({
+    CLOUDINARY_CLOUD_NAME: "demo",
+    CLOUDINARY_API_KEY: "key",
+    CLOUDINARY_API_SECRET: "secret",
+    CLOUDINARY_FOLDER: "test-folder"
+  });
+  const { cloudinary } = require("../../src/lib/cloudinary");
+  const originalUploadStream = cloudinary.uploader.upload_stream;
+
+  t.after(async () => {
+    cloudinary.uploader.upload_stream = originalUploadStream;
+    await context.close();
+  });
+
+  cloudinary.uploader.upload_stream = (options, callback) => {
+    const stream = new PassThrough();
+
+    stream.on("finish", () => {
+      assert.equal(options.resource_type, "image");
+      assert.match(options.folder, /\/avatars$/);
+      assert.equal(options.transformation[0].width, 512);
+      callback(null, {
+        secure_url: "https://res.cloudinary.com/demo/image/upload/avatar.jpg",
+        public_id: "avatars/test-avatar",
+        format: "jpg"
+      });
+    });
+
+    return stream;
+  };
+
+  const registerResponse = await context.agent
+    .post("/api/auth/register")
+    .send({
+      displayName: "Avatar User",
+      email: "avatar@example.com",
+      password: "Password123!"
+    })
+    .set(context.mutationHeaders);
+
+  assert.equal(registerResponse.status, 201);
+
+  const avatarResponse = await context.agent
+    .post("/api/auth/me/avatar")
+    .set(context.mutationHeaders)
+    .attach("avatar", Buffer.from("fake image bytes"), {
+      filename: "avatar.png",
+      contentType: "image/png"
+    });
+
+  assert.equal(avatarResponse.status, 200);
+  assert.equal(
+    avatarResponse.body.user.avatarUrl,
+    "https://res.cloudinary.com/demo/image/upload/avatar.jpg"
+  );
+  assert.ok(avatarResponse.body.token);
+
+  const meResponse = await context.agent.get("/api/auth/me");
+
+  assert.equal(meResponse.status, 200);
+  assert.equal(
+    meResponse.body.user.avatarUrl,
+    "https://res.cloudinary.com/demo/image/upload/avatar.jpg"
+  );
+});
+
+test("avatar upload validates session and file input", async (t) => {
+  const context = await createApiTestContext();
+  t.after(async () => {
+    await context.close();
+  });
+
+  const unauthenticatedResponse = await context.client
+    .post("/api/auth/me/avatar")
+    .set(context.mutationHeaders);
+
+  assert.equal(unauthenticatedResponse.status, 401);
+  assert.equal(
+    unauthenticatedResponse.body.message,
+    "Authentication required."
+  );
+
+  const registerResponse = await context.agent
+    .post("/api/auth/register")
+    .send({
+      displayName: "Avatar Validation User",
+      email: "avatar-validation@example.com",
+      password: "Password123!"
+    })
+    .set(context.mutationHeaders);
+
+  assert.equal(registerResponse.status, 201);
+
+  const missingFileResponse = await context.agent
+    .post("/api/auth/me/avatar")
+    .set(context.mutationHeaders);
+
+  assert.equal(missingFileResponse.status, 400);
+  assert.equal(
+    missingFileResponse.body.message,
+    "Choose an image before uploading."
+  );
+
+  const wrongTypeResponse = await context.agent
+    .post("/api/auth/me/avatar")
+    .set(context.mutationHeaders)
+    .attach("avatar", Buffer.from("not image"), {
+      filename: "avatar.txt",
+      contentType: "text/plain"
+    });
+
+  assert.equal(wrongTypeResponse.status, 400);
+  assert.equal(
+    wrongTypeResponse.body.message,
+    "Profile picture must be an image file."
+  );
+});
+
+test("avatar upload returns a clear message when Cloudinary fails", async (t) => {
+  const context = await createApiTestContext({
+    CLOUDINARY_CLOUD_NAME: "demo",
+    CLOUDINARY_API_KEY: "key",
+    CLOUDINARY_API_SECRET: "secret",
+    CLOUDINARY_FOLDER: "test-folder"
+  });
+  const { cloudinary } = require("../../src/lib/cloudinary");
+  const originalUploadStream = cloudinary.uploader.upload_stream;
+
+  t.after(async () => {
+    cloudinary.uploader.upload_stream = originalUploadStream;
+    await context.close();
+  });
+
+  cloudinary.uploader.upload_stream = (_options, callback) => {
+    const stream = new PassThrough();
+
+    stream.on("finish", () => {
+      callback(new Error("Cloudinary unavailable"));
+    });
+
+    return stream;
+  };
+
+  const registerResponse = await context.agent
+    .post("/api/auth/register")
+    .send({
+      displayName: "Avatar Failure User",
+      email: "avatar-failure@example.com",
+      password: "Password123!"
+    })
+    .set(context.mutationHeaders);
+
+  assert.equal(registerResponse.status, 201);
+
+  const avatarResponse = await context.agent
+    .post("/api/auth/me/avatar")
+    .set(context.mutationHeaders)
+    .attach("avatar", Buffer.from("fake image bytes"), {
+      filename: "avatar.png",
+      contentType: "image/png"
+    });
+
+  assert.equal(avatarResponse.status, 502);
+  assert.equal(
+    avatarResponse.body.message,
+    "Profile picture could not be uploaded. Try again in a moment."
   );
 });
 

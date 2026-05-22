@@ -10,6 +10,7 @@ function sanitizeUser(user) {
     id: user.id,
     email: user.email,
     displayName: user.displayName,
+    avatarUrl: user.avatarUrl || "",
     role: user.role,
     status: user.status,
     savedReleaseSlugs: Array.isArray(user.savedReleaseSlugs)
@@ -54,8 +55,12 @@ function issueAdminToken() {
 function normalizeUserInput(input, existingUser = {}) {
   return {
     ...existingUser,
-    displayName: String(input.displayName || existingUser.displayName || "").trim(),
-    email: String(input.email || existingUser.email || "").trim().toLowerCase()
+    displayName: String(
+      input.displayName || existingUser.displayName || ""
+    ).trim(),
+    email: String(input.email || existingUser.email || "")
+      .trim()
+      .toLowerCase()
   };
 }
 
@@ -63,7 +68,9 @@ function normalizeCommentInput(input, existingComment = {}) {
   return {
     ...existingComment,
     body: String(input.body || existingComment.body || "").trim(),
-    status: String(input.status || existingComment.status || "visible").trim() || "visible",
+    status:
+      String(input.status || existingComment.status || "visible").trim() ||
+      "visible",
     updatedAt: new Date().toISOString()
   };
 }

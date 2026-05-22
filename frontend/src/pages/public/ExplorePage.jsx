@@ -1,5 +1,5 @@
 import { startTransition, useDeferredValue, useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   PublicErrorState,
   PublicLoadingState,
@@ -243,10 +243,14 @@ export default function ExplorePage({ onPlayTrack }) {
         </section>
 
         {hasActiveFilters ? (
-          <section className="explore-filter-summary" aria-label="Active filters">
+          <section
+            className="explore-filter-summary"
+            aria-label="Active filters"
+          >
             <p className="results-context-copy">
               {selectedCollectionTitle}
-              {query.trim() ? ` · “${query.trim()}”` : ""} · {filteredPosts.length}{" "}
+              {query.trim() ? ` · “${query.trim()}”` : ""} ·{" "}
+              {filteredPosts.length}{" "}
               {filteredPosts.length === 1 ? "match" : "matches"}
             </p>
           </section>

@@ -4,6 +4,7 @@ const crypto = require("crypto");
 const config = require("../config");
 const { readStore, insertUser, replaceUser } = require("../data/store");
 const { requireUser } = require("../middleware/auth");
+const { uploadAvatar } = require("../middleware/uploadAvatar");
 const { loginLimiter, userAuthLimiter } = require("../middleware/rateLimiters");
 const {
   issueAuthToken,
@@ -25,6 +26,9 @@ const {
   isPostPubliclyVisible,
   resolvePublishedPost
 } = require("../services/catalogService");
+const {
+  uploadAvatarToCloudinary
+} = require("../services/uploadAvatarToCloudinary");
 
 const router = express.Router();
 const VALID_REACTIONS = new Set([
@@ -39,7 +43,9 @@ async function findOrCreateAdminUser(store) {
   const normalizedEmail = String(config.adminEmail || "")
     .trim()
     .toLowerCase();
-  const existingUser = store.users.find((entry) => entry.email === normalizedEmail);
+  const existingUser = store.users.find(
+    (entry) => entry.email === normalizedEmail
+  );
 
   if (existingUser) {
     if (existingUser.role === "admin" && existingUser.status === "active") {
@@ -86,7 +92,9 @@ router.post("/admin/login", loginLimiter, async (req, res, next) => {
     const suppliedPassword = String(password || "");
     const isEmailMatch =
       normalizedEmail.toLowerCase() ===
-      String(config.adminEmail || "").trim().toLowerCase();
+      String(config.adminEmail || "")
+        .trim()
+        .toLowerCase();
     const isPasswordMatch = config.adminPasswordHash
       ? await bcrypt.compare(suppliedPassword, config.adminPasswordHash)
       : suppliedPassword === config.adminPassword;
@@ -174,7 +182,12 @@ router.post("/auth/login", userAuthLimiter, async (req, res, next) => {
     const password = String(req.body.password || "");
     let user = null;
 
-    if (email === String(config.adminEmail || "").trim().toLowerCase()) {
+    if (
+      email ===
+      String(config.adminEmail || "")
+        .trim()
+        .toLowerCase()
+    ) {
       const isAdminPasswordMatch = config.adminPasswordHash
         ? await bcrypt.compare(password, config.adminPasswordHash)
         : password === config.adminPassword;
@@ -284,6 +297,86 @@ router.put("/auth/me", requireUser, async (req, res, next) => {
   }
 });
 
+function handleAvatarUpload(req, res, next) {
+  uploadAvatar.single("avatar")(req, res, (error) => {
+    if (!error) {
+      next();
+      return;
+    }
+
+    if (error.code === "LIMIT_FILE_SIZE") {
+      return res
+        .status(400)
+        .json({ message: "Profile picture must be 5 MB or smaller." });
+    }
+
+    return res.status(400).json({
+      message: error.message || "Profile picture could not be read."
+    });
+  });
+}
+
+router.post(
+  "/auth/me/avatar",
+  requireUser,
+  handleAvatarUpload,
+  async (req, res, next) => {
+    try {
+      const store = await readStore();
+      const existingUser = store.users.find(
+        (entry) => entry.id === req.user.sub
+      );
+
+      if (!existingUser || existingUser.status !== "active") {
+        return res
+          .status(401)
+          .json({ message: "User session is no longer valid." });
+      }
+
+      if (!req.file) {
+        return res
+          .status(400)
+          .json({ message: "Choose an image before uploading." });
+      }
+
+      if (!req.file.mimetype?.startsWith("image/")) {
+        return res
+          .status(400)
+          .json({ message: "Profile picture must be an image file." });
+      }
+
+      let uploadResult;
+
+      try {
+        uploadResult = await uploadAvatarToCloudinary(req.file.buffer);
+      } catch {
+        return res.status(502).json({
+          message:
+            "Profile picture could not be uploaded. Try again in a moment."
+        });
+      }
+
+      const nextUser = {
+        ...existingUser,
+        avatarUrl: uploadResult.avatarUrl,
+        updatedAt: new Date().toISOString()
+      };
+
+      await replaceUser(nextUser);
+      clearAdminSessionCookie(res);
+      const token = issueAuthToken(nextUser);
+      setUserSessionCookie(res, token);
+
+      return res.json({
+        token,
+        user: sanitizeUser(nextUser)
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
 function getActivePublicUser(store, req) {
   return store.users.find(
     (entry) => entry.id === req.user.sub && entry.status === "active"
@@ -294,7 +387,10 @@ function resolveLibraryPosts(store, slugs = []) {
   const postsBySlug = new Map(
     store.posts
       .filter((post) => isPostPubliclyVisible(post))
-      .map((post) => [post.slug, attachCollectionDetails(post, store.collections)])
+      .map((post) => [
+        post.slug,
+        attachCollectionDetails(post, store.collections)
+      ])
   );
 
   return slugs.map((slug) => postsBySlug.get(slug)).filter(Boolean);
@@ -306,7 +402,9 @@ router.get("/auth/library", requireUser, async (req, res, next) => {
     const user = getActivePublicUser(store, req);
 
     if (!user) {
-      return res.status(401).json({ message: "User session is no longer valid." });
+      return res
+        .status(401)
+        .json({ message: "User session is no longer valid." });
     }
 
     return res.json({
@@ -319,124 +417,144 @@ router.get("/auth/library", requireUser, async (req, res, next) => {
   }
 });
 
-router.put("/auth/library/releases/:slug/save", requireUser, async (req, res, next) => {
-  try {
-    const store = await readStore();
-    const user = getActivePublicUser(store, req);
-    const { entry: post } = resolvePublishedPost(store, req.params.slug);
+router.put(
+  "/auth/library/releases/:slug/save",
+  requireUser,
+  async (req, res, next) => {
+    try {
+      const store = await readStore();
+      const user = getActivePublicUser(store, req);
+      const { entry: post } = resolvePublishedPost(store, req.params.slug);
 
-    if (!user) {
-      return res.status(401).json({ message: "User session is no longer valid." });
+      if (!user) {
+        return res
+          .status(401)
+          .json({ message: "User session is no longer valid." });
+      }
+
+      if (!post) {
+        return res.status(404).json({ message: "Release not found." });
+      }
+
+      const shouldSave = req.body.saved !== false;
+      const currentSlugs = Array.isArray(user.savedReleaseSlugs)
+        ? user.savedReleaseSlugs
+        : [];
+      const nextSavedReleaseSlugs = shouldSave
+        ? [post.slug, ...currentSlugs.filter((slug) => slug !== post.slug)]
+        : currentSlugs.filter((slug) => slug !== post.slug);
+      const nextUser = {
+        ...user,
+        savedReleaseSlugs: nextSavedReleaseSlugs,
+        updatedAt: new Date().toISOString()
+      };
+
+      await replaceUser(nextUser);
+
+      return res.json({
+        user: sanitizeUser(nextUser),
+        saved: shouldSave,
+        savedReleaseSlugs: nextSavedReleaseSlugs
+      });
+    } catch (error) {
+      next(error);
     }
-
-    if (!post) {
-      return res.status(404).json({ message: "Release not found." });
-    }
-
-    const shouldSave = req.body.saved !== false;
-    const currentSlugs = Array.isArray(user.savedReleaseSlugs)
-      ? user.savedReleaseSlugs
-      : [];
-    const nextSavedReleaseSlugs = shouldSave
-      ? [post.slug, ...currentSlugs.filter((slug) => slug !== post.slug)]
-      : currentSlugs.filter((slug) => slug !== post.slug);
-    const nextUser = {
-      ...user,
-      savedReleaseSlugs: nextSavedReleaseSlugs,
-      updatedAt: new Date().toISOString()
-    };
-
-    await replaceUser(nextUser);
-
-    return res.json({
-      user: sanitizeUser(nextUser),
-      saved: shouldSave,
-      savedReleaseSlugs: nextSavedReleaseSlugs
-    });
-  } catch (error) {
-    next(error);
   }
-});
+);
 
-router.put("/auth/library/releases/:slug/reaction", requireUser, async (req, res, next) => {
-  try {
-    const store = await readStore();
-    const user = getActivePublicUser(store, req);
-    const { entry: post } = resolvePublishedPost(store, req.params.slug);
-    const reaction = String(req.body.reaction || "").trim();
+router.put(
+  "/auth/library/releases/:slug/reaction",
+  requireUser,
+  async (req, res, next) => {
+    try {
+      const store = await readStore();
+      const user = getActivePublicUser(store, req);
+      const { entry: post } = resolvePublishedPost(store, req.params.slug);
+      const reaction = String(req.body.reaction || "").trim();
 
-    if (!user) {
-      return res.status(401).json({ message: "User session is no longer valid." });
+      if (!user) {
+        return res
+          .status(401)
+          .json({ message: "User session is no longer valid." });
+      }
+
+      if (!post) {
+        return res.status(404).json({ message: "Release not found." });
+      }
+
+      if (reaction && !VALID_REACTIONS.has(reaction)) {
+        return res
+          .status(400)
+          .json({ message: "Choose a supported reaction." });
+      }
+
+      const releaseReactions = { ...(user.releaseReactions || {}) };
+
+      if (reaction) {
+        releaseReactions[post.slug] = reaction;
+      } else {
+        delete releaseReactions[post.slug];
+      }
+
+      const nextUser = {
+        ...user,
+        releaseReactions,
+        updatedAt: new Date().toISOString()
+      };
+
+      await replaceUser(nextUser);
+
+      return res.json({
+        user: sanitizeUser(nextUser),
+        releaseReactions
+      });
+    } catch (error) {
+      next(error);
     }
-
-    if (!post) {
-      return res.status(404).json({ message: "Release not found." });
-    }
-
-    if (reaction && !VALID_REACTIONS.has(reaction)) {
-      return res.status(400).json({ message: "Choose a supported reaction." });
-    }
-
-    const releaseReactions = { ...(user.releaseReactions || {}) };
-
-    if (reaction) {
-      releaseReactions[post.slug] = reaction;
-    } else {
-      delete releaseReactions[post.slug];
-    }
-
-    const nextUser = {
-      ...user,
-      releaseReactions,
-      updatedAt: new Date().toISOString()
-    };
-
-    await replaceUser(nextUser);
-
-    return res.json({
-      user: sanitizeUser(nextUser),
-      releaseReactions
-    });
-  } catch (error) {
-    next(error);
   }
-});
+);
 
-router.post("/auth/library/releases/:slug/listen", requireUser, async (req, res, next) => {
-  try {
-    const store = await readStore();
-    const user = getActivePublicUser(store, req);
-    const { entry: post } = resolvePublishedPost(store, req.params.slug);
+router.post(
+  "/auth/library/releases/:slug/listen",
+  requireUser,
+  async (req, res, next) => {
+    try {
+      const store = await readStore();
+      const user = getActivePublicUser(store, req);
+      const { entry: post } = resolvePublishedPost(store, req.params.slug);
 
-    if (!user) {
-      return res.status(401).json({ message: "User session is no longer valid." });
+      if (!user) {
+        return res
+          .status(401)
+          .json({ message: "User session is no longer valid." });
+      }
+
+      if (!post) {
+        return res.status(404).json({ message: "Release not found." });
+      }
+
+      const recentReleaseSlugs = [
+        post.slug,
+        ...(Array.isArray(user.recentReleaseSlugs)
+          ? user.recentReleaseSlugs.filter((slug) => slug !== post.slug)
+          : [])
+      ].slice(0, 12);
+      const nextUser = {
+        ...user,
+        recentReleaseSlugs,
+        updatedAt: new Date().toISOString()
+      };
+
+      await replaceUser(nextUser);
+
+      return res.json({
+        user: sanitizeUser(nextUser),
+        recentReleaseSlugs
+      });
+    } catch (error) {
+      next(error);
     }
-
-    if (!post) {
-      return res.status(404).json({ message: "Release not found." });
-    }
-
-    const recentReleaseSlugs = [
-      post.slug,
-      ...(Array.isArray(user.recentReleaseSlugs)
-        ? user.recentReleaseSlugs.filter((slug) => slug !== post.slug)
-        : [])
-    ].slice(0, 12);
-    const nextUser = {
-      ...user,
-      recentReleaseSlugs,
-      updatedAt: new Date().toISOString()
-    };
-
-    await replaceUser(nextUser);
-
-    return res.json({
-      user: sanitizeUser(nextUser),
-      recentReleaseSlugs
-    });
-  } catch (error) {
-    next(error);
   }
-});
+);
 
 module.exports = router;

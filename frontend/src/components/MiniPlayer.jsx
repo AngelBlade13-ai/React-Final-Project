@@ -9,7 +9,6 @@ import {
 
 export default function MiniPlayer({
   collectionName,
-  currentIndex,
   currentTrack,
   duration,
   isPlaying,
@@ -22,7 +21,6 @@ export default function MiniPlayer({
   onTogglePlay,
   onVolumeChange,
   progress,
-  queueLength,
   siteContent,
   volume
 }) {
@@ -47,14 +45,6 @@ export default function MiniPlayer({
     : isFractureverse
       ? "Now playing"
       : themeConfig.playerLabel || "Now playing";
-  const positionLabel =
-    queueLength > 1
-      ? fractureMeta?.fragmentId
-        ? `Song ${currentIndex + 1} of ${queueLength}`
-        : eldoriaMeta?.chapterLabel
-          ? `${eldoriaMeta.chapterLabel} of ${queueLength}`
-          : `${currentIndex + 1} / ${queueLength}`
-      : "";
   const secondaryMeta =
     [eldoriaMeta?.chapterLabel || primaryCollection, fractureMeta?.state]
       .filter(Boolean)
@@ -69,7 +59,9 @@ export default function MiniPlayer({
     ? fractureMeta.signalType
     : eldoriaMeta?.entryType || "";
   const displayTitle =
-    isEldoria && eldoriaMeta?.subtitle ? eldoriaMeta.subtitle : currentTrack.title;
+    isEldoria && eldoriaMeta?.subtitle
+      ? eldoriaMeta.subtitle
+      : currentTrack.title;
   const flavorLine = isEldoria ? eldoriaMeta?.playerFlavorLine : "";
 
   return (
@@ -87,7 +79,9 @@ export default function MiniPlayer({
             {secondaryMeta ? (
               <p className="mini-player-meta">{secondaryMeta}</p>
             ) : null}
-            {flavorLine ? <p className="mini-player-flavor">{flavorLine}</p> : null}
+            {flavorLine ? (
+              <p className="mini-player-flavor">{flavorLine}</p>
+            ) : null}
           </div>
           {chipLabel ? (
             <span
@@ -131,7 +125,10 @@ export default function MiniPlayer({
                 className="mini-player-progress-shell"
                 style={{ "--mini-progress": progressPercent }}
               >
-                <div aria-hidden="true" className="mini-player-progress-track" />
+                <div
+                  aria-hidden="true"
+                  className="mini-player-progress-track"
+                />
                 <div
                   aria-hidden="true"
                   className={`mini-player-progress-fill${hasProgress ? " has-progress" : ""}`}
@@ -152,8 +149,12 @@ export default function MiniPlayer({
                 />
               </div>
               <div className="mini-player-times">
-                <span className="mini-player-time">{formatClock(progress)}</span>
-                <span className="mini-player-time">{formatClock(duration)}</span>
+                <span className="mini-player-time">
+                  {formatClock(progress)}
+                </span>
+                <span className="mini-player-time">
+                  {formatClock(duration)}
+                </span>
               </div>
             </div>
             <label className="mini-player-volume">

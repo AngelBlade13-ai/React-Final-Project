@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { PublicLoadingState } from "../../components/PublicDataState";
 import { withMutationIntent } from "../../lib/api";
@@ -13,9 +13,10 @@ export default function AccountPage({
 }) {
   usePageMetadata({
     description:
-      "Manage your public account, library, comments, and role-based archive access.",
+      "Manage your profile, saved songs, recent listens, and account settings.",
     title: "Account"
   });
+
   const [profileName, setProfileName] = useState(
     currentUser?.displayName || ""
   );
@@ -23,6 +24,11 @@ export default function AccountPage({
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState("");
+  const [avatarError, setAvatarError] = useState("");
+  const [avatarSuccess, setAvatarSuccess] = useState("");
+  const [avatarUploading, setAvatarUploading] = useState(false);
   const [library, setLibrary] = useState({
     savedReleases: [],
     recentReleases: [],
@@ -30,17 +36,47 @@ export default function AccountPage({
   });
   const [libraryError, setLibraryError] = useState("");
   const [libraryLoading, setLibraryLoading] = useState(false);
+
   const reactionCount = Object.keys(library.releaseReactions || {}).length;
+
   const profileInitial =
     String(currentUser?.displayName || currentUser?.email || "A")
       .trim()
       .slice(0, 1)
       .toUpperCase() || "A";
 
+  const displayName =
+    currentUser?.displayName || currentUser?.email || "Your Profile";
+
+  const roleLabel = currentUser?.role === "admin" ? "Admin" : "Listener";
+  const statusLabel = currentUser?.status || "active";
+
+  const continueRelease = useMemo(() => {
+    return library.recentReleases[0] || library.savedReleases[0] || null;
+  }, [library.recentReleases, library.savedReleases]);
+
+  const favoriteRelease = useMemo(() => {
+    return library.savedReleases[0] || null;
+  }, [library.savedReleases]);
+
   useEffect(() => {
     setProfileName(currentUser?.displayName || "");
     setProfilePassword("");
   }, [currentUser]);
+
+  useEffect(() => {
+    if (!avatarFile) {
+      setAvatarPreviewUrl("");
+      return undefined;
+    }
+
+    const nextPreviewUrl = URL.createObjectURL(avatarFile);
+    setAvatarPreviewUrl(nextPreviewUrl);
+
+    return () => {
+      URL.revokeObjectURL(nextPreviewUrl);
+    };
+  }, [avatarFile]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -131,11 +167,73 @@ export default function AccountPage({
 
       onUserAuthSuccess(data);
       setProfilePassword("");
-      setSuccess("Account updated.");
+      setSuccess("Profile updated.");
     } catch (apiError) {
       setError(apiError.message);
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  function handleAvatarFileChange(event) {
+    const file = event.target.files?.[0] || null;
+    setAvatarError("");
+    setAvatarSuccess("");
+
+    if (!file) {
+      setAvatarFile(null);
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      setAvatarFile(null);
+      setAvatarError("Choose an image file for your profile picture.");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setAvatarFile(null);
+      setAvatarError("Profile pictures must be 5 MB or smaller.");
+      return;
+    }
+
+    setAvatarFile(file);
+  }
+
+  async function handleAvatarSubmit(event) {
+    event.preventDefault();
+    setAvatarError("");
+    setAvatarSuccess("");
+
+    if (!avatarFile) {
+      setAvatarError("Choose an image before uploading.");
+      return;
+    }
+
+    try {
+      setAvatarUploading(true);
+      const formData = new FormData();
+      formData.append("avatar", avatarFile);
+
+      const response = await fetch(`${apiBaseUrl}/auth/me/avatar`, {
+        method: "POST",
+        credentials: "include",
+        headers: withMutationIntent(),
+        body: formData
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.message || "Profile picture upload failed.");
+      }
+
+      onUserAuthSuccess(data);
+      setAvatarFile(null);
+      setAvatarSuccess("Profile picture updated.");
+    } catch (apiError) {
+      setAvatarError(apiError.message);
+    } finally {
+      setAvatarUploading(false);
     }
   }
 
@@ -155,63 +253,62 @@ export default function AccountPage({
   }
 
   return (
-    <div className="content-grid">
-      <section className="hero homepage-hero account-hero">
-        <div className="hero-header-row auth-header-row">
+    <div className="content-grid account-page">
+      <section className="account-profile-shell">
+        <div className="account-profile-main">
           <Link className="back-link" to="/">
             Back to site
           </Link>
-        </div>
-        <p className="eyebrow">Archive Profile</p>
-        <h1>Your account, library, and archive trail.</h1>
-        <p className="hero-copy">
-          Manage your listener identity, return to saved songs, and open any
-          role-based tools connected to this account.
-        </p>
-      </section>
 
-      <section className="profile-hero-card">
-        <div className="profile-avatar" aria-hidden="true">
-          {profileInitial}
-        </div>
-        <div className="profile-identity">
-          <p className="eyebrow">
-            {currentUser.role === "admin"
-              ? "Admin Profile"
-              : "Listener Profile"}
-          </p>
-          <h2>{currentUser.displayName}</h2>
-          <p>{currentUser.email}</p>
-          <div className="profile-pill-row">
-            <span>
-              {currentUser.role === "admin"
-                ? "Studio access"
-                : "Public account"}
-            </span>
-            <span>{currentUser.status || "active"}</span>
+          <div className="account-profile-header">
+            <div
+              className="profile-avatar profile-avatar-large"
+              aria-hidden="true"
+            >
+              {currentUser.avatarUrl ? (
+                <img alt="" src={currentUser.avatarUrl} />
+              ) : (
+                profileInitial
+              )}
+            </div>
+
+            <div className="account-profile-copy">
+              <p className="eyebrow">Your Profile</p>
+              <h1>{displayName}</h1>
+              <p>{currentUser.email}</p>
+
+              <div className="profile-pill-row">
+                <span>{roleLabel}</span>
+                <span>{statusLabel}</span>
+              </div>
+            </div>
           </div>
         </div>
-        <div className="profile-action-stack">
-          <div className="profile-stat-grid">
+
+        <aside className="account-profile-side">
+          <p className="eyebrow">Listening Snapshot</p>
+          <div className="profile-stat-grid profile-stat-grid-wide">
             <article>
               <strong>{library.savedReleases.length}</strong>
-              <span>Saved</span>
+              <span>Saved songs</span>
             </article>
             <article>
               <strong>{library.recentReleases.length}</strong>
-              <span>Recent</span>
+              <span>Recent listens</span>
             </article>
             <article>
               <strong>{reactionCount}</strong>
               <span>Reactions</span>
             </article>
           </div>
+
           <div className="account-action-row">
             {currentUser.role === "admin" ? (
               <Link className="hero-link" to="/admin">
                 Open Admin Studio
               </Link>
             ) : null}
+
             <button
               className="secondary-button"
               onClick={onUserLogout}
@@ -220,80 +317,117 @@ export default function AccountPage({
               Sign Out
             </button>
           </div>
-        </div>
+        </aside>
       </section>
-      <section className="profile-dashboard-grid">
-        <article className="intro-card homepage-panel profile-feature-card">
-          <p className="eyebrow">Latest In Your Library</p>
-          <h2>
-            {library.savedReleases[0]?.title ||
-              library.recentReleases[0]?.title ||
-              "Start building your archive trail."}
-          </h2>
-          <p>
-            {library.savedReleases[0]
-              ? "Your latest saved song is waiting here whenever you come back."
-              : library.recentReleases[0]
-                ? "Your most recent listen is ready to continue."
-                : "Save a song or press play while signed in to shape this profile."}
-          </p>
-          {library.savedReleases[0] || library.recentReleases[0] ? (
-            <Link
-              className="card-link"
-              to={`/release/${(library.savedReleases[0] || library.recentReleases[0]).slug}`}
+
+      <section className="account-dashboard-grid">
+        <article className="intro-card homepage-panel account-avatar-card">
+          <div className="section-head">
+            <div>
+              <p className="eyebrow">Profile Picture</p>
+              <h2>Your listener image</h2>
+            </div>
+            <span>Optional</span>
+          </div>
+
+          <div className="account-avatar-upload-layout">
+            <div
+              className="profile-avatar account-avatar-preview"
+              aria-hidden="true"
             >
-              Open Song
+              {avatarPreviewUrl || currentUser.avatarUrl ? (
+                <img alt="" src={avatarPreviewUrl || currentUser.avatarUrl} />
+              ) : (
+                profileInitial
+              )}
+            </div>
+
+            <form className="account-avatar-form" onSubmit={handleAvatarSubmit}>
+              <label className="avatar-file-picker">
+                Choose image
+                <input
+                  accept="image/*"
+                  onChange={handleAvatarFileChange}
+                  type="file"
+                />
+              </label>
+              <p className="form-helper-text">
+                Use a square image if you have one. Large images are cropped to
+                fit.
+              </p>
+              {avatarFile ? (
+                <p className="avatar-file-name">{avatarFile.name}</p>
+              ) : null}
+              {avatarError ? <p className="error-text">{avatarError}</p> : null}
+              {avatarSuccess ? (
+                <p className="success-text">{avatarSuccess}</p>
+              ) : null}
+              <button disabled={avatarUploading || !avatarFile} type="submit">
+                {avatarUploading ? "Uploading..." : "Upload picture"}
+              </button>
+            </form>
+          </div>
+        </article>
+
+        <article className="intro-card homepage-panel account-feature-card">
+          <p className="eyebrow">Continue Listening</p>
+          <h2>{continueRelease?.title || "No recent listens yet"}</h2>
+          <p>
+            {continueRelease
+              ? "Pick up from the last song you opened, or keep browsing from your saved list."
+              : "Play a song while signed in and it will appear here for quick access."}
+          </p>
+
+          {continueRelease ? (
+            <Link className="card-link" to={`/release/${continueRelease.slug}`}>
+              Open song
             </Link>
           ) : (
             <Link className="card-link" to="/explore">
-              Search Songs
+              Browse songs
             </Link>
           )}
         </article>
-        <article className="intro-card homepage-panel profile-settings-card">
-          <p className="eyebrow">Profile Settings</p>
-          <h2>Account details</h2>
-          <form className="account-form-grid" onSubmit={handleProfileSubmit}>
-            <label>
-              Display Name
-              <input
-                minLength="2"
-                onChange={(event) => setProfileName(event.target.value)}
-                required
-                type="text"
-                value={profileName}
-              />
-            </label>
-            <label>
-              New Password
-              <input
-                minLength="8"
-                onChange={(event) => setProfilePassword(event.target.value)}
-                placeholder="Leave blank to keep current password"
-                type="password"
-                value={profilePassword}
-              />
-            </label>
-            <p className="form-helper-text">
-              Leave the password blank to keep the current one.
-            </p>
-            {error ? <p className="error-text">{error}</p> : null}
-            {success ? <p className="success-text">{success}</p> : null}
-            <button disabled={submitting} type="submit">
-              {submitting ? "Saving..." : "Update Profile"}
-            </button>
-          </form>
+
+        <article className="intro-card homepage-panel account-feature-card">
+          <p className="eyebrow">Saved Favorite</p>
+          <h2>{favoriteRelease?.title || "Nothing saved yet"}</h2>
+          <p>
+            {favoriteRelease
+              ? "Your saved songs are kept here so the pieces you want to return to stay easy to find."
+              : "Save songs from their release pages to start building your personal shelf."}
+          </p>
+
+          {favoriteRelease ? (
+            <Link className="card-link" to={`/release/${favoriteRelease.slug}`}>
+              Open saved song
+            </Link>
+          ) : (
+            <Link className="card-link" to="/collections">
+              Explore collections
+            </Link>
+          )}
         </article>
       </section>
+
       <section className="intro-card homepage-panel account-library-panel">
         <div className="section-head">
-          <h2>Your Library</h2>
-          <span>{libraryLoading ? "Loading..." : "Saved + recent"}</span>
+          <div>
+            <p className="eyebrow">Your Music</p>
+            <h2>Library</h2>
+          </div>
+          <span>{libraryLoading ? "Loading..." : "Saved and recent"}</span>
         </div>
+
         {libraryError ? <p className="error-text">{libraryError}</p> : null}
+
         <div className="account-library-grid">
           <article className="account-library-list">
-            <p className="eyebrow">Saved Songs</p>
+            <div className="account-list-heading">
+              <h3>Saved Songs</h3>
+              <span>{library.savedReleases.length}</span>
+            </div>
+
             {library.savedReleases.length ? (
               library.savedReleases.map((release) => (
                 <Link
@@ -314,8 +448,13 @@ export default function AccountPage({
               </p>
             )}
           </article>
+
           <article className="account-library-list">
-            <p className="eyebrow">Recently Played</p>
+            <div className="account-list-heading">
+              <h3>Recently Played</h3>
+              <span>{library.recentReleases.length}</span>
+            </div>
+
             {library.recentReleases.length ? (
               library.recentReleases.map((release) => (
                 <Link
@@ -334,6 +473,51 @@ export default function AccountPage({
             )}
           </article>
         </div>
+      </section>
+
+      <section className="intro-card homepage-panel account-settings-panel">
+        <div className="section-head">
+          <div>
+            <p className="eyebrow">Account Settings</p>
+            <h2>Profile details</h2>
+          </div>
+          <span>Private</span>
+        </div>
+
+        <form className="account-form-grid" onSubmit={handleProfileSubmit}>
+          <label>
+            Display name
+            <input
+              minLength="2"
+              onChange={(event) => setProfileName(event.target.value)}
+              required
+              type="text"
+              value={profileName}
+            />
+          </label>
+
+          <label>
+            New password
+            <input
+              minLength="8"
+              onChange={(event) => setProfilePassword(event.target.value)}
+              placeholder="Leave blank to keep current password"
+              type="password"
+              value={profilePassword}
+            />
+          </label>
+
+          <p className="form-helper-text">
+            Leave the password blank if you do not want to change it.
+          </p>
+
+          {error ? <p className="error-text">{error}</p> : null}
+          {success ? <p className="success-text">{success}</p> : null}
+
+          <button disabled={submitting} type="submit">
+            {submitting ? "Saving..." : "Save changes"}
+          </button>
+        </form>
       </section>
     </div>
   );

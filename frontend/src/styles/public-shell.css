@@ -14,6 +14,295 @@
   transition: transform 160ms ease;
 }
 
+.account-page {
+  gap: clamp(1.25rem, 3vw, 2rem);
+}
+
+.account-profile-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr);
+  gap: clamp(1rem, 3vw, 1.5rem);
+  align-items: stretch;
+}
+
+.account-profile-main,
+.account-profile-side,
+.account-avatar-card,
+.account-feature-card,
+.account-library-panel,
+.account-settings-panel {
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
+  border-radius: 28px;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--surface, #fff) 94%, transparent),
+    color-mix(in srgb, var(--surface-raised, #fff) 82%, transparent)
+  );
+  box-shadow: var(--shadow-soft, 0 20px 60px rgba(0, 0, 0, 0.12));
+}
+
+.account-profile-main {
+  padding: clamp(1.25rem, 4vw, 2rem);
+}
+
+.account-profile-side {
+  padding: clamp(1.1rem, 3vw, 1.5rem);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1.25rem;
+}
+
+.account-profile-header {
+  display: flex;
+  gap: clamp(1rem, 3vw, 1.5rem);
+  align-items: center;
+  margin-top: 1.25rem;
+}
+
+.profile-avatar-large {
+  width: clamp(5rem, 14vw, 7rem);
+  height: clamp(5rem, 14vw, 7rem);
+  font-size: clamp(2rem, 5vw, 3rem);
+  flex: 0 0 auto;
+}
+
+.profile-avatar img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  border-radius: inherit;
+}
+
+.account-profile-copy h1 {
+  margin: 0;
+  font-size: clamp(2.2rem, 7vw, 4.5rem);
+  letter-spacing: -0.07em;
+  line-height: 0.95;
+}
+
+.account-profile-copy > p:not(.eyebrow) {
+  margin: 0.65rem 0 0;
+  color: var(--text-muted, rgba(255, 255, 255, 0.68));
+}
+
+.profile-pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.profile-pill-row span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.14));
+  background: color-mix(in srgb, var(--surface-raised, #fff) 76%, transparent);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.profile-stat-grid-wide {
+  grid-template-columns: 1fr;
+}
+
+.account-dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(1rem, 3vw, 1.5rem);
+}
+
+.account-avatar-card {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.account-avatar-upload-layout {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: clamp(1rem, 3vw, 1.35rem);
+  align-items: center;
+}
+
+.account-avatar-preview {
+  width: clamp(5.5rem, 16vw, 8rem);
+  height: clamp(5.5rem, 16vw, 8rem);
+  font-size: clamp(2rem, 5vw, 3rem);
+  flex: 0 0 auto;
+}
+
+.account-avatar-form {
+  display: grid;
+  gap: 0.8rem;
+  align-content: start;
+}
+
+.avatar-file-picker {
+  display: grid;
+  gap: 0.45rem;
+  font-weight: 800;
+}
+
+.avatar-file-picker input {
+  width: 100%;
+  border-radius: 16px;
+  border: 1px dashed color-mix(in srgb, var(--border) 70%, var(--primary) 30%);
+  background: color-mix(in srgb, var(--surface-raised, #fff) 70%, transparent);
+  color: inherit;
+  padding: 0.85rem;
+}
+
+.avatar-file-name {
+  margin: 0;
+  color: var(--text-muted, rgba(255, 255, 255, 0.68));
+  font-size: 0.9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-avatar-form button {
+  justify-self: start;
+}
+
+.account-feature-card {
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.account-feature-card h2,
+.account-library-panel h2,
+.account-settings-panel h2 {
+  margin-top: 0.25rem;
+}
+
+.account-library-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(1rem, 3vw, 1.5rem);
+}
+
+.account-library-list {
+  display: grid;
+  gap: 0.75rem;
+  align-content: start;
+}
+
+.account-list-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.account-list-heading h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.account-list-heading span {
+  display: inline-flex;
+  min-width: 2rem;
+  height: 2rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent, #d946ef) 14%, transparent);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.account-library-link {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.9rem 1rem;
+  border-radius: 18px;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
+  background: color-mix(in srgb, var(--surface-raised, #fff) 72%, transparent);
+  text-decoration: none;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background 160ms ease;
+}
+
+.account-library-link:hover,
+.account-library-link:focus-visible {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--accent, #d946ef) 45%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--accent, #d946ef) 10%,
+    var(--surface-raised, #fff)
+  );
+}
+
+.account-library-link strong {
+  color: var(--text-strong, inherit);
+}
+
+.account-library-link span {
+  color: var(--text-muted, rgba(255, 255, 255, 0.65));
+  font-size: 0.88rem;
+}
+
+.account-settings-panel {
+  max-width: 780px;
+}
+
+.account-form-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.account-form-grid label {
+  display: grid;
+  gap: 0.45rem;
+  font-weight: 700;
+}
+
+.account-form-grid input {
+  width: 100%;
+  min-height: 2.9rem;
+  border-radius: 16px;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.14));
+  background: color-mix(in srgb, var(--surface, #fff) 80%, transparent);
+  color: inherit;
+  padding: 0 0.95rem;
+}
+
+.account-form-grid button {
+  justify-self: start;
+}
+
+@media (max-width: 860px) {
+  .account-profile-shell,
+  .account-dashboard-grid,
+  .account-library-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .account-profile-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .account-avatar-upload-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .account-profile-side {
+    justify-content: flex-start;
+  }
+}
+
 .skip-link:focus-visible {
   transform: translateY(0);
 }
@@ -166,25 +455,27 @@
 .footer-link-row a:hover,
 .footer-link-row a:focus-visible {
   transform: translateY(-2px);
-  border-color: color-mix(in srgb, var(--primary-strong) 60%, var(--border) 40%);
-  background:
-    linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--primary) 74%, var(--surface) 26%),
-      color-mix(in srgb, var(--primary-strong) 78%, var(--secondary) 22%)
-    );
+  border-color: color-mix(
+    in srgb,
+    var(--primary-strong) 60%,
+    var(--border) 40%
+  );
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--primary) 74%, var(--surface) 26%),
+    color-mix(in srgb, var(--primary-strong) 78%, var(--secondary) 22%)
+  );
   color: var(--background);
   box-shadow: 0 14px 26px color-mix(in srgb, var(--primary) 24%, transparent);
 }
 
 :root[data-theme="light"] .footer-link-row a:hover,
 :root[data-theme="light"] .footer-link-row a:focus-visible {
-  background:
-    linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--primary) 78%, white 22%),
-      var(--primary-strong)
-    );
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--primary) 78%, white 22%),
+    var(--primary-strong)
+  );
   color: #2f081b;
   border-color: color-mix(in srgb, var(--primary-strong) 64%, white 36%);
   box-shadow: 0 16px 28px rgba(155, 45, 93, 0.22);
@@ -444,8 +735,16 @@
 
 .homepage-hero {
   background:
-    radial-gradient(circle at 88% 12%, color-mix(in srgb, var(--secondary) 16%, transparent), transparent 22rem),
-    radial-gradient(circle at 10% 24%, color-mix(in srgb, var(--primary) 14%, transparent), transparent 24rem),
+    radial-gradient(
+      circle at 88% 12%,
+      color-mix(in srgb, var(--secondary) 16%, transparent),
+      transparent 22rem
+    ),
+    radial-gradient(
+      circle at 10% 24%,
+      color-mix(in srgb, var(--primary) 14%, transparent),
+      transparent 24rem
+    ),
     linear-gradient(
       145deg,
       color-mix(in srgb, var(--editorial-surface) 86%, white 14%),
@@ -488,8 +787,16 @@
 
 .home-doorway-guided {
   background:
-    radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--primary) 34%, transparent), transparent 34%),
-    linear-gradient(135deg, color-mix(in srgb, var(--editorial-surface) 66%, var(--primary) 34%), color-mix(in srgb, var(--shell-surface) 70%, var(--secondary) 30%)),
+    radial-gradient(
+      circle at 12% 0%,
+      color-mix(in srgb, var(--primary) 34%, transparent),
+      transparent 34%
+    ),
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--editorial-surface) 66%, var(--primary) 34%),
+      color-mix(in srgb, var(--shell-surface) 70%, var(--secondary) 30%)
+    ),
     var(--editorial-surface);
   box-shadow:
     0 22px 42px color-mix(in srgb, var(--primary) 22%, transparent),
@@ -498,7 +805,11 @@
 
 .home-doorway-fractureverse {
   background:
-    radial-gradient(circle at top right, color-mix(in srgb, var(--primary) 28%, transparent), transparent 28%),
+    radial-gradient(
+      circle at top right,
+      color-mix(in srgb, var(--primary) 28%, transparent),
+      transparent 28%
+    ),
     linear-gradient(
       180deg,
       color-mix(in srgb, var(--editorial-surface) 70%, var(--primary) 30%),
@@ -512,7 +823,11 @@
 
 .home-doorway-eldoria {
   background:
-    radial-gradient(circle at top right, color-mix(in srgb, var(--secondary) 26%, transparent), transparent 28%),
+    radial-gradient(
+      circle at top right,
+      color-mix(in srgb, var(--secondary) 26%, transparent),
+      transparent 28%
+    ),
     linear-gradient(
       180deg,
       color-mix(in srgb, var(--utility-surface) 70%, var(--secondary) 30%),
@@ -526,8 +841,16 @@
 
 .home-doorway-utility {
   background:
-    radial-gradient(circle at 92% 0%, color-mix(in srgb, var(--primary) 24%, transparent), transparent 32%),
-    linear-gradient(180deg, color-mix(in srgb, var(--utility-surface) 66%, var(--primary) 34%), color-mix(in srgb, var(--utility-surface) 82%, var(--surface-alt) 18%)),
+    radial-gradient(
+      circle at 92% 0%,
+      color-mix(in srgb, var(--primary) 24%, transparent),
+      transparent 32%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--utility-surface) 66%, var(--primary) 34%),
+      color-mix(in srgb, var(--utility-surface) 82%, var(--surface-alt) 18%)
+    ),
     var(--utility-surface);
   box-shadow:
     0 22px 40px color-mix(in srgb, var(--primary) 18%, transparent),
@@ -597,7 +920,11 @@
 
 .featured-release-section .section-head,
 #latest-releases .section-head {
-  border-bottom-color: color-mix(in srgb, var(--border) 76%, var(--primary) 24%);
+  border-bottom-color: color-mix(
+    in srgb,
+    var(--border) 76%,
+    var(--primary) 24%
+  );
 }
 
 .featured-release-section,
@@ -621,7 +948,11 @@
 }
 
 .collection-index-section:first-of-type .section-head {
-  border-bottom-color: color-mix(in srgb, var(--primary) 28%, var(--border) 72%);
+  border-bottom-color: color-mix(
+    in srgb,
+    var(--primary) 28%,
+    var(--border) 72%
+  );
 }
 
 .collection-index-section:first-of-type .collection-card {
@@ -635,7 +966,11 @@
 }
 
 .collection-index-section:last-of-type .section-head {
-  border-bottom-color: color-mix(in srgb, var(--secondary) 28%, var(--border) 72%);
+  border-bottom-color: color-mix(
+    in srgb,
+    var(--secondary) 28%,
+    var(--border) 72%
+  );
 }
 
 .collection-index-section:last-of-type .collection-card {
@@ -651,7 +986,11 @@
 .featured-release-card {
   border-radius: 34px;
   background:
-    linear-gradient(145deg, color-mix(in srgb, var(--editorial-surface) 66%, var(--primary) 34%), color-mix(in srgb, var(--shell-surface) 78%, var(--surface-alt) 22%)),
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--editorial-surface) 66%, var(--primary) 34%),
+      color-mix(in srgb, var(--shell-surface) 78%, var(--surface-alt) 22%)
+    ),
     var(--editorial-surface);
   box-shadow:
     0 24px 52px color-mix(in srgb, var(--primary) 20%, transparent),
@@ -673,7 +1012,11 @@
 .collection-card {
   border-radius: 30px;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--utility-surface) 74%, var(--primary) 26%), color-mix(in srgb, var(--shell-surface) 84%, var(--surface-alt) 16%)),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--utility-surface) 74%, var(--primary) 26%),
+      color-mix(in srgb, var(--shell-surface) 84%, var(--surface-alt) 16%)
+    ),
     var(--utility-surface);
 }
 
@@ -721,7 +1064,11 @@
 
 .explore-toolbar {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--utility-surface) 82%, white 18%), color-mix(in srgb, var(--utility-surface) 96%, var(--surface-alt) 4%)),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--utility-surface) 82%, white 18%),
+      color-mix(in srgb, var(--utility-surface) 96%, var(--surface-alt) 4%)
+    ),
     var(--utility-surface);
 }
 
@@ -802,7 +1149,11 @@
 .filter-chip.active {
   background: color-mix(in srgb, var(--primary) 78%, var(--secondary) 22%);
   color: color-mix(in srgb, var(--background) 48%, black 52%);
-  border-color: color-mix(in srgb, var(--primary-strong) 72%, var(--border) 28%);
+  border-color: color-mix(
+    in srgb,
+    var(--primary-strong) 72%,
+    var(--border) 28%
+  );
 }
 
 .results-grid .result-card {
@@ -849,7 +1200,11 @@
 .auth-intro-panel,
 .account-panel {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--editorial-surface) 86%, white 14%), color-mix(in srgb, var(--shell-surface) 96%, var(--surface-alt) 4%)),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--editorial-surface) 86%, white 14%),
+      color-mix(in srgb, var(--shell-surface) 96%, var(--surface-alt) 4%)
+    ),
     var(--editorial-surface);
 }
 

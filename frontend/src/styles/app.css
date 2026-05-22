@@ -327,12 +327,11 @@ button {
 
 :root[data-theme="light"] .hero-link,
 :root[data-theme="light"] button {
-  background:
-    linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--primary) 86%, white 14%),
-      var(--primary-strong)
-    );
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--primary) 86%, white 14%),
+    var(--primary-strong)
+  );
   color: #3d1026;
   border-color: color-mix(in srgb, var(--primary-strong) 64%, white 36%);
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.22);
@@ -353,12 +352,11 @@ button:focus-visible:not(:disabled) {
 :root[data-theme="light"] .hero-link:focus-visible,
 :root[data-theme="light"] button:hover:not(:disabled),
 :root[data-theme="light"] button:focus-visible:not(:disabled) {
-  background:
-    linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--primary) 72%, white 28%),
-      color-mix(in srgb, var(--primary-strong) 86%, #5d1235 14%)
-    );
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--primary) 72%, white 28%),
+    color-mix(in srgb, var(--primary-strong) 86%, #5d1235 14%)
+  );
   color: #2f081b;
   box-shadow:
     0 16px 32px rgba(155, 45, 93, 0.24),
@@ -1710,11 +1708,7 @@ select:focus {
       color-mix(in srgb, var(--secondary) 24%, transparent),
       transparent 30%
     ),
-    linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0.36),
-      rgba(121, 24, 69, 0.08)
-    );
+    linear-gradient(180deg, rgba(255, 255, 255, 0.36), rgba(121, 24, 69, 0.08));
   opacity: 1;
 }
 
@@ -1774,22 +1768,20 @@ select:focus {
 }
 
 :root[data-theme="light"] .home-doorway-fractureverse {
-  background:
-    linear-gradient(
-      145deg,
-      color-mix(in srgb, #2a1430 62%, var(--primary) 38%),
-      color-mix(in srgb, #170d22 72%, var(--secondary) 28%)
-    );
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, #2a1430 62%, var(--primary) 38%),
+    color-mix(in srgb, #170d22 72%, var(--secondary) 28%)
+  );
   color: #fff0f7;
 }
 
 :root[data-theme="light"] .home-doorway-eldoria {
-  background:
-    linear-gradient(
-      145deg,
-      color-mix(in srgb, #25301f 68%, #c6ab6d 32%),
-      color-mix(in srgb, #121a15 76%, #a6884f 24%)
-    );
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, #25301f 68%, #c6ab6d 32%),
+    color-mix(in srgb, #121a15 76%, #a6884f 24%)
+  );
   color: #fff7dc;
 }
 
@@ -1981,12 +1973,11 @@ select:focus {
 }
 
 :root[data-theme="light"] .featured-release-copy {
-  background:
-    linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0.22),
-      rgba(121, 24, 69, 0.08)
-    );
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.22),
+    rgba(121, 24, 69, 0.08)
+  );
 }
 
 :root[data-theme="light"] .featured-release-intro,
@@ -2053,7 +2044,11 @@ select:focus {
 :root[data-theme="light"] .guided-path-card {
   border-color: color-mix(in srgb, var(--primary-strong) 26%, white 74%);
   background:
-    radial-gradient(circle at 12% 0%, rgba(213, 73, 146, 0.24), transparent 34%),
+    radial-gradient(
+      circle at 12% 0%,
+      rgba(213, 73, 146, 0.24),
+      transparent 34%
+    ),
     linear-gradient(145deg, #ffd7e9, #f8b9d7 52%, #f3d5de);
   color: #321020;
   box-shadow:
@@ -3133,8 +3128,16 @@ select:focus {
   gap: 1.2rem;
   align-items: stretch;
   background:
-    radial-gradient(circle at 82% 20%, rgba(218, 67, 143, 0.22), transparent 30%),
-    radial-gradient(circle at 12% 10%, rgba(255, 196, 222, 0.22), transparent 26%),
+    radial-gradient(
+      circle at 82% 20%,
+      rgba(218, 67, 143, 0.22),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 12% 10%,
+      rgba(255, 196, 222, 0.22),
+      transparent 26%
+    ),
     linear-gradient(
       145deg,
       color-mix(in srgb, var(--surface) 72%, var(--primary) 28%),
@@ -3155,7 +3158,11 @@ select:focus {
   border-radius: 30px;
   border: 1px solid color-mix(in srgb, var(--border) 70%, var(--primary) 30%);
   background:
-    linear-gradient(180deg, transparent, color-mix(in srgb, var(--primary) 18%, transparent)),
+    linear-gradient(
+      180deg,
+      transparent,
+      color-mix(in srgb, var(--primary) 18%, transparent)
+    ),
     color-mix(in srgb, var(--surface) 68%, var(--primary) 32%);
   box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text) 5%, transparent);
 }
@@ -3183,13 +3190,21 @@ select:focus {
 
 .about-artist-card {
   background:
-    radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--primary) 18%, transparent), transparent 34%),
+    radial-gradient(
+      circle at 12% 0%,
+      color-mix(in srgb, var(--primary) 18%, transparent),
+      transparent 34%
+    ),
     color-mix(in srgb, var(--surface) 82%, var(--primary) 18%);
 }
 
 .about-site-card {
   background:
-    radial-gradient(circle at 86% 10%, color-mix(in srgb, var(--secondary) 18%, transparent), transparent 34%),
+    radial-gradient(
+      circle at 86% 10%,
+      color-mix(in srgb, var(--secondary) 18%, transparent),
+      transparent 34%
+    ),
     color-mix(in srgb, var(--surface-alt) 82%, var(--surface) 18%);
 }
 
@@ -3229,8 +3244,16 @@ select:focus {
   justify-content: center;
   min-height: 240px;
   background:
-    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--primary) 20%, transparent), transparent 34%),
-    linear-gradient(135deg, color-mix(in srgb, var(--surface) 70%, var(--primary) 30%), var(--surface-alt));
+    radial-gradient(
+      circle at 50% 0%,
+      color-mix(in srgb, var(--primary) 20%, transparent),
+      transparent 34%
+    ),
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--surface) 70%, var(--primary) 30%),
+      var(--surface-alt)
+    );
 }
 
 :root[data-theme="light"] .about-hero,
@@ -3255,7 +3278,11 @@ select:focus {
 
 :root[data-theme="light"] .about-hero-card {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.24), rgba(172, 42, 100, 0.18)),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.24),
+      rgba(172, 42, 100, 0.18)
+    ),
     #f6b7d5;
   color: #2e0b1c;
 }
@@ -3694,13 +3721,18 @@ select:focus {
   place-items: center;
   border-radius: 32px;
   background:
-    radial-gradient(circle at 28% 20%, rgba(255, 255, 255, 0.5), transparent 28%),
+    radial-gradient(
+      circle at 28% 20%,
+      rgba(255, 255, 255, 0.5),
+      transparent 28%
+    ),
     linear-gradient(135deg, var(--primary), var(--primary-strong));
   color: #fff7fb;
   font-size: clamp(2.4rem, 6vw, 4.5rem);
   font-weight: 900;
   letter-spacing: -0.08em;
   box-shadow: 0 18px 34px color-mix(in srgb, var(--primary) 26%, transparent);
+  overflow: hidden;
 }
 
 .profile-identity {
@@ -3784,8 +3816,16 @@ select:focus {
   gap: 0.7rem;
   min-height: 320px;
   background:
-    radial-gradient(circle at 82% 12%, color-mix(in srgb, var(--primary) 22%, transparent), transparent 34%),
-    linear-gradient(145deg, color-mix(in srgb, var(--surface) 72%, var(--primary) 28%), var(--surface-alt));
+    radial-gradient(
+      circle at 82% 12%,
+      color-mix(in srgb, var(--primary) 22%, transparent),
+      transparent 34%
+    ),
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--surface) 72%, var(--primary) 28%),
+      var(--surface-alt)
+    );
 }
 
 .profile-feature-card h2 {
@@ -3806,7 +3846,11 @@ select:focus {
 :root[data-theme="light"] .profile-settings-card {
   border-color: color-mix(in srgb, var(--primary-strong) 24%, white 76%);
   background:
-    radial-gradient(circle at 10% 0%, rgba(214, 76, 148, 0.24), transparent 34%),
+    radial-gradient(
+      circle at 10% 0%,
+      rgba(214, 76, 148, 0.24),
+      transparent 34%
+    ),
     linear-gradient(145deg, #ffddeb, #f8bfd9 54%, #f5dce5);
   color: #321020;
   box-shadow:

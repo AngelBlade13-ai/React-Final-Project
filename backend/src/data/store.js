@@ -673,7 +673,8 @@ function normalizeSiteContent(siteContent = {}) {
           status: String(entry?.status || "rejected").trim() || "rejected",
           reasonCode: String(entry?.reasonCode || "other").trim() || "other",
           summary: String(entry?.summary || "").trim(),
-          targetType: String(entry?.targetType || "catalog").trim() || "catalog",
+          targetType:
+            String(entry?.targetType || "catalog").trim() || "catalog",
           targetSlug: String(entry?.targetSlug || "").trim(),
           field: String(entry?.field || "").trim(),
           issue: String(entry?.issue || "").trim(),
@@ -851,6 +852,7 @@ function normalizeUser(user) {
       .trim()
       .toLowerCase(),
     displayName: String(user.displayName || "").trim(),
+    avatarUrl: String(user.avatarUrl || "").trim(),
     passwordHash: String(user.passwordHash || "").trim(),
     role: String(user.role || "user").trim() || "user",
     status: String(user.status || "active").trim() || "active",
