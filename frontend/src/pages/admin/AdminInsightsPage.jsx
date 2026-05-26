@@ -109,10 +109,10 @@ export default function AdminInsightsPage() {
             <Link className="hero-link" to="/admin/posts">
               New Or Edit Post
             </Link>
-            <Link className="secondary-button" to="/admin/comments">
+            <Link className="hero-link" to="/admin/comments">
               Moderate Comments
             </Link>
-            <Link className="secondary-button" to="/admin/ai-runtime">
+            <Link className="hero-link" to="/admin/ai-runtime">
               AI Runtime
             </Link>
           </div>

@@ -1,7 +1,7 @@
 # Catalog Sync Report
 
 - Catalog file: `backend\data\posts.local.json`
-- Generated: `2026-04-27T21:14:57.610Z`
+- Generated: `2026-05-26T20:04:17.050Z`
 
 ## Summary
 
@@ -10,8 +10,8 @@
 - Live-only posts added to tracked catalog: `0`
 - Tracked-only posts missing from live store: `0`
 - Matching posts with field drift: `0`
-- Tracked collections before sync: `4`
-- Live collections exported: `4`
+- Tracked collections before sync: `12`
+- Live collections exported: `12`
 - Collections with field drift: `0`
 - Site content sections changed: `0`
 - Live users excluded from tracked catalog: `1`
