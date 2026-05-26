@@ -1372,6 +1372,8 @@
 .homepage-selection-section {
   display: grid;
   gap: 1rem;
+  max-width: min(100%, 68rem);
+  margin-inline: auto;
   border-color: color-mix(in srgb, var(--border) 48%, var(--primary) 52%);
   background:
     radial-gradient(
@@ -1396,14 +1398,19 @@
 
 .homepage-selection-section .section-head {
   align-items: baseline;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--border) 50%, var(--primary) 50%);
 }
 
 .homepage-selection-section .results-context-copy {
-  max-width: 62rem;
+  max-width: 50rem;
   color: color-mix(in srgb, var(--text) 76%, var(--muted-text) 24%);
+  line-height: 1.65;
 }
 
 .homepage-selection-grid .compact-release-card {
+  min-height: 100%;
   border-color: color-mix(in srgb, var(--border) 48%, var(--primary) 52%);
   background:
     linear-gradient(
@@ -1415,6 +1422,29 @@
   box-shadow:
     0 18px 38px color-mix(in srgb, var(--primary) 14%, transparent),
     inset 0 1px 0 color-mix(in srgb, var(--text) 7%, transparent);
+}
+
+.homepage-selection-grid .compact-release-card .release-card-media {
+  aspect-ratio: 16 / 7.25;
+}
+
+.homepage-selection-grid .compact-release-card .post-body {
+  grid-template-rows: auto auto minmax(3.2rem, auto) minmax(3.6rem, 1fr) auto;
+}
+
+.homepage-selection-grid .compact-release-card .post-body h3 {
+  min-height: 2.7em;
+}
+
+.homepage-selection-grid .compact-release-card .compact-tag-row {
+  align-self: start;
+  max-height: 4.9rem;
+  overflow: hidden;
+}
+
+.homepage-selection-grid .compact-release-card .card-action-row {
+  align-self: end;
+  margin-top: 0.35rem;
 }
 
 .account-profile-shell {
@@ -1498,6 +1528,10 @@
   .result-card {
     grid-template-columns: minmax(112px, 0.42fr) minmax(0, 1fr);
   }
+
+  .homepage-selection-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 560px) {
@@ -1523,6 +1557,15 @@
   }
 
   .result-card {
+    grid-template-columns: 1fr;
+  }
+
+  .homepage-selection-section .section-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .homepage-selection-grid {
     grid-template-columns: 1fr;
   }
 
