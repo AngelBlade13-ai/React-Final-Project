@@ -141,16 +141,20 @@ function App() {
 
   useEffect(() => {
     const root = document.documentElement;
+    const visualCollectionTheme =
+      activeCollectionTheme && activeCollectionTheme !== "default"
+        ? activeCollectionTheme
+        : "";
     root.setAttribute("data-theme", activeTheme);
 
-    if (activeCollectionTheme) {
-      root.setAttribute("data-collection-theme", activeCollectionTheme);
+    if (visualCollectionTheme) {
+      root.setAttribute("data-collection-theme", visualCollectionTheme);
     } else {
       root.removeAttribute("data-collection-theme");
     }
 
     const themeVars = getThemeCssVariables(
-      activeCollectionTheme,
+      visualCollectionTheme,
       activeTheme,
       siteContent
     );
