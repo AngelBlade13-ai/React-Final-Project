@@ -54,7 +54,15 @@ function describeAuditDetails(entry) {
 }
 
 async function readJson(responsePromise, fallbackMessage) {
-  const response = await responsePromise;
+  let response;
+  try {
+    response = await responsePromise;
+  } catch (error) {
+    throw new Error(
+      `${fallbackMessage} The browser could not reach the backend; the task may still be running. Check the result again in a moment.`,
+      { cause: error }
+    );
+  }
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
@@ -62,6 +70,12 @@ async function readJson(responsePromise, fallbackMessage) {
   }
 
   return data;
+}
+
+function delay(ms) {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
 }
 
 export default function AdminSystemPage() {
@@ -212,6 +226,21 @@ export default function AdminSystemPage() {
         }),
         "Failed to reseed the live website from posts.json."
       );
+      const startedJob = data.reseedJob || null;
+
+      if (startedJob?.jobId) {
+        setReseedMessage(
+          startedJob.message ||
+            "Live site reseed started. Waiting for it to finish..."
+        );
+        const finishedJob = await waitForReseedJob(startedJob.jobId);
+        setReseedResult(finishedJob.reseed || null);
+        setReseedMessage(
+          finishedJob.message ||
+            "Live site reseeded from backend/data/posts.json."
+        );
+        return;
+      }
 
       setReseedResult(data.reseed || null);
       setReseedMessage(
@@ -221,6 +250,30 @@ export default function AdminSystemPage() {
       setReseedError(apiError.message);
     } finally {
       setReseedLoading(false);
+    }
+  }
+
+  async function waitForReseedJob(jobId) {
+    for (;;) {
+      await delay(1500);
+      const data = await readJson(
+        adminFetch(
+          `${apiBaseUrl}/admin/reseed-live-site/jobs/${encodeURIComponent(jobId)}`
+        ),
+        "Failed to read live reseed progress."
+      );
+      const job = data.reseedJob || {};
+
+      if (job.status === "running") {
+        setReseedMessage(job.message || "Live site reseed is still running...");
+        continue;
+      }
+
+      if (job.status === "success") {
+        return job;
+      }
+
+      throw new Error(job.error || job.message || "Live site reseed failed.");
     }
   }
 

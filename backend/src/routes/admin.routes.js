@@ -1,6 +1,7 @@
 const express = require("express");
 const crypto = require("crypto");
 const path = require("path");
+const config = require("../config");
 const { requireAdmin } = require("../middleware/auth");
 const {
   requireCatalogFileMutationsEnabled
@@ -24,7 +25,10 @@ const {
   writeSiteContent
 } = require("../data/store");
 const { buildArchiveInsights } = require("../services/archiveInsights");
-const { attachCommentDetails, sanitizeUser } = require("../services/authUserService");
+const {
+  attachCommentDetails,
+  sanitizeUser
+} = require("../services/authUserService");
 const {
   applyLiveStoreSync,
   previewLiveStoreSync
@@ -51,7 +55,10 @@ const {
   stopRemoteAiTunnel
 } = require("../services/remoteAiTunnelService");
 const { wakeRemoteOllama } = require("../services/remoteOllamaService");
-const { runPostFileReseed } = require("../services/reseedLiveSiteService");
+const {
+  getPostFileReseedJob,
+  startPostFileReseedJob
+} = require("../services/reseedLiveSiteService");
 const {
   appendSlugHistory,
   applyBulkPostUpdates,
@@ -130,7 +137,9 @@ router.get("/users", async (req, res, next) => {
             : 0
       }))
       .sort((left, right) =>
-        String(right.createdAt || "").localeCompare(String(left.createdAt || ""))
+        String(right.createdAt || "").localeCompare(
+          String(left.createdAt || "")
+        )
       );
 
     return res.json({ users });
@@ -152,15 +161,24 @@ router.put("/users/:id", async (req, res, next) => {
     const nextStatus = String(req.body.status || existingUser.status).trim();
 
     if (!["user", "admin"].includes(nextRole)) {
-      return res.status(400).json({ message: "User role must be user or admin." });
+      return res
+        .status(400)
+        .json({ message: "User role must be user or admin." });
     }
 
     if (!["active", "disabled"].includes(nextStatus)) {
-      return res.status(400).json({ message: "User status must be active or disabled." });
+      return res
+        .status(400)
+        .json({ message: "User status must be active or disabled." });
     }
 
-    if (existingUser.id === req.admin.sub && (nextRole !== "admin" || nextStatus !== "active")) {
-      return res.status(400).json({ message: "You cannot remove your own admin access." });
+    if (
+      existingUser.id === req.admin.sub &&
+      (nextRole !== "admin" || nextStatus !== "active")
+    ) {
+      return res
+        .status(400)
+        .json({ message: "You cannot remove your own admin access." });
     }
 
     const nextUser = {
@@ -201,11 +219,17 @@ router.delete("/users/:id", async (req, res, next) => {
     }
 
     if (user.id === req.admin.sub) {
-      return res.status(400).json({ message: "You cannot delete your own account while signed in." });
+      return res
+        .status(400)
+        .json({
+          message: "You cannot delete your own account while signed in."
+        });
     }
 
     if (user.role === "admin") {
-      return res.status(400).json({ message: "Demote admin users before deleting them." });
+      return res
+        .status(400)
+        .json({ message: "Demote admin users before deleting them." });
     }
 
     const deletedCommentCount = store.comments.filter(
@@ -1155,7 +1179,9 @@ router.post("/assistant/catalog-finding-review", async (req, res, next) => {
       entityType: "assistant",
       entityId: review.finding?.fingerprint || "catalog-finding",
       entityLabel:
-        review.finding?.targetSlug || req.body?.finding?.targetSlug || "Finding",
+        review.finding?.targetSlug ||
+        req.body?.finding?.targetSlug ||
+        "Finding",
       details: {
         changedFields: Object.keys(review.suggestedPatch || {}),
         model: review.model,
@@ -1424,33 +1450,41 @@ router.post(
 router.post(
   "/reseed-live-site",
   requireCatalogFileMutationsEnabled,
-  async (req, res, next) => {
+  async (req, res) => {
     try {
-      const result = await runPostFileReseed();
+      const job = startPostFileReseedJob();
       await recordAdminAuditEvent(req, {
-        action: "site.reseeded",
+        action: "site.reseed_started",
         entityType: "site",
-        entityId: path.basename(result.postsFile || ""),
+        entityId: path.basename(config.postsFile || ""),
         entityLabel: "Live site reseed",
         details: {
-          postsFile: result.postsFile || "",
-          logPath: result.logPath
+          jobId: job.jobId,
+          postsFile: config.postsFile || ""
         }
       });
 
-      return res.json({
-        message: `Live site reseeded from ${result.postsFile || "the authored catalog file"}.`,
-        reseed: {
-          generatedAt: result.generatedAt,
-          logPath: result.logPath,
-          output: result.output
-        }
+      return res.status(202).json({
+        message:
+          "Live site reseed started. Progress will update automatically.",
+        reseedJob: job
       });
     } catch (error) {
-      next(error);
+      return res.status(500).json({
+        message: error.message || "Failed to start live site reseed."
+      });
     }
   }
 );
+
+router.get("/reseed-live-site/jobs/:jobId", async (req, res) => {
+  const job = getPostFileReseedJob(req.params.jobId);
+  if (!job) {
+    return res.status(404).json({ message: "Unknown reseed job." });
+  }
+
+  return res.json({ reseedJob: job });
+});
 
 router.get("/comments", async (req, res, next) => {
   try {
