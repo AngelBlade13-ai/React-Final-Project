@@ -106,10 +106,7 @@ test("admin reseed endpoint rewrites the live database from the local authored c
     .set("Cookie", adminCookie);
 
   assert.equal(reseedResponse.status, 202);
-  assert.match(
-    reseedResponse.body.message,
-    /reseed started/i
-  );
+  assert.match(reseedResponse.body.message, /reseed started/i);
   assert.ok(reseedResponse.body.reseedJob);
   assert.equal(reseedResponse.body.reseedJob.status, "running");
   assert.ok(reseedResponse.body.reseedJob.jobId);
