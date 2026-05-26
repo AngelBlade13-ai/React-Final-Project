@@ -755,6 +755,12 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
         <NavLink className="admin-subnav-link" to="/admin/paths">
           Paths
         </NavLink>
+        <NavLink className="admin-subnav-link" to="/admin/ai-runtime">
+          AI Runtime
+        </NavLink>
+        <NavLink className="admin-subnav-link" to="/admin/system">
+          System
+        </NavLink>
         <NavLink className="admin-subnav-link" to="/admin/about">
           About
         </NavLink>

@@ -2,12 +2,6 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import useDocumentTitle from "../../hooks/useDocumentTitle";
 import {
-  buildAssistantStatusUrl,
-  readAssistantModelProfile,
-  withAssistantProfile,
-  writeAssistantModelProfile
-} from "../../lib/adminAssistant";
-import {
   formatPercent,
   formatPostDate,
   formatRelativeTime
@@ -36,137 +30,6 @@ function formatSeverity(severity) {
     .replace("-", " ");
 }
 
-function formatAuditAction(action) {
-  return String(action || "activity.logged")
-    .replace(/[._-]+/g, " ")
-    .replace(/\b([a-z])/g, (match) => match.toUpperCase());
-}
-
-function formatUptime(totalSeconds = 0) {
-  const seconds = Math.max(0, Number(totalSeconds) || 0);
-  const days = Math.floor(seconds / 86400);
-  const hours = Math.floor((seconds % 86400) / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-
-  if (days > 0) {
-    return `${days}d ${hours}h`;
-  }
-
-  if (hours > 0) {
-    return `${hours}h ${minutes}m`;
-  }
-
-  return `${Math.max(1, minutes)}m`;
-}
-
-function buildAdminFindingLink(finding = {}) {
-  const targetSlug = String(finding?.targetSlug || "").trim();
-  const targetType = String(finding?.targetType || "catalog")
-    .trim()
-    .toLowerCase();
-
-  if (targetType === "post" && targetSlug) {
-    return `/admin/posts?slug=${encodeURIComponent(targetSlug)}`;
-  }
-
-  if (targetType === "collection" && targetSlug) {
-    return `/admin/collections?slug=${encodeURIComponent(targetSlug)}`;
-  }
-
-  if (targetType === "path" && targetSlug) {
-    return `/admin/paths?slug=${encodeURIComponent(targetSlug)}`;
-  }
-
-  if (targetType === "catalog") {
-    return "/admin/insights";
-  }
-
-  return "";
-}
-
-function formatFindingTarget(finding = {}) {
-  const targetType = String(finding?.targetType || "catalog")
-    .trim()
-    .toLowerCase();
-  const targetSlug = String(finding?.targetSlug || "").trim();
-  const field = String(finding?.field || "").trim();
-  const baseLabel =
-    targetType === "post"
-      ? "Post"
-      : targetType === "collection"
-        ? "Collection"
-        : targetType === "path"
-          ? "Path"
-          : "Catalog";
-
-  if (targetSlug && field) {
-    return `${baseLabel}: ${targetSlug} -> ${field}`;
-  }
-
-  if (targetSlug) {
-    return `${baseLabel}: ${targetSlug}`;
-  }
-
-  if (field) {
-    return `${baseLabel}: ${field}`;
-  }
-
-  return baseLabel;
-}
-
-function buildFindingKey(finding = {}, fallback = "") {
-  return (
-    String(finding?.fingerprint || "").trim() ||
-    [
-      finding?.targetType || "catalog",
-      finding?.targetSlug || "",
-      finding?.field || "",
-      finding?.issue || "",
-      fallback
-    ].join(":")
-  );
-}
-
-function formatDecisionStatus(status = "") {
-  return String(status || "")
-    .replace(/[-_]+/g, " ")
-    .replace(/\b([a-z])/g, (match) => match.toUpperCase());
-}
-
-function formatPatchValue(value) {
-  if (Array.isArray(value)) {
-    return value.join(", ");
-  }
-
-  return String(value || "");
-}
-
-function describeAuditDetails(entry) {
-  const details = entry?.details || {};
-
-  if (Array.isArray(details.changedFields) && details.changedFields.length) {
-    return `Changed: ${details.changedFields.join(", ")}`;
-  }
-
-  if (Number.isFinite(details.updatedCount)) {
-    return `Updated ${details.updatedCount} posts${details.unchangedCount ? `, skipped ${details.unchangedCount}` : ""}.`;
-  }
-
-  if (details.previousStatus && details.nextStatus) {
-    return `Status changed from ${details.previousStatus} to ${details.nextStatus}.`;
-  }
-
-  if (details.slug) {
-    return `Slug: ${details.slug}`;
-  }
-
-  if (details.siteName) {
-    return `Site name: ${details.siteName}`;
-  }
-
-  return "Operation recorded.";
-}
-
 async function readJson(responsePromise, fallbackMessage) {
   const response = await responsePromise;
   const data = await response.json().catch(() => ({}));
@@ -179,122 +42,32 @@ async function readJson(responsePromise, fallbackMessage) {
 }
 
 export default function AdminInsightsPage() {
-  useDocumentTitle("Admin Insights");
+  useDocumentTitle("Admin Dashboard");
   const { adminFetch } = useAdminContext();
   const [insights, setInsights] = useState(null);
-  const [auditLogs, setAuditLogs] = useState([]);
-  const [opsHealth, setOpsHealth] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [auditError, setAuditError] = useState("");
-  const [healthError, setHealthError] = useState("");
-  const [syncPreview, setSyncPreview] = useState(null);
-  const [syncLoading, setSyncLoading] = useState(false);
-  const [syncWriting, setSyncWriting] = useState(false);
-  const [syncError, setSyncError] = useState("");
-  const [syncMessage, setSyncMessage] = useState("");
-  const [reseedLoading, setReseedLoading] = useState(false);
-  const [reseedError, setReseedError] = useState("");
-  const [reseedMessage, setReseedMessage] = useState("");
-  const [reseedResult, setReseedResult] = useState(null);
-  const [localAiStatus, setLocalAiStatus] = useState(null);
-  const [remotePodStatus, setRemotePodStatus] = useState(null);
-  const [remoteTunnelStatus, setRemoteTunnelStatus] = useState(null);
-  const [localAiError, setLocalAiError] = useState("");
-  const [localAiReview, setLocalAiReview] = useState(null);
-  const [localAiReviewLoading, setLocalAiReviewLoading] = useState(false);
-  const [localAiReviewError, setLocalAiReviewError] = useState("");
-  const [findingReviewLoadingKey, setFindingReviewLoadingKey] = useState("");
-  const [findingReviewError, setFindingReviewError] = useState("");
-  const [findingReviews, setFindingReviews] = useState({});
-  const [remotePodActionLoading, setRemotePodActionLoading] = useState("");
-  const [remotePodActionError, setRemotePodActionError] = useState("");
-  const [remoteTunnelActionLoading, setRemoteTunnelActionLoading] =
-    useState("");
-  const [remoteTunnelActionError, setRemoteTunnelActionError] = useState("");
-  const [remoteOllamaActionLoading, setRemoteOllamaActionLoading] =
-    useState(false);
-  const [remoteOllamaActionError, setRemoteOllamaActionError] = useState("");
-  const [remoteOllamaMessage, setRemoteOllamaMessage] = useState("");
-  const [selectedAssistantProfile, setSelectedAssistantProfile] = useState(() =>
-    readAssistantModelProfile()
-  );
 
   useEffect(() => {
     let isCancelled = false;
 
-    async function loadInsights() {
+    async function loadDashboard() {
       try {
         setLoading(true);
         setError("");
-        setAuditError("");
-        setHealthError("");
 
-        const [insightsResult, auditResult, healthResult, localAiResult] =
-          await Promise.allSettled([
-            readJson(
-              adminFetch(`${apiBaseUrl}/admin/insights`),
-              "Failed to load archive insights."
-            ),
-            readJson(
-              adminFetch(`${apiBaseUrl}/admin/audit-logs?limit=12`),
-              "Failed to load admin audit trail."
-            ),
-            readJson(
-              fetch(`${apiBaseUrl}/health`, { credentials: "include" }),
-              "Failed to load health snapshot."
-            ),
-            readJson(
-              adminFetch(
-                buildAssistantStatusUrl(apiBaseUrl, selectedAssistantProfile)
-              ),
-              "Failed to load local assistant status."
-            )
-          ]);
+        const data = await readJson(
+          adminFetch(`${apiBaseUrl}/admin/insights`),
+          "Failed to load archive insights."
+        );
 
         if (!isCancelled) {
-          if (insightsResult.status === "fulfilled") {
-            setInsights(insightsResult.value.insights || null);
-          } else {
-            setInsights(null);
-            setError(
-              insightsResult.reason?.message ||
-                "Failed to load archive insights."
-            );
-          }
-
-          if (auditResult.status === "fulfilled") {
-            setAuditLogs(auditResult.value.auditLogs || []);
-          } else {
-            setAuditLogs([]);
-            setAuditError(
-              auditResult.reason?.message || "Failed to load admin audit trail."
-            );
-          }
-
-          if (healthResult.status === "fulfilled") {
-            setOpsHealth(healthResult.value || null);
-          } else {
-            setOpsHealth(null);
-            setHealthError(
-              healthResult.reason?.message || "Failed to load health snapshot."
-            );
-          }
-
-          if (localAiResult.status === "fulfilled") {
-            setLocalAiStatus(localAiResult.value.localAi || null);
-            setRemotePodStatus(localAiResult.value.remotePod || null);
-            setRemoteTunnelStatus(localAiResult.value.remoteTunnel || null);
-            setLocalAiError("");
-          } else {
-            setLocalAiStatus(null);
-            setRemotePodStatus(null);
-            setRemoteTunnelStatus(null);
-            setLocalAiError(
-              localAiResult.reason?.message ||
-                "Failed to load local assistant status."
-            );
-          }
+          setInsights(data.insights || null);
+        }
+      } catch (apiError) {
+        if (!isCancelled) {
+          setInsights(null);
+          setError(apiError.message);
         }
       } finally {
         if (!isCancelled) {
@@ -303,360 +76,21 @@ export default function AdminInsightsPage() {
       }
     }
 
-    loadInsights();
+    loadDashboard();
 
     return () => {
       isCancelled = true;
     };
-  }, [adminFetch, selectedAssistantProfile]);
-
-  async function handlePreviewLiveSync() {
-    try {
-      setSyncLoading(true);
-      setSyncError("");
-      setSyncMessage("");
-
-      const data = await readJson(
-        adminFetch(`${apiBaseUrl}/admin/live-store-sync`),
-        "Failed to preview live admin drift."
-      );
-
-      setSyncPreview(data.preview || null);
-    } catch (apiError) {
-      setSyncError(apiError.message);
-    } finally {
-      setSyncLoading(false);
-    }
-  }
-
-  async function handleApplyLiveSync() {
-    const confirmed = window.confirm(
-      "This will overwrite backend/data/posts.json from the current live admin-backed store. Continue?"
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
-    try {
-      setSyncWriting(true);
-      setSyncError("");
-      setSyncMessage("");
-
-      const data = await readJson(
-        adminFetch(`${apiBaseUrl}/admin/live-store-sync`, {
-          method: "POST"
-        }),
-        "Failed to write live admin data back into posts.json."
-      );
-
-      setSyncPreview({
-        generatedAt: data.sync?.generatedAt,
-        postsFile: data.sync?.postsFile,
-        report: data.sync?.report,
-        artifactPaths: data.sync?.artifactPaths
-      });
-      setSyncMessage(
-        data.message || "Live admin data was written back into posts.json."
-      );
-    } catch (apiError) {
-      setSyncError(apiError.message);
-    } finally {
-      setSyncWriting(false);
-    }
-  }
-
-  async function handleReseedLiveSite() {
-    const confirmed = window.confirm(
-      "This will reseed the live database from backend/data/posts.json. Continue?"
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
-    try {
-      setReseedLoading(true);
-      setReseedError("");
-      setReseedMessage("");
-      setReseedResult(null);
-
-      const data = await readJson(
-        adminFetch(`${apiBaseUrl}/admin/reseed-live-site`, {
-          method: "POST"
-        }),
-        "Failed to reseed the live website from posts.json."
-      );
-
-      setReseedResult(data.reseed || null);
-      setReseedMessage(
-        data.message || "Live site reseeded from backend/data/posts.json."
-      );
-    } catch (apiError) {
-      setReseedError(apiError.message);
-    } finally {
-      setReseedLoading(false);
-    }
-  }
-
-  async function handleRefreshLocalAiStatus() {
-    try {
-      setLocalAiError("");
-      setRemotePodActionError("");
-      const data = await readJson(
-        adminFetch(
-          buildAssistantStatusUrl(apiBaseUrl, selectedAssistantProfile)
-        ),
-        "Failed to load local assistant status."
-      );
-
-      setLocalAiStatus(data.localAi || null);
-      setRemotePodStatus(data.remotePod || null);
-      setRemoteTunnelStatus(data.remoteTunnel || null);
-    } catch (apiError) {
-      setLocalAiStatus(null);
-      setRemotePodStatus(null);
-      setRemoteTunnelStatus(null);
-      setLocalAiError(apiError.message);
-    }
-  }
-
-  function handleAssistantProfileChange(event) {
-    const nextProfile = event.target.value;
-    setSelectedAssistantProfile(nextProfile);
-    writeAssistantModelProfile(nextProfile);
-  }
-
-  async function handleRemotePodAction(action) {
-    try {
-      setRemotePodActionLoading(action);
-      setRemotePodActionError("");
-
-      const data = await readJson(
-        adminFetch(`${apiBaseUrl}/admin/assistant/remote-pod/${action}`, {
-          method: "POST"
-        }),
-        `Failed to ${action} the remote AI pod.`
-      );
-
-      setRemotePodStatus(data.remotePod || null);
-      await handleRefreshLocalAiStatus();
-    } catch (apiError) {
-      setRemotePodActionError(apiError.message);
-    } finally {
-      setRemotePodActionLoading("");
-    }
-  }
-
-  async function handleRemoteTunnelAction(action) {
-    try {
-      setRemoteTunnelActionLoading(action);
-      setRemoteTunnelActionError("");
-
-      const data = await readJson(
-        adminFetch(`${apiBaseUrl}/admin/assistant/remote-tunnel/${action}`, {
-          method: "POST"
-        }),
-        `Failed to ${action} the remote AI SSH tunnel.`
-      );
-
-      setRemoteTunnelStatus(data.remoteTunnel || null);
-      await handleRefreshLocalAiStatus();
-    } catch (apiError) {
-      setRemoteTunnelActionError(apiError.message);
-    } finally {
-      setRemoteTunnelActionLoading("");
-    }
-  }
-
-  async function handleRemoteOllamaWake() {
-    try {
-      setRemoteOllamaActionLoading(true);
-      setRemoteOllamaActionError("");
-      setRemoteOllamaMessage("");
-
-      const data = await readJson(
-        adminFetch(`${apiBaseUrl}/admin/assistant/remote-ollama/wake`, {
-          method: "POST"
-        }),
-        "Failed to wake remote Ollama."
-      );
-
-      setRemoteOllamaMessage(
-        data.remoteOllama?.message || "Remote Ollama wake command finished."
-      );
-      await handleRefreshLocalAiStatus();
-    } catch (apiError) {
-      setRemoteOllamaActionError(apiError.message);
-    } finally {
-      setRemoteOllamaActionLoading(false);
-    }
-  }
-
-  async function handleLocalAiCatalogReview() {
-    try {
-      setLocalAiReviewLoading(true);
-      setLocalAiReviewError("");
-      setFindingReviewError("");
-      setFindingReviews({});
-      setLocalAiReview(null);
-
-      const data = await readJson(
-        adminFetch(`${apiBaseUrl}/admin/assistant/catalog-review`, {
-          method: "POST",
-          body: JSON.stringify(withAssistantProfile({}, selectedAssistantProfile))
-        }),
-        "Failed to run local assistant catalog review."
-      );
-
-      setLocalAiReview(data.review || null);
-      await handleRefreshLocalAiStatus();
-    } catch (apiError) {
-      setLocalAiReviewError(apiError.message);
-    } finally {
-      setLocalAiReviewLoading(false);
-    }
-  }
-
-  async function handleReviewFindingWithPostAssistant(finding, index) {
-    const findingKey = buildFindingKey(finding, index);
-
-    try {
-      setFindingReviewLoadingKey(findingKey);
-      setFindingReviewError("");
-
-      const data = await readJson(
-        adminFetch(`${apiBaseUrl}/admin/assistant/catalog-finding-review`, {
-          method: "POST",
-          body: JSON.stringify(
-            withAssistantProfile({ finding }, selectedAssistantProfile)
-          )
-        }),
-        "Failed to review finding with the post assistant."
-      );
-
-      setFindingReviews((current) => ({
-        ...current,
-        [findingKey]: data.review || { decision: data.decision }
-      }));
-      await handleRefreshLocalAiStatus();
-    } catch (apiError) {
-      setFindingReviewError(apiError.message);
-    } finally {
-      setFindingReviewLoadingKey("");
-    }
-  }
-
-  async function handleDismissFinding(finding, index) {
-    const findingKey = buildFindingKey(finding, index);
-
-    try {
-      setFindingReviewLoadingKey(findingKey);
-      setFindingReviewError("");
-
-      await readJson(
-        adminFetch(`${apiBaseUrl}/admin/assistant/catalog-finding-dismiss`, {
-          method: "POST",
-          body: JSON.stringify({ finding })
-        }),
-        "Failed to dismiss finding."
-      );
-
-      setLocalAiReview((current) =>
-        current?.findings?.length
-          ? {
-              ...current,
-              findings: current.findings.filter(
-                (entry, entryIndex) =>
-                  buildFindingKey(entry, entryIndex) !== findingKey
-              ),
-              suppressedFindingCount: (current.suppressedFindingCount || 0) + 1
-            }
-          : current
-      );
-    } catch (apiError) {
-      setFindingReviewError(apiError.message);
-    } finally {
-      setFindingReviewLoadingKey("");
-    }
-  }
+  }, [adminFetch]);
 
   const summary = insights?.summary || {};
   const readinessEntries = insights
     ? Object.values(insights.readiness || {})
     : [];
   const scoreTone = getScoreTone(summary.archiveHealthScore || 0);
-  const syncReport = syncPreview?.report || null;
-  const syncPostSummary = syncReport?.posts || null;
-  const syncCollectionSummary = syncReport?.collections || null;
-  const syncPostSamples = [
-    ...(syncPostSummary?.onlyInLive || []).slice(0, 4).map((entry) => ({
-      label: "Live only",
-      title: entry.title || entry.key,
-      note: entry.key
-    })),
-    ...(syncPostSummary?.changed || []).slice(0, 4).map((entry) => ({
-      label: "Changed",
-      title: entry.title || entry.key,
-      note: entry.changedFields.join(", ")
-    }))
-  ].slice(0, 6);
-  const opsHighlights = [
-    {
-      label: "Archive Health",
-      value: loading ? "--" : summary.archiveHealthScore || 0,
-      note:
-        scoreTone === "stable"
-          ? "Stable"
-          : scoreTone === "watch"
-            ? "Watch"
-            : "Attention"
-    },
-    {
-      label: "Live Sync",
-      value: syncPreview
-        ? `${syncPostSummary?.changed?.length || 0} drift`
-        : "Preview not run",
-      note: syncPreview ? "Preview ready" : "Run drift preview"
-    },
-    {
-      label: "Audit Trail",
-      value: loading ? "--" : auditLogs.length,
-      note: "Recent actions"
-    },
-    {
-      label: "Runtime",
-      value: loading ? "--" : opsHealth?.status || "Unknown",
-      note: opsHealth?.database?.connected ? "DB connected" : "DB state pending"
-    },
-    {
-      label: "Local AI",
-      value: loading
-        ? "--"
-        : localAiStatus?.available
-          ? "Available"
-          : "Offline",
-      note: localAiStatus?.model || "Ollama optional"
-    },
-    {
-      label: "Remote Pod",
-      value: loading ? "--" : remotePodStatus?.runtimeStatus || "Unavailable",
-      note: remotePodStatus?.configured
-        ? "RunPod control ready"
-        : "Not configured"
-    },
-    {
-      label: "SSH Tunnel",
-      value: loading
-        ? "--"
-        : remoteTunnelStatus?.running
-          ? "Active"
-          : remoteTunnelStatus?.configured
-            ? "Inactive"
-            : "Unconfigured",
-      note: remoteTunnelStatus?.localUrl || "127.0.0.1 forward"
-    }
-  ];
+  const topQuickWins = (insights?.quickWins || []).slice(0, 4);
+  const recentPosts = (insights?.recentActivity?.posts || []).slice(0, 4);
+  const recentComments = (insights?.recentActivity?.comments || []).slice(0, 3);
 
   return (
     <main className="admin-grid admin-insights-grid">
@@ -664,19 +98,22 @@ export default function AdminInsightsPage() {
         className={`intro-card homepage-panel full-span archive-intelligence-hero score-${scoreTone}`}
       >
         <div className="archive-intelligence-copy">
-          <p className="eyebrow">Archive Intelligence</p>
-          <h2>The admin now has a pulse.</h2>
+          <p className="eyebrow">Admin Dashboard</p>
+          <h2>What needs attention next?</h2>
           <p>
-            This view turns the site into something you can read operationally:
-            what is healthy, what is drifting, what just changed, and what will
-            have the biggest impact if you fix it next.
+            A focused overview of archive health, content gaps, recent activity,
+            and the next useful actions. Runtime and file operations now live in
+            their own admin workspaces.
           </p>
           <div className="archive-intelligence-actions">
             <Link className="hero-link" to="/admin/posts">
-              Open Posts
+              New Or Edit Post
             </Link>
             <Link className="secondary-button" to="/admin/comments">
               Moderate Comments
+            </Link>
+            <Link className="secondary-button" to="/admin/ai-runtime">
+              AI Runtime
             </Link>
           </div>
         </div>
@@ -689,666 +126,55 @@ export default function AdminInsightsPage() {
             {loading
               ? "Reading archive signals..."
               : scoreTone === "stable"
-                ? "The archive is in strong shape, with only smaller cleanup wins left."
+                ? "The archive is in strong shape. Keep changes focused."
                 : scoreTone === "watch"
-                  ? "The archive is healthy overall, but a few curation gaps are starting to stack."
-                  : "There are enough content gaps right now that the site could drift without a cleanup pass."}
+                  ? "The archive is healthy, but a few cleanup items are stacking."
+                  : "There are enough gaps that the archive needs a cleanup pass."}
           </p>
         </div>
-      </section>
-
-      <section className="admin-ops-board full-span">
-        {opsHighlights.map((item) => (
-          <article className="admin-ops-card" key={item.label}>
-            <p className="eyebrow">{item.label}</p>
-            <strong>{item.value}</strong>
-            <span>{item.note}</span>
-          </article>
-        ))}
       </section>
 
       {error ? (
         <section className="intro-card homepage-panel full-span">
-          <p className="eyebrow">Insights Unavailable</p>
-          <h3>Archive intelligence could not load.</h3>
+          <p className="eyebrow">Dashboard Unavailable</p>
+          <h3>Archive insights could not load.</h3>
           <p>{error}</p>
         </section>
       ) : null}
 
-      <section className="intro-card homepage-panel full-span metric-summary-grid">
-        <article className="metric-summary-card">
-          <p className="note-label">Releases</p>
+      <section className="admin-ops-board full-span">
+        <article className="admin-ops-card">
+          <p className="eyebrow">Songs</p>
           <strong>{loading ? "--" : summary.totalPosts || 0}</strong>
           <span>
             {loading
-              ? "..."
-              : `${summary.publishedPosts || 0} published / ${summary.publicPosts || 0} publicly visible`}
+              ? "Loading..."
+              : `${summary.publicPosts || 0} public / ${summary.publishedPosts || 0} published`}
           </span>
         </article>
-        <article className="metric-summary-card">
-          <p className="note-label">Collections</p>
+        <article className="admin-ops-card">
+          <p className="eyebrow">Collections</p>
           <strong>{loading ? "--" : summary.totalCollections || 0}</strong>
           <span>
             {loading
-              ? "..."
-              : `${summary.publicPrimaryCollections || 0} top-level public collections`}
+              ? "Loading..."
+              : `${summary.publicPrimaryCollections || 0} public primary`}
           </span>
         </article>
-        <article className="metric-summary-card">
-          <p className="note-label">Conversation</p>
+        <article className="admin-ops-card">
+          <p className="eyebrow">Comments</p>
           <strong>{loading ? "--" : summary.totalComments || 0}</strong>
           <span>
             {loading
-              ? "..."
+              ? "Loading..."
               : `${summary.visibleComments || 0} visible / ${summary.hiddenComments || 0} hidden`}
           </span>
         </article>
-        <article className="metric-summary-card">
-          <p className="note-label">Accounts</p>
+        <article className="admin-ops-card">
+          <p className="eyebrow">Accounts</p>
           <strong>{loading ? "--" : summary.totalUsers || 0}</strong>
-          <span>Registered community members</span>
+          <span>Registered listeners</span>
         </article>
-      </section>
-
-      <section className="intro-card homepage-panel full-span">
-        <div className="section-head">
-          <h2>Operational Status</h2>
-          <span>
-            {loading
-              ? "Loading..."
-              : opsHealth
-                ? "Live runtime snapshot"
-                : "Unavailable"}
-          </span>
-        </div>
-        {healthError ? <p className="meta">{healthError}</p> : null}
-        <div className="metric-summary-grid">
-          <article className="metric-summary-card">
-            <p className="note-label">Backend</p>
-            <strong>{loading ? "--" : opsHealth?.status || "Unknown"}</strong>
-            <span>
-              {loading
-                ? "..."
-                : opsHealth
-                  ? `${opsHealth.environment} / ${opsHealth.database?.connected ? "DB connected" : "DB unavailable"}`
-                  : "No health snapshot available."}
-            </span>
-          </article>
-          <article className="metric-summary-card">
-            <p className="note-label">Uptime</p>
-            <strong>
-              {loading ? "--" : formatUptime(opsHealth?.uptimeSeconds)}
-            </strong>
-            <span>
-              {loading
-                ? "..."
-                : opsHealth?.timestamp
-                  ? `Snapshot ${formatRelativeTime(opsHealth.timestamp)}`
-                  : "No timestamp available."}
-            </span>
-          </article>
-          <article className="metric-summary-card">
-            <p className="note-label">Request Logs</p>
-            <strong>
-              {loading
-                ? "--"
-                : opsHealth?.logging?.requestLogging
-                  ? "Enabled"
-                  : "Disabled"}
-            </strong>
-            <span>
-              {loading
-                ? "..."
-                : `${opsHealth?.logging?.level || "info"} / slow at ${opsHealth?.logging?.slowRequestThresholdMs || 0} ms`}
-            </span>
-          </article>
-          <article className="metric-summary-card">
-            <p className="note-label">Monitoring</p>
-            <strong>
-              {loading
-                ? "--"
-                : opsHealth?.logging?.monitoringWebhookConfigured
-                  ? "Webhook"
-                  : "Logs Only"}
-            </strong>
-            <span>
-              {loading
-                ? "..."
-                : opsHealth?.logging?.adminAuditLogging
-                  ? "Admin audit trail enabled"
-                  : "Audit trail disabled"}
-            </span>
-          </article>
-        </div>
-      </section>
-
-      <section className="intro-card homepage-panel full-span">
-        <div className="section-head">
-          <h2>Source Of Truth Sync</h2>
-          <span>
-            {syncPreview ? "Preview ready" : "Run a preview before writing"}
-          </span>
-        </div>
-        <p className="meta">
-          This pulls the live admin-backed Mongo store back into{" "}
-          <code>backend/data/posts.json</code>. Use it before any reseed if you
-          have been editing posts in the admin and do not want those changes
-          overwritten by stale file data.
-        </p>
-        <div className="archive-intelligence-actions">
-          <button
-            className="hero-link"
-            disabled={syncLoading || syncWriting}
-            onClick={handlePreviewLiveSync}
-            type="button"
-          >
-            {syncLoading ? "Scanning Live Drift..." : "Preview Live Drift"}
-          </button>
-          <button
-            className="secondary-button"
-            disabled={!syncPreview || syncLoading || syncWriting}
-            onClick={handleApplyLiveSync}
-            type="button"
-          >
-            {syncWriting
-              ? "Writing posts.json..."
-              : "Write Live Store To posts.json"}
-          </button>
-          <button
-            className="secondary-button"
-            disabled={reseedLoading || syncLoading || syncWriting}
-            onClick={handleReseedLiveSite}
-            type="button"
-          >
-            {reseedLoading ? "Reseeding Live DB..." : "Reseed Live Site"}
-          </button>
-        </div>
-        {syncError ? <p className="error-text">{syncError}</p> : null}
-        {syncMessage ? <p className="meta">{syncMessage}</p> : null}
-        {reseedError ? <p className="error-text">{reseedError}</p> : null}
-        {reseedMessage ? <p className="meta">{reseedMessage}</p> : null}
-        {reseedResult ? (
-          <div
-            className="insight-issue-card severity-info"
-            style={{ marginTop: "1rem" }}
-          >
-            <div className="insight-issue-head">
-              <div>
-                <p className="eyebrow">Reseed</p>
-                <h3>Live database reseed complete</h3>
-              </div>
-            </div>
-            <p>
-              {`Generated at ${formatRelativeTime(reseedResult.generatedAt)} | `}
-              {`Log: ${reseedResult.logPath || "n/a"}`}
-            </p>
-            {reseedResult.output ? <pre>{reseedResult.output}</pre> : null}
-          </div>
-        ) : null}
-        {syncReport ? (
-          <div className="insight-issue-grid" style={{ marginTop: "1rem" }}>
-            <article className="insight-issue-card severity-info">
-              <div className="insight-issue-head">
-                <div>
-                  <p className="eyebrow">Posts</p>
-                  <h3>Live vs File Drift</h3>
-                </div>
-                <span className="issue-count-pill">
-                  {syncPostSummary?.changed?.length || 0}
-                </span>
-              </div>
-              <p>
-                {`${syncPostSummary?.liveCount || 0} live / ${syncPostSummary?.fileCount || 0} file | `}
-                {`${syncPostSummary?.onlyInLive?.length || 0} live-only | `}
-                {`${syncPostSummary?.onlyInFile?.length || 0} file-only`}
-              </p>
-              {syncPostSamples.length ? (
-                <div className="insight-sample-list">
-                  {syncPostSamples.map((sample, index) => (
-                    <article
-                      className="insight-sample-link"
-                      key={`${sample.label}-${sample.title}-${index}`}
-                    >
-                      <strong>{sample.title}</strong>
-                      <span>{sample.label}</span>
-                      <small>{sample.note}</small>
-                    </article>
-                  ))}
-                </div>
-              ) : (
-                <p className="meta">
-                  No post drift was detected between the live store and
-                  posts.json.
-                </p>
-              )}
-            </article>
-            <article className="insight-issue-card severity-info">
-              <div className="insight-issue-head">
-                <div>
-                  <p className="eyebrow">Collections</p>
-                  <h3>Collection Drift</h3>
-                </div>
-                <span className="issue-count-pill">
-                  {syncCollectionSummary?.changed?.length || 0}
-                </span>
-              </div>
-              <p>
-                {`${syncCollectionSummary?.liveCount || 0} live / ${syncCollectionSummary?.fileCount || 0} file | `}
-                {`${syncCollectionSummary?.onlyInLive?.length || 0} live-only | `}
-                {`${syncCollectionSummary?.onlyInFile?.length || 0} file-only`}
-              </p>
-              <p className="meta">
-                {`Reports: ${syncPreview?.artifactPaths?.reportPath || "n/a"} | Snapshot: ${syncPreview?.artifactPaths?.liveSnapshotPath || "n/a"}`}
-              </p>
-              {syncPreview?.artifactPaths?.backupPath ? (
-                <p className="meta">
-                  {`Backup written: ${syncPreview.artifactPaths.backupPath}`}
-                </p>
-              ) : (
-                <p className="meta">
-                  No file write has happened yet. Preview mode is read-only.
-                </p>
-              )}
-            </article>
-          </div>
-        ) : null}
-      </section>
-
-      <section className="intro-card homepage-panel full-span">
-        <div className="section-head">
-          <h2>Local Assistant Test Bench</h2>
-          <span>
-            {localAiStatus?.available
-              ? localAiStatus.modelInstalled
-                ? "Ready"
-                : "Model missing"
-              : "Offline"}
-          </span>
-        </div>
-        <p className="meta">
-          This is a non-destructive smoke test for a local Ollama-backed admin
-          helper. It reads the current catalog and returns suggestions only; it
-          does not save posts, edit files, or run source-of-truth sync.
-        </p>
-        <div className="metric-summary-grid">
-          <article className="metric-summary-card">
-            <p className="note-label">Status</p>
-            <strong>
-              {localAiStatus?.available ? "Reachable" : "Unavailable"}
-            </strong>
-            <span>
-              {localAiError ||
-                localAiStatus?.message ||
-                "Install and start Ollama to enable this panel."}
-            </span>
-          </article>
-          <article className="metric-summary-card">
-            <p className="note-label">Model</p>
-            <strong>{localAiStatus?.model || "qwen2.5:7b"}</strong>
-            <span>
-              {localAiStatus?.modelInstalled
-                ? "Installed"
-                : `Run: ollama pull ${localAiStatus?.model || "qwen2.5:7b"}`}
-            </span>
-          </article>
-          <article className="metric-summary-card">
-            <p className="note-label">Endpoint</p>
-            <strong>Ollama</strong>
-            <span>{localAiStatus?.baseUrl || "http://127.0.0.1:11434"}</span>
-          </article>
-          <article className="metric-summary-card">
-            <p className="note-label">Installed Models</p>
-            <strong>{localAiStatus?.models?.length || 0}</strong>
-            <span>
-              {(localAiStatus?.models || []).slice(0, 2).join(", ") ||
-                "No models detected"}
-            </span>
-          </article>
-          <article className="metric-summary-card">
-            <p className="note-label">Remote Pod</p>
-            <strong>{remotePodStatus?.runtimeStatus || "unconfigured"}</strong>
-            <span>
-              {remotePodStatus?.message ||
-                "Configure RunPod env vars to control a remote GPU pod."}
-            </span>
-            <small>
-              {remotePodStatus?.configuredPodName
-                ? `Configured name: ${remotePodStatus.configuredPodName}`
-                : "Configured name: not set"}
-            </small>
-            <small>
-              {remotePodStatus?.podId
-                ? `Resolved pod ID: ${remotePodStatus.podId}`
-                : remotePodStatus?.configuredPodId
-                  ? `Fallback pod ID: ${remotePodStatus.configuredPodId}`
-                  : "Resolved pod ID: not found"}
-            </small>
-            <small>{`Resolved by: ${remotePodStatus?.resolveSource || "none"}`}</small>
-            {remotePodStatus?.gpuDisplayName || remotePodStatus?.machineId ? (
-              <small>
-                {[remotePodStatus.gpuDisplayName, remotePodStatus.machineId]
-                  .filter(Boolean)
-                  .join(" / ")}
-              </small>
-            ) : null}
-          </article>
-          <article className="metric-summary-card">
-            <p className="note-label">SSH Tunnel</p>
-            <strong>
-              {remoteTunnelStatus?.running
-                ? "Active"
-                : remoteTunnelStatus?.configured
-                  ? "Inactive"
-                  : "Unconfigured"}
-            </strong>
-            <span>
-              {remoteTunnelStatus?.message ||
-                "Automate the local SSH forward used by LOCAL_AI_BASE_URL."}
-            </span>
-          </article>
-        </div>
-        <div className="admin-form" style={{ marginTop: "1rem" }}>
-          <label>
-            Assistant Model Profile
-            <select
-              onChange={handleAssistantProfileChange}
-              value={
-                selectedAssistantProfile ||
-                localAiStatus?.selectedProfileKey ||
-                ""
-              }
-            >
-              {(localAiStatus?.modelProfiles || []).map((profile) => (
-                <option key={profile.key} value={profile.key}>
-                  {`${profile.label} - ${profile.model}${profile.installed ? "" : " (missing)"}`}
-                </option>
-              ))}
-              {!localAiStatus?.modelProfiles?.length ? (
-                <option value="">Default runtime model</option>
-              ) : null}
-            </select>
-          </label>
-          <p className="full-span meta">
-            {localAiStatus?.selectedProfileLabel
-              ? `${localAiStatus.selectedProfileLabel} routes assistant requests to ${localAiStatus.model}.`
-              : `Assistant requests currently target ${localAiStatus?.model || "the default Ollama model"}.`}
-          </p>
-        </div>
-        <div className="archive-intelligence-actions">
-          <button
-            className="secondary-button"
-            onClick={handleRefreshLocalAiStatus}
-            type="button"
-          >
-            Refresh Assistant Status
-          </button>
-          <button
-            className="secondary-button"
-            disabled={
-              remotePodActionLoading === "start" || !remotePodStatus?.configured
-            }
-            onClick={() => handleRemotePodAction("start")}
-            type="button"
-          >
-            {remotePodActionLoading === "start"
-              ? "Starting Remote Pod..."
-              : "Start Remote AI"}
-          </button>
-          <button
-            className="secondary-button"
-            disabled={
-              remotePodActionLoading === "stop" || !remotePodStatus?.configured
-            }
-            onClick={() => handleRemotePodAction("stop")}
-            type="button"
-          >
-            {remotePodActionLoading === "stop"
-              ? "Stopping Remote Pod..."
-              : "Stop Remote AI"}
-          </button>
-          <button
-            className="secondary-button"
-            disabled={
-              remoteTunnelActionLoading === "start" ||
-              !remoteTunnelStatus?.configured
-            }
-            onClick={() => handleRemoteTunnelAction("start")}
-            type="button"
-          >
-            {remoteTunnelActionLoading === "start"
-              ? "Opening SSH Tunnel..."
-              : "Open SSH Tunnel"}
-          </button>
-          <button
-            className="secondary-button"
-            disabled={
-              remoteTunnelActionLoading === "stop" ||
-              !remoteTunnelStatus?.configured
-            }
-            onClick={() => handleRemoteTunnelAction("stop")}
-            type="button"
-          >
-            {remoteTunnelActionLoading === "stop"
-              ? "Closing SSH Tunnel..."
-              : "Close SSH Tunnel"}
-          </button>
-          <button
-            className="secondary-button"
-            disabled={
-              remoteOllamaActionLoading ||
-              !remotePodStatus?.configured ||
-              remotePodStatus?.runtimeStatus !== "running"
-            }
-            onClick={handleRemoteOllamaWake}
-            type="button"
-          >
-            {remoteOllamaActionLoading
-              ? "Waking Remote Ollama..."
-              : "Wake Remote Ollama"}
-          </button>
-          <button
-            className="hero-link"
-            disabled={
-              localAiReviewLoading ||
-              !localAiStatus?.available ||
-              !localAiStatus?.modelInstalled
-            }
-            onClick={handleLocalAiCatalogReview}
-            type="button"
-          >
-            {localAiReviewLoading
-              ? "Asking Local Assistant..."
-              : "Run Catalog Review"}
-          </button>
-        </div>
-        {remotePodStatus?.configured ? (
-          <p className="meta">
-            {`RunPod pod ${remotePodStatus.podId || "unknown"} is ${remotePodStatus.runtimeStatus}. `}
-            The tunnel and the pod are managed separately because the pod can be
-            running while the local SSH forward is still closed.
-          </p>
-        ) : null}
-        {remotePodActionError ? (
-          <p className="error-text">{remotePodActionError}</p>
-        ) : null}
-        {remoteTunnelActionError ? (
-          <p className="error-text">{remoteTunnelActionError}</p>
-        ) : null}
-        {remoteOllamaActionError ? (
-          <p className="error-text">{remoteOllamaActionError}</p>
-        ) : null}
-        {remoteOllamaMessage ? <p className="meta">{remoteOllamaMessage}</p> : null}
-        {localAiReviewError ? (
-          <p className="error-text">{localAiReviewError}</p>
-        ) : null}
-        {findingReviewError ? (
-          <p className="error-text">{findingReviewError}</p>
-        ) : null}
-        {localAiReview ? (
-          <div
-            className="insight-issue-card severity-info"
-            style={{ marginTop: "1rem" }}
-          >
-            <div className="insight-issue-head">
-              <div>
-                <p className="eyebrow">{localAiReview.model}</p>
-                <h3>Assistant Review</h3>
-              </div>
-              <span className="issue-count-pill">
-                {(localAiReview.findings?.length || 0) +
-                  (localAiReview.risks?.length || 0)}
-              </span>
-            </div>
-            <p>{localAiReview.summary}</p>
-            {localAiReview.suppressedFindingCount ? (
-              <p className="meta">
-                {`${localAiReview.suppressedFindingCount} finding${localAiReview.suppressedFindingCount === 1 ? "" : "s"} hidden by prior assistant review or dismissal.`}
-              </p>
-            ) : null}
-            {localAiReview.contradictedFindingCount ? (
-              <p className="meta">
-                {`${localAiReview.contradictedFindingCount} finding${localAiReview.contradictedFindingCount === 1 ? "" : "s"} hidden because the current post data already contradicted the claim.`}
-              </p>
-            ) : null}
-            {localAiReview.findings?.length ? (
-              <>
-                <p className="note-label">Actionable Findings</p>
-                <div className="insight-sample-list">
-                  {localAiReview.findings.map((finding, index) => {
-                    const targetLink = buildAdminFindingLink(finding);
-                    const key = buildFindingKey(finding, index);
-                    const findingReview = findingReviews[key];
-                    const patchEntries = Object.entries(
-                      findingReview?.suggestedPatch || {}
-                    );
-                    const existingDecision = finding.reviewDecision;
-                    const isReviewing = findingReviewLoadingKey === key;
-
-                    return (
-                      <article
-                        className={`insight-issue-card severity-${finding.severity || "info"}`}
-                        key={key}
-                      >
-                        <div className="insight-issue-head">
-                          <div>
-                            <p className="eyebrow">
-                              {formatSeverity(finding.severity)}
-                            </p>
-                            <h4>{formatFindingTarget(finding)}</h4>
-                          </div>
-                        </div>
-                        <p>{finding.issue}</p>
-                        <p className="meta">{finding.recommendedAction}</p>
-                        {existingDecision ? (
-                          <p className="meta">
-                            {`Prior post assistant review: ${formatDecisionStatus(existingDecision.status)} / ${existingDecision.reasonCode}.`}
-                          </p>
-                        ) : null}
-                        {findingReview ? (
-                          <div className="insight-sample-list">
-                            <article className="insight-sample-link">
-                              <strong>
-                                {findingReview.verdict === "accepted"
-                                  ? "Post Assistant Confirmed"
-                                  : "Post Assistant Rejected"}
-                              </strong>
-                              <span>
-                                {findingReview.reasonCode ||
-                                  findingReview.decision?.reasonCode ||
-                                  "reviewed"}
-                              </span>
-                              <small>
-                                {findingReview.summary ||
-                                  findingReview.decision?.summary ||
-                                  "The finding was reviewed against the current post."}
-                              </small>
-                            </article>
-                            {patchEntries.length ? (
-                              <article className="insight-sample-link">
-                                <strong>Suggested Patch</strong>
-                                {patchEntries.map(([field, value]) => (
-                                  <small key={field}>
-                                    {`${field}: ${formatPatchValue(value).slice(0, 220)}`}
-                                  </small>
-                                ))}
-                              </article>
-                            ) : null}
-                          </div>
-                        ) : null}
-                        <div className="archive-intelligence-actions">
-                          {finding.targetType === "post" ? (
-                            <button
-                              className="secondary-button"
-                              disabled={
-                                isReviewing ||
-                                !localAiStatus?.available ||
-                                !localAiStatus?.modelInstalled
-                              }
-                              onClick={() =>
-                                handleReviewFindingWithPostAssistant(
-                                  finding,
-                                  index
-                                )
-                              }
-                              type="button"
-                            >
-                              {isReviewing
-                                ? "Reviewing..."
-                                : "Review With Post Assistant"}
-                            </button>
-                          ) : null}
-                          <button
-                            className="secondary-button"
-                            disabled={isReviewing}
-                            onClick={() => handleDismissFinding(finding, index)}
-                            type="button"
-                          >
-                            Dismiss Finding
-                          </button>
-                          {targetLink ? (
-                            <Link className="secondary-button" to={targetLink}>
-                              {finding.targetType === "post"
-                                ? "Open Post Workspace"
-                                : finding.targetType === "collection"
-                                  ? "Open Collection Workspace"
-                                  : finding.targetType === "path"
-                                    ? "Open Path Workspace"
-                                    : "Open Insights"}
-                            </Link>
-                          ) : null}
-                        </div>
-                      </article>
-                    );
-                  })}
-                </div>
-              </>
-            ) : null}
-            {localAiReview.risks?.length ? (
-              <>
-                <p className="note-label">Risks</p>
-                <div className="insight-sample-list">
-                  {localAiReview.risks.map((risk) => (
-                    <article className="insight-sample-link" key={risk}>
-                      <strong>{risk}</strong>
-                    </article>
-                  ))}
-                </div>
-              </>
-            ) : null}
-            {localAiReview.suggestedActions?.length ? (
-              <>
-                <p className="note-label">Suggested Actions</p>
-                <div className="insight-sample-list">
-                  {localAiReview.suggestedActions.map((action) => (
-                    <article className="insight-sample-link" key={action}>
-                      <strong>{action}</strong>
-                    </article>
-                  ))}
-                </div>
-              </>
-            ) : null}
-          </div>
-        ) : null}
       </section>
 
       <section className="intro-card homepage-panel">
@@ -1360,10 +186,7 @@ export default function AdminInsightsPage() {
         </div>
         <div className="readiness-list">
           {loading ? (
-            <p className="meta">
-              Measuring release coverage, world metadata, and collection
-              readiness.
-            </p>
+            <p className="meta">Measuring release and collection readiness.</p>
           ) : (
             readinessEntries.map((entry) => (
               <article className="readiness-card" key={entry.label}>
@@ -1411,59 +234,17 @@ export default function AdminInsightsPage() {
 
       <section className="intro-card homepage-panel full-span">
         <div className="section-head">
-          <h2>Admin Audit Trail</h2>
-          <span>
-            {loading ? "Loading..." : `${auditLogs.length} recent actions`}
-          </span>
-        </div>
-        {auditError ? <p className="meta">{auditError}</p> : null}
-        {!loading && !auditLogs.length ? (
-          <p className="meta">No admin mutations have been recorded yet.</p>
-        ) : (
-          <div className="activity-list">
-            {auditLogs.map((entry) => (
-              <article className="activity-card" key={entry.id}>
-                <div className="activity-card-head">
-                  <div>
-                    <h3>
-                      {entry.entityLabel ||
-                        entry.entityId ||
-                        formatAuditAction(entry.action)}
-                    </h3>
-                    <p>{`${entry.actorEmail || "Admin"} / ${formatRelativeTime(entry.createdAt)}`}</p>
-                  </div>
-                  <span className="activity-status-pill">
-                    {formatAuditAction(entry.action)}
-                  </span>
-                </div>
-                <p className="meta">{`${entry.method} ${entry.path}`}</p>
-                <p className="meta">{describeAuditDetails(entry)}</p>
-                {entry.requestId ? (
-                  <small>{`Request ${entry.requestId.slice(0, 8)}`}</small>
-                ) : null}
-              </article>
-            ))}
-          </div>
-        )}
-      </section>
-
-      <section className="intro-card homepage-panel full-span">
-        <div className="section-head">
           <h2>Quick Wins</h2>
-          <span>
-            {loading
-              ? "Loading..."
-              : `${insights?.quickWins?.length || 0} priorities`}
-          </span>
+          <span>{loading ? "Loading..." : `${topQuickWins.length} shown`}</span>
         </div>
-        {!loading && !insights?.quickWins?.length ? (
+        {!loading && !topQuickWins.length ? (
           <p className="meta">
             No immediate cleanup spikes were detected. The archive looks steady
             from here.
           </p>
         ) : (
           <div className="insight-issue-grid">
-            {(insights?.quickWins || []).map((issue) => (
+            {topQuickWins.map((issue) => (
               <article
                 className={`insight-issue-card severity-${issue.severity}`}
                 key={issue.key}
@@ -1478,7 +259,7 @@ export default function AdminInsightsPage() {
                 <p>{issue.description}</p>
                 <p className="insight-action-note">{issue.action}</p>
                 <div className="insight-sample-list">
-                  {issue.sample.map((sample, index) => (
+                  {issue.sample.slice(0, 3).map((sample, index) => (
                     <Link
                       className="insight-sample-link"
                       key={`${issue.key}-${index}`}
@@ -1496,120 +277,13 @@ export default function AdminInsightsPage() {
         )}
       </section>
 
-      <section className="intro-card homepage-panel full-span">
-        <div className="section-head">
-          <h2>World Coverage</h2>
-          <span>
-            {loading
-              ? "Loading..."
-              : `${insights?.themeCoverage?.length || 0} lanes tracked`}
-          </span>
-        </div>
-        <div className="theme-coverage-list">
-          {(insights?.themeCoverage || []).map((theme) => (
-            <article className="theme-coverage-card" key={theme.key}>
-              <div className="theme-coverage-head">
-                <div>
-                  <h3>{theme.label}</h3>
-                  <p>{`${theme.collectionCount} collections / ${theme.releaseCount} releases`}</p>
-                </div>
-                <strong>
-                  {theme.metadataRelevantCount
-                    ? formatPercent(theme.metadataCoverage)
-                    : `${theme.publishedCount} published`}
-                </strong>
-              </div>
-              <div aria-hidden="true" className="readiness-meter compact-meter">
-                <span
-                  style={{
-                    width: `${Math.max(
-                      10,
-                      Math.round(
-                        (theme.metadataRelevantCount
-                          ? theme.metadataCoverage
-                          : theme.releaseCount
-                            ? theme.publishedCount / theme.releaseCount
-                            : 1) * 100
-                      )
-                    )}%`
-                  }}
-                />
-              </div>
-              <p className="meta">
-                {theme.metadataRelevantCount
-                  ? `${theme.metadataReadyCount} of ${theme.metadataRelevantCount} immersive releases are metadata-complete.`
-                  : `${theme.publicCount} releases are currently visible on public surfaces.`}
-              </p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="intro-card homepage-panel full-span">
-        <div className="section-head">
-          <h2>Collection Health</h2>
-          <span>
-            {loading
-              ? "Loading..."
-              : `${insights?.collectionHealth?.length || 0} collections surfaced`}
-          </span>
-        </div>
-        <div className="collection-health-grid">
-          {(insights?.collectionHealth || []).map((collection) => (
-            <article className="collection-health-card" key={collection.id}>
-              <div className="collection-health-head">
-                <div>
-                  <p className="eyebrow">
-                    {collection.isPublicPrimary
-                      ? "Public Primary"
-                      : "Internal Collection"}
-                  </p>
-                  <h3>{collection.title}</h3>
-                </div>
-                <span
-                  className={`collection-health-score score-${getScoreTone(collection.healthScore)}`}
-                >
-                  {collection.healthScore}
-                </span>
-              </div>
-              <p className="meta">
-                {`${collection.releaseCount} releases / ${collection.publishedCount} published / ${collection.commentCount} comments`}
-              </p>
-              {collection.theme ? (
-                <p className="meta">{`Theme: ${collection.theme}`}</p>
-              ) : null}
-              {collection.featuredReleaseSlug ? (
-                <p className="meta">{`Featured: ${collection.featuredReleaseTitle || collection.featuredReleaseSlug}`}</p>
-              ) : null}
-              {collection.issues.length ? (
-                <div className="collection-health-issues">
-                  {collection.issues.map((issue) => (
-                    <span className="collection-health-pill" key={issue}>
-                      {issue}
-                    </span>
-                  ))}
-                </div>
-              ) : (
-                <p className="meta">
-                  This collection is currently reading as healthy.
-                </p>
-              )}
-            </article>
-          ))}
-        </div>
-      </section>
-
       <section className="intro-card homepage-panel">
         <div className="section-head">
-          <h2>Recent Release Activity</h2>
-          <span>
-            {loading
-              ? "Loading..."
-              : `${insights?.recentActivity?.posts?.length || 0} recent`}
-          </span>
+          <h2>Recent Songs</h2>
+          <span>{loading ? "Loading..." : `${recentPosts.length} recent`}</span>
         </div>
         <div className="activity-list">
-          {(insights?.recentActivity?.posts || []).map((post) => (
+          {recentPosts.map((post) => (
             <article className="activity-card" key={post.id}>
               <div className="activity-card-head">
                 <div>
@@ -1634,49 +308,31 @@ export default function AdminInsightsPage() {
 
       <section className="intro-card homepage-panel">
         <div className="section-head">
-          <h2>Conversation Pulse</h2>
+          <h2>Recent Comments</h2>
           <span>
-            {loading
-              ? "Loading..."
-              : `${insights?.topCommentedPosts?.length || 0} active releases`}
+            {loading ? "Loading..." : `${recentComments.length} recent`}
           </span>
         </div>
-        <div className="conversation-grid">
-          <div className="activity-list">
-            {(insights?.recentActivity?.comments || []).map((comment) => (
-              <article className="activity-card" key={comment.id}>
-                <div className="activity-card-head">
-                  <div>
-                    <h3>{comment.postTitle}</h3>
-                    <p>{`${comment.authorName} / ${formatRelativeTime(comment.createdAt)}`}</p>
-                  </div>
-                  <span
-                    className={`activity-status-pill status-${comment.status}`}
-                  >
-                    {comment.status}
-                  </span>
-                </div>
-                <p className="comment-body">{comment.bodyPreview}</p>
-              </article>
-            ))}
-          </div>
-          <div className="top-commented-list">
-            {(insights?.topCommentedPosts || []).map((post) => (
-              <div className="top-commented-row" key={post.postSlug}>
+        <div className="activity-list">
+          {recentComments.map((comment) => (
+            <article className="activity-card" key={comment.id}>
+              <div className="activity-card-head">
                 <div>
-                  <strong>{post.title}</strong>
-                  <p>{post.postSlug}</p>
+                  <h3>{comment.postTitle}</h3>
+                  <p>{`${comment.authorName} / ${formatRelativeTime(comment.createdAt)}`}</p>
                 </div>
-                <span className="issue-count-pill">{post.count}</span>
+                <span
+                  className={`activity-status-pill status-${comment.status}`}
+                >
+                  {comment.status}
+                </span>
               </div>
-            ))}
-            {!loading && !insights?.topCommentedPosts?.length ? (
-              <p className="meta">
-                Comments have not started clustering around specific releases
-                yet.
-              </p>
-            ) : null}
-          </div>
+              <p className="comment-body">{comment.bodyPreview}</p>
+            </article>
+          ))}
+          {!loading && !recentComments.length ? (
+            <p className="meta">No recent comment activity.</p>
+          ) : null}
         </div>
       </section>
     </main>

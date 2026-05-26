@@ -23,11 +23,15 @@ const AdminCommentsPage = lazy(() => import("./pages/admin/AdminCommentsPage"));
 const AdminCollectionsPage = lazy(
   () => import("./pages/admin/AdminCollectionsPage")
 );
+const AdminAiRuntimePage = lazy(
+  () => import("./pages/admin/AdminAiRuntimePage")
+);
 const AdminInsightsPage = lazy(() => import("./pages/admin/AdminInsightsPage"));
 const AdminNotFoundPage = lazy(() => import("./pages/admin/AdminNotFoundPage"));
 const AdminPathsPage = lazy(() => import("./pages/admin/AdminPathsPage"));
 const AdminPostsPage = lazy(() => import("./pages/admin/AdminPostsPage"));
 const AdminSitePage = lazy(() => import("./pages/admin/AdminSitePage"));
+const AdminSystemPage = lazy(() => import("./pages/admin/AdminSystemPage"));
 const AdminUsersPage = lazy(() => import("./pages/admin/AdminUsersPage"));
 const AboutPage = lazy(() => import("./pages/public/AboutPage"));
 const PublicTrustPage = lazy(() => import("./pages/public/PublicTrustPage"));
@@ -699,6 +703,8 @@ function App() {
                 <Route path="users" element={<AdminUsersPage />} />
                 <Route path="collections" element={<AdminCollectionsPage />} />
                 <Route path="paths" element={<AdminPathsPage />} />
+                <Route path="ai-runtime" element={<AdminAiRuntimePage />} />
+                <Route path="system" element={<AdminSystemPage />} />
                 <Route path="about" element={<AdminAboutPage />} />
                 <Route path="site" element={<AdminSitePage />} />
                 <Route path="*" element={<AdminNotFoundPage />} />
