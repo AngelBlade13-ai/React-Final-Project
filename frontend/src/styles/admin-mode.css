@@ -1,8 +1,10 @@
 .admin-shell {
   width: min(1240px, calc(100% - 2rem));
+  min-height: 100vh;
 }
 
 .admin-shell .admin-hero {
+  align-items: stretch;
   background:
     linear-gradient(
       145deg,
@@ -14,6 +16,18 @@
 
 .admin-shell .admin-hero-note {
   max-width: 44ch;
+}
+
+.admin-shell .admin-hero-actions {
+  max-width: none;
+  min-width: min(100%, 28rem);
+  align-content: center;
+}
+
+.admin-shell .admin-hero-actions .hero-link,
+.admin-shell .admin-hero-actions .secondary-button,
+.admin-shell .admin-hero-actions .theme-toggle {
+  min-width: 10.5rem;
 }
 
 .admin-shell .admin-subnav {
@@ -59,6 +73,86 @@
 
 .admin-status-strip strong {
   color: var(--text);
+}
+
+.admin-data-loading,
+.admin-loading-shell .route-loading-card,
+.route-loading-shell .route-loading-card {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding: 1.1rem 1.2rem;
+  border: 1px solid color-mix(in srgb, var(--border) 62%, var(--primary) 38%);
+  border-radius: 24px;
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--admin-surface, var(--surface)) 84%, white 16%),
+      color-mix(
+        in srgb,
+        var(--admin-surface, var(--surface)) 88%,
+        var(--primary) 12%
+      )
+    ),
+    var(--admin-surface, var(--surface));
+  box-shadow:
+    0 18px 36px color-mix(in srgb, var(--primary) 12%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 10%, transparent);
+}
+
+.admin-data-loading {
+  grid-template-columns: minmax(0, 1fr) minmax(160px, 0.35fr);
+  align-items: center;
+}
+
+.admin-data-loading strong {
+  display: block;
+  margin-top: 0.2rem;
+}
+
+.admin-data-loading span {
+  color: var(--muted-text);
+}
+
+.admin-loading-bars {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.admin-loading-bars span {
+  display: block;
+  height: 0.7rem;
+  border-radius: 999px;
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in srgb, white 34%, var(--primary) 30%),
+      transparent
+    ),
+    color-mix(in srgb, var(--primary) 18%, var(--surface) 82%);
+  background-size: 180% 100%;
+  animation: adminLoadingSweep 1.25s ease-in-out infinite;
+}
+
+.admin-loading-bars span:nth-child(2) {
+  width: 82%;
+  animation-delay: 100ms;
+}
+
+.admin-loading-bars span:nth-child(3) {
+  width: 64%;
+  animation-delay: 200ms;
+}
+
+@keyframes adminLoadingSweep {
+  0% {
+    background-position: 180% 0;
+  }
+
+  100% {
+    background-position: -180% 0;
+  }
 }
 
 .admin-not-found-card {
@@ -348,10 +442,13 @@
   border-radius: 24px;
   border: 1px solid color-mix(in srgb, var(--border) 76%, transparent);
   background: color-mix(in srgb, var(--surface-raised) 72%, var(--surface) 28%);
+  display: grid;
+  justify-items: center;
+  align-content: center;
 }
 
 .archive-score-ring {
-  width: 11.5rem;
+  width: clamp(8.5rem, 18vw, 11.5rem);
   box-shadow: 0 14px 30px color-mix(in srgb, black 12%, transparent);
 }
 
@@ -376,6 +473,43 @@
   box-shadow:
     0 8px 16px color-mix(in srgb, black 7%, transparent),
     inset 0 1px 0 color-mix(in srgb, white 3%, transparent);
+}
+
+.editor-validation-panel.has-blocking {
+  background:
+    radial-gradient(
+      circle at top right,
+      color-mix(in srgb, var(--primary) 16%, transparent),
+      transparent 40%
+    ),
+    color-mix(in srgb, var(--surface-raised) 88%, var(--surface) 12%);
+}
+
+.editor-issue-link {
+  border-color: color-mix(in srgb, var(--border) 58%, var(--primary) 42%);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--surface-raised) 90%, white 10%),
+      color-mix(in srgb, var(--surface-raised) 98%, var(--surface) 2%)
+    ),
+    var(--surface-raised);
+}
+
+.editor-issue-link span {
+  color: color-mix(in srgb, var(--text) 78%, var(--muted-text) 22%);
+  font-weight: 650;
+}
+
+.editor-issue-link.advisory {
+  border-color: color-mix(in srgb, var(--secondary) 38%, var(--border) 62%);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--surface-raised) 88%, var(--secondary) 12%),
+      color-mix(in srgb, var(--surface-raised) 96%, var(--surface) 4%)
+    ),
+    var(--surface-raised);
 }
 
 .collection-health-issues,
@@ -435,5 +569,19 @@
 @media (max-width: 760px) {
   .admin-status-strip {
     grid-template-columns: 1fr;
+  }
+
+  .admin-data-loading {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-shell .admin-hero-actions {
+    min-width: 0;
+  }
+
+  .admin-shell .admin-hero-actions .hero-link,
+  .admin-shell .admin-hero-actions .secondary-button,
+  .admin-shell .admin-hero-actions .theme-toggle {
+    width: 100%;
   }
 }

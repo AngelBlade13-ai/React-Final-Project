@@ -27,13 +27,18 @@ export function ProtectedRoute({
 }) {
   if (!isAdminSessionReady) {
     return (
-      <div className="page-shell">
-        <section className="intro-card homepage-panel">
+      <div className="page-shell admin-loading-shell">
+        <section className="intro-card homepage-panel route-loading-card">
           <p className="eyebrow">Admin Session</p>
           <h2>Checking access.</h2>
           <p>
             Validating the current admin session before loading the dashboard.
           </p>
+          <div aria-hidden="true" className="admin-loading-bars">
+            <span />
+            <span />
+            <span />
+          </div>
         </section>
       </div>
     );
@@ -128,50 +133,53 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
     try {
       setLoading(true);
       setError("");
-      const [postsResponse, collectionsResponse, siteContentResponse] =
-        await Promise.all([
-          adminFetch(`${apiBaseUrl}/admin/posts`),
-          adminFetch(`${apiBaseUrl}/admin/collections`),
-          adminFetch(`${apiBaseUrl}/admin/site-content`)
-        ]);
+      const loadPosts = adminFetch(`${apiBaseUrl}/admin/posts`)
+        .then((response) => response.json())
+        .then((data) => {
+          setPosts(data.posts || []);
+          return data;
+        });
+      const loadCollections = adminFetch(`${apiBaseUrl}/admin/collections`)
+        .then((response) => response.json())
+        .then((data) => {
+          setCollections(data.collections || []);
+          return data;
+        });
+      const loadSiteContent = adminFetch(`${apiBaseUrl}/admin/site-content`)
+        .then((response) => response.json())
+        .then((data) => {
+          setAboutForm({
+            ...emptyAbout,
+            ...(data.siteContent?.about || {})
+          });
+          setSiteSettingsForm({
+            branding: {
+              ...emptySiteSettings.branding,
+              ...(data.siteContent?.branding || {})
+            },
+            home: {
+              ...emptySiteSettings.home,
+              ...(data.siteContent?.home || {})
+            },
+            collectionThemes: Array.isArray(data.siteContent?.collectionThemes)
+              ? data.siteContent.collectionThemes
+              : emptySiteSettings.collectionThemes,
+            guidedPaths: Array.isArray(data.siteContent?.guidedPaths)
+              ? data.siteContent.guidedPaths
+              : emptySiteSettings.guidedPaths
+          });
+          return data;
+        });
 
-      if (
-        [
-          postsResponse.status,
-          collectionsResponse.status,
-          siteContentResponse.status
-        ].some((status) => status === 401 || status === 403)
-      ) {
-        return;
+      const results = await Promise.allSettled([
+        loadPosts,
+        loadCollections,
+        loadSiteContent
+      ]);
+
+      if (results.some((result) => result.status === "rejected")) {
+        setError("Some admin data failed to load. Refresh or switch sections.");
       }
-
-      const postsData = await postsResponse.json();
-      const collectionsData = await collectionsResponse.json();
-      const siteContentData = await siteContentResponse.json();
-      setPosts(postsData.posts || []);
-      setCollections(collectionsData.collections || []);
-      setAboutForm({
-        ...emptyAbout,
-        ...(siteContentData.siteContent?.about || {})
-      });
-      setSiteSettingsForm({
-        branding: {
-          ...emptySiteSettings.branding,
-          ...(siteContentData.siteContent?.branding || {})
-        },
-        home: {
-          ...emptySiteSettings.home,
-          ...(siteContentData.siteContent?.home || {})
-        },
-        collectionThemes: Array.isArray(
-          siteContentData.siteContent?.collectionThemes
-        )
-          ? siteContentData.siteContent.collectionThemes
-          : emptySiteSettings.collectionThemes,
-        guidedPaths: Array.isArray(siteContentData.siteContent?.guidedPaths)
-          ? siteContentData.siteContent.guidedPaths
-          : emptySiteSettings.guidedPaths
-      });
     } catch {
       setError("Failed to load admin data.");
     } finally {
@@ -790,6 +798,21 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
           <strong>Protected</strong>
         </div>
       </section>
+
+      {loading ? (
+        <section className="admin-data-loading" aria-live="polite">
+          <div>
+            <p className="eyebrow">Loading Admin Data</p>
+            <strong>Connecting to the content store.</strong>
+            <span>Sections will fill in as their data arrives.</span>
+          </div>
+          <div aria-hidden="true" className="admin-loading-bars">
+            <span />
+            <span />
+            <span />
+          </div>
+        </section>
+      ) : null}
 
       {error ? <p className="error-text admin-error-banner">{error}</p> : null}
 

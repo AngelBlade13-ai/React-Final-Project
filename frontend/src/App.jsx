@@ -90,12 +90,17 @@ class RouteErrorBoundary extends Component {
 
 function RouteFallback() {
   return (
-    <main className="content-grid route-loading-shell" aria-live="polite">
-      <section className="intro-card homepage-panel">
+    <div className="page-shell route-loading-shell" aria-live="polite">
+      <section className="intro-card homepage-panel route-loading-card">
         <p className="eyebrow">Loading</p>
         <h2>Opening the next page.</h2>
+        <div aria-hidden="true" className="admin-loading-bars">
+          <span />
+          <span />
+          <span />
+        </div>
       </section>
-    </main>
+    </div>
   );
 }
 

@@ -242,35 +242,6 @@ const seedSiteContent = {
       }
     },
     {
-      key: "soft-archive",
-      label: "Soft Archive",
-      kind: "standard",
-      palette: {
-        light: {
-          background: "#fbf1ee",
-          surface: "#fff8f6",
-          surfaceAlt: "#f7ebe7",
-          text: "#432930",
-          mutedText: "#87646d",
-          border: "#efd5ce",
-          primary: "#dca0ad",
-          primaryStrong: "#cb7f93",
-          secondary: "#f6ddd7"
-        },
-        dark: {
-          background: "#1a1215",
-          surface: "#25181d",
-          surfaceAlt: "#302027",
-          text: "#f7eef2",
-          mutedText: "#ccb8c0",
-          border: "#47323a",
-          primary: "#e3a4af",
-          primaryStrong: "#f2b8c2",
-          secondary: "#c8a2b1"
-        }
-      }
-    },
-    {
       key: "fractureverse",
       label: "Fractureverse",
       kind: "immersive",
@@ -296,64 +267,6 @@ const seedSiteContent = {
           primary: "#ff6fa5",
           primaryStrong: "#ff3f87",
           secondary: "#8a4fff"
-        }
-      }
-    },
-    {
-      key: "stage",
-      label: "Stage",
-      kind: "standard",
-      palette: {
-        light: {
-          background: "#f6e3d8",
-          surface: "#f9ece4",
-          surfaceAlt: "#f1ddd1",
-          text: "#44251d",
-          mutedText: "#7f5a4d",
-          border: "#e2bea7",
-          primary: "#b84934",
-          primaryStrong: "#c99236",
-          secondary: "#8f261d"
-        },
-        dark: {
-          background: "#160d0d",
-          surface: "#241313",
-          surfaceAlt: "#311818",
-          text: "#faefe3",
-          mutedText: "#d7b9a6",
-          border: "#573126",
-          primary: "#c53d2c",
-          primaryStrong: "#e0a646",
-          secondary: "#8f261d"
-        }
-      }
-    },
-    {
-      key: "signal",
-      label: "Signal",
-      kind: "standard",
-      palette: {
-        light: {
-          background: "#e7e5f4",
-          surface: "#efedf9",
-          surfaceAlt: "#e0dcf3",
-          text: "#2e2945",
-          mutedText: "#676084",
-          border: "#c6bedf",
-          primary: "#7764dc",
-          primaryStrong: "#4e8ed8",
-          secondary: "#8b86c9"
-        },
-        dark: {
-          background: "#12101b",
-          surface: "#1b1727",
-          surfaceAlt: "#241d35",
-          text: "#efeefe",
-          mutedText: "#b8b4db",
-          border: "#3d345d",
-          primary: "#8c72ff",
-          primaryStrong: "#66b5ff",
-          secondary: "#4b5ec7"
         }
       }
     }

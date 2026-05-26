@@ -687,7 +687,8 @@ export function getSiblingVersionPosts(posts = [], currentPost, options = {}) {
 
 export const emptyAbout = {
   heroEyebrow: "About",
-  heroTitle: "I make music to understand things I do not know how to say out loud.",
+  heroTitle:
+    "I make music to understand things I do not know how to say out loud.",
   heroText:
     "This site is where I keep those songs connected: the personal ones, the fantasy worlds, and the pieces that turned into something larger than a single feeling.",
   artistEyebrow: "The Artist",
@@ -696,11 +697,13 @@ export const emptyAbout = {
   artistText:
     "I make songs from feelings that are hard to explain directly. Some are personal. Some become fantasy worlds. Some turn into villain songs, anime openings, or quiet survival pieces.",
   siteEyebrow: "The Site",
-  siteTitle: "Built for listening, reading, and finding connections between songs.",
+  siteTitle:
+    "Built for listening, reading, and finding connections between songs.",
   siteText:
     "Each song can carry notes, versions, and the mood around it. Collections help you browse by world or theme. Listening paths give you a guided way through the archive when you do not know where to start.",
   quoteEyebrow: "Why It Exists",
-  quoteTitle: "Some feelings do not go away until you turn them into something.",
+  quoteTitle:
+    "Some feelings do not go away until you turn them into something.",
   quoteText:
     "This archive gives each song room to breathe, then links those rooms together into a larger story."
 };
@@ -765,35 +768,6 @@ export const DEFAULT_COLLECTION_THEME_PROFILES = [
     }
   },
   {
-    key: "soft-archive",
-    label: "Soft Archive",
-    kind: "standard",
-    palette: {
-      light: {
-        background: "#fbf1ee",
-        surface: "#fff8f6",
-        surfaceAlt: "#f7ebe7",
-        text: "#432930",
-        mutedText: "#87646d",
-        border: "#efd5ce",
-        primary: "#dca0ad",
-        primaryStrong: "#cb7f93",
-        secondary: "#f6ddd7"
-      },
-      dark: {
-        background: "#1a1215",
-        surface: "#25181d",
-        surfaceAlt: "#302027",
-        text: "#f7eef2",
-        mutedText: "#ccb8c0",
-        border: "#47323a",
-        primary: "#e3a4af",
-        primaryStrong: "#f2b8c2",
-        secondary: "#c8a2b1"
-      }
-    }
-  },
-  {
     key: "fractureverse",
     label: "Fractureverse",
     kind: "immersive",
@@ -819,64 +793,6 @@ export const DEFAULT_COLLECTION_THEME_PROFILES = [
         primary: "#ff6fa5",
         primaryStrong: "#ff3f87",
         secondary: "#8a4fff"
-      }
-    }
-  },
-  {
-    key: "stage",
-    label: "Stage",
-    kind: "standard",
-    palette: {
-      light: {
-        background: "#f6e3d8",
-        surface: "#f9ece4",
-        surfaceAlt: "#f1ddd1",
-        text: "#44251d",
-        mutedText: "#7f5a4d",
-        border: "#e2bea7",
-        primary: "#b84934",
-        primaryStrong: "#c99236",
-        secondary: "#8f261d"
-      },
-      dark: {
-        background: "#160d0d",
-        surface: "#241313",
-        surfaceAlt: "#311818",
-        text: "#faefe3",
-        mutedText: "#d7b9a6",
-        border: "#573126",
-        primary: "#c53d2c",
-        primaryStrong: "#e0a646",
-        secondary: "#8f261d"
-      }
-    }
-  },
-  {
-    key: "signal",
-    label: "Signal",
-    kind: "standard",
-    palette: {
-      light: {
-        background: "#e7e5f4",
-        surface: "#efedf9",
-        surfaceAlt: "#e0dcf3",
-        text: "#2e2945",
-        mutedText: "#676084",
-        border: "#c6bedf",
-        primary: "#7764dc",
-        primaryStrong: "#4e8ed8",
-        secondary: "#8b86c9"
-      },
-      dark: {
-        background: "#12101b",
-        surface: "#1b1727",
-        surfaceAlt: "#241d35",
-        text: "#efeefe",
-        mutedText: "#b8b4db",
-        border: "#3d345d",
-        primary: "#8c72ff",
-        primaryStrong: "#66b5ff",
-        secondary: "#4b5ec7"
       }
     }
   }
@@ -1014,22 +930,6 @@ export const COLLECTION_THEMES = {
     playerLabel: "Now Playing - A Ballad",
     playerUpNextLabel: "Next Ballad"
   },
-  "soft-archive": {
-    worldEyebrow: "Soft Archive",
-    featuredLabel: "Primary Entry",
-    featuredAction: "Open Entry",
-    listLabel: "Recent Entries",
-    releaseNote: "Entry",
-    lyrics: "Words",
-    worldNoteTitle: "A note about this world",
-    worldNoteText:
-      "Quiet songs do not need to be small. They just need enough room to stay gentle.",
-    itemName: "Entry",
-    itemPlural: "Entries",
-    itemAction: "Open Entry",
-    playerLabel: "Now Playing",
-    playerUpNextLabel: "Up Next"
-  },
   fractureverse: {
     worldEyebrow: "Fractureverse",
     featuredLabel: "Primary Timeline Fragment",
@@ -1052,38 +952,6 @@ export const COLLECTION_THEMES = {
     itemName: "Fragment",
     itemPlural: "Fragments",
     itemAction: "Open Fragment",
-    playerLabel: "Now Playing",
-    playerUpNextLabel: "Up Next"
-  },
-  stage: {
-    worldEyebrow: "Stage",
-    featuredLabel: "Opening Act",
-    featuredAction: "Continue Act",
-    listLabel: "Acts",
-    releaseNote: "Performance Notes",
-    lyrics: "Script",
-    worldNoteTitle: "A note about this world",
-    worldNoteText:
-      "Some songs are meant to arrive like entrances, spotlights, and final bows.",
-    itemName: "Act",
-    itemPlural: "Acts",
-    itemAction: "Open Act",
-    playerLabel: "Now Playing",
-    playerUpNextLabel: "Up Next"
-  },
-  signal: {
-    worldEyebrow: "Signal",
-    featuredLabel: "Primary Transmission",
-    featuredAction: "Open Transmission",
-    listLabel: "Signals",
-    releaseNote: "Transmission Log",
-    lyrics: "Decoded Signal",
-    worldNoteTitle: "A note about this world",
-    worldNoteText:
-      "What survives here sounds like a message from somewhere distant, imperfect, and still reaching back.",
-    itemName: "Signal",
-    itemPlural: "Signals",
-    itemAction: "Open Signal",
     playerLabel: "Now Playing",
     playerUpNextLabel: "Up Next"
   }
@@ -1439,11 +1307,16 @@ const PUBLIC_COLLECTION_DESCRIPTION_OVERRIDES = {
     "A fantasy chronicle told as ballads—awakening, memory, and belonging in a world that should not know you.",
   "original-personal":
     "Direct, personal songs—identity, grief, becoming, and the feelings that do not fit anywhere else.",
-  standalone: "Individual songs that stand on their own outside a larger world.",
-  "kawaii-adventure": "Bright, adventurous songs with princess-symbolic and anime-bright energy.",
-  "kawaii-magical": "Magical, expressive songs where fantasy says something real.",
-  "villain-anthology": "Darker voices—villain songs, power, damage, and necessary monsters.",
-  "late-night-drafts": "Quieter sketches and after-hours songs still finding their shape."
+  standalone:
+    "Individual songs that stand on their own outside a larger world.",
+  "kawaii-adventure":
+    "Bright, adventurous songs with princess-symbolic and anime-bright energy.",
+  "kawaii-magical":
+    "Magical, expressive songs where fantasy says something real.",
+  "villain-anthology":
+    "Darker voices—villain songs, power, damage, and necessary monsters.",
+  "late-night-drafts":
+    "Quieter sketches and after-hours songs still finding their shape."
 };
 
 const LEGACY_COLLECTION_DESCRIPTION_PATTERN =
@@ -1460,9 +1333,7 @@ export function getPublicCollectionDescription(collection = {}) {
   const raw = String(collection.description || "").trim();
 
   if (!raw || LEGACY_COLLECTION_DESCRIPTION_PATTERN.test(raw)) {
-    return collection.title
-      ? `Songs grouped under ${collection.title}.`
-      : "";
+    return collection.title ? `Songs grouped under ${collection.title}.` : "";
   }
 
   return raw;

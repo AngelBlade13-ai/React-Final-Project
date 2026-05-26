@@ -373,7 +373,7 @@ export default function AdminSitePage() {
               onChange={(event) =>
                 updateThemeProfileField("key", event.target.value)
               }
-              placeholder="soft-archive"
+              placeholder="custom-theme"
               value={themeProfileForm.key}
             />
           </label>
