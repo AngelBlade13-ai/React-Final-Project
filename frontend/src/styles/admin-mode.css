@@ -5,6 +5,7 @@
 
 .admin-shell .admin-hero {
   align-items: stretch;
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, auto);
   background:
     linear-gradient(
       145deg,
@@ -19,15 +20,22 @@
 }
 
 .admin-shell .admin-hero-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(9.75rem, 1fr));
   max-width: none;
-  min-width: min(100%, 28rem);
+  min-width: min(100%, 23rem);
   align-content: center;
+  justify-content: end;
+  gap: 0.65rem;
 }
 
 .admin-shell .admin-hero-actions .hero-link,
 .admin-shell .admin-hero-actions .secondary-button,
 .admin-shell .admin-hero-actions .theme-toggle {
-  min-width: 10.5rem;
+  width: 100%;
+  min-width: 0;
+  justify-content: center;
+  text-align: center;
 }
 
 .admin-shell .admin-subnav {
@@ -190,6 +198,8 @@
 }
 
 .archive-intelligence-hero {
+  grid-template-columns: minmax(0, 1.45fr) minmax(220px, 0.55fr);
+  align-items: stretch;
   background:
     linear-gradient(
       145deg,
@@ -203,6 +213,7 @@
 }
 
 .archive-intelligence-copy {
+  align-content: center;
   display: grid;
   gap: 0.75rem;
 }
@@ -210,6 +221,13 @@
 .archive-intelligence-actions {
   padding-top: 0.9rem;
   border-top: 1px solid color-mix(in srgb, var(--border) 76%, transparent);
+}
+
+.archive-intelligence-actions .hero-link,
+.archive-intelligence-actions .secondary-button {
+  min-width: 9.5rem;
+  justify-content: center;
+  text-align: center;
 }
 
 .admin-workspace-board {
@@ -438,18 +456,40 @@
 }
 
 .archive-score-shell {
-  padding: 1.15rem;
-  border-radius: 24px;
+  padding: 1rem;
+  border-radius: 22px;
   border: 1px solid color-mix(in srgb, var(--border) 76%, transparent);
-  background: color-mix(in srgb, var(--surface-raised) 72%, var(--surface) 28%);
+  background:
+    radial-gradient(
+      circle at top,
+      color-mix(in srgb, var(--primary) 10%, transparent),
+      transparent 46%
+    ),
+    color-mix(in srgb, var(--surface-raised) 76%, var(--surface) 24%);
   display: grid;
   justify-items: center;
   align-content: center;
+  gap: 0.7rem;
 }
 
 .archive-score-ring {
-  width: clamp(8.5rem, 18vw, 11.5rem);
-  box-shadow: 0 14px 30px color-mix(in srgb, black 12%, transparent);
+  width: clamp(7.25rem, 12vw, 9.25rem);
+  box-shadow: 0 12px 24px color-mix(in srgb, black 10%, transparent);
+}
+
+.archive-score-ring span {
+  font-size: clamp(2.1rem, 3.3vw, 3rem);
+}
+
+.archive-score-ring small {
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+}
+
+.archive-score-note {
+  max-width: 16rem;
+  font-size: 0.9rem;
+  line-height: 1.45;
 }
 
 .metric-summary-card {
@@ -485,7 +525,21 @@
     color-mix(in srgb, var(--surface-raised) 88%, var(--surface) 12%);
 }
 
+.editor-validation-head {
+  align-items: center;
+}
+
+.editor-validation-count {
+  min-width: 4.2rem;
+  min-height: 2.6rem;
+  padding: 0.35rem 0.7rem;
+  background: color-mix(in srgb, var(--surface) 82%, var(--primary) 18%);
+  color: color-mix(in srgb, var(--text) 86%, var(--primary-strong) 14%);
+  line-height: 1.15;
+}
+
 .editor-issue-link {
+  position: relative;
   border-color: color-mix(in srgb, var(--border) 58%, var(--primary) 42%);
   background:
     linear-gradient(
@@ -494,22 +548,41 @@
       color-mix(in srgb, var(--surface-raised) 98%, var(--surface) 2%)
     ),
     var(--surface-raised);
+  box-shadow:
+    0 8px 16px color-mix(in srgb, black 6%, transparent),
+    inset 4px 0 0 color-mix(in srgb, #b92b66 72%, var(--primary) 28%);
+}
+
+.editor-issue-link strong {
+  color: color-mix(in srgb, #7a1f47 72%, var(--text) 28%);
 }
 
 .editor-issue-link span {
-  color: color-mix(in srgb, var(--text) 78%, var(--muted-text) 22%);
-  font-weight: 650;
+  color: color-mix(in srgb, var(--text) 86%, var(--muted-text) 14%);
+  font-weight: 700;
 }
 
 .editor-issue-link.advisory {
-  border-color: color-mix(in srgb, var(--secondary) 38%, var(--border) 62%);
+  border-color: color-mix(in srgb, var(--border) 62%, var(--secondary) 38%);
   background:
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--surface-raised) 88%, var(--secondary) 12%),
+      color-mix(in srgb, var(--surface-raised) 92%, var(--secondary) 8%),
       color-mix(in srgb, var(--surface-raised) 96%, var(--surface) 4%)
     ),
     var(--surface-raised);
+  box-shadow:
+    0 8px 16px color-mix(in srgb, black 5%, transparent),
+    inset 4px 0 0 color-mix(in srgb, var(--secondary) 42%, var(--border) 58%);
+}
+
+.editor-issue-link.advisory strong {
+  color: color-mix(in srgb, var(--text) 76%, var(--secondary-strong) 24%);
+}
+
+.editor-issue-link.advisory span {
+  color: color-mix(in srgb, var(--text) 76%, var(--muted-text) 24%);
+  font-weight: 650;
 }
 
 .collection-health-issues,
@@ -577,6 +650,7 @@
 
   .admin-shell .admin-hero-actions {
     min-width: 0;
+    grid-template-columns: 1fr;
   }
 
   .admin-shell .admin-hero-actions .hero-link,
