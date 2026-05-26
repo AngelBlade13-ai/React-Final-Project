@@ -105,15 +105,38 @@ test("admin reseed endpoint rewrites the live database from the local authored c
     .set(context.mutationHeaders)
     .set("Cookie", adminCookie);
 
-  assert.equal(reseedResponse.status, 200);
+  assert.equal(reseedResponse.status, 202);
   assert.match(
     reseedResponse.body.message,
-    /reseeded from .*posts\.local\.json/i
+    /reseed started/i
   );
-  assert.ok(reseedResponse.body.reseed);
-  assert.ok(reseedResponse.body.reseed.logPath);
-  assert.ok(reseedResponse.body.reseed.output);
-  assert.match(reseedResponse.body.reseed.output, /reseed ok/);
+  assert.ok(reseedResponse.body.reseedJob);
+  assert.equal(reseedResponse.body.reseedJob.status, "running");
+  assert.ok(reseedResponse.body.reseedJob.jobId);
+
+  let reseedJob;
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    const jobResponse = await context.client
+      .get(
+        `/api/admin/reseed-live-site/jobs/${reseedResponse.body.reseedJob.jobId}`
+      )
+      .set("Cookie", adminCookie);
+
+    assert.equal(jobResponse.status, 200);
+    reseedJob = jobResponse.body.reseedJob;
+    if (reseedJob.status !== "running") {
+      break;
+    }
+    await new Promise((resolve) => {
+      setTimeout(resolve, 25);
+    });
+  }
+
+  assert.equal(reseedJob.status, "success");
+  assert.ok(reseedJob.reseed);
+  assert.ok(reseedJob.reseed.logPath);
+  assert.ok(reseedJob.reseed.output);
+  assert.match(reseedJob.reseed.output, /reseed ok/);
 
   const auditResponse = await context.agent.get(
     "/api/admin/audit-logs?limit=5"
@@ -121,12 +144,16 @@ test("admin reseed endpoint rewrites the live database from the local authored c
 
   assert.equal(auditResponse.status, 200);
   const reseedAuditEntry = auditResponse.body.auditLogs.find(
-    (entry) => entry.action === "site.reseeded"
+    (entry) => entry.action === "site.reseed_started"
   );
 
   assert.ok(reseedAuditEntry);
   assert.equal(reseedAuditEntry.entityType, "site");
   assert.equal(reseedAuditEntry.entityId, "posts.local.json");
+  assert.equal(
+    reseedAuditEntry.details.jobId,
+    reseedResponse.body.reseedJob.jobId
+  );
 });
 
 test("local assistant endpoints fail safely when local AI is disabled", async (t) => {
