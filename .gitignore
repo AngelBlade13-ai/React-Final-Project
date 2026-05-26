@@ -19,5 +19,9 @@ backend/data/posts.json.backup.*.json
 backend/src/data/remote-ai-tunnel.json
 backend/src/data/remote-ai-tunnel.log
 backend/output/
+tools/song-importer/.venv/
+tools/song-importer/output/
+tools/song-importer/input/
+tools/song-importer/.env
 __pycache__/
 *.py[cod]

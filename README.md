@@ -96,9 +96,17 @@ Optional backend operations values:
 - `ENABLE_ADMIN_AUDIT_LOGGING`
 - `SLOW_REQUEST_THRESHOLD_MS`
 - `MONITORING_WEBHOOK_URL`
-- `IMPORTER_ROOT`
+- `IMPORTER_ROOT` (optional override; defaults to `tools/song-importer`)
 - `IMPORTER_URL`
-- `IMPORTER_PYTHON_PATH`
+- `IMPORTER_PYTHON_PATH` (optional override; defaults to the bundled importer's virtualenv Python)
+
+The local song importer is vendored at `tools/song-importer`. Create its virtualenv there before using **Open Importer**:
+
+```bash
+cd tools/song-importer
+python -m venv .venv
+.venv\Scripts\python -m pip install -r requirements.txt
+```
 
 Frontend API base URL:
 

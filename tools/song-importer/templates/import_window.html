@@ -1,0 +1,2076 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Song Import Window</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #fbf1ee;
+        --bg-deep: #f1dbe3;
+        --surface: #fffaf8;
+        --surface-soft: #f8ecef;
+        --surface-strong: #ffffff;
+        --ink: #3d222c;
+        --muted: #7c5b67;
+        --line: #ead0d8;
+        --line-strong: #d6aebe;
+        --accent: #cf648c;
+        --accent-strong: #9f3d66;
+        --accent-soft: #f8e3ea;
+        --secondary: #8067d8;
+        --secondary-soft: #eee8ff;
+        --danger: #a72d45;
+        --danger-soft: #fff0f3;
+        --ok: #44785a;
+        --ok-soft: #edf8f1;
+        --warn: #93621c;
+        --warn-soft: #fff6dc;
+        --shadow: 0 16px 38px rgba(127, 76, 97, 0.14);
+        --radius: 8px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(
+            circle at top left,
+            rgba(207, 100, 140, 0.16),
+            transparent 26rem
+          ),
+          radial-gradient(
+            circle at 82% 8%,
+            rgba(128, 103, 216, 0.14),
+            transparent 22rem
+          ),
+          linear-gradient(
+            180deg,
+            var(--bg) 0%,
+            #f7e7ec 48%,
+            var(--bg-deep) 100%
+          );
+      }
+
+      .shell {
+        width: min(1440px, calc(100vw - 2rem));
+        margin: 0 auto 2rem;
+      }
+
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        margin: 0 -1rem 1rem;
+        padding: 0.85rem 1rem;
+        border-bottom: 1px solid var(--line);
+        background: rgba(251, 241, 238, 0.9);
+        backdrop-filter: blur(14px);
+      }
+
+      .brand {
+        min-width: 0;
+      }
+
+      .brand-kicker,
+      .section-kicker {
+        margin: 0 0 0.25rem;
+        color: var(--accent-strong);
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .brand h1 {
+        margin: 0;
+        font-size: 1.18rem;
+        letter-spacing: 0;
+      }
+
+      .topbar-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+      }
+
+      .panel {
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--surface);
+        box-shadow:
+          var(--shadow),
+          inset 0 1px 0 rgba(255, 255, 255, 0.72);
+      }
+
+      .overview {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 1rem;
+        align-items: end;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background:
+          linear-gradient(
+            145deg,
+            rgba(255, 255, 255, 0.68),
+            rgba(248, 227, 234, 0.68)
+          ),
+          var(--surface);
+        box-shadow:
+          var(--shadow),
+          inset 0 1px 0 rgba(255, 255, 255, 0.74);
+      }
+
+      .overview h2 {
+        margin: 0;
+        font-size: 1.45rem;
+      }
+
+      .overview p {
+        max-width: 76ch;
+        margin: 0.35rem 0 0;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      .catalog-shape {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+        justify-content: flex-end;
+        max-width: 23rem;
+      }
+
+      .context-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 0.75rem;
+      }
+
+      .context-chip {
+        display: inline-flex;
+        align-items: center;
+        min-height: 2rem;
+        padding: 0.42rem 0.65rem;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.72);
+        color: var(--muted);
+        font-size: 0.78rem;
+        font-weight: 800;
+      }
+
+      .context-chip.ready {
+        border-color: rgba(68, 120, 90, 0.3);
+        background: var(--ok-soft);
+        color: var(--ok);
+      }
+
+      .context-chip.demo {
+        border-color: rgba(128, 103, 216, 0.28);
+        background: var(--secondary-soft);
+        color: var(--secondary);
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1.04fr) minmax(25rem, 0.66fr);
+        gap: 1rem;
+      }
+
+      .results-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 0.84fr) minmax(0, 1.16fr);
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+
+      .control-stack,
+      .stage-grid {
+        display: grid;
+        gap: 1rem;
+      }
+
+      .mode-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.5rem;
+      }
+
+      .mode-option {
+        position: relative;
+        display: flex;
+        min-height: 4.7rem;
+        flex-direction: column;
+        justify-content: center;
+        gap: 0.25rem;
+        padding: 0.75rem 0.85rem 0.75rem 2.3rem;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--surface);
+        cursor: pointer;
+        transition:
+          border-color 150ms ease,
+          background 150ms ease,
+          box-shadow 150ms ease;
+      }
+
+      .mode-option input {
+        position: absolute;
+        left: 0.75rem;
+        top: 1rem;
+        margin: 0;
+      }
+
+      .mode-option strong {
+        font-size: 0.95rem;
+      }
+
+      .mode-option span {
+        color: var(--muted);
+        font-size: 0.82rem;
+        line-height: 1.35;
+      }
+
+      .mode-option.active {
+        border-color: var(--accent);
+        background: var(--accent-soft);
+        box-shadow: 0 0 0 2px rgba(207, 100, 140, 0.11);
+      }
+
+      .panel {
+        padding: 1rem;
+      }
+
+      .panel h2 {
+        margin: 0;
+        font-size: 1.05rem;
+      }
+
+      .panel-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 0.85rem;
+      }
+
+      .panel .subtle {
+        margin: 0.25rem 0 0;
+        color: var(--muted);
+        font-size: 0.9rem;
+        line-height: 1.45;
+      }
+
+      label {
+        display: block;
+        margin: 0;
+        font-weight: 700;
+        font-size: 0.88rem;
+      }
+
+      input[type="text"],
+      textarea {
+        width: 100%;
+        margin-top: 0.4rem;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 0.72rem 0.78rem;
+        font: inherit;
+        font-size: 0.93rem;
+        color: var(--ink);
+        background: #ffffff;
+      }
+
+      textarea {
+        min-height: 24rem;
+        resize: vertical;
+        font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+        font-size: 0.86rem;
+        line-height: 1.55;
+      }
+
+      input[type="file"] {
+        display: block;
+        width: 100%;
+        margin-top: 0.35rem;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.75rem;
+      }
+
+      .stage-card,
+      .settings-panel {
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--surface-soft);
+      }
+
+      .stage-card {
+        padding: 0.9rem;
+      }
+
+      .stage-card h3 {
+        margin: 0 0 0.25rem;
+        font-size: 1rem;
+      }
+
+      .stage-card p,
+      .settings-panel p {
+        margin: 0 0 0.75rem;
+        color: var(--muted);
+        font-size: 0.88rem;
+        line-height: 1.45;
+      }
+
+      .settings-panel {
+        padding: 0.85rem;
+      }
+
+      .settings-panel[open] {
+        background: #ffffff;
+      }
+
+      .settings-summary {
+        margin: 0;
+        cursor: pointer;
+        list-style: none;
+        font-size: 0.95rem;
+        font-weight: 800;
+      }
+
+      .settings-summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-top: 0;
+      }
+
+      .action-note {
+        margin: 0.65rem 0 0;
+        color: var(--muted);
+        font-size: 0.86rem;
+        line-height: 1.45;
+      }
+
+      button {
+        border: 0;
+        border-radius: var(--radius);
+        padding: 0.74rem 1rem;
+        font: inherit;
+        font-size: 0.92rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition:
+          transform 150ms ease,
+          background 150ms ease,
+          border-color 150ms ease;
+      }
+
+      button:hover:not(:disabled) {
+        transform: translateY(-1px);
+      }
+
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.52;
+      }
+
+      button.primary:disabled {
+        color: var(--muted);
+        background: rgba(255, 255, 255, 0.74);
+        border: 1px solid var(--line);
+      }
+
+      .primary {
+        color: white;
+        background: linear-gradient(
+          135deg,
+          var(--accent),
+          var(--accent-strong)
+        );
+      }
+
+      .secondary {
+        color: var(--ink);
+        background: rgba(255, 255, 255, 0.74);
+        border: 1px solid var(--line);
+      }
+
+      .muted-button {
+        color: var(--muted);
+        background: #ffffff;
+        border: 1px solid var(--line);
+      }
+
+      .status-strip {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+      }
+
+      .workflow-rail {
+        display: grid;
+        gap: 0.5rem;
+        margin: 0.9rem 0;
+      }
+
+      .workflow-card {
+        position: relative;
+        display: grid;
+        gap: 0.18rem;
+        padding: 0.72rem 0.8rem 0.72rem 2.25rem;
+        border-radius: var(--radius);
+        border: 1px solid var(--line);
+        background: #ffffff;
+      }
+
+      .workflow-card::before {
+        content: "";
+        position: absolute;
+        left: 0.82rem;
+        top: 0.92rem;
+        width: 0.58rem;
+        height: 0.58rem;
+        border-radius: 50%;
+        background: var(--line-strong);
+      }
+
+      .workflow-card strong {
+        font-size: 0.86rem;
+      }
+
+      .workflow-card span {
+        color: var(--muted);
+        font-size: 0.8rem;
+        line-height: 1.45;
+      }
+
+      .workflow-card.ready {
+        border-color: #b9e2cb;
+        background: var(--ok-soft);
+      }
+
+      .workflow-card.pending {
+        border-color: #f0d58d;
+        background: var(--warn-soft);
+      }
+
+      .workflow-card.applied {
+        border-color: #98d4b3;
+        background: var(--ok-soft);
+      }
+
+      .workflow-card.ready::before,
+      .workflow-card.applied::before {
+        background: var(--ok);
+      }
+
+      .workflow-card.pending::before {
+        background: var(--warn);
+      }
+
+      .pill {
+        display: grid;
+        gap: 0.15rem;
+        padding: 0.65rem 0.7rem;
+        border-radius: var(--radius);
+        background:
+          linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.78),
+            rgba(248, 236, 239, 0.72)
+          ),
+          var(--surface-soft);
+        border: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 0.76rem;
+      }
+
+      .pill strong {
+        color: var(--ink);
+        font-size: 1.05rem;
+      }
+
+      .pill.emphasis {
+        border-color: rgba(207, 100, 140, 0.34);
+        background: var(--accent-soft);
+      }
+
+      .message {
+        margin: 0 0 1rem;
+        padding: 0.85rem 0.9rem;
+        border-radius: var(--radius);
+        background: #ffffff;
+        border: 1px solid var(--line);
+        font-size: 0.9rem;
+        line-height: 1.45;
+      }
+
+      .message.error {
+        border-color: #f1b3bf;
+        color: var(--danger);
+        background: var(--danger-soft);
+      }
+
+      .message.success {
+        border-color: #b9e2cb;
+        color: var(--ok);
+        background: var(--ok-soft);
+      }
+
+      .job-banner {
+        display: grid;
+        gap: 0.35rem;
+        margin: 0 0 1rem;
+        padding: 0.85rem 0.9rem;
+        border-radius: var(--radius);
+        border: 1px solid #f0d58d;
+        background: var(--warn-soft);
+      }
+
+      .job-banner strong {
+        display: block;
+        margin-bottom: 0.1rem;
+        color: var(--warn);
+      }
+
+      .job-banner code {
+        display: inline-block;
+        padding: 0.1rem 0.35rem;
+        border-radius: 999px;
+        background: #ffffff;
+      }
+
+      .job-banner span {
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      .warning-panel {
+        margin: 0 0 1rem;
+        padding: 0.85rem 0.9rem;
+        border-radius: var(--radius);
+        border: 1px solid #f0d58d;
+        background: var(--warn-soft);
+        color: var(--ink);
+        font-size: 0.88rem;
+        line-height: 1.45;
+      }
+
+      .warning-panel strong {
+        display: block;
+        margin-bottom: 0.25rem;
+      }
+
+      .checkbox-row {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        margin: 0;
+        color: var(--muted);
+      }
+
+      .results-list,
+      .match-list {
+        display: grid;
+        gap: 0.65rem;
+      }
+
+      .result-card,
+      .preview-card {
+        border-radius: var(--radius);
+        border: 1px solid var(--line);
+        background: var(--surface-strong);
+        padding: 0.9rem;
+      }
+
+      .result-card h3,
+      .preview-card h3 {
+        margin: 0 0 0.35rem;
+        font-size: 1rem;
+      }
+
+      .meta {
+        margin: 0.25rem 0;
+        color: var(--muted);
+        font-size: 0.86rem;
+        line-height: 1.45;
+      }
+
+      pre {
+        margin: 0;
+        max-height: 22rem;
+        overflow: auto;
+        padding: 0.85rem;
+        border-radius: var(--radius);
+        background: #101828;
+        color: #eef4ff;
+        font-size: 0.78rem;
+        line-height: 1.5;
+      }
+
+      .result-state {
+        display: inline-block;
+        margin-bottom: 0.6rem;
+        padding: 0.35rem 0.65rem;
+        border-radius: 999px;
+        font-size: 0.76rem;
+        font-weight: 700;
+      }
+
+      .state-clear {
+        color: var(--ok);
+        background: rgba(68, 120, 90, 0.12);
+      }
+
+      .state-review {
+        color: var(--accent-strong);
+        background: rgba(207, 100, 140, 0.14);
+      }
+
+      .state-blocked {
+        color: var(--danger);
+        background: rgba(170, 49, 66, 0.12);
+      }
+
+      .inline-notice {
+        margin: 0.75rem 0 0;
+        padding: 0.75rem 0.85rem;
+        border-radius: var(--radius);
+        border: 1px solid rgba(128, 103, 216, 0.26);
+        background: var(--secondary-soft);
+        color: var(--muted);
+        font-size: 0.86rem;
+        line-height: 1.45;
+      }
+
+      .inline-notice strong {
+        color: var(--secondary);
+      }
+
+      .link-row {
+        display: grid;
+        gap: 0.4rem;
+        font-size: 0.82rem;
+      }
+
+      .link-row code {
+        word-break: break-all;
+      }
+
+      .report-overlay {
+        position: fixed;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        padding: 1rem;
+        background: rgba(16, 24, 40, 0.42);
+        backdrop-filter: blur(6px);
+        z-index: 50;
+      }
+
+      .report-overlay[hidden] {
+        display: none;
+      }
+
+      .report-dialog {
+        width: min(760px, 100%);
+        max-height: min(88vh, 920px);
+        overflow: auto;
+        border-radius: var(--radius);
+        border: 1px solid var(--line);
+        background: #ffffff;
+        box-shadow: 0 28px 72px rgba(16, 24, 40, 0.24);
+      }
+
+      .report-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 1.15rem 1.25rem;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .report-header h3 {
+        margin: 0;
+        font-size: 1.25rem;
+      }
+
+      .report-status {
+        margin-top: 0.25rem;
+        color: var(--muted);
+      }
+
+      .report-status.success {
+        color: var(--ok);
+      }
+
+      .report-status.error {
+        color: var(--danger);
+      }
+
+      .report-close {
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.9);
+        color: var(--ink);
+      }
+
+      .report-body {
+        padding: 1.15rem 1.25rem 1.3rem;
+        display: grid;
+        gap: 1rem;
+      }
+
+      .report-section {
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--surface-soft);
+        padding: 0.95rem 1rem;
+      }
+
+      .report-section h4 {
+        margin: 0 0 0.45rem;
+        font-size: 1rem;
+      }
+
+      .report-section ul {
+        margin: 0;
+        padding-left: 1.1rem;
+        color: var(--ink);
+      }
+
+      body.modal-open {
+        overflow: hidden;
+      }
+
+      @media (max-width: 980px) {
+        .layout,
+        .results-layout,
+        .overview {
+          grid-template-columns: 1fr;
+        }
+
+        .catalog-shape {
+          justify-content: flex-start;
+        }
+      }
+
+      @media (max-width: 720px) {
+        .topbar {
+          align-items: stretch;
+          flex-direction: column;
+        }
+
+        .topbar-actions,
+        .mode-grid,
+        .status-strip,
+        .grid {
+          grid-template-columns: 1fr;
+        }
+
+        .topbar-actions {
+          display: grid;
+        }
+
+        textarea {
+          min-height: 18rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <header class="topbar">
+        <div class="brand">
+          <p class="brand-kicker">Local Importer</p>
+          <h1>Archive Import Workstation</h1>
+        </div>
+        <div class="topbar-actions">
+          <button class="primary" id="process-button" type="button">
+            Process + Preview
+          </button>
+          <button
+            class="primary"
+            id="apply-reseed-button"
+            type="button"
+            disabled
+          >
+            Apply To Website
+          </button>
+          <button class="secondary" id="apply-button" type="button" disabled>
+            Save posts.json Only
+          </button>
+        </div>
+      </header>
+
+      <section class="overview">
+        <div>
+          <p class="section-kicker">Catalog-safe workflow</p>
+          <h2>Preview, apply, reseed, and verify from one screen.</h2>
+          <p>
+            Paste one song object or a batch array, attach media for one-song
+            imports, and review the generated website payload before writing the
+            authored catalog.
+          </p>
+          {% if demo_mode %}
+          <p>
+            Standalone demo mode is active. The importer will use the bundled
+            sample catalog and write preview files without requiring the React
+            website, MongoDB, npm, or Cloudinary.
+          </p>
+          {% elif standalone_preview_mode %}
+          <p>
+            Standalone preview mode is active. The importer will use the
+            configured catalog and write preview files without applying changes
+            to a website.
+          </p>
+          {% endif %}
+          <div class="context-row">
+            {% if demo_mode %}
+            <span class="context-chip demo">Standalone demo</span>
+            <span class="context-chip">Preview only</span>
+            {% elif standalone_preview_mode %}
+            <span class="context-chip demo">Standalone preview</span>
+            <span class="context-chip">Preview only</span>
+            {% else %}
+            <span class="context-chip ready">Website connected</span>
+            <span class="context-chip"
+              >Apply + reseed enabled after preview</span
+            >
+            {% endif %}
+            <span class="context-chip">Authored catalog only</span>
+          </div>
+        </div>
+        <div class="catalog-shape" aria-label="Authored catalog keys">
+          <span class="pill"><strong>posts</strong>authored songs</span>
+          <span class="pill"><strong>collections</strong>curated groups</span>
+          <span class="pill"><strong>siteContent</strong>page copy</span>
+        </div>
+      </section>
+
+      <div class="layout">
+        <section class="panel control-stack">
+          <div class="panel-header">
+            <div>
+              <h2>Input</h2>
+              <p class="subtle">
+                Choose a mode, paste JSON, and set media or project options.
+              </p>
+            </div>
+          </div>
+
+          <div class="mode-grid" id="mode-grid">
+            <label class="mode-option active">
+              <input type="radio" name="import-mode" value="import" checked />
+              <strong>New Song Import</strong>
+              <span>Create new website posts and optionally upload media.</span>
+            </label>
+            <label class="mode-option">
+              <input type="radio" name="import-mode" value="merge-lyrics" />
+              <strong>Lyrics Merge</strong>
+              <span
+                >Fill blank lyrics on matching existing posts without
+                overwriting existing lyrics.</span
+              >
+            </label>
+          </div>
+
+          <div class="stage-grid">
+            <section class="stage-card">
+              <h3>Song Data</h3>
+              <p>
+                Bulk batches work in every mode. File uploads are limited to one
+                song object per run.
+              </p>
+              <label>
+                Song JSON
+                <textarea id="song-json" spellcheck="false">
+{{ default_song_json }}</textarea
+                >
+              </label>
+            </section>
+
+            <section class="stage-card">
+              <h3>Media Attachments</h3>
+              <p>
+                Cloudinary upload runs during preview. Remove attached files
+                when upload is disabled.
+              </p>
+              <div class="grid">
+                <label>
+                  Video File
+                  <input id="video-file" type="file" accept="video/*" />
+                </label>
+
+                <label>
+                  Cover Image
+                  <input id="cover-file" type="file" accept="image/*" />
+                </label>
+              </div>
+            </section>
+          </div>
+
+          <details class="settings-panel" open>
+            <summary class="settings-summary">Project Settings</summary>
+            <p>
+              These paths control where previews, backups, and the website
+              catalog write land.
+            </p>
+            <div class="grid">
+              <label>
+                Existing Catalog
+                <input
+                  id="catalog-path"
+                  type="text"
+                  value="{{ default_catalog_path }}"
+                  readonly
+                />
+              </label>
+
+              <label>
+                Website Root
+                <input
+                  id="website-root"
+                  type="text"
+                  value="{{ default_website_root }}"
+                />
+              </label>
+
+              <label>
+                Website Posts Path
+                <input
+                  id="website-posts"
+                  type="text"
+                  value="{{ default_website_posts }}"
+                />
+              </label>
+            </div>
+
+            <div class="grid">
+              <label>
+                Output Directory
+                <input
+                  id="output-dir"
+                  type="text"
+                  value="{{ default_output_dir }}"
+                />
+              </label>
+
+              <div class="checkbox-row">
+                <input
+                  id="upload-media"
+                  type="checkbox"
+                  {%
+                  if
+                  upload_enabled
+                  %}checked{%
+                  endif
+                  %}
+                />
+                <label for="upload-media" style="margin: 0; font-weight: 600">
+                  Upload media to Cloudinary before preview
+                </label>
+              </div>
+
+              <input id="merge-lyrics" type="checkbox" hidden />
+            </div>
+          </details>
+
+          <p class="action-note">
+            <strong>Apply To Website</strong> writes the catalog file and
+            reseeds the live site. Use
+            <strong>Save posts.json Only</strong> only when you want to review
+            the file before updating the live site.
+          </p>
+          {% if demo_mode %}
+          <p class="inline-notice">
+            <strong>Demo mode:</strong> apply actions stay disabled because no
+            website target is configured. This is intentional for standalone
+            review.
+          </p>
+          {% elif standalone_preview_mode %}
+          <p class="inline-notice">
+            <strong>Standalone preview:</strong> apply actions stay disabled
+            because no website target is configured. Add a website root or posts
+            path when you are ready to write to a site.
+          </p>
+          {% endif %}
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <div>
+              <h2>Run Status</h2>
+              <p class="subtle">
+                Current validation, apply, reseed, and verification state.
+              </p>
+            </div>
+          </div>
+          <div class="warning-panel">
+            <strong>Important</strong>
+            <code>Save posts.json Only</code> only writes the merged result into
+            the website's <code>backend/data/posts.json</code>. The live site
+            will not change until reseed. <code>Apply To Website</code> rewrites
+            live posts and collections from that file, so admin-only changes
+            that never made it back into <code>posts.json</code> can be
+            overwritten.
+          </div>
+          <div class="job-banner" id="job-banner" hidden></div>
+          <div id="message" class="message">Ready.</div>
+
+          <div class="status-strip" id="summary-strip">
+            <div class="pill"><strong>0</strong>Existing songs</div>
+            <div class="pill"><strong>0</strong>Processed</div>
+            <div class="pill"><strong>0</strong>Import-ready</div>
+          </div>
+
+          <div class="workflow-rail" id="workflow-rail"></div>
+
+          <div class="link-row" id="artifact-links"></div>
+        </section>
+      </div>
+
+      <div class="results-layout">
+        <section class="panel">
+          <div class="panel-header">
+            <div>
+              <h2>Results</h2>
+              <p class="subtle">
+                Duplicate signals, blocked items, and lyrics merge candidates.
+              </p>
+            </div>
+          </div>
+          <div class="results-list" id="results"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <div>
+              <h2>Website Preview</h2>
+              <p class="subtle">
+                The exact website-ready payload prepared for apply.
+              </p>
+            </div>
+          </div>
+          <div id="preview"></div>
+        </section>
+      </div>
+    </div>
+
+    <div class="report-overlay" id="report-overlay" hidden>
+      <div
+        class="report-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="report-title"
+      >
+        <div class="report-header">
+          <div>
+            <h3 id="report-title">Task report</h3>
+            <div class="report-status" id="report-status">Ready.</div>
+          </div>
+          <button class="report-close" id="report-close" type="button">
+            Close
+          </button>
+        </div>
+        <div class="report-body" id="report-body"></div>
+      </div>
+    </div>
+
+    <script>
+      const state = {
+        websitePostsReady: [],
+        lyricsMergeUpdates: [],
+        lyricsRepairReadySongs: 0,
+        supersedeOverrides: {},
+        artifacts: null,
+        websiteRoot: "",
+        websitePosts: "",
+        outputDir: "",
+        hasAppliedCurrentPreview: false,
+        previewSignature: "",
+        activeJobId: "",
+        lastReportStatus: "",
+        reportDismissedWhileRunning: false,
+        activeJobPhase: ""
+      };
+      let applyJobPollTimer = null;
+
+      const messageEl = document.getElementById("message");
+      const summaryStripEl = document.getElementById("summary-strip");
+      const workflowRailEl = document.getElementById("workflow-rail");
+      const resultsEl = document.getElementById("results");
+      const previewEl = document.getElementById("preview");
+      const artifactLinksEl = document.getElementById("artifact-links");
+      const applyButton = document.getElementById("apply-button");
+      const applyReseedButton = document.getElementById("apply-reseed-button");
+      const modeGridEl = document.getElementById("mode-grid");
+      const reportOverlayEl = document.getElementById("report-overlay");
+      const reportTitleEl = document.getElementById("report-title");
+      const reportStatusEl = document.getElementById("report-status");
+      const reportBodyEl = document.getElementById("report-body");
+      const reportCloseEl = document.getElementById("report-close");
+      const jobBannerEl = document.getElementById("job-banner");
+      const activeJobStorageKey = "song-import-assistant-active-job-id";
+
+      function setMessage(text, kind = "") {
+        messageEl.className = kind ? `message ${kind}` : "message";
+        messageEl.textContent = text;
+      }
+
+      function setButtonsEnabled(enabled) {
+        applyButton.disabled = !enabled;
+        applyReseedButton.disabled = !enabled;
+      }
+
+      async function fetchJson(
+        url,
+        options = {},
+        fallbackMessage = "Request failed."
+      ) {
+        let response;
+        try {
+          response = await fetch(url, options);
+        } catch (error) {
+          throw new Error(
+            `${fallbackMessage} This importer tab is open, but the local importer server behind it is no longer running. Close this tab and reopen the importer from the admin dashboard.`
+          );
+        }
+
+        const text = await response.text();
+        let payload = {};
+        if (text) {
+          try {
+            payload = JSON.parse(text);
+          } catch (_) {
+            throw new Error(
+              `${fallbackMessage} The importer returned a non-JSON response. Restart the importer and try again.`
+            );
+          }
+        }
+
+        if (!response.ok || payload.ok === false) {
+          throw new Error(payload.error || fallbackMessage);
+        }
+
+        return payload;
+      }
+
+      function renderJobBanner() {
+        if (!state.activeJobId) {
+          jobBannerEl.hidden = true;
+          jobBannerEl.innerHTML = "";
+          return;
+        }
+
+        jobBannerEl.hidden = false;
+        jobBannerEl.innerHTML = `
+          <strong>Reseed running in the background</strong>
+          <span>
+            Job <code>${escapeHtml(state.activeJobId)}</code>${state.activeJobPhase ? ` is in phase <code>${escapeHtml(state.activeJobPhase)}</code>` : ""}.
+            Keep this tab open or refresh
+            safely; the importer will resume polling and update this banner when the reseed finishes.
+          </span>
+        `;
+      }
+
+      function renderTaskReport(report) {
+        const summaryLines = Array.isArray(report?.summary)
+          ? report.summary
+          : [];
+        const artifactEntries = report?.artifacts
+          ? Object.entries(report.artifacts)
+          : [];
+        const extraOutput = String(report?.reseedOutput || "").trim();
+
+        reportTitleEl.textContent = report?.title || "Task report";
+        const status =
+          report?.status === "error"
+            ? "error"
+            : report?.status === "running"
+              ? "running"
+              : "success";
+        reportStatusEl.textContent =
+          status === "error"
+            ? "Failed"
+            : status === "running"
+              ? "Running"
+              : "Completed";
+        reportStatusEl.className = `report-status ${status === "error" ? "error" : status === "running" ? "" : "success"}`;
+
+        const sections = [];
+        if (summaryLines.length) {
+          sections.push(`
+            <section class="report-section">
+              <h4>Summary</h4>
+              <ul>
+                ${summaryLines.map((line) => `<li>${escapeHtml(line)}</li>`).join("")}
+              </ul>
+            </section>
+          `);
+        }
+        if (artifactEntries.length) {
+          sections.push(`
+            <section class="report-section">
+              <h4>Artifacts</h4>
+              <ul>
+                ${artifactEntries
+                  .filter(([, value]) => value)
+                  .map(
+                    ([label, value]) =>
+                      `<li><strong>${escapeHtml(label)}:</strong> <code>${escapeHtml(value)}</code></li>`
+                  )
+                  .join("")}
+              </ul>
+            </section>
+          `);
+        }
+        if (extraOutput) {
+          sections.push(`
+            <section class="report-section">
+              <h4>Command output</h4>
+              <pre>${escapeHtml(extraOutput)}</pre>
+            </section>
+          `);
+        }
+        if (!sections.length) {
+          sections.push(`
+            <section class="report-section">
+              <h4>Details</h4>
+              <p class="meta">No additional report details were returned.</p>
+            </section>
+          `);
+        }
+
+        reportBodyEl.innerHTML = sections.join("");
+        return status;
+      }
+
+      function openTaskReport() {
+        reportOverlayEl.hidden = false;
+        document.body.classList.add("modal-open");
+      }
+
+      function showTaskReport(report, options = {}) {
+        const { forceOpen = false } = options;
+        const status = renderTaskReport(report);
+        const shouldOpen =
+          forceOpen ||
+          (!reportOverlayEl.hidden && !state.reportDismissedWhileRunning) ||
+          (status !== "running" && state.lastReportStatus === "running");
+
+        if (shouldOpen) {
+          openTaskReport();
+        }
+
+        state.lastReportStatus = status;
+      }
+
+      function stopApplyJobPolling() {
+        if (applyJobPollTimer) {
+          window.clearInterval(applyJobPollTimer);
+          applyJobPollTimer = null;
+        }
+      }
+
+      function clearActiveJobState() {
+        state.activeJobId = "";
+        state.activeJobPhase = "";
+        try {
+          window.localStorage.removeItem(activeJobStorageKey);
+        } catch (_) {
+          // Ignore storage failures in private browsing or blocked storage.
+        }
+      }
+
+      async function pollApplyJob(jobId) {
+        const payload = await fetchJson(
+          `/api/apply/jobs/${encodeURIComponent(jobId)}`,
+          {},
+          "Failed to read reseed progress."
+        );
+
+        showTaskReport(payload.report || payload);
+        state.activeJobPhase = payload.phase || "";
+        renderWorkflow();
+        if (payload.status === "running") {
+          setMessage(payload.message || "Reseed is still running.", "success");
+          return;
+        }
+
+        if (payload.status === "success") {
+          stopApplyJobPolling();
+          setMessage(
+            `Reseeded the live site from posts.json. ${payload.report?.summary?.join(" ") || ""}`.trim(),
+            "success"
+          );
+          clearActiveJobState();
+          renderWorkflow();
+          return;
+        }
+
+        if (payload.status === "error") {
+          stopApplyJobPolling();
+          setMessage(payload.message || "Reseed failed.", "error");
+          clearActiveJobState();
+          renderWorkflow();
+        }
+      }
+
+      function startApplyJobPolling(jobId) {
+        stopApplyJobPolling();
+        state.activeJobId = jobId;
+        try {
+          window.localStorage.setItem(activeJobStorageKey, jobId);
+        } catch (_) {
+          // Ignore storage failures in private browsing or blocked storage.
+        }
+        renderWorkflow();
+        applyJobPollTimer = window.setInterval(() => {
+          pollApplyJob(jobId).catch((error) => {
+            stopApplyJobPolling();
+            clearActiveJobState();
+            setMessage(error.message, "error");
+            renderWorkflow();
+          });
+        }, 1500);
+        pollApplyJob(jobId).catch((error) => {
+          stopApplyJobPolling();
+          clearActiveJobState();
+          setMessage(error.message, "error");
+          renderWorkflow();
+        });
+      }
+
+      function hideTaskReport() {
+        if (state.lastReportStatus === "running") {
+          state.reportDismissedWhileRunning = true;
+        }
+        reportOverlayEl.hidden = true;
+        document.body.classList.remove("modal-open");
+      }
+
+      async function resumePersistedApplyJob() {
+        let jobId = "";
+        try {
+          jobId = window.localStorage.getItem(activeJobStorageKey) || "";
+        } catch (_) {
+          jobId = "";
+        }
+
+        if (!jobId) {
+          return;
+        }
+
+        state.activeJobId = jobId;
+        setMessage(
+          "Reseed job still running. Restoring progress view...",
+          "success"
+        );
+        renderWorkflow();
+        startApplyJobPolling(jobId);
+      }
+
+      function getDraftSignature() {
+        const songJson = document.getElementById("song-json").value.trim();
+        const websiteRoot = document
+          .getElementById("website-root")
+          .value.trim();
+        const websitePosts = document
+          .getElementById("website-posts")
+          .value.trim();
+        const catalogPath = document
+          .getElementById("catalog-path")
+          .value.trim();
+        const outputDir = document.getElementById("output-dir").value.trim();
+        const uploadEnabled = document.getElementById("upload-media").checked;
+        const videoFile = document.getElementById("video-file").files[0];
+        const coverFile = document.getElementById("cover-file").files[0];
+
+        return [
+          songJson,
+          catalogPath,
+          websiteRoot,
+          websitePosts,
+          outputDir,
+          JSON.stringify(state.supersedeOverrides),
+          uploadEnabled ? "upload" : "no-upload",
+          videoFile ? `${videoFile.name}:${videoFile.size}` : "no-video",
+          coverFile ? `${coverFile.name}:${coverFile.size}` : "no-cover"
+        ].join("||");
+      }
+
+      function setSupersedeOverride(songSlug, targetSlug, targetTitle) {
+        if (!songSlug || !targetSlug) {
+          return;
+        }
+
+        state.supersedeOverrides[songSlug] = {
+          songSlug,
+          targetSlug,
+          reason: `Superseded by imported version targeting ${targetTitle || targetSlug}.`
+        };
+        processSongs().catch((error) => {
+          setMessage(
+            error.message || "Failed to process supersede override.",
+            "error"
+          );
+        });
+      }
+
+      function clearSupersedeOverride(songSlug) {
+        if (!songSlug) {
+          return;
+        }
+
+        delete state.supersedeOverrides[songSlug];
+        processSongs().catch((error) => {
+          setMessage(
+            error.message || "Failed to clear supersede override.",
+            "error"
+          );
+        });
+      }
+
+      function getSelectedImportMode() {
+        return (
+          document.querySelector('input[name="import-mode"]:checked')?.value ||
+          "import"
+        );
+      }
+
+      function syncImportModeUi() {
+        const mode = getSelectedImportMode();
+        const mergeLyrics = document.getElementById("merge-lyrics");
+        const uploadMedia = document.getElementById("upload-media");
+        if (mode === "import") {
+          mergeLyrics.checked = false;
+          uploadMedia.disabled = false;
+        } else {
+          mergeLyrics.checked = true;
+          uploadMedia.disabled = false;
+        }
+
+        [...modeGridEl.querySelectorAll(".mode-option")].forEach((option) => {
+          const radio = option.querySelector('input[name="import-mode"]');
+          option.classList.toggle("active", radio?.checked);
+        });
+      }
+
+      function renderSummary(summary) {
+        summaryStripEl.innerHTML = `
+          <div class="pill"><strong>${summary.existingSongs}</strong>Existing songs</div>
+          <div class="pill"><strong>${summary.processedSongs}</strong>Processed</div>
+          <div class="pill"><strong>${summary.duplicateCandidates}</strong>Candidates</div>
+          <div class="pill"><strong>${summary.blockedImports}</strong>Blocked</div>
+          <div class="pill emphasis"><strong>${summary.importReadySongs}</strong>Import-ready</div>
+          <div class="pill"><strong>${summary.lyricsMergeReadySongs || 0}</strong>Lyrics merges</div>
+        `;
+      }
+
+      function renderWorkflow() {
+        syncImportModeUi();
+        const songJson = document.getElementById("song-json").value.trim();
+        const videoFile = document.getElementById("video-file").files[0];
+        const coverFile = document.getElementById("cover-file").files[0];
+        const websiteRoot = document
+          .getElementById("website-root")
+          .value.trim();
+        const websitePosts = document
+          .getElementById("website-posts")
+          .value.trim();
+        const catalogPath = document
+          .getElementById("catalog-path")
+          .value.trim();
+        const outputDir = document.getElementById("output-dir").value.trim();
+        const mergeLyricsEnabled =
+          document.getElementById("merge-lyrics").checked;
+        const uploadMedia = document.getElementById("upload-media");
+        const uploadEnabled = uploadMedia.checked;
+        const draftSignature = getDraftSignature();
+        const previewCurrent = Boolean(
+          state.previewSignature && state.previewSignature === draftSignature
+        );
+        const actionReady = Boolean(
+          (state.websitePostsReady.length || state.lyricsMergeUpdates.length) &&
+          previewCurrent &&
+          (websitePosts || websiteRoot)
+        );
+
+        const stages = [
+          {
+            label: "Song data",
+            status: songJson ? "ready" : "pending",
+            title: songJson ? "JSON loaded" : "Paste a song object",
+            text: songJson
+              ? "The workstation has content to validate."
+              : "Start here by pasting one raw song object or a list of song objects."
+          },
+          {
+            label: "Media",
+            status: videoFile ? "ready" : "pending",
+            title: videoFile
+              ? `Video attached: ${videoFile.name}`
+              : "No video attached",
+            text: coverFile
+              ? `Cover selected: ${coverFile.name}.`
+              : uploadEnabled
+                ? "Upload is enabled and ready for Cloudinary once a video is attached."
+                : "Optional cover artwork is still available if you want to test it later."
+          },
+          {
+            label: "Website target",
+            status:
+              websitePosts || websiteRoot || catalogPath ? "ready" : "pending",
+            title:
+              websitePosts || websiteRoot
+                ? "Website path configured"
+                : catalogPath
+                  ? "Standalone preview mode"
+                  : "Set a website path",
+            text:
+              websitePosts || websiteRoot
+                ? `Root: ${websiteRoot || "unset"}`
+                : catalogPath
+                  ? `Using sample catalog: ${catalogPath}. Apply buttons stay disabled until a website target is set.`
+                  : "Point the tool at the website repo so it can write and reseed safely."
+          },
+          {
+            label: "Lyrics mode",
+            status: mergeLyricsEnabled ? "ready" : "pending",
+            title: mergeLyricsEnabled
+              ? "Lyrics merge enabled"
+              : "Lyrics merge off",
+            text: mergeLyricsEnabled
+              ? "Matching songs will safely fill missing lyrics on existing posts without overwriting existing lyrics."
+              : "Turn this on when the batch is meant to fill blank lyrics on existing songs."
+          },
+          {
+            label: "Output",
+            status: outputDir ? "ready" : "pending",
+            title: outputDir
+              ? "Output directory set"
+              : "Choose an output directory",
+            text: outputDir
+              ? `Generated files will land in ${outputDir}.`
+              : "Pick a workspace folder for previews, snapshots, and backups."
+          },
+          {
+            label: "Action state",
+            status: state.hasAppliedCurrentPreview
+              ? "applied"
+              : previewCurrent
+                ? "ready"
+                : "pending",
+            title: state.hasAppliedCurrentPreview
+              ? "Preview already applied"
+              : previewCurrent
+                ? "Preview is current"
+                : "Preview needs refresh",
+            text: state.hasAppliedCurrentPreview
+              ? "Process again if you change the song JSON or attached files."
+              : previewCurrent
+                ? websitePosts || websiteRoot
+                  ? "Preview is current. You can write to posts.json or reseed when it looks right."
+                  : "Preview is current. Add a website target to enable apply actions."
+                : "Any change to the JSON or attachments will require a fresh validation pass."
+          }
+        ];
+
+        workflowRailEl.innerHTML = stages
+          .map(
+            (stage) => `
+              <article class="workflow-card ${stage.status}">
+                <strong>${escapeHtml(stage.label)} - ${escapeHtml(stage.title)}</strong>
+                <span>${escapeHtml(stage.text)}</span>
+              </article>
+            `
+          )
+          .join("");
+
+        renderJobBanner();
+        setButtonsEnabled(actionReady);
+      }
+
+      function renderArtifacts(artifacts) {
+        const items = [
+          ["Catalog source", artifacts.catalogPath],
+          ["Catalog snapshot", artifacts.catalogSnapshotPath],
+          ["Merged preview", artifacts.mergedPreviewPath],
+          ["Website target", artifacts.websiteTargetPath],
+          ["Output directory", artifacts.outputDir]
+        ].filter(([, value]) => value);
+
+        artifactLinksEl.innerHTML = items
+          .map(
+            ([label, value]) =>
+              `<div><strong>${label}:</strong> <code>${escapeHtml(value)}</code></div>`
+          )
+          .join("");
+      }
+
+      function renderResults(results) {
+        if (!results.length) {
+          resultsEl.innerHTML = `<div class="preview-card"><p class="meta">No songs processed yet.</p></div>`;
+          return;
+        }
+
+        resultsEl.innerHTML = results
+          .map((result) => {
+            const hasSupersedeOverride = Boolean(result.supersedeTargetSlug);
+            const stateClass =
+              result.suggestedAction === "merge-lyrics"
+                ? "state-clear"
+                : result.suggestedAction === "supersede-import"
+                  ? "state-review"
+                  : result.isBlocked
+                    ? "state-blocked"
+                    : result.matches.length
+                      ? "state-review"
+                      : "state-clear";
+            const stateLabel =
+              result.suggestedAction === "merge-lyrics"
+                ? "Merge Lyrics"
+                : result.suggestedAction === "supersede-import"
+                  ? "Supersede Import"
+                  : result.isBlocked
+                    ? "Blocked"
+                    : result.matches.length
+                      ? "Review"
+                      : "Clear";
+            const matches = result.matches.length
+              ? `<div class="match-list">${result.matches
+                  .map(
+                    (match) => `
+                      <div class="preview-card">
+                        <div class="meta"><strong>${escapeHtml(match.title)}</strong></div>
+                        <div class="meta">Slug: ${escapeHtml(match.slug)} | Family: ${escapeHtml(match.family || "")}</div>
+                        <div class="meta">Status: ${escapeHtml(match.status || "")} | Score: ${match.score}</div>
+                        ${
+                          result.isBlocked
+                            ? `<div class="admin-actions">
+                          <button
+                            class="secondary"
+                            type="button"
+                            onclick='setSupersedeOverride(${JSON.stringify(result.song.slug)}, ${JSON.stringify(match.slug)}, ${JSON.stringify(match.title)})'
+                          >
+                            Import As Superseding Version
+                          </button>
+                        </div>`
+                            : ""
+                        }
+                      </div>`
+                  )
+                  .join("")}</div>`
+              : `<p class="meta">No duplicate signals found.</p>`;
+            const overrideMessage = hasSupersedeOverride
+              ? `<p class="meta">Superseding target: ${escapeHtml(result.supersedeTargetSlug)}.</p>
+                 ${result.supersedeReason ? `<p class="meta">${escapeHtml(result.supersedeReason)}</p>` : ""}
+                 <div class="admin-actions">
+                   <button
+                     class="secondary"
+                     type="button"
+                     onclick='clearSupersedeOverride(${JSON.stringify(result.song.slug)})'
+                   >
+                     Clear Supersede Override
+                   </button>
+                 </div>`
+              : "";
+
+            return `
+              <article class="result-card">
+                <span class="result-state ${stateClass}">${stateLabel}</span>
+                <h3>${escapeHtml(result.song.title)}</h3>
+                <p class="meta">Slug: ${escapeHtml(result.song.slug)} | Family: ${escapeHtml(result.song.versionFamily || "")}</p>
+                <p class="meta">Status: ${escapeHtml(result.song.releaseStatus || "")} | Suggested action: ${escapeHtml(result.suggestedAction)}</p>
+                ${result.blockReason ? `<p class="meta">Reason: ${escapeHtml(result.blockReason)}</p>` : ""}
+                ${overrideMessage}
+                ${matches}
+              </article>
+            `;
+          })
+          .join("");
+      }
+
+      function renderPreview(websitePostsReady, lyricsMergeUpdates, upload) {
+        if (!websitePostsReady.length && !lyricsMergeUpdates.length) {
+          previewEl.innerHTML = `<div class="preview-card"><p class="meta">No website changes prepared yet.</p></div>`;
+          return;
+        }
+
+        const uploadSummary = upload.enabled
+          ? `Uploaded ${upload.uploadedFiles} of ${upload.attemptedFiles} file(s).`
+          : `Upload skipped: ${escapeHtml(upload.skippedReason || "not requested")}`;
+        const lyricsMergeSummary = lyricsMergeUpdates.length
+          ? `<p class="meta">${lyricsMergeUpdates.length} lyrics merge update${lyricsMergeUpdates.length === 1 ? "" : "s"} ready.</p>`
+          : "";
+        const importReadySummary = websitePostsReady.length
+          ? `<p class="meta">${websitePostsReady.length} website post${websitePostsReady.length === 1 ? "" : "s"} ready for append.</p>`
+          : "";
+        const importReadyJson = websitePostsReady.length
+          ? `<pre>${escapeHtml(JSON.stringify(websitePostsReady, null, 2))}</pre>`
+          : "";
+        const lyricsMergeJson = lyricsMergeUpdates.length
+          ? `<pre>${escapeHtml(JSON.stringify(lyricsMergeUpdates, null, 2))}</pre>`
+          : "";
+        const combinedPreview = [importReadyJson, lyricsMergeJson]
+          .filter(Boolean)
+          .join("");
+
+        previewEl.innerHTML = `
+          <div class="preview-card">
+            <h3>Website-ready posts</h3>
+            <p class="meta">${uploadSummary}</p>
+            ${importReadySummary}
+            ${lyricsMergeSummary}
+            ${combinedPreview || `<pre>${escapeHtml(JSON.stringify(websitePostsReady, null, 2))}</pre>`}
+          </div>
+        `;
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;");
+      }
+
+      async function processSongs() {
+        setButtonsEnabled(false);
+        setMessage(
+          "Processing song JSON, duplicate checks, and optional upload..."
+        );
+
+        const formData = new FormData();
+        formData.append(
+          "song_json",
+          document.getElementById("song-json").value
+        );
+        formData.append(
+          "website_root",
+          document.getElementById("website-root").value
+        );
+        formData.append(
+          "website_posts",
+          document.getElementById("website-posts").value
+        );
+        formData.append(
+          "output_dir",
+          document.getElementById("output-dir").value
+        );
+        formData.append(
+          "upload_media",
+          document.getElementById("upload-media").checked ? "true" : "false"
+        );
+        formData.append(
+          "merge_lyrics",
+          document.getElementById("merge-lyrics").checked ? "true" : "false"
+        );
+        formData.append("lyrics_repair_only", "false");
+        formData.append(
+          "supersede_overrides",
+          JSON.stringify(Object.values(state.supersedeOverrides))
+        );
+
+        const videoFile = document.getElementById("video-file").files[0];
+        const coverFile = document.getElementById("cover-file").files[0];
+        if (videoFile) {
+          formData.append("video_file", videoFile);
+        }
+        if (coverFile) {
+          formData.append("cover_image_file", coverFile);
+        }
+
+        const payload = await fetchJson(
+          "/api/process",
+          {
+            method: "POST",
+            body: formData
+          },
+          "Processing failed."
+        );
+
+        state.websitePostsReady = payload.websitePostsReady;
+        state.artifacts = payload.artifacts;
+        state.websiteRoot = document.getElementById("website-root").value;
+        state.websitePosts = document.getElementById("website-posts").value;
+        state.outputDir = document.getElementById("output-dir").value;
+        state.hasAppliedCurrentPreview = false;
+        state.previewSignature = getDraftSignature();
+        state.lyricsMergeUpdates = payload.lyricsMergeUpdates || [];
+        state.lyricsRepairReadySongs =
+          payload.summary.lyricsRepairReadySongs || 0;
+        state.supersedeOverrides = Object.fromEntries(
+          (payload.results || [])
+            .filter((result) => result.supersedeTargetSlug)
+            .map((result) => [
+              result.song.slug,
+              {
+                songSlug: result.song.slug,
+                targetSlug: result.supersedeTargetSlug,
+                reason: result.supersedeReason || ""
+              }
+            ])
+        );
+
+        renderWorkflow();
+        renderSummary(payload.summary);
+        renderArtifacts(payload.artifacts);
+        renderResults(payload.results);
+        renderPreview(
+          payload.websitePostsReady,
+          state.lyricsMergeUpdates,
+          payload.upload
+        );
+        setMessage(
+          `Processed ${payload.summary.processedSongs} song(s). ${payload.summary.importReadySongs} are ready for website import and ${payload.summary.lyricsMergeReadySongs || 0} can fill missing lyrics.`,
+          "success"
+        );
+      }
+
+      async function applyToWebsite(reseedWebsite) {
+        if (
+          !state.websitePostsReady.length &&
+          !state.lyricsMergeUpdates.length
+        ) {
+          setMessage(
+            "Process a song first so there is something to apply.",
+            "error"
+          );
+          return;
+        }
+
+        const currentSignature = getDraftSignature();
+        if (
+          state.previewSignature &&
+          state.previewSignature !== currentSignature
+        ) {
+          setMessage(
+            "Your inputs changed after the last preview. Process again before applying.",
+            "error"
+          );
+          setButtonsEnabled(false);
+          return;
+        }
+
+        if (reseedWebsite) {
+          const confirmed = window.confirm(
+            "This will reseed the live website posts and collections from backend/data/posts.json. " +
+              "If you made admin edits directly in the live site and they are not in posts.json, reseed can overwrite them. Continue?"
+          );
+          if (!confirmed) {
+            return;
+          }
+        }
+
+        setMessage(
+          reseedWebsite
+            ? "Applying merged catalog and reseeding website..."
+            : "Applying merged catalog to website..."
+        );
+
+        const payload = await fetchJson(
+          "/api/apply",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              websitePostsReady: state.websitePostsReady,
+              lyricsMergeUpdates: state.lyricsMergeUpdates,
+              websiteRoot: state.websiteRoot,
+              websitePosts: state.websitePosts,
+              outputDir: state.outputDir,
+              reseedWebsite
+            })
+          },
+          "Apply failed."
+        );
+
+        state.hasAppliedCurrentPreview = true;
+        renderWorkflow();
+
+        showTaskReport(
+          payload.report || {
+            title: reseedWebsite
+              ? "Apply + reseed completed"
+              : "Apply completed",
+            status: "success",
+            summary: [
+              reseedWebsite
+                ? "The merged catalog was written and the live site reseed step completed."
+                : "The merged catalog was written to posts.json."
+            ],
+            artifacts: {
+              websiteTargetPath: payload.websiteTargetPath,
+              backupPath: payload.backupPath,
+              liveStoreBackupPath: payload.liveStoreBackupPath,
+              mergedPreviewPath: payload.mergedPreviewPath,
+              reseedLogPath: payload.reseedLogPath
+            },
+            reseedOutput: payload.reseedOutput
+          }
+        );
+
+        if (reseedWebsite) {
+          if (payload.status === "running" && payload.jobId) {
+            const applyNote = payload.alreadyApplied
+              ? " The posts were already in posts.json."
+              : " The merged posts were written to posts.json before reseed.";
+            const lyricsNote = payload.lyricsMergeApplied
+              ? " Missing lyrics were filled before reseed."
+              : "";
+            setMessage(
+              `Reseed started and is still running.${applyNote}${lyricsNote} The popup will update as the log grows.`,
+              "success"
+            );
+            state.reportDismissedWhileRunning = false;
+            startApplyJobPolling(payload.jobId);
+            return;
+          }
+          return;
+        }
+
+        const fileBackupNote = payload.backupPath
+          ? ` Backup: ${payload.backupPath}.`
+          : "";
+        const lyricsNote = payload.lyricsMergeApplied
+          ? ` Filled missing lyrics for ${state.lyricsMergeUpdates.length} existing post${state.lyricsMergeUpdates.length === 1 ? "" : "s"}.`
+          : "";
+        setMessage(
+          `Wrote ${payload.appliedPosts} website post(s) into backend/data/posts.json.${fileBackupNote}${lyricsNote} The live site will not change until you reseed.`,
+          "success"
+        );
+      }
+
+      document
+        .getElementById("process-button")
+        .addEventListener("click", async () => {
+          try {
+            await processSongs();
+          } catch (error) {
+            setMessage(error.message, "error");
+            setButtonsEnabled(false);
+          }
+        });
+
+      applyButton.addEventListener("click", async () => {
+        try {
+          await applyToWebsite(false);
+        } catch (error) {
+          setMessage(error.message, "error");
+          showTaskReport(
+            {
+              title: "Apply failed",
+              status: "error",
+              summary: [error.message]
+            },
+            { forceOpen: true }
+          );
+        }
+      });
+
+      applyReseedButton.addEventListener("click", async () => {
+        try {
+          await applyToWebsite(true);
+        } catch (error) {
+          setMessage(error.message, "error");
+          showTaskReport(
+            {
+              title: "Apply + reseed failed",
+              status: "error",
+              summary: [error.message]
+            },
+            { forceOpen: true }
+          );
+        }
+      });
+
+      reportCloseEl.addEventListener("click", hideTaskReport);
+      reportOverlayEl.addEventListener("click", (event) => {
+        if (event.target === reportOverlayEl) {
+          hideTaskReport();
+        }
+      });
+
+      [
+        "song-json",
+        "catalog-path",
+        "website-root",
+        "website-posts",
+        "output-dir",
+        "upload-media"
+      ].forEach((id) => {
+        document.getElementById(id).addEventListener("input", () => {
+          state.hasAppliedCurrentPreview = false;
+          state.lyricsMergeUpdates = [];
+          renderWorkflow();
+        });
+        document.getElementById(id).addEventListener("change", () => {
+          state.hasAppliedCurrentPreview = false;
+          state.lyricsMergeUpdates = [];
+          renderWorkflow();
+        });
+      });
+      document.getElementById("video-file").addEventListener("change", () => {
+        state.hasAppliedCurrentPreview = false;
+        state.lyricsMergeUpdates = [];
+        renderWorkflow();
+      });
+      document.getElementById("cover-file").addEventListener("change", () => {
+        state.hasAppliedCurrentPreview = false;
+        state.lyricsMergeUpdates = [];
+        renderWorkflow();
+      });
+      modeGridEl
+        .querySelectorAll('input[name="import-mode"]')
+        .forEach((input) => {
+          input.addEventListener("change", () => {
+            state.hasAppliedCurrentPreview = false;
+            state.lyricsMergeUpdates = [];
+            renderWorkflow();
+          });
+        });
+      renderWorkflow();
+      renderResults([]);
+      renderPreview([], [], { enabled: false, skippedReason: "not requested" });
+      resumePersistedApplyJob().catch((error) => {
+        setMessage(error.message, "error");
+        clearActiveJobState();
+      });
+    </script>
+  </body>
+</html>

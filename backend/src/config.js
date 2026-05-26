@@ -28,9 +28,7 @@ const config = {
   websiteRoot: path.resolve(__dirname, "..", ".."),
   importerRoot:
     process.env.IMPORTER_ROOT ||
-    (process.platform === "win32"
-      ? "D:\\Projects\\PythonProject"
-      : path.resolve(__dirname, "..", "..", "..", "PythonProject")),
+    path.resolve(__dirname, "..", "..", "tools", "song-importer"),
   importerUrl: process.env.IMPORTER_URL || "http://127.0.0.1:8765",
   importerPythonPath: process.env.IMPORTER_PYTHON_PATH || "",
   localAiEnabled: process.env.LOCAL_AI_ENABLED !== "false",
