@@ -16,6 +16,21 @@
 
 .account-page {
   gap: clamp(1.25rem, 3vw, 2rem);
+  --account-panel-fill: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--surface) 82%, var(--primary) 18%),
+    color-mix(in srgb, var(--surface-raised) 78%, var(--accent) 22%)
+  );
+  --account-panel-border: color-mix(
+    in srgb,
+    var(--border) 54%,
+    var(--primary) 46%
+  );
+  --account-soft-fill: color-mix(
+    in srgb,
+    var(--surface-raised) 78%,
+    var(--primary) 22%
+  );
 }
 
 .account-profile-shell {
@@ -31,14 +46,18 @@
 .account-feature-card,
 .account-library-panel,
 .account-settings-panel {
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
+  border: 1px solid var(--account-panel-border);
   border-radius: 28px;
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--surface, #fff) 94%, transparent),
-    color-mix(in srgb, var(--surface-raised, #fff) 82%, transparent)
-  );
-  box-shadow: var(--shadow-soft, 0 20px 60px rgba(0, 0, 0, 0.12));
+  background:
+    radial-gradient(
+      circle at top right,
+      color-mix(in srgb, var(--primary) 18%, transparent),
+      transparent 34%
+    ),
+    var(--account-panel-fill);
+  box-shadow:
+    0 24px 60px color-mix(in srgb, var(--primary) 16%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--text) 8%, transparent);
 }
 
 .account-profile-main {
@@ -51,6 +70,13 @@
   flex-direction: column;
   justify-content: space-between;
   gap: 1.25rem;
+  background:
+    radial-gradient(
+      circle at top left,
+      color-mix(in srgb, var(--accent) 18%, transparent),
+      transparent 34%
+    ),
+    var(--account-panel-fill);
 }
 
 .account-profile-header {
@@ -100,8 +126,8 @@
   min-height: 2rem;
   padding: 0.35rem 0.75rem;
   border-radius: 999px;
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.14));
-  background: color-mix(in srgb, var(--surface-raised, #fff) 76%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 58%, var(--primary) 42%);
+  background: var(--account-soft-fill);
   font-size: 0.8rem;
   font-weight: 700;
 }
@@ -150,8 +176,8 @@
 .avatar-file-picker input {
   width: 100%;
   border-radius: 16px;
-  border: 1px dashed color-mix(in srgb, var(--border) 70%, var(--primary) 30%);
-  background: color-mix(in srgb, var(--surface-raised, #fff) 70%, transparent);
+  border: 1px dashed color-mix(in srgb, var(--border) 48%, var(--primary) 52%);
+  background: var(--account-soft-fill);
   color: inherit;
   padding: 0.85rem;
 }
@@ -214,7 +240,8 @@
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--accent, #d946ef) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border) 70%);
+  background: color-mix(in srgb, var(--accent, #d946ef) 22%, var(--surface));
   font-size: 0.8rem;
   font-weight: 800;
 }
@@ -224,8 +251,8 @@
   gap: 0.25rem;
   padding: 0.9rem 1rem;
   border-radius: 18px;
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
-  background: color-mix(in srgb, var(--surface-raised, #fff) 72%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 58%, var(--primary) 42%);
+  background: var(--account-soft-fill);
   text-decoration: none;
   transition:
     transform 160ms ease,
@@ -272,8 +299,8 @@
   width: 100%;
   min-height: 2.9rem;
   border-radius: 16px;
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.14));
-  background: color-mix(in srgb, var(--surface, #fff) 80%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 56%, var(--primary) 44%);
+  background: color-mix(in srgb, var(--surface) 78%, var(--primary) 22%);
   color: inherit;
   padding: 0 0.95rem;
 }
@@ -1340,6 +1367,54 @@
 
 .result-card .card-action-row {
   gap: 0.5rem;
+}
+
+.homepage-selection-section {
+  display: grid;
+  gap: 1rem;
+  border-color: color-mix(in srgb, var(--border) 48%, var(--primary) 52%);
+  background:
+    radial-gradient(
+      circle at 12% 18%,
+      color-mix(in srgb, var(--primary) 20%, transparent),
+      transparent 34%
+    ),
+    radial-gradient(
+      circle at 92% 10%,
+      color-mix(in srgb, var(--accent) 16%, transparent),
+      transparent 30%
+    ),
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--surface) 76%, var(--primary) 24%),
+      color-mix(in srgb, var(--surface-raised) 78%, var(--accent) 22%)
+    );
+  box-shadow:
+    0 26px 58px color-mix(in srgb, var(--primary) 16%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--text) 8%, transparent);
+}
+
+.homepage-selection-section .section-head {
+  align-items: baseline;
+}
+
+.homepage-selection-section .results-context-copy {
+  max-width: 62rem;
+  color: color-mix(in srgb, var(--text) 76%, var(--muted-text) 24%);
+}
+
+.homepage-selection-grid .compact-release-card {
+  border-color: color-mix(in srgb, var(--border) 48%, var(--primary) 52%);
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--surface) 78%, var(--primary) 22%),
+      color-mix(in srgb, var(--surface-raised) 80%, var(--accent) 20%)
+    ),
+    var(--surface);
+  box-shadow:
+    0 18px 38px color-mix(in srgb, var(--primary) 14%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--text) 7%, transparent);
 }
 
 .account-profile-shell {

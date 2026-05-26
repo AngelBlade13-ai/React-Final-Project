@@ -379,18 +379,15 @@ export default function PublicHome({ onPlayTrack, siteContent }) {
         </section>
 
         {homepageSelectionPosts.length ? (
-          <details className="intro-card homepage-panel homepage-selection-section public-collapsible-section">
-            <summary>
-              <span className="section-head">
-                <h2>More Ways To Begin</h2>
-                <span>{`${homepageSelectionPosts.length} starting points`}</span>
-              </span>
-            </summary>
+          <section className="intro-card homepage-panel homepage-selection-section">
+            <div className="section-head">
+              <h2>More Ways To Begin</h2>
+              <span>{`${homepageSelectionPosts.length} starting points`}</span>
+            </div>
             <p className="results-context-copy">
               Other good entry songs if you want a different mood before diving
-              deeper.{" "}
-              <Link to="/about">Read about the archive</Link> for the full
-              story behind the project.
+              deeper. <Link to="/about">Read about the archive</Link> for the
+              full story behind the project.
             </p>
             <div className="homepage-selection-grid">
               {homepageSelectionPosts.map((post) => (
@@ -402,7 +399,7 @@ export default function PublicHome({ onPlayTrack, siteContent }) {
                 />
               ))}
             </div>
-          </details>
+          </section>
         ) : null}
       </main>
     </>
