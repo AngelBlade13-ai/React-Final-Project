@@ -1376,6 +1376,7 @@ router.post("/importer/launch", async (req, res, next) => {
       entityLabel: "Song importer",
       details: {
         alreadyRunning: result.alreadyRunning,
+        logPath: result.logPath || "",
         started: result.started,
         url: result.url
       }

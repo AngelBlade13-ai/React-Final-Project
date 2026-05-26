@@ -695,10 +695,14 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
       }
 
       const url = data.importer?.url || importerBaseUrl;
+      const logPath = data.importer?.logPath || "";
       if (importerWindow) {
         importerWindow.location.href = url;
       } else {
         window.open(url, "_blank", "noreferrer");
+      }
+      if (logPath) {
+        setSaveMessage(`Importer started. Log: ${logPath}`);
       }
     } catch (apiError) {
       if (importerWindow) {

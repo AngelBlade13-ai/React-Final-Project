@@ -7,6 +7,13 @@ const config = require("../config");
 
 const DEFAULT_READY_TIMEOUT_MS = 8000;
 const PING_TIMEOUT_MS = 700;
+const DEFAULT_IMPORTER_LOG_DIR = path.resolve(
+  __dirname,
+  "..",
+  "..",
+  "reports",
+  "importer"
+);
 
 async function launchImporter(options = {}) {
   if (Object.prototype.hasOwnProperty.call(process.env, "IMPORTER_LAUNCH_TEST_RESULT")) {
@@ -23,7 +30,8 @@ async function launchImporter(options = {}) {
     return {
       url: importerUrl,
       alreadyRunning: true,
-      started: false
+      started: false,
+      logPath: ""
     };
   }
 
@@ -38,6 +46,8 @@ async function launchImporter(options = {}) {
   await assertFileExists(pythonPath, "Importer Python executable was not found.");
 
   const port = resolvePort(importerUrl);
+  const logPath = await createImporterLogPath();
+  const logHandle = await fs.open(logPath, "a");
   const child = spawn(
     pythonPath,
     [
@@ -54,19 +64,32 @@ async function launchImporter(options = {}) {
     {
       cwd: importerRoot,
       detached: true,
-      stdio: "ignore",
+      stdio: ["ignore", logHandle.fd, logHandle.fd],
       windowsHide: true
     }
   );
   child.unref();
+  await logHandle.close();
 
-  await waitForImporter(importerUrl, DEFAULT_READY_TIMEOUT_MS);
+  try {
+    await waitForImporter(importerUrl, DEFAULT_READY_TIMEOUT_MS);
+  } catch (error) {
+    error.message = `${error.message} Importer log: ${logPath}`;
+    throw error;
+  }
 
   return {
     url: importerUrl,
     alreadyRunning: false,
-    started: true
+    started: true,
+    logPath
   };
+}
+
+async function createImporterLogPath() {
+  await fs.mkdir(DEFAULT_IMPORTER_LOG_DIR, { recursive: true });
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  return path.join(DEFAULT_IMPORTER_LOG_DIR, `importer.${timestamp}.log`);
 }
 
 function normalizeImporterUrl(value) {
@@ -138,6 +161,7 @@ function isImporterReachable(importerUrl) {
 }
 
 module.exports = {
+  createImporterLogPath,
   isImporterReachable,
   launchImporter,
   normalizeImporterUrl,
