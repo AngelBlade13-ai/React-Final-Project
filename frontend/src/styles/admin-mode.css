@@ -226,8 +226,30 @@
 .archive-intelligence-actions .hero-link,
 .archive-intelligence-actions .secondary-button {
   min-width: 9.5rem;
+  min-height: 2.65rem;
+  padding: 0.68rem 0.95rem;
+  border-radius: 16px;
   justify-content: center;
   text-align: center;
+  text-decoration: none;
+}
+
+.archive-intelligence-actions .hero-link {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--primary) 88%, white 12%),
+      color-mix(in srgb, var(--primary-strong) 84%, var(--primary) 16%)
+    ),
+    var(--primary);
+  color: color-mix(in srgb, var(--background) 40%, black 60%);
+}
+
+.archive-intelligence-actions .secondary-button {
+  background: color-mix(in srgb, var(--surface-raised) 82%, var(--surface) 18%);
+  border-color: color-mix(in srgb, var(--border) 54%, var(--primary) 46%);
+  color: color-mix(in srgb, var(--text) 86%, var(--primary-strong) 14%);
+  box-shadow: none;
 }
 
 .admin-workspace-board {
@@ -527,53 +549,89 @@
 
 .editor-validation-head {
   align-items: center;
+  gap: 0.75rem;
 }
 
 .editor-validation-count {
-  min-width: 4.2rem;
-  min-height: 2.6rem;
-  padding: 0.35rem 0.7rem;
-  background: color-mix(in srgb, var(--surface) 82%, var(--primary) 18%);
+  min-width: 3.55rem;
+  min-height: 2.25rem;
+  padding: 0.28rem 0.6rem;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface) 88%, var(--primary) 12%);
   color: color-mix(in srgb, var(--text) 86%, var(--primary-strong) 14%);
+  font-size: 0.72rem;
   line-height: 1.15;
+}
+
+.editor-validation-group {
+  gap: 0.55rem;
+}
+
+.editor-validation-group > strong {
+  color: color-mix(in srgb, var(--text) 82%, var(--muted-text) 18%);
+  font-size: 0.92rem;
+}
+
+.editor-issue-list {
+  gap: 0.55rem;
 }
 
 .editor-issue-link {
   position: relative;
-  border-color: color-mix(in srgb, var(--border) 58%, var(--primary) 42%);
+  grid-template-columns: 0.2rem minmax(0, 1fr);
+  column-gap: 0.75rem;
+  row-gap: 0.16rem;
+  align-items: center;
+  padding: 0.72rem 0.82rem;
+  border-radius: 14px;
+  border-color: color-mix(in srgb, var(--border) 62%, var(--primary) 38%);
   background:
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--surface-raised) 90%, white 10%),
+      color-mix(in srgb, var(--surface-raised) 96%, white 4%),
       color-mix(in srgb, var(--surface-raised) 98%, var(--surface) 2%)
     ),
     var(--surface-raised);
   box-shadow:
-    0 8px 16px color-mix(in srgb, black 6%, transparent),
-    inset 4px 0 0 color-mix(in srgb, #b92b66 72%, var(--primary) 28%);
+    0 6px 12px color-mix(in srgb, black 5%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 5%, transparent);
+}
+
+.editor-issue-link::before {
+  content: "";
+  grid-row: 1 / span 2;
+  align-self: stretch;
+  border-radius: 999px;
+  background: color-mix(in srgb, #b92b66 76%, var(--primary) 24%);
 }
 
 .editor-issue-link strong {
+  grid-column: 2;
   color: color-mix(in srgb, #7a1f47 72%, var(--text) 28%);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
 }
 
 .editor-issue-link span {
+  grid-column: 2;
   color: color-mix(in srgb, var(--text) 86%, var(--muted-text) 14%);
-  font-weight: 700;
+  font-weight: 650;
+  line-height: 1.38;
 }
 
 .editor-issue-link.advisory {
-  border-color: color-mix(in srgb, var(--border) 62%, var(--secondary) 38%);
+  border-color: color-mix(in srgb, var(--border) 70%, var(--secondary) 30%);
   background:
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--surface-raised) 92%, var(--secondary) 8%),
-      color-mix(in srgb, var(--surface-raised) 96%, var(--surface) 4%)
+      color-mix(in srgb, var(--surface-raised) 96%, var(--secondary) 4%),
+      color-mix(in srgb, var(--surface-raised) 98%, var(--surface) 2%)
     ),
     var(--surface-raised);
-  box-shadow:
-    0 8px 16px color-mix(in srgb, black 5%, transparent),
-    inset 4px 0 0 color-mix(in srgb, var(--secondary) 42%, var(--border) 58%);
+}
+
+.editor-issue-link.advisory::before {
+  background: color-mix(in srgb, var(--secondary) 48%, var(--border) 52%);
 }
 
 .editor-issue-link.advisory strong {
