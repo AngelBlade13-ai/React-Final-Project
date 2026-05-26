@@ -1214,6 +1214,253 @@
   gap: 0.95rem;
 }
 
+/* Public polish pass: tighten existing surfaces without changing theme tokens. */
+.home-doorway-link {
+  display: flex;
+  min-width: 0;
+}
+
+.home-doorway-card {
+  min-height: clamp(20rem, 24vw, 23rem);
+  isolation: isolate;
+}
+
+.home-doorway-card h3,
+.collection-card h3,
+.featured-release-copy h3,
+.homepage-post-card .post-body h3 {
+  text-wrap: balance;
+}
+
+.home-doorway-card > p,
+.home-doorway-copy p,
+.collection-card > p,
+.featured-collection-panel p:last-child,
+.featured-release-excerpt,
+.homepage-post-card .post-body > p:not(.meta) {
+  overflow-wrap: anywhere;
+}
+
+.home-doorway-card > p,
+.home-doorway-copy p {
+  display: -webkit-box;
+  overflow: hidden;
+  line-height: 1.52;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+
+.home-doorway-footer,
+.home-doorway-actions,
+.featured-release-actions,
+.card-action-row {
+  align-self: end;
+}
+
+.home-doorway-actions .card-link,
+.home-doorway-actions .home-doorway-secondary-link,
+.featured-release-actions .hero-link,
+.featured-release-actions .secondary-button,
+.card-action-row .secondary-button,
+.card-action-row .result-card-cta {
+  min-width: max-content;
+}
+
+.featured-release-card {
+  min-height: clamp(25rem, 38vw, 31rem);
+}
+
+.featured-release-copy {
+  align-content: stretch;
+}
+
+.featured-release-copy h3 {
+  max-width: 15ch;
+}
+
+.featured-release-excerpt {
+  display: -webkit-box;
+  overflow: hidden;
+  line-height: 1.55;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+
+.collection-card {
+  min-height: clamp(18rem, 24vw, 22rem);
+}
+
+.collection-card-topline {
+  min-width: 0;
+}
+
+.collection-card-topline .meta-badge {
+  flex: 0 0 auto;
+}
+
+.collection-card > p {
+  display: -webkit-box;
+  overflow: hidden;
+  line-height: 1.56;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 5;
+}
+
+.collection-meta-row {
+  align-self: end;
+}
+
+.featured-collection-panel {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.featured-collection-panel p:last-child {
+  display: -webkit-box;
+  overflow: hidden;
+  line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.results-grid {
+  gap: 1rem;
+}
+
+.results-grid .result-card {
+  min-height: 188px;
+  box-shadow:
+    0 16px 34px color-mix(in srgb, var(--primary) 10%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--text) 4%, transparent);
+}
+
+.result-card .post-body {
+  justify-content: center;
+}
+
+.result-card .card-action-row {
+  gap: 0.5rem;
+}
+
+.account-profile-shell {
+  grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.8fr);
+}
+
+.account-profile-main,
+.account-profile-side,
+.account-avatar-card,
+.account-feature-card,
+.account-library-panel,
+.account-settings-panel {
+  box-shadow:
+    0 22px 52px color-mix(in srgb, var(--primary) 12%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--text) 5%, transparent);
+}
+
+.account-dashboard-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr));
+}
+
+.account-avatar-card,
+.account-feature-card {
+  min-height: 100%;
+}
+
+.account-avatar-preview,
+.profile-avatar-large {
+  border: 1px solid color-mix(in srgb, var(--border) 58%, var(--primary) 42%);
+}
+
+.avatar-file-picker input,
+.account-form-grid input {
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background 160ms ease;
+}
+
+.avatar-file-picker input:focus-visible,
+.account-form-grid input:focus-visible {
+  outline: none;
+  border-color: color-mix(
+    in srgb,
+    var(--primary-strong) 64%,
+    var(--border) 36%
+  );
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
+}
+
+.account-library-link {
+  min-height: 4.65rem;
+}
+
+.account-library-link strong,
+.account-library-link span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (min-width: 1080px) {
+  .account-avatar-card {
+    grid-column: span 1;
+  }
+
+  .account-dashboard-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .featured-release-card {
+    min-height: 0;
+  }
+
+  .featured-release-copy h3 {
+    max-width: none;
+  }
+
+  .result-card {
+    grid-template-columns: minmax(112px, 0.42fr) minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 560px) {
+  .home-doorway-card {
+    min-height: 0;
+  }
+
+  .home-doorway-footer,
+  .home-doorway-actions,
+  .featured-release-actions,
+  .card-action-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .home-doorway-actions .card-link,
+  .home-doorway-actions .home-doorway-secondary-link,
+  .featured-release-actions .hero-link,
+  .featured-release-actions .secondary-button,
+  .card-action-row .secondary-button,
+  .card-action-row .result-card-cta {
+    width: 100%;
+  }
+
+  .result-card {
+    grid-template-columns: 1fr;
+  }
+
+  .result-card .release-card-media {
+    aspect-ratio: 16 / 7;
+  }
+
+  .account-library-link strong,
+  .account-library-link span {
+    white-space: normal;
+  }
+}
+
 @media (max-width: 1100px) {
   .public-site-header {
     grid-template-columns: 1fr;
