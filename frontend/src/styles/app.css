@@ -420,7 +420,6 @@ button:disabled {
 }
 
 :root[data-theme="light"] .homepage-panel {
-  border-color: color-mix(in srgb, var(--border) 68%, white 32%);
   background:
     linear-gradient(
       180deg,
