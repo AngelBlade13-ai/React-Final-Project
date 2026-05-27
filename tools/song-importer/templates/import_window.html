@@ -830,7 +830,7 @@
             Apply To Website
           </button>
           <button class="secondary" id="apply-button" type="button" disabled>
-            Save posts.json Only
+            Save posts.local.json Only
           </button>
         </div>
       </header>
@@ -1011,7 +1011,7 @@
           <p class="action-note">
             <strong>Apply To Website</strong> writes the catalog file and
             reseeds the live site. Use
-            <strong>Save posts.json Only</strong> only when you want to review
+            <strong>Save posts.local.json Only</strong> only when you want to review
             the file before updating the live site.
           </p>
           {% if demo_mode %}
@@ -1040,11 +1040,11 @@
           </div>
           <div class="warning-panel">
             <strong>Important</strong>
-            <code>Save posts.json Only</code> only writes the merged result into
-            the website's <code>backend/data/posts.json</code>. The live site
+            <code>Save posts.local.json Only</code> only writes the merged result into
+            the website's <code>backend/data/posts.local.json</code>. The live site
             will not change until reseed. <code>Apply To Website</code> rewrites
             live posts and collections from that file, so admin-only changes
-            that never made it back into <code>posts.json</code> can be
+            that never made it back into <code>posts.local.json</code> can be
             overwritten.
           </div>
           <div class="job-banner" id="job-banner" hidden></div>
@@ -1333,7 +1333,7 @@
         if (payload.status === "success") {
           stopApplyJobPolling();
           setMessage(
-            `Reseeded the live site from posts.json. ${payload.report?.summary?.join(" ") || ""}`.trim(),
+            `Reseeded the live site from posts.local.json. ${payload.report?.summary?.join(" ") || ""}`.trim(),
             "success"
           );
           clearActiveJobState();
@@ -1603,7 +1603,7 @@
               ? "Process again if you change the song JSON or attached files."
               : previewCurrent
                 ? websitePosts || websiteRoot
-                  ? "Preview is current. You can write to posts.json or reseed when it looks right."
+                  ? "Preview is current. You can write to posts.local.json or reseed when it looks right."
                   : "Preview is current. Add a website target to enable apply actions."
                 : "Any change to the JSON or attachments will require a fresh validation pass."
           }
@@ -1887,8 +1887,8 @@
 
         if (reseedWebsite) {
           const confirmed = window.confirm(
-            "This will reseed the live website posts and collections from backend/data/posts.json. " +
-              "If you made admin edits directly in the live site and they are not in posts.json, reseed can overwrite them. Continue?"
+            "This will reseed the live website posts and collections from backend/data/posts.local.json. " +
+              "If you made admin edits directly in the live site and they are not in posts.local.json, reseed can overwrite them. Continue?"
           );
           if (!confirmed) {
             return;
@@ -1932,7 +1932,7 @@
             summary: [
               reseedWebsite
                 ? "The merged catalog was written and the live site reseed step completed."
-                : "The merged catalog was written to posts.json."
+                : "The merged catalog was written to posts.local.json."
             ],
             artifacts: {
               websiteTargetPath: payload.websiteTargetPath,
@@ -1948,8 +1948,8 @@
         if (reseedWebsite) {
           if (payload.status === "running" && payload.jobId) {
             const applyNote = payload.alreadyApplied
-              ? " The posts were already in posts.json."
-              : " The merged posts were written to posts.json before reseed.";
+              ? " The posts were already in posts.local.json."
+              : " The merged posts were written to posts.local.json before reseed.";
             const lyricsNote = payload.lyricsMergeApplied
               ? " Missing lyrics were filled before reseed."
               : "";
@@ -1971,7 +1971,7 @@
           ? ` Filled missing lyrics for ${state.lyricsMergeUpdates.length} existing post${state.lyricsMergeUpdates.length === 1 ? "" : "s"}.`
           : "";
         setMessage(
-          `Wrote ${payload.appliedPosts} website post(s) into backend/data/posts.json.${fileBackupNote}${lyricsNote} The live site will not change until you reseed.`,
+          `Wrote ${payload.appliedPosts} website post(s) into backend/data/posts.local.json.${fileBackupNote}${lyricsNote} The live site will not change until you reseed.`,
           "success"
         );
       }

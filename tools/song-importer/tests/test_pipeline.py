@@ -29,7 +29,7 @@ def test_run_processing_pipeline_skips_upload_in_dry_run(tmp_path: Path) -> None
 
 def test_write_processing_outputs_exports_extracted_catalog_snapshot(tmp_path: Path) -> None:
     website_root = tmp_path / "website"
-    posts_path = website_root / "backend" / "data" / "posts.json"
+    posts_path = website_root / "backend" / "data" / "posts.local.json"
     posts_path.parent.mkdir(parents=True)
     posts_path.write_text(
         json.dumps(
@@ -63,7 +63,7 @@ def test_write_processing_outputs_exports_extracted_catalog_snapshot(tmp_path: P
 
 def test_run_processing_pipeline_can_prepare_lyrics_merge_updates(tmp_path: Path) -> None:
     website_root = tmp_path / "website"
-    posts_path = website_root / "backend" / "data" / "posts.json"
+    posts_path = website_root / "backend" / "data" / "posts.local.json"
     posts_path.parent.mkdir(parents=True)
     posts_path.write_text(
         json.dumps(
@@ -120,7 +120,7 @@ def test_run_processing_pipeline_can_prepare_lyrics_merge_updates(tmp_path: Path
 
 def test_run_processing_pipeline_can_run_lyrics_repair_only(tmp_path: Path) -> None:
     website_root = tmp_path / "website"
-    posts_path = website_root / "backend" / "data" / "posts.json"
+    posts_path = website_root / "backend" / "data" / "posts.local.json"
     posts_path.parent.mkdir(parents=True)
     posts_path.write_text(
         json.dumps(
@@ -175,7 +175,7 @@ def test_run_processing_pipeline_can_run_lyrics_repair_only(tmp_path: Path) -> N
 
 def test_run_processing_pipeline_allows_intentional_supersede_imports(tmp_path: Path) -> None:
     website_root = tmp_path / "website"
-    posts_path = website_root / "backend" / "data" / "posts.json"
+    posts_path = website_root / "backend" / "data" / "posts.local.json"
     posts_path.parent.mkdir(parents=True)
     posts_path.write_text(
         json.dumps(

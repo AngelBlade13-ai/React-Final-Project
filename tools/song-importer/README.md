@@ -26,10 +26,10 @@ This project automates that workflow in a way that is easy to demo for a class a
 - blocks likely duplicates from import-ready output
 - optionally uploads video and cover image files to Cloudinary
 - exports JSON and Markdown review files
-- exports a website-ready post payload for direct append into the website `posts.json` workflow
+- exports a website-ready post payload for direct append into the website `posts.local.json` workflow
 - can launch a local browser window for paste JSON, file upload, preview, website apply, reseed, and verification
 - can merge lyrics into existing website posts that have blank lyrics without overwriting existing lyrics
-- preserves the website `posts.json` as an authored catalog containing only `posts`, `collections`, and `siteContent`
+- preserves the website `posts.local.json` as an authored catalog containing only `posts`, `collections`, and `siteContent`
 
 ## Stable output schema
 
@@ -132,33 +132,33 @@ python main.py --web --demo
 python main.py --web --website-root "D:\Docs\Active Project\React Final Project"
 ```
 
-You can also point `--catalog` directly at the website's canonical `posts.json`. The tool accepts either:
+You can also point `--catalog` directly at the website's canonical `posts.local.json`. The tool accepts either:
 
 - a plain catalog array
 - an object with a top-level `posts` array
 
-If `--website-root` or `--website-posts` is provided and `--catalog` is omitted, the tool automatically uses the website's `posts.json` for duplicate checks.
+If `--website-root` or `--website-posts` is provided and `--catalog` is omitted, the tool automatically uses the website's `posts.local.json` for duplicate checks.
 
 ### CLI flags
 
-| Flag | Purpose |
-|---|---|
-| `--catalog PATH` | Existing website catalog JSON |
-| `--input PATH` | New songs JSON |
-| `--output-dir PATH` | Destination for generated files |
-| `--no-upload` | Force media upload to stay off |
-| `--dry-run` | Validate and process without writing files |
-| `--demo` | Use bundled sample data, disable upload, write to `output/demo`, and skip website integration |
-| `--website-root PATH` | Website repo root; resolves `backend/data/posts.json` automatically |
-| `--website-posts PATH` | Direct path to the website `posts.json` |
-| `--apply-to-website` | Write the merged catalog back into the website `posts.json` |
-| `--reseed-website` | Run the website backend `npm run reseed` after apply |
-| `--web` | Launch the local browser-based import window |
-| `--merge-lyrics` | Fill blank lyrics on matching existing website posts without overwriting existing lyrics |
-| `--lyrics-repair-only` | Backend-only cleanup mode for blank lyric repair; hidden from the browser UI |
-| `--host HOST` | Host for the browser app in `--web` mode |
-| `--port PORT` | Port for the browser app in `--web` mode |
-| `--no-browser` | Do not auto-open the browser in `--web` mode |
+| Flag                   | Purpose                                                                                       |
+| ---------------------- | --------------------------------------------------------------------------------------------- |
+| `--catalog PATH`       | Existing website catalog JSON                                                                 |
+| `--input PATH`         | New songs JSON                                                                                |
+| `--output-dir PATH`    | Destination for generated files                                                               |
+| `--no-upload`          | Force media upload to stay off                                                                |
+| `--dry-run`            | Validate and process without writing files                                                    |
+| `--demo`               | Use bundled sample data, disable upload, write to `output/demo`, and skip website integration |
+| `--website-root PATH`  | Website repo root; resolves `backend/data/posts.local.json` automatically                     |
+| `--website-posts PATH` | Direct path to the website `posts.local.json`                                                 |
+| `--apply-to-website`   | Write the merged catalog back into the website `posts.local.json`                             |
+| `--reseed-website`     | Run the website backend `npm run reseed` after apply                                          |
+| `--web`                | Launch the local browser-based import window                                                  |
+| `--merge-lyrics`       | Fill blank lyrics on matching existing website posts without overwriting existing lyrics      |
+| `--lyrics-repair-only` | Backend-only cleanup mode for blank lyric repair; hidden from the browser UI                  |
+| `--host HOST`          | Host for the browser app in `--web` mode                                                      |
+| `--port PORT`          | Port for the browser app in `--web` mode                                                      |
+| `--no-browser`         | Do not auto-open the browser in `--web` mode                                                  |
 
 ## Input requirements
 
@@ -253,11 +253,11 @@ The tool fails cleanly with a clear error message when:
 
 Each new song is compared against the existing catalog using these signals:
 
-| Signal | Score |
-|---|---|
-| exact slug match | `+100` |
-| matching version family | `+70` |
-| fuzzy title similarity | `0-80` |
+| Signal                  | Score  |
+| ----------------------- | ------ |
+| exact slug match        | `+100` |
+| matching version family | `+70`  |
+| fuzzy title similarity  | `0-80` |
 
 Current thresholds:
 
@@ -287,7 +287,7 @@ CLOUDINARY_API_KEY=your_api_key
 CLOUDINARY_API_SECRET=your_api_secret
 WEBSITE_ROOT=D:\Docs\Active Project\React Final Project
 # or
-# WEBSITE_POSTS_PATH=D:\Docs\Active Project\React Final Project\backend\data\posts.json
+# WEBSITE_POSTS_PATH=D:\Docs\Active Project\React Final Project\backend\data\posts.local.json
 ```
 
 ## Output files
@@ -303,13 +303,13 @@ The tool always writes these files to the chosen output directory:
 When website integration is enabled, it also writes:
 
 - `existing_catalog.extracted.json`: the catalog data actually used for duplicate checks
-- `website_posts_merged_preview.json`: a full preview of the website `posts.json` after merging import-ready songs
+- `website_posts_merged_preview.json`: a full preview of the website `posts.local.json` after merging import-ready songs
 - `website_posts.backup.<timestamp>.json`: backup of the original website catalog before apply
 - `website_live_store.backup.<timestamp>.json`: backup of the live Mongo store before reseed
 - `website_reseed.<jobId>.log`: captured website reseed output when browser apply/reseed runs
 - `lyrics_merge_updates.json`: lyrics-only merge plan when lyrics merge is enabled
 
-The website `posts.json` output intentionally keeps only authored catalog keys:
+The website `posts.local.json` output intentionally keeps only authored catalog keys:
 
 - `posts`
 - `collections`
@@ -347,7 +347,7 @@ The local browser window lets you:
 4. optionally attach a cover image
 5. preview duplicate detection, lyrics merge candidates, and website-ready output
 6. apply the merged catalog into the website repo
-7. reseed the website backend and verify the live store against `posts.json`
+7. reseed the website backend and verify the live store against `posts.local.json`
 
 The browser flow still uses the same core pipeline as the CLI:
 
@@ -356,7 +356,7 @@ The browser flow still uses the same core pipeline as the CLI:
 - optional Cloudinary upload
 - blank-lyrics merge for matched existing songs
 - website-ready post mapping
-- merged `posts.json` preview
+- merged `posts.local.json` preview
 - backup + apply + async reseed + live-store verification
 
 ## Streamlined website workflow
@@ -377,7 +377,7 @@ python main.py --website-root "D:\Docs\Active Project\React Final Project" --inp
 
 That workflow now does this automatically:
 
-1. loads the website's current `backend/data/posts.json`
+1. loads the website's current `backend/data/posts.local.json`
 2. uses that catalog for duplicate detection
 3. generates website-shaped import entries
 4. builds a full merged website catalog preview
@@ -443,7 +443,7 @@ Full website demo:
 5. Click `Process + Preview`.
 6. Show the duplicate decision, lyrics merge candidates, and website-ready payload.
 7. Show the merged website preview.
-8. Explain that `Save posts.json Only` writes the catalog file, while `Apply To Website` also reseeds and verifies the live database.
+8. Explain that `Save posts.local.json Only` writes the catalog file, while `Apply To Website` also reseeds and verifies the live database.
 
 ## Why this is submission-ready
 

@@ -59,7 +59,7 @@ def validate_catalog(catalog: Any) -> None:
 
 
 def extract_catalog_entries(catalog: Any) -> list[dict]:
-    """Accept either a raw catalog array or a website posts.json object."""
+    """Accept either a raw catalog array or a website posts.local.json object."""
     if isinstance(catalog, list):
         return catalog
     if isinstance(catalog, dict) and isinstance(catalog.get("posts"), list):

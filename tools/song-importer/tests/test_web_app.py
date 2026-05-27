@@ -206,7 +206,7 @@ def test_process_endpoint_rejects_uploaded_files_without_cloudinary_config(monke
 
 def test_process_endpoint_flags_lyrics_merge_updates(tmp_path: Path) -> None:
     website_root = tmp_path / "website"
-    posts_path = website_root / "backend" / "data" / "posts.json"
+    posts_path = website_root / "backend" / "data" / "posts.local.json"
     posts_path.parent.mkdir(parents=True)
     posts_path.write_text(
         json.dumps(
@@ -261,7 +261,7 @@ def test_process_endpoint_flags_lyrics_merge_updates(tmp_path: Path) -> None:
 
 def test_process_endpoint_supports_lyrics_repair_only(tmp_path: Path) -> None:
     website_root = tmp_path / "website"
-    posts_path = website_root / "backend" / "data" / "posts.json"
+    posts_path = website_root / "backend" / "data" / "posts.local.json"
     posts_path.parent.mkdir(parents=True)
     posts_path.write_text(
         json.dumps(
@@ -321,7 +321,7 @@ def test_process_endpoint_allows_supersede_override_for_blocked_duplicates(
     tmp_path: Path,
 ) -> None:
     website_root = tmp_path / "website"
-    posts_path = website_root / "backend" / "data" / "posts.json"
+    posts_path = website_root / "backend" / "data" / "posts.local.json"
     posts_path.parent.mkdir(parents=True)
     posts_path.write_text(
         json.dumps(
@@ -386,7 +386,7 @@ def test_process_endpoint_allows_supersede_override_for_blocked_duplicates(
 
 def test_apply_endpoint_writes_to_website_posts(tmp_path: Path) -> None:
     website_root = tmp_path / "website"
-    posts_path = website_root / "backend" / "data" / "posts.json"
+    posts_path = website_root / "backend" / "data" / "posts.local.json"
     posts_path.parent.mkdir(parents=True)
     posts_path.write_text(json.dumps({"posts": [], "collections": []}), encoding="utf-8")
     output_dir = tmp_path / "output"
@@ -438,7 +438,7 @@ def test_apply_endpoint_writes_to_website_posts(tmp_path: Path) -> None:
 
 def test_apply_endpoint_can_reseed_when_posts_are_already_applied(monkeypatch, tmp_path: Path) -> None:
     website_root = tmp_path / "website"
-    posts_path = website_root / "backend" / "data" / "posts.json"
+    posts_path = website_root / "backend" / "data" / "posts.local.json"
     posts_path.parent.mkdir(parents=True)
     posts_path.write_text(
         json.dumps(
@@ -532,7 +532,7 @@ def test_apply_endpoint_can_reseed_when_posts_are_already_applied(monkeypatch, t
 
 def test_apply_endpoint_can_fill_missing_lyrics(tmp_path: Path) -> None:
     website_root = tmp_path / "website"
-    posts_path = website_root / "backend" / "data" / "posts.json"
+    posts_path = website_root / "backend" / "data" / "posts.local.json"
     posts_path.parent.mkdir(parents=True)
     posts_path.write_text(
         json.dumps(
@@ -581,7 +581,7 @@ def test_apply_endpoint_can_fill_missing_lyrics(tmp_path: Path) -> None:
 
 def test_apply_endpoint_marks_superseded_target_when_requested(tmp_path: Path) -> None:
     website_root = tmp_path / "website"
-    posts_path = website_root / "backend" / "data" / "posts.json"
+    posts_path = website_root / "backend" / "data" / "posts.local.json"
     posts_path.parent.mkdir(parents=True)
     posts_path.write_text(
         json.dumps(

@@ -20,7 +20,7 @@ from src.models import LyricsMergeUpdate, Song
 from src.utils import load_json
 
 
-DEFAULT_WEBSITE_POSTS_RELATIVE_PATH = Path("backend") / "data" / "posts.json"
+DEFAULT_WEBSITE_POSTS_RELATIVE_PATH = Path("backend") / "data" / "posts.local.json"
 DEFAULT_RESEED_TIMEOUT_MS = 2 * 60 * 1000
 DEFAULT_WEBSITE_STEP_TIMEOUT_MS = 2 * 60 * 1000
 _LINE_SENTINEL = object()
@@ -62,7 +62,7 @@ def resolve_website_target(config: Config) -> WebsiteTarget | None:
     if not posts_path.exists():
         raise InputFileError(
             f"Website catalog not found: {posts_path}. "
-            "Expected a website posts.json file."
+            "Expected a website posts.local.json file."
         )
     if not posts_path.is_file():
         raise InputFileError(f"Website catalog path is not a file: {posts_path}")
@@ -108,7 +108,7 @@ def validate_website_catalog(catalog: Any, source: Path | None = None) -> dict[s
 
 
 def load_website_catalog(posts_path: Path) -> dict[str, Any]:
-    """Load and validate a website posts.json file."""
+    """Load and validate a website posts.local.json file."""
     catalog = load_json(posts_path)
     return validate_website_catalog(catalog, posts_path)
 
@@ -334,7 +334,7 @@ def build_lyrics_merged_website_catalog(
 
 
 def export_merged_preview(merged_catalog: dict[str, Any], output_dir: Path) -> Path:
-    """Write a full website posts.json merge preview."""
+    """Write a full website posts.local.json merge preview."""
     output_dir.mkdir(parents=True, exist_ok=True)
     destination = output_dir / "website_posts_merged_preview.json"
     _write_json(destination, merged_catalog)
@@ -394,7 +394,7 @@ def website_posts_already_applied(
     website_catalog: dict[str, Any],
     new_posts: list[dict[str, Any]],
 ) -> bool:
-    """Return True when every incoming post slug is already present in posts.json."""
+    """Return True when every incoming post slug is already present in posts.local.json."""
     if not new_posts:
         return False
 

@@ -16,7 +16,7 @@ D:\Docs\Active Project\React Final Project
 
 ## Quick Context To Paste Into A New Chat
 
-We are working on a standalone Python song importer at `D:\Projects\PythonProject`, branch `feat/website-automation`. It integrates with the React website at `D:\Docs\Active Project\React Final Project`, using the website catalog at `backend/data/posts.json`.
+We are working on a standalone Python song importer at `D:\Projects\PythonProject`, branch `feat/website-automation`. It integrates with the React website at `D:\Docs\Active Project\React Final Project`, using the website catalog at `backend/data/posts.local.json`.
 
 The importer has a Flask browser UI launched with:
 
@@ -31,7 +31,7 @@ The importer supports:
 - optional Cloudinary video upload
 - duplicate detection against the website catalog
 - website-ready post mapping
-- applying merged output into the website `posts.json`
+- applying merged output into the website `posts.local.json`
 - reseeding the website Mongo database after apply
 - lyrics merge into existing posts with blank lyrics
 - async apply/reseed jobs with a popup report and progress polling
@@ -50,7 +50,7 @@ Important recent fixes:
 - Importer merge output now strips non-authored top-level keys and keeps only `posts`, `collections`, and `siteContent`.
 - Regression tests cover authored-only merge output using `users`, `comments`, `email`, and `passwordHash` as intentionally rejected keys.
 
-The website recently split operational data away from `posts.json`. The website `posts.json` should now contain only:
+The website recently split operational data away from `posts.local.json`. The website `posts.local.json` should now contain only:
 
 - `posts`
 - `collections`
@@ -197,7 +197,7 @@ Relevant variables:
 
 ```env
 WEBSITE_ROOT=D:\Docs\Active Project\React Final Project
-WEBSITE_POSTS_PATH=D:\Docs\Active Project\React Final Project\backend\data\posts.json
+WEBSITE_POSTS_PATH=D:\Docs\Active Project\React Final Project\backend\data\posts.local.json
 CLOUDINARY_CLOUD_NAME=...
 CLOUDINARY_API_KEY=...
 CLOUDINARY_API_SECRET=...
@@ -222,7 +222,7 @@ Normal import flow:
 4. Click `Process + Preview`.
 5. Review duplicate results and website-ready preview.
 6. Click `Apply To Website`.
-7. The tool writes `backend/data/posts.json`, backs up live Mongo store, runs website `npm run reseed`, then verifies live DB vs file.
+7. The tool writes `backend/data/posts.local.json`, backs up live Mongo store, runs website `npm run reseed`, then verifies live DB vs file.
 
 Standalone demo flow:
 
@@ -269,9 +269,9 @@ Backend-only lyrics repair:
 
 Apply behavior:
 
-- `Save posts.json Only` writes the website catalog file but does not reseed Mongo.
+- `Save posts.local.json Only` writes the website catalog file but does not reseed Mongo.
 - `Apply To Website` writes the catalog file and reseeds live Mongo.
-- New posts already present in `posts.json` are treated as already applied so reseed can still proceed.
+- New posts already present in `posts.local.json` are treated as already applied so reseed can still proceed.
 - The UI popup should show a running report, then update to success or error.
 
 ## Reseed Job Details
@@ -319,7 +319,7 @@ output\web-ui
 The importer assumes the website uses:
 
 ```text
-D:\Docs\Active Project\React Final Project\backend\data\posts.json
+D:\Docs\Active Project\React Final Project\backend\data\posts.local.json
 ```
 
 The website reseed command is:
@@ -335,7 +335,7 @@ The website diff command is:
 npm run catalog:diff-live
 ```
 
-The website side was changed so `posts.json` is authored content only. That matters because importer previews and applies should preserve only the existing top-level authored catalog keys, not operational data.
+The website side was changed so `posts.local.json` is authored content only. That matters because importer previews and applies should preserve only the existing top-level authored catalog keys, not operational data.
 
 ## Output Files
 

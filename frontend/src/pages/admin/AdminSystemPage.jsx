@@ -170,7 +170,7 @@ export default function AdminSystemPage() {
 
   async function handleApplyLiveSync() {
     const confirmed = window.confirm(
-      "This will overwrite backend/data/posts.json from the current live admin-backed store. Continue?"
+      "This will overwrite the configured authored posts file from the current live admin-backed store. Continue?"
     );
 
     if (!confirmed) {
@@ -186,7 +186,7 @@ export default function AdminSystemPage() {
         adminFetch(`${apiBaseUrl}/admin/live-store-sync`, {
           method: "POST"
         }),
-        "Failed to write live admin data back into posts.json."
+        "Failed to write live admin data back into the authored posts file."
       );
 
       setSyncPreview({
@@ -196,7 +196,8 @@ export default function AdminSystemPage() {
         artifactPaths: data.sync?.artifactPaths
       });
       setSyncMessage(
-        data.message || "Live admin data was written back into posts.json."
+        data.message ||
+          "Live admin data was written back into the authored posts file."
       );
     } catch (apiError) {
       setSyncError(apiError.message);
@@ -207,7 +208,7 @@ export default function AdminSystemPage() {
 
   async function handleReseedLiveSite() {
     const confirmed = window.confirm(
-      "This will reseed the live database from backend/data/posts.json. Continue?"
+      "This will reseed the live database from the configured authored posts file. Continue?"
     );
 
     if (!confirmed) {
@@ -224,7 +225,7 @@ export default function AdminSystemPage() {
         adminFetch(`${apiBaseUrl}/admin/reseed-live-site`, {
           method: "POST"
         }),
-        "Failed to reseed the live website from posts.json."
+        "Failed to reseed the live website from the authored posts file."
       );
       const startedJob = data.reseedJob || null;
 
@@ -237,14 +238,14 @@ export default function AdminSystemPage() {
         setReseedResult(finishedJob.reseed || null);
         setReseedMessage(
           finishedJob.message ||
-            "Live site reseeded from backend/data/posts.json."
+            "Live site reseeded from the authored posts file."
         );
         return;
       }
 
       setReseedResult(data.reseed || null);
       setReseedMessage(
-        data.message || "Live site reseeded from backend/data/posts.json."
+        data.message || "Live site reseeded from the authored posts file."
       );
     } catch (apiError) {
       setReseedError(apiError.message);
@@ -385,9 +386,10 @@ export default function AdminSystemPage() {
         </div>
         <p className="meta">
           This pulls the live admin-backed Mongo store back into{" "}
-          <code>backend/data/posts.json</code>. Use it before any reseed if you
-          have been editing posts in the admin and do not want those changes
-          overwritten by stale file data.
+          the configured authored posts file. By default this repo uses{" "}
+          <code>backend/data/posts.local.json</code>. Use it before any reseed
+          if you have been editing posts in the admin and do not want those
+          changes overwritten by stale file data.
         </p>
         <div className="archive-intelligence-actions">
           <button
@@ -405,8 +407,8 @@ export default function AdminSystemPage() {
             type="button"
           >
             {syncWriting
-              ? "Writing posts.json..."
-              : "Write Live Store To posts.json"}
+              ? "Writing Posts File..."
+              : "Write Live Store To Posts File"}
           </button>
           <button
             className="secondary-button"
@@ -472,7 +474,7 @@ export default function AdminSystemPage() {
               ) : (
                 <p className="meta">
                   No post drift was detected between the live store and
-                  posts.json.
+                  the authored posts file.
                 </p>
               )}
             </article>

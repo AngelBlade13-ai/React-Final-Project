@@ -380,13 +380,13 @@ def _apply_web_payload(base_config: Config, payload: dict[str, Any]) -> dict[str
         )
     if has_new_posts:
         if already_applied:
-            report_lines.append("Website-ready posts were already present in posts.json.")
+            report_lines.append("Website-ready posts were already present in posts.local.json.")
         else:
             report_lines.append(
-                f"Wrote {len(website_posts_ready)} website post(s) into posts.json."
+                f"Wrote {len(website_posts_ready)} website post(s) into posts.local.json."
             )
     if reseed_website:
-        report_lines.append("Reseed queued for backend/data/posts.json.")
+        report_lines.append("Reseed queued for backend/data/posts.local.json.")
 
     if reseed_website:
         job_id = uuid.uuid4().hex
@@ -578,7 +578,7 @@ def _run_reseed_job(
         phase_started_at = time.monotonic()
         set_phase(
             "reseed",
-            "Running website npm run reseed against backend/data/posts.json.",
+            "Running website npm run reseed against backend/data/posts.local.json.",
         )
         reseed_output = run_website_reseed_streaming(website_target, log_path)
         complete_phase("Website reseed", phase_started_at)
@@ -586,7 +586,7 @@ def _run_reseed_job(
         phase_started_at = time.monotonic()
         set_phase(
             "verify",
-            "Verifying live Mongo store matches backend/data/posts.json.",
+            "Verifying live Mongo store matches backend/data/posts.local.json.",
         )
         verification_output = run_website_catalog_diff(website_target)
         complete_phase("Live-store verification", phase_started_at)
@@ -601,8 +601,8 @@ def _run_reseed_job(
             "summary": report_lines
             + phase_summaries
             + [
-                "Live site reseeded from backend/data/posts.json.",
-                "Live store verification matched backend/data/posts.json.",
+                "Live site reseeded from backend/data/posts.local.json.",
+                "Live store verification matched backend/data/posts.local.json.",
             ],
             "artifacts": {
                 "websiteTargetPath": str(website_target.posts_path),

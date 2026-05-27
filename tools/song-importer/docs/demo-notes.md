@@ -17,7 +17,7 @@
 - The tool now accepts the website repo path directly instead of needing manual internal edits.
 - The tool can also open a local browser window so the workflow feels like an app instead of a command-only pipeline.
 - The output schema matches the website workflow directly.
-- The tool emits both append-ready post objects and a full merged `posts.json` preview.
+- The tool emits both append-ready post objects and a full merged `posts.local.json` preview.
 - Duplicate detection uses slug, version family, and fuzzy title similarity.
 - Cloudinary upload is optional, so the project still demos cleanly without credentials.
 - Tests cover the main edge cases that could break a real import batch.

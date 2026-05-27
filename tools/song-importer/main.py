@@ -51,19 +51,19 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="PATH",
         help=(
             "Path to the website repo root. The tool will use "
-            "backend/data/posts.json automatically."
+            "backend/data/posts.local.json automatically."
         ),
     )
     parser.add_argument(
         "--website-posts",
         metavar="PATH",
-        help="Path to the website's backend/data/posts.json file.",
+        help="Path to the website's backend/data/posts.local.json file.",
     )
     parser.add_argument(
         "--apply-to-website",
         action="store_true",
         help=(
-            "Write the merged preview back into the website posts.json file after "
+            "Write the merged preview back into the website posts.local.json file after "
             "generating output."
         ),
     )
@@ -208,7 +208,7 @@ def run(config: Config) -> int:
         if outcome.website_target is not None:
             print("Website merge preview: website_posts_merged_preview.json")
             if config.apply_to_website:
-                print("Website apply status:  applied to posts.json")
+                print("Website apply status:  applied to posts.local.json")
                 if config.reseed_website:
                     print("Website reseed status: completed")
                     if website_outputs.live_store_backup_path is not None:

@@ -24,7 +24,7 @@ from src.website_integration import (
 
 def test_resolve_website_target_from_root(tmp_path: Path) -> None:
     website_root = tmp_path / "website"
-    posts_path = website_root / "backend" / "data" / "posts.json"
+    posts_path = website_root / "backend" / "data" / "posts.local.json"
     posts_path.parent.mkdir(parents=True)
     posts_path.write_text(json.dumps({"posts": []}), encoding="utf-8")
 
@@ -39,7 +39,7 @@ def test_get_effective_catalog_path_prefers_website_when_catalog_not_set(tmp_pat
     target = WebsiteTarget(
         root=tmp_path / "website",
         backend_dir=tmp_path / "website" / "backend",
-        posts_path=tmp_path / "website" / "backend" / "data" / "posts.json",
+        posts_path=tmp_path / "website" / "backend" / "data" / "posts.local.json",
     )
 
     assert get_effective_catalog_path(Config(), target) == target.posts_path
@@ -259,7 +259,7 @@ def test_website_posts_already_applied_detects_existing_slugs() -> None:
 
 def test_apply_merged_catalog_writes_backup_and_target(tmp_path: Path) -> None:
     website_root = tmp_path / "website"
-    posts_path = website_root / "backend" / "data" / "posts.json"
+    posts_path = website_root / "backend" / "data" / "posts.local.json"
     posts_path.parent.mkdir(parents=True)
     original_catalog = {"posts": [{"id": "existing-1", "slug": "hopes-song"}]}
     merged_catalog = {
@@ -287,7 +287,7 @@ def test_run_website_reseed_raises_on_command_failure(monkeypatch, tmp_path: Pat
     target = WebsiteTarget(
         root=tmp_path / "website",
         backend_dir=tmp_path,
-        posts_path=tmp_path / "posts.json",
+        posts_path=tmp_path / "posts.local.json",
     )
 
     class FakeResult:
@@ -308,7 +308,7 @@ def test_export_live_store_snapshot_writes_backup(monkeypatch, tmp_path: Path) -
     target = WebsiteTarget(
         root=tmp_path / "website",
         backend_dir=tmp_path,
-        posts_path=tmp_path / "posts.json",
+        posts_path=tmp_path / "posts.local.json",
     )
 
     class FakeResult:
