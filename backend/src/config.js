@@ -32,6 +32,10 @@ const config = {
   importerUrl: process.env.IMPORTER_URL || "http://127.0.0.1:8765",
   importerPythonPath: process.env.IMPORTER_PYTHON_PATH || "",
   localAiEnabled: process.env.LOCAL_AI_ENABLED !== "false",
+  assistantAiProvider:
+    process.env.ASSISTANT_AI_PROVIDER ||
+    process.env.LOCAL_AI_PROVIDER ||
+    "ollama",
   localAiBaseUrl: process.env.LOCAL_AI_BASE_URL || "http://127.0.0.1:11434",
   localAiModel: process.env.LOCAL_AI_MODEL || "qwen2.5:7b",
   localAiModelProfilesRaw: process.env.LOCAL_AI_MODEL_PROFILES || "",
@@ -52,6 +56,16 @@ const config = {
   runpodApiKey: process.env.RUNPOD_API_KEY || "",
   runpodApiBaseUrl:
     process.env.RUNPOD_API_BASE_URL || "https://rest.runpod.io/v1",
+  runpodServerlessEndpointId:
+    process.env.RUNPOD_SERVERLESS_ENDPOINT_ID || "",
+  runpodServerlessApiBaseUrl:
+    process.env.RUNPOD_SERVERLESS_API_BASE_URL || "https://api.runpod.ai/v2",
+  runpodServerlessInputMode:
+    process.env.RUNPOD_SERVERLESS_INPUT_MODE || "ollama",
+  runpodServerlessTimeoutMs:
+    Number(process.env.RUNPOD_SERVERLESS_TIMEOUT_MS) ||
+    Number(process.env.LOCAL_AI_TIMEOUT_MS) ||
+    180000,
   runpodSshHost: process.env.RUNPOD_SSH_HOST || "",
   runpodSshPort: Number(process.env.RUNPOD_SSH_PORT) || 22,
   runpodSshUser: process.env.RUNPOD_SSH_USER || "root",

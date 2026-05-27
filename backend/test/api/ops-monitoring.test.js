@@ -416,6 +416,81 @@ test("catalog review retries once when the model returns an empty response", asy
   assert.equal(generateCallCount, 2);
 });
 
+test("catalog review can use RunPod Serverless as the assistant provider", async (t) => {
+  const originalFetch = global.fetch;
+  let requestBody = null;
+
+  global.fetch = async (url, options = {}) => {
+    const normalizedUrl = String(url);
+
+    if (
+      normalizedUrl ===
+      "https://api.runpod.ai/v2/endpoint_test_123/runsync"
+    ) {
+      requestBody = JSON.parse(options.body);
+
+      return {
+        ok: true,
+        json: async () => ({
+          status: "COMPLETED",
+          output: {
+            response: JSON.stringify({
+              summary: "Serverless review completed.",
+              risks: [],
+              suggestedActions: ["Review one public collection highlight."]
+            })
+          }
+        })
+      };
+    }
+
+    throw new Error(`Unexpected fetch URL: ${normalizedUrl}`);
+  };
+
+  const context = await createApiTestContext({
+    ASSISTANT_AI_PROVIDER: "runpod-serverless",
+    LOCAL_AI_ENABLED: "true",
+    RUNPOD_API_KEY: "test-runpod-key",
+    RUNPOD_SERVERLESS_ENDPOINT_ID: "endpoint_test_123"
+  });
+  t.after(async () => {
+    global.fetch = originalFetch;
+    delete process.env.ASSISTANT_AI_PROVIDER;
+    delete process.env.RUNPOD_SERVERLESS_ENDPOINT_ID;
+    await context.close();
+  });
+
+  const loginResponse = await context.agent
+    .post("/api/admin/login")
+    .set(context.mutationHeaders)
+    .send({
+      email: "admin@example.com",
+      password: "Admin123!"
+    });
+
+  assert.equal(loginResponse.status, 200);
+
+  const statusResponse = await context.agent.get("/api/admin/assistant/status");
+
+  assert.equal(statusResponse.status, 200);
+  assert.equal(statusResponse.body.localAi.provider, "runpod-serverless");
+  assert.equal(statusResponse.body.localAi.available, true);
+  assert.equal(statusResponse.body.localAi.modelInstalled, true);
+
+  const response = await context.agent
+    .post("/api/admin/assistant/catalog-review")
+    .set(context.mutationHeaders);
+
+  assert.equal(response.status, 200);
+  assert.equal(response.body.review.summary, "Serverless review completed.");
+  assert.equal(response.body.review.model, "qwen2.5:7b");
+  assert.equal(
+    requestBody.input.method_name,
+    "generate"
+  );
+  assert.match(requestBody.input.input.prompt, /music archive admin review/);
+});
+
 test("catalog finding review stores post assistant decision memory", async (t) => {
   const originalFetch = global.fetch;
 

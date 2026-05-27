@@ -116,6 +116,10 @@ export default function AdminAiRuntimePage() {
   const [selectedAssistantProfile, setSelectedAssistantProfile] = useState(() =>
     readAssistantModelProfile()
   );
+  const assistantProvider =
+    localAiStatus?.provider === "runpod-serverless"
+      ? "RunPod Serverless"
+      : "Local Ollama";
 
   const loadAssistantStatus = useCallback(async () => {
     try {
@@ -325,8 +329,8 @@ export default function AdminAiRuntimePage() {
         <p className="eyebrow">AI Runtime</p>
         <h2>Assistant infrastructure and catalog review tools.</h2>
         <p>
-          This workspace owns local Ollama status, remote RunPod controls,
-          tunnel controls, model profile selection, and assistant-driven catalog
+          This workspace owns assistant status, model profile selection, local
+          Ollama or RunPod Serverless routing, and assistant-driven catalog
           review.
         </p>
       </section>
@@ -344,21 +348,23 @@ export default function AdminAiRuntimePage() {
         </div>
         <div className="metric-summary-grid">
           <article className="metric-summary-card">
-            <p className="note-label">Local Ollama</p>
+            <p className="note-label">{assistantProvider}</p>
             <strong>
               {localAiStatus?.available ? "Reachable" : "Unavailable"}
             </strong>
             <span>
               {localAiError ||
                 localAiStatus?.message ||
-                "Install and start Ollama to enable local assistant calls."}
+                "Configure an assistant runtime to enable admin AI calls."}
             </span>
           </article>
           <article className="metric-summary-card">
             <p className="note-label">Model</p>
             <strong>{localAiStatus?.model || "qwen2.5:7b"}</strong>
             <span>
-              {localAiStatus?.modelInstalled
+              {localAiStatus?.provider === "runpod-serverless"
+                ? "Selected endpoint model profile"
+                : localAiStatus?.modelInstalled
                 ? "Installed"
                 : `Run: ollama pull ${localAiStatus?.model || "qwen2.5:7b"}`}
             </span>
@@ -424,6 +430,9 @@ export default function AdminAiRuntimePage() {
             {localAiStatus?.selectedProfileLabel
               ? `${localAiStatus.selectedProfileLabel} routes assistant requests to ${localAiStatus.model}.`
               : `Assistant requests currently target ${localAiStatus?.model || "the default Ollama model"}.`}
+            {localAiStatus?.provider === "runpod-serverless"
+              ? " Requests are sent through the configured RunPod Serverless endpoint."
+              : ""}
           </p>
         </div>
         <div className="archive-intelligence-actions">

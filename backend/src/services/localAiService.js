@@ -1,5 +1,10 @@
 const crypto = require("crypto");
 const config = require("../config");
+const {
+  getRunpodServerlessStatus,
+  isRunpodServerlessProvider,
+  requestRunpodServerlessGenerate
+} = require("./runpodServerlessAiService");
 const { slugify } = require("../utils/slugify");
 
 const DEFAULT_REVIEW_RESULT = {
@@ -234,6 +239,7 @@ function buildUnavailableStatus(reason, options = {}) {
   return {
     available: false,
     enabled: Boolean(config.localAiEnabled),
+    provider: "ollama",
     baseUrl: config.localAiBaseUrl,
     model: selection.model,
     selectedProfileKey: selection.profileKey,
@@ -286,6 +292,7 @@ function buildAvailableStatus(models = [], options = {}) {
   return {
     available: true,
     enabled: true,
+    provider: "ollama",
     baseUrl: config.localAiBaseUrl,
     model: selection.model,
     selectedProfileKey: selection.profileKey,
@@ -304,6 +311,11 @@ function buildAvailableStatus(models = [], options = {}) {
 }
 
 async function getLocalAiStatus(options = {}) {
+  if (isRunpodServerlessProvider()) {
+    const selection = resolveRequestedModel(options);
+    return getRunpodServerlessStatus(selection);
+  }
+
   if (!config.localAiEnabled) {
     return buildUnavailableStatus(
       "Local AI is disabled by LOCAL_AI_ENABLED=false.",
@@ -356,6 +368,15 @@ async function requestGenerate({
   generationOptions,
   format = "json"
 }) {
+  if (isRunpodServerlessProvider()) {
+    return requestRunpodServerlessGenerate({
+      model,
+      prompt,
+      generationOptions,
+      format
+    });
+  }
+
   const response = await fetchOllama("/api/generate", {
     method: "POST",
     headers: {

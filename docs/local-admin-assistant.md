@@ -112,6 +112,7 @@ the remote pod through `http://127.0.0.1:11434`.
 
 ```env
 LOCAL_AI_ENABLED=true
+ASSISTANT_AI_PROVIDER=ollama
 LOCAL_AI_BASE_URL=http://127.0.0.1:11434
 LOCAL_AI_MODEL=qwen2.5:7b
 # Optional model profiles exposed in admin selectors.
@@ -136,6 +137,53 @@ safe, explicit way. Leave `RUNPOD_SSH_HOST` blank if you want the app to
 discover the current SSH host and exposed port from RunPod automatically. The
 assistant selectors in admin only enable a profile when Ollama reports that the
 profile's model is actually installed.
+
+### RunPod Serverless
+
+For admin-only AI work, use RunPod Serverless to avoid managing a named pod,
+SSH endpoint, and local tunnel. The backend still uses the same assistant
+prompts and validation logic, but `generateJson` sends each request to a stable
+RunPod Serverless endpoint.
+
+```env
+LOCAL_AI_ENABLED=true
+ASSISTANT_AI_PROVIDER=runpod-serverless
+LOCAL_AI_MODEL=qwen2.5:7b
+LOCAL_AI_TIMEOUT_MS=180000
+RUNPOD_API_KEY=rp_redacted
+RUNPOD_SERVERLESS_ENDPOINT_ID=your_endpoint_id
+RUNPOD_SERVERLESS_API_BASE_URL=https://api.runpod.ai/v2
+RUNPOD_SERVERLESS_INPUT_MODE=ollama
+RUNPOD_SERVERLESS_TIMEOUT_MS=180000
+```
+
+With the RunPod Ollama Serverless template, keep
+`RUNPOD_SERVERLESS_INPUT_MODE=ollama`. The backend posts to:
+
+```text
+https://api.runpod.ai/v2/{RUNPOD_SERVERLESS_ENDPOINT_ID}/runsync
+```
+
+The request body uses RunPod's Ollama shape:
+
+```json
+{
+  "input": {
+    "method_name": "generate",
+    "input": {
+      "model": "qwen2.5:7b",
+      "prompt": "assistant prompt",
+      "stream": false,
+      "format": "json",
+      "think": false,
+      "options": {}
+    }
+  }
+}
+```
+
+For a custom handler that expects the prompt directly under `input`, set
+`RUNPOD_SERVERLESS_INPUT_MODE=raw`.
 
 ### Why This Shape
 
