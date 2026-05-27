@@ -120,6 +120,7 @@ export default function AdminAiRuntimePage() {
     localAiStatus?.provider === "runpod-serverless"
       ? "RunPod Serverless"
       : "Local Ollama";
+  const isRunpodServerless = localAiStatus?.provider === "runpod-serverless";
 
   const loadAssistantStatus = useCallback(async () => {
     try {
@@ -365,45 +366,60 @@ export default function AdminAiRuntimePage() {
               {localAiStatus?.provider === "runpod-serverless"
                 ? "Selected endpoint model profile"
                 : localAiStatus?.modelInstalled
-                ? "Installed"
-                : `Run: ollama pull ${localAiStatus?.model || "qwen2.5:7b"}`}
+                  ? "Installed"
+                  : `Run: ollama pull ${localAiStatus?.model || "qwen2.5:7b"}`}
             </span>
           </article>
-          <article className="metric-summary-card">
-            <p className="note-label">Remote Pod</p>
-            <strong>{remotePodStatus?.runtimeStatus || "unconfigured"}</strong>
-            <span>
-              {remotePodStatus?.message ||
-                "Configure RunPod env vars to control a remote GPU pod."}
-            </span>
-            <small>
-              {remotePodStatus?.configuredPodName
-                ? `Configured name: ${remotePodStatus.configuredPodName}`
-                : "Configured name: not set"}
-            </small>
-            <small>
-              {remotePodStatus?.podId
-                ? `Resolved pod ID: ${remotePodStatus.podId}`
-                : remotePodStatus?.configuredPodId
-                  ? `Fallback pod ID: ${remotePodStatus.configuredPodId}`
-                  : "Resolved pod ID: not found"}
-            </small>
-            <small>{`Resolved by: ${remotePodStatus?.resolveSource || "none"}`}</small>
-          </article>
-          <article className="metric-summary-card">
-            <p className="note-label">SSH Tunnel</p>
-            <strong>
-              {remoteTunnelStatus?.running
-                ? "Active"
-                : remoteTunnelStatus?.configured
-                  ? "Inactive"
-                  : "Unconfigured"}
-            </strong>
-            <span>
-              {remoteTunnelStatus?.message ||
-                "Automate the local SSH forward used by LOCAL_AI_BASE_URL."}
-            </span>
-          </article>
+          {isRunpodServerless ? (
+            <article className="metric-summary-card">
+              <p className="note-label">Serverless Endpoint</p>
+              <strong>{localAiStatus?.endpointId || "Configured"}</strong>
+              <span>
+                RunPod starts workers on demand. Pod, SSH, and tunnel controls
+                are not used for this runtime.
+              </span>
+            </article>
+          ) : (
+            <>
+              <article className="metric-summary-card">
+                <p className="note-label">Remote Pod</p>
+                <strong>
+                  {remotePodStatus?.runtimeStatus || "unconfigured"}
+                </strong>
+                <span>
+                  {remotePodStatus?.message ||
+                    "Configure RunPod env vars to control a remote GPU pod."}
+                </span>
+                <small>
+                  {remotePodStatus?.configuredPodName
+                    ? `Configured name: ${remotePodStatus.configuredPodName}`
+                    : "Configured name: not set"}
+                </small>
+                <small>
+                  {remotePodStatus?.podId
+                    ? `Resolved pod ID: ${remotePodStatus.podId}`
+                    : remotePodStatus?.configuredPodId
+                      ? `Fallback pod ID: ${remotePodStatus.configuredPodId}`
+                      : "Resolved pod ID: not found"}
+                </small>
+                <small>{`Resolved by: ${remotePodStatus?.resolveSource || "none"}`}</small>
+              </article>
+              <article className="metric-summary-card">
+                <p className="note-label">SSH Tunnel</p>
+                <strong>
+                  {remoteTunnelStatus?.running
+                    ? "Active"
+                    : remoteTunnelStatus?.configured
+                      ? "Inactive"
+                      : "Unconfigured"}
+                </strong>
+                <span>
+                  {remoteTunnelStatus?.message ||
+                    "Automate the local SSH forward used by LOCAL_AI_BASE_URL."}
+                </span>
+              </article>
+            </>
+          )}
         </div>
         <div className="admin-form" style={{ marginTop: "1rem" }}>
           <label>
@@ -443,80 +459,86 @@ export default function AdminAiRuntimePage() {
           >
             Refresh Status
           </button>
-          <button
-            className="secondary-button"
-            disabled={
-              remotePodActionLoading === "start" || !remotePodStatus?.configured
-            }
-            onClick={() => handleRemotePodAction("start")}
-            type="button"
-          >
-            {remotePodActionLoading === "start"
-              ? "Starting Remote Pod..."
-              : "Start Remote AI"}
-          </button>
-          <button
-            className="secondary-button"
-            disabled={
-              remotePodActionLoading === "stop" || !remotePodStatus?.configured
-            }
-            onClick={() => handleRemotePodAction("stop")}
-            type="button"
-          >
-            {remotePodActionLoading === "stop"
-              ? "Stopping Remote Pod..."
-              : "Stop Remote AI"}
-          </button>
-          <button
-            className="secondary-button"
-            disabled={
-              remoteTunnelActionLoading === "start" ||
-              !remoteTunnelStatus?.configured
-            }
-            onClick={() => handleRemoteTunnelAction("start")}
-            type="button"
-          >
-            {remoteTunnelActionLoading === "start"
-              ? "Opening Tunnel..."
-              : "Open SSH Tunnel"}
-          </button>
-          <button
-            className="secondary-button"
-            disabled={
-              remoteTunnelActionLoading === "stop" ||
-              !remoteTunnelStatus?.configured
-            }
-            onClick={() => handleRemoteTunnelAction("stop")}
-            type="button"
-          >
-            {remoteTunnelActionLoading === "stop"
-              ? "Closing Tunnel..."
-              : "Close SSH Tunnel"}
-          </button>
-          <button
-            className="secondary-button"
-            disabled={
-              remoteOllamaActionLoading ||
-              (!remoteTunnelStatus?.running && !localAiStatus?.available)
-            }
-            onClick={handleRemoteOllamaWake}
-            type="button"
-          >
-            {remoteOllamaActionLoading
-              ? "Waking Remote Ollama..."
-              : "Wake Remote Ollama"}
-          </button>
+          {isRunpodServerless ? null : (
+            <>
+              <button
+                className="secondary-button"
+                disabled={
+                  remotePodActionLoading === "start" ||
+                  !remotePodStatus?.configured
+                }
+                onClick={() => handleRemotePodAction("start")}
+                type="button"
+              >
+                {remotePodActionLoading === "start"
+                  ? "Starting Remote Pod..."
+                  : "Start Remote AI"}
+              </button>
+              <button
+                className="secondary-button"
+                disabled={
+                  remotePodActionLoading === "stop" ||
+                  !remotePodStatus?.configured
+                }
+                onClick={() => handleRemotePodAction("stop")}
+                type="button"
+              >
+                {remotePodActionLoading === "stop"
+                  ? "Stopping Remote Pod..."
+                  : "Stop Remote AI"}
+              </button>
+              <button
+                className="secondary-button"
+                disabled={
+                  remoteTunnelActionLoading === "start" ||
+                  !remoteTunnelStatus?.configured
+                }
+                onClick={() => handleRemoteTunnelAction("start")}
+                type="button"
+              >
+                {remoteTunnelActionLoading === "start"
+                  ? "Opening Tunnel..."
+                  : "Open SSH Tunnel"}
+              </button>
+              <button
+                className="secondary-button"
+                disabled={
+                  remoteTunnelActionLoading === "stop" ||
+                  !remoteTunnelStatus?.configured
+                }
+                onClick={() => handleRemoteTunnelAction("stop")}
+                type="button"
+              >
+                {remoteTunnelActionLoading === "stop"
+                  ? "Closing Tunnel..."
+                  : "Close SSH Tunnel"}
+              </button>
+              <button
+                className="secondary-button"
+                disabled={
+                  remoteOllamaActionLoading ||
+                  (!remoteTunnelStatus?.running && !localAiStatus?.available)
+                }
+                onClick={handleRemoteOllamaWake}
+                type="button"
+              >
+                {remoteOllamaActionLoading
+                  ? "Waking Remote Ollama..."
+                  : "Wake Remote Ollama"}
+              </button>
+            </>
+          )}
         </div>
-        {remotePodActionError ? (
+        {!isRunpodServerless && remotePodActionError ? (
           <p className="error-text">{remotePodActionError}</p>
         ) : null}
-        {remoteTunnelActionError ? (
+        {!isRunpodServerless && remoteTunnelActionError ? (
           <p className="error-text">{remoteTunnelActionError}</p>
         ) : null}
-        {remoteOllamaActionError ? (
+        {!isRunpodServerless && remoteOllamaActionError ? (
           <p className="error-text">{remoteOllamaActionError}</p>
         ) : null}
-        {remoteOllamaMessage ? (
+        {!isRunpodServerless && remoteOllamaMessage ? (
           <p className="meta">{remoteOllamaMessage}</p>
         ) : null}
       </section>
