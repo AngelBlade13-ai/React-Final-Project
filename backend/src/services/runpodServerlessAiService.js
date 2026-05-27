@@ -234,7 +234,9 @@ async function requestRunpodServerlessGenerate({
     };
   } catch (error) {
     if (error.name === "AbortError") {
-      throw new Error("Timed out while contacting RunPod Serverless.");
+      throw new Error("Timed out while contacting RunPod Serverless.", {
+        cause: error
+      });
     }
 
     throw error;

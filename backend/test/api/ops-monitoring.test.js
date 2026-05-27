@@ -424,8 +424,7 @@ test("catalog review can use RunPod Serverless as the assistant provider", async
     const normalizedUrl = String(url);
 
     if (
-      normalizedUrl ===
-      "https://api.runpod.ai/v2/endpoint_test_123/runsync"
+      normalizedUrl === "https://api.runpod.ai/v2/endpoint_test_123/runsync"
     ) {
       requestBody = JSON.parse(options.body);
 
@@ -484,10 +483,7 @@ test("catalog review can use RunPod Serverless as the assistant provider", async
   assert.equal(response.status, 200);
   assert.equal(response.body.review.summary, "Serverless review completed.");
   assert.equal(response.body.review.model, "qwen2.5:7b");
-  assert.equal(
-    requestBody.input.method_name,
-    "generate"
-  );
+  assert.equal(requestBody.input.method_name, "generate");
   assert.match(requestBody.input.input.prompt, /music archive admin review/);
 });
 
