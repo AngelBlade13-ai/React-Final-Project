@@ -2,7 +2,7 @@
 
 ## 1. Executive Summary
 
-Suno Diary is a full-stack personal music archive for Suno-generated songs. The public site presents songs as release pages, browsable collections, story/world archives, guided listening paths, search/explore surfaces, account libraries, comments, reactions, and a persistent mini-player. The admin side is a private studio for maintaining the archive: posts, collections, homepage/about/site settings, guided paths, comments, users, operational health, JSON reseeding/sync, local importer launch, and AI-assisted catalog review.
+Suno Diary is a full-stack personal music archive for Suno-generated songs. The public site presents songs as release pages, browsable collections, story/world archives, guided listening paths, search/explore surfaces, account libraries, public listener profiles, threaded comments, reports, reactions, and a persistent mini-player. The admin side is a private studio for maintaining the archive: posts, collections, homepage/about/site settings, guided paths, comments, users, operational health, JSON reseeding/sync, local importer launch, and AI-assisted catalog review.
 
 The problem it solves is catalog drift. A growing AI-song library is not just a list of files; each song needs stable metadata, media URLs, lyrics, story/world context, versions, collection membership, public visibility, and safe ways to import new material. This project gives the archive a public listening experience and a maintenance workflow.
 
@@ -12,7 +12,7 @@ Primary users:
 - The site owner/admin who curates songs, world collections, guided paths, media, and catalog quality.
 - Developers/instructors/interviewers reviewing a full-stack portfolio project with real data flows.
 
-This is more than a basic CRUD app because it includes media hosting, MongoDB persistence, authored JSON seed files, public/private role separation, JWT cookie sessions, account libraries, comment moderation, operational audit logs, catalog reseeding, live-store-to-file sync, a separate Python import pipeline, Cloudinary upload, AI-assisted review through Ollama, and optional Thunder Compute GPU runtime control.
+This is more than a basic CRUD app because it includes media hosting, MongoDB persistence, authored JSON seed files, public/private role separation, JWT cookie sessions, account libraries, threaded community features, comment reporting/moderation, operational audit logs, catalog reseeding, live-store-to-file sync, a separate Python import pipeline, Cloudinary upload, AI-assisted review through Ollama, and optional Thunder Compute GPU runtime support.
 
 ## 2. Tech Stack
 
@@ -32,7 +32,7 @@ Flask importer UI is present. [web_app.py](../tools/song-importer/src/web_app.py
 
 Ollama powers the admin AI assistant. [localAiService.js](../backend/src/services/localAiService.js) checks `/api/tags`, calls `/api/generate`, builds JSON-only prompts, validates returned structures, and exposes catalog review, post suggestions, guided path suggestions, and finding decisions.
 
-Thunder Compute is optional remote GPU infrastructure for Ollama. The app does not manage the Thunder instance lifecycle; `backend/src/services/remoteAiService.js` opens an SSH tunnel and wakes Ollama with `nohup` after you manually start or restore the instance.
+Thunder Compute is optional remote GPU infrastructure for Ollama. The app does not manage the Thunder instance lifecycle; the current production-friendly mode points `LOCAL_AI_BASE_URL` at a Thunder forwarded Ollama URL. `backend/src/services/remoteAiService.js` still supports a manual SSH tunnel and `nohup` wake workflow for local/operator use when `REMOTE_AI_ENABLED=true`.
 
 Deployment setup is present in `README.md`: frontend on Vercel, backend on Render, MongoDB as the database, and Cloudinary as media hosting. The README lists a live frontend `https://react-final-project-seven-sigma.vercel.app` and backend `https://react-final-project-cnk7.onrender.com`.
 
@@ -96,7 +96,7 @@ Admin UI
   -> /api/admin/assistant/*
   -> localAiService builds compact JSON prompt
   -> Ollama at LOCAL_AI_BASE_URL
-  -> local machine or Thunder Compute through SSH tunnel
+  -> local machine, Thunder forwarded URL, or Thunder through SSH tunnel
   -> structured suggestions/findings
   -> admin reviews before applying anything
 ```
@@ -109,17 +109,17 @@ Collections: [CollectionsIndexPage.jsx](../frontend/src/pages/public/Collections
 
 Listening/guided paths: [GuidedPathsIndexPage.jsx](../frontend/src/pages/public/GuidedPathsIndexPage.jsx) and [GuidedPathPage.jsx](../frontend/src/pages/public/GuidedPathPage.jsx) use `siteContent.guidedPaths` plus helpers in [listeningPaths.js](../frontend/src/lib/listeningPaths.js). A guided path contains `postSlugs` for manual ordering and/or `algorithm` rules such as `preset`, `collectionSlug`, `collectionSlugs`, `sectionKeys`, `themeTags`, `worldLayers`, `releaseStatuses`, `sort`, `match`, and `maxItems`. It exists to make the archive approachable by mood/story route.
 
-Explore/search: [ExplorePage.jsx](../frontend/src/pages/public/ExplorePage.jsx) uses public posts and frontend filtering/sorting helpers. Visitors see searchable releases, collection/category signals, and play/open actions. Data comes from `GET /api/posts`, which only returns public visible posts.
+Explore/search: [ExplorePage.jsx](../frontend/src/pages/public/ExplorePage.jsx) uses public posts and frontend filtering/sorting helpers. Visitors see searchable releases, collection/category signals, and play/open actions. Data comes from `GET /api/posts`, which only returns public visible posts. Search text is kept in component state while typing, then written to URL query params on blur/Enter so the input does not lose focus after every character. [RouteAnnouncer.jsx](../frontend/src/components/RouteAnnouncer.jsx) only scrolls to top on path changes, not query-string updates, so search-result clicks do not jump the page back to the top.
 
 Release/song pages: [PublicReleasePage.jsx](../frontend/src/pages/public/PublicReleasePage.jsx) uses `GET /api/posts/:slug`. Visitors see title, metadata, lyrics/content, collection links, comments, save/reaction controls for signed-in users, and playback controls. `redirectSlug` supports old slug handling when slug history exists. Media display is handled by [ReleaseMedia.jsx](../frontend/src/components/ReleaseMedia.jsx), and Cloudinary poster derivation is in `getVideoPosterUrl()` in [site.js](../frontend/src/lib/site.js).
 
 Mini-player: [MiniPlayer.jsx](../frontend/src/components/MiniPlayer.jsx) is always mounted in [App.jsx](../frontend/src/App.jsx). App-level state stores `playerQueue`, `currentQueueIndex`, progress, duration, volume, and play state. A hidden `<video>` element acts as the media element, even for audio-like playback, and receives `currentTrack.videoUrl`. When a signed-in user plays a track, App posts to `POST /api/auth/library/releases/:slug/listen`.
 
-Account/profile: [AccountPage.jsx](../frontend/src/pages/public/AccountPage.jsx) loads `GET /api/auth/library`, updates profile through `PUT /api/auth/me`, uploads avatars through `POST /api/auth/me/avatar`, and shows saved/recent releases/reactions. Auth state is owned by [App.jsx](../frontend/src/App.jsx), which calls `GET /api/auth/me` on load.
+Account/profile: [AccountPage.jsx](../frontend/src/pages/public/AccountPage.jsx) loads `GET /api/auth/library`, updates profile through `PUT /api/auth/me`, uploads avatars through `POST /api/auth/me/avatar`, and shows saved/recent releases/reactions. Public listener profiles are served by [PublicProfilePage.jsx](../frontend/src/pages/public/PublicProfilePage.jsx) at `/users/:id`, powered by `GET /api/users/:id/profile`. The public profile intentionally exposes display name, avatar, role label, visible comment count, and recent visible comments, not email or library data. Auth state is owned by [App.jsx](../frontend/src/App.jsx), which calls `GET /api/auth/me` on load.
 
 Saved songs/recently played: Backend user documents store `savedReleaseSlugs`, `recentReleaseSlugs`, and `releaseReactions`. Routes live in [auth.routes.js](../backend/src/routes/auth.routes.js): `GET /auth/library`, `PUT /auth/library/releases/:slug/save`, `PUT /auth/library/releases/:slug/reaction`, and `POST /auth/library/releases/:slug/listen`.
 
-Comments/reactions: [CommentsSection.jsx](../frontend/src/components/CommentsSection.jsx) calls `GET /api/posts/:slug/comments`, `POST /api/posts/:slug/comments`, `PUT /api/comments/:id`, and `DELETE /api/comments/:id`. Backend comments have `id`, `postSlug`, `authorId`, `body`, `status`, timestamps. Only visible comments are returned publicly. Reactions are user-library metadata, not global reaction counts.
+Comments/reactions: [CommentsSection.jsx](../frontend/src/components/CommentsSection.jsx) calls `GET /api/posts/:slug/comments`, `POST /api/posts/:slug/comments`, `PUT /api/comments/:id`, `DELETE /api/comments/:id`, and `POST /api/comments/:id/report`. Backend comments have `id`, `postSlug`, `parentCommentId`, `authorId`, `body`, `status`, private `reports`, and timestamps. The public UI renders author avatars, links usernames to `/users/:id`, nests replies through `parentCommentId`, lets owners edit/delete their own comments, and lets signed-in non-owners report comments. Public responses sanitize report details so reporter identities and moderation data are not exposed. Reactions are user-library metadata, not global reaction counts.
 
 Theme toggle/light-dark mode: [ThemeToggle.jsx](../frontend/src/components/ThemeToggle.jsx), [PublicLayout.jsx](../frontend/src/layouts/PublicLayout.jsx), and [App.jsx](../frontend/src/App.jsx) manage `suno-blog-theme` in localStorage and set `data-theme` on the root. Theme CSS variables come from site content collection theme profiles through `getThemeCssVariables()`.
 
@@ -141,7 +141,7 @@ Guided paths editor: [AdminPathsPage.jsx](../frontend/src/pages/admin/AdminPaths
 
 Insights/dashboard: [AdminInsightsPage.jsx](../frontend/src/pages/admin/AdminInsightsPage.jsx) calls `GET /api/admin/insights`. [archiveInsights.js](../backend/src/services/archiveInsights.js) calculates archive health, video/lyrics/world metadata coverage, featured-release issues, theme coverage, collection health, recent activity, and quick wins.
 
-Comments moderation: [AdminCommentsPage.jsx](../frontend/src/pages/admin/AdminCommentsPage.jsx) calls `GET /api/admin/comments` and `PUT /api/admin/comments/:id`. It changes comment `status` between allowed values such as `visible` and `hidden`.
+Comments moderation: [AdminCommentsPage.jsx](../frontend/src/pages/admin/AdminCommentsPage.jsx) calls `GET /api/admin/comments`, `PUT /api/admin/comments/:id`, and `DELETE /api/admin/comments/:id`. It searches comments by release/author/text, filters visible/hidden/reported items, shows commenter avatars/profile links, displays report reasons/details for moderators, changes comment `status` between `visible` and `hidden`, and can delete comments.
 
 Users management: [AdminUsersPage.jsx](../frontend/src/pages/admin/AdminUsersPage.jsx) calls `GET /api/admin/users`, `PUT /api/admin/users/:id`, and `DELETE /api/admin/users/:id`. Backend prevents deleting your own signed-in admin and requires demoting admin users before deletion.
 
@@ -151,7 +151,7 @@ Reseed from posts file: [AdminSystemPage.jsx](../frontend/src/pages/admin/AdminS
 
 Importer launcher: AdminLayout calls `POST /api/admin/importer/launch`. [importerLauncherService.js](../backend/src/services/importerLauncherService.js) checks if `IMPORTER_URL` is reachable, otherwise starts `tools/song-importer/main.py --web --website-root <root> --website-posts <config.postsFile> --port <port> --no-browser`.
 
-AI assistant panel/status/actions: [AdminAiRuntimePage.jsx](../frontend/src/pages/admin/AdminAiRuntimePage.jsx), [AdminPostsPage.jsx](../frontend/src/pages/admin/AdminPostsPage.jsx), and [AdminPathsPage.jsx](../frontend/src/pages/admin/AdminPathsPage.jsx) call assistant routes. Status: `GET /api/admin/assistant/status`. Runtime: remote tunnel start/stop, tunnel start/stop, remote Ollama wake. Suggestions: catalog review, catalog finding review/dismiss, post suggestions, guided path suggestions.
+AI assistant panel/status/actions: [AdminAiRuntimePage.jsx](../frontend/src/pages/admin/AdminAiRuntimePage.jsx), [AdminPostsPage.jsx](../frontend/src/pages/admin/AdminPostsPage.jsx), and [AdminPathsPage.jsx](../frontend/src/pages/admin/AdminPathsPage.jsx) call assistant routes. Status: `GET /api/admin/assistant/status`. Runtime controls are Thunder/manual SSH helpers only when `REMOTE_AI_ENABLED=true`; in forwarded-URL mode, `LOCAL_AI_BASE_URL` points directly at Thunder and the SSH controls are intentionally disabled. Suggestions: catalog review, catalog finding review/dismiss, post suggestions, guided path suggestions, and new guided path suggestions.
 
 Protection against accidental changes:
 
@@ -289,13 +289,33 @@ Comment object:
 {
   "id": "uuid",
   "postSlug": "heaven-wakes-in-me",
+  "parentCommentId": "",
   "authorId": "uuid",
   "body": "Comment text",
   "status": "visible",
+  "reports": [
+    {
+      "id": "uuid",
+      "reporterId": "uuid",
+      "reason": "harassment",
+      "details": "Optional moderator context",
+      "status": "open",
+      "createdAt": "...",
+      "updatedAt": "..."
+    }
+  ],
   "createdAt": "...",
   "updatedAt": "..."
 }
 ```
+
+Important comment fields:
+
+- `postSlug`: connects the comment to a release.
+- `parentCommentId`: empty for a top-level comment, set to another comment id for replies.
+- `authorId`: connects to a user; public responses include sanitized author display name/avatar.
+- `status`: `visible` or `hidden`.
+- `reports`: private moderation records. Public comment responses do not expose report details; admin comment responses include sanitized report/reporter summaries.
 
 Assistant finding decision:
 
@@ -317,7 +337,7 @@ Assistant finding decision:
 }
 ```
 
-Slugs connect everything. Posts are opened by slug. Collections contain posts through `collectionSlugs`. Comments point to posts by `postSlug`. Guided paths point to posts by `postSlugs`. Featured releases use `featuredReleaseSlug`. Homepage uses `home.featuredReleaseSlug`. Slug-change logic in [admin.routes.js](../backend/src/routes/admin.routes.js) appends slug history and remaps references.
+Slugs connect everything. Posts are opened by slug. Collections contain posts through `collectionSlugs`. Comments point to posts by `postSlug`, and threaded replies point to comments by `parentCommentId`. Guided paths point to posts by `postSlugs`. Featured releases use `featuredReleaseSlug`. Homepage uses `home.featuredReleaseSlug`. Slug-change logic in [admin.routes.js](../backend/src/routes/admin.routes.js) appends slug history and remaps references.
 
 ## 7. Cloudinary Media Pipeline
 
@@ -487,11 +507,11 @@ Backend prompt building: [localAiService.js](../backend/src/services/localAiServ
 
 Backend to Ollama: `fetchOllama()` calls `${LOCAL_AI_BASE_URL}/api/tags` for status and `/api/generate` for generation. `requestGenerate()` uses `stream: false`, `format: "json"`, `think: false`, keep-alive, context, and prediction limits from env.
 
-Local/remote Ollama: locally, `LOCAL_AI_BASE_URL` can be `http://127.0.0.1:11434`. Remotely, Thunder Compute hosts Ollama and the backend still calls `localhost:11434` after an SSH tunnel maps local port 11434 to the instance’s remote 11434.
+Local/remote Ollama: locally, `LOCAL_AI_BASE_URL` can be `http://127.0.0.1:11434`. In production forwarded-URL mode, Render can call a Thunder forwarded Ollama URL directly, for example `https://<uuid>-11434.thundercompute.net`, with `REMOTE_AI_ENABLED=false`. In operator tunnel mode, Thunder Compute hosts Ollama and the backend calls `localhost:11434` after an SSH tunnel maps local port 11434 to the instance’s remote 11434.
 
 Thunder Compute purpose: provide a GPU machine for larger Ollama models without running them on the laptop. Models live under `/home/ubuntu/ollama-models`.
 
-SSH tunnel purpose: `backend/src/services/remoteAiService.js` runs:
+SSH tunnel purpose: when `REMOTE_AI_ENABLED=true`, `backend/src/services/remoteAiService.js` runs:
 
 ```text
 ssh -N -L localPort:remoteHost:remotePort user@instanceHost -p instanceSshPort -i key
@@ -501,7 +521,7 @@ That makes `http://127.0.0.1:11434` on the backend machine reach Ollama running 
 
 Network volume: Thunder Compute instances can be ephemeral. Storing models in `/home/ubuntu/ollama-models` on a persistent volume prevents losing downloaded model files when the tunnel stops/restarts.
 
-`REMOTE_AI_POD_NAME` is better than hardcoding `REMOTE_AI_POD_ID` because instance IDs can change when instances are recreated. [remoteAiService.js](../backend/src/services/remoteAiService.js) can discover a unique instance by name, while `REMOTE_AI_POD_ID` is treated as fallback or explicit override through `REMOTE_AI_POD_ID_OVERRIDE=true`.
+Forwarded URL mode: if Thunder forwards port `11434`, Ollama must be started with `OLLAMA_HOST=0.0.0.0:11434`; otherwise Thunder's forwarder cannot reach it. Render then uses that HTTPS forward URL as `LOCAL_AI_BASE_URL`, and the admin runtime page correctly shows SSH tunnel controls as disabled because the backend is no longer opening a tunnel.
 
 Catalog review flow:
 
@@ -519,13 +539,20 @@ Admin clicks catalog review
 Remote AI flow:
 
 ```text
-Start instance
-  -> POST /api/admin/assistant/remote-tunnel/start
-Open tunnel
-  -> POST /api/admin/assistant/remote-tunnel/start
-Wake Ollama
-  -> POST /api/admin/assistant/remote-ollama/wake
-Backend calls localhost:11434
+Start/restore Thunder instance manually
+  -> start Ollama on Thunder with OLLAMA_HOST=0.0.0.0:11434
+  -> Thunder forwards port 11434 to HTTPS URL
+  -> Render LOCAL_AI_BASE_URL points at forwarded URL
+  -> suggestions return to admin UI
+```
+
+Optional SSH tunnel flow:
+
+```text
+Start/restore Thunder instance manually
+  -> backend opens SSH tunnel
+  -> backend wakes Ollama over SSH
+  -> backend calls localhost:11434
   -> suggestions return to admin UI
 ```
 
@@ -533,11 +560,27 @@ AI findings must be reviewed because the model can hallucinate, misread editoria
 
 ## 12. Thunder Compute/Ollama Operational Explanation
 
-Thunder Compute is used when local hardware is not enough for the selected Ollama model. The GPU instance hosts the Ollama server, while the backend continues to use the same Ollama HTTP API.
+Thunder Compute is used when local hardware is not enough for the selected Ollama model. The GPU instance hosts Ollama, while the backend continues to use the same Ollama HTTP API.
 
-The Thunder instance hosts Ollama. The wake script sets `OLLAMA_MODELS=/home/ubuntu/ollama-models` and starts `ollama serve` with `nohup`, without `systemd` or `sudo`.
+The current production setup uses Thunder forwarded port mode. Thunder forwards port `11434` to an HTTPS URL, and Render sets `LOCAL_AI_BASE_URL` to that URL. In this mode the backend does not need SSH credentials and `REMOTE_AI_ENABLED=false` is correct. The admin runtime page still reports Ollama reachable and model installed, while SSH tunnel cards show disabled/unconfigured because they are not part of this production path.
 
-The network volume prevents losing models because downloaded model files are written under `/home/ubuntu/ollama-models` instead of a disposable container path.
+The operator SSH mode still exists for local/admin use. In that mode, the app can open a tunnel and wake Ollama after the Thunder instance is manually started or restored.
+
+The Thunder instance hosts Ollama. For forwarded port mode, Ollama must listen on all interfaces:
+
+```bash
+export OLLAMA_MODELS=/home/ubuntu/ollama-models
+export OLLAMA_HOST=0.0.0.0:11434
+export OLLAMA_FLASH_ATTENTION=1
+export OLLAMA_NUM_PARALLEL=1
+export OLLAMA_MAX_LOADED_MODELS=1
+export CUDA_VISIBLE_DEVICES=0
+nohup ollama serve > /home/ubuntu/ollama.log 2>&1 &
+```
+
+For SSH tunnel mode, Ollama can listen on `127.0.0.1:11434` because the tunnel forwards traffic to the local Ollama port inside the instance.
+
+Model files live under `/home/ubuntu/ollama-models`. Keeping the model path there prevents repeated downloads when the instance is restored from a snapshot or persistent storage.
 
 To download models, SSH into the instance or use the instance terminal after Ollama is running and run commands such as:
 
@@ -546,21 +589,22 @@ OLLAMA_MODELS=/home/ubuntu/ollama-models ollama pull qwen2.5:7b
 OLLAMA_MODELS=/home/ubuntu/ollama-models ollama pull qwen3:14b
 ```
 
-Backend instance discovery: [remoteAiService.js](../backend/src/services/remoteAiService.js) calls `GET /instances`, finds the unique instance named `REMOTE_AI_POD_NAME`, or falls back to `GET /instances/:id`. It reads `desiredStatus`, `publicIp`, and `portMappings["22"]` for SSH.
-
 Actions:
 
-- Start: `POST /api/admin/assistant/remote-tunnel/start` asks Thunder Compute to start the instance.
-- Stop: `POST /api/admin/assistant/remote-tunnel/stop` asks Thunder Compute to stop it.
-- Tunnel start: `POST /api/admin/assistant/remote-tunnel/start` opens local port forwarding.
+- Check Ollama status: `GET /api/admin/assistant/status` checks `${LOCAL_AI_BASE_URL}/api/tags`.
+- Refresh models: the same status flow refreshes installed-model data.
+- Tunnel start: `POST /api/admin/assistant/remote-tunnel/start` opens local port forwarding when `REMOTE_AI_ENABLED=true`.
 - Tunnel stop: kills the stored SSH process and clears `remote-ai-tunnel.json`.
 - Wake: `POST /api/admin/assistant/remote-ollama/wake` installs/starts Ollama and checks `/api/tags`.
+- Start/stop billing: not handled by the website. Start/restore/snapshot/delete the instance in Thunder.
 
 What can go wrong:
 
-- Thunder Compute API key missing or invalid.
-- Instance name not unique or not found.
-- Instance is running but SSH port is not published yet.
+- Thunder forwarded port points at the wrong port or old instance UUID.
+- Ollama is listening on `127.0.0.1` when forwarded URL mode requires `0.0.0.0`.
+- `LOCAL_AI_BASE_URL` includes the wrong host or missing scheme.
+- The model is installed but not loaded; the first `qwen3:30b` request can spend over a minute loading.
+- The model consumes output tokens on reasoning/thinking and returns empty visible output; larger `LOCAL_AI_*_NUM_PREDICT` budgets help.
 - SSH key path wrong or key not authorized.
 - Local port 11434 already in use.
 - Ollama installed but model not pulled.
@@ -574,14 +618,12 @@ Env vars:
 - `LOCAL_AI_BASE_URL`: Ollama HTTP base URL the backend calls.
 - `LOCAL_AI_MODEL`: default model name.
 - `LOCAL_AI_TIMEOUT_MS`: model request timeout.
-- `REMOTE_AI_SSH_HOST`: Thunder SSH host.
-- `REMOTE_AI_POD_NAME`: preferred unique instance identifier.
-- `REMOTE_AI_POD_ID`: fallback instance id.
+- `LOCAL_AI_DEFAULT_NUM_GPU`: Ollama GPU-layer hint, currently set to `99` for GPU offload.
+- `REMOTE_AI_ENABLED`: enables/disables backend-managed SSH tunnel controls.
+- `REMOTE_AI_SSH_HOST`: Thunder SSH host or SSH config alias for tunnel mode.
 - `REMOTE_AI_SSH_KEY_PATH`: private key path for SSH.
-- `REMOTE_AI_SSH_HOST`: manual SSH host override.
 - `REMOTE_AI_SSH_PORT`: manual/default SSH port.
-- `REMOTE_AI_SSH_USER`: SSH username, usually `root`.
-- `REMOTE_AI_SSH_KEY_PATH`: private key for SSH.
+- `REMOTE_AI_SSH_USER`: SSH username, usually `ubuntu`.
 - `REMOTE_AI_TUNNEL_LOCAL_PORT`: local port exposed to backend.
 - `REMOTE_AI_TUNNEL_REMOTE_HOST`: remote host inside instance, usually `127.0.0.1`.
 - `REMOTE_AI_TUNNEL_REMOTE_PORT`: remote Ollama port, usually `11434`.
@@ -628,18 +670,16 @@ Sanitized table:
 | `LOCAL_AI_POST_NUM_PREDICT`     | Post suggestion budget                  |                                              `700` | No               | Backend          | Post suggestions truncated/verbose                     |
 | `LOCAL_AI_PATH_NUM_PREDICT`     | Path suggestion budget                  |                                              `850` | No               | Backend          | Path suggestions truncated/verbose                     |
 | `LOCAL_AI_NEW_PATH_NUM_PREDICT` | New path suggestion budget              |                                              `900` | No               | Backend          | New path suggestions truncated/verbose                 |
-| `REMOTE_AI_POD_NAME`            | Preferred instance discovery name       |                            `angelina-ollama-admin` | For remote AI    | Backend          | Instance discovery fails                               |
-| `REMOTE_AI_POD_ID`              | Fallback instance id                    |                                           `abc123` | No               | Backend          | Fallback controls unavailable                          |
-| `REMOTE_AI_POD_ID_OVERRIDE`     | Force instance id over name             |                                            `false` | No               | Backend          | May target stale instance                              |
-| `REMOTE_AI_SSH_HOST`            | Manual SSH host                         |                                     `203.0.113.10` | No               | Backend          | Tunnel relies on API discovery                         |
+| `REMOTE_AI_ENABLED`             | Enables SSH tunnel/wake controls        |                                            `false` | No               | Backend          | SSH controls hidden/disabled or unexpectedly active    |
+| `REMOTE_AI_SSH_HOST`            | Thunder SSH host or SSH config alias    |                                            `tnr-0` | For tunnel       | Backend          | Tunnel/wake cannot find host                           |
 | `REMOTE_AI_SSH_PORT`            | SSH port                                |                                               `22` | For tunnel       | Backend          | SSH connection fails                                   |
-| `REMOTE_AI_SSH_USER`            | SSH user                                |                                             `root` | For tunnel       | Backend          | SSH login fails                                        |
+| `REMOTE_AI_SSH_USER`            | SSH user                                |                                           `ubuntu` | For tunnel       | Backend          | SSH login fails                                        |
 | `REMOTE_AI_SSH_KEY_PATH`        | Private key path                        |                                `~/.ssh/id_ed25519` | For tunnel       | Backend          | SSH auth fails                                         |
 | `REMOTE_AI_TUNNEL_LOCAL_PORT`   | Local forwarded port                    |                                            `11434` | For tunnel       | Backend          | Backend cannot reach expected local port               |
 | `REMOTE_AI_TUNNEL_REMOTE_HOST`  | Remote host                             |                                        `127.0.0.1` | For tunnel       | Backend          | Tunnel points wrong place                              |
 | `REMOTE_AI_TUNNEL_REMOTE_PORT`  | Remote Ollama port                      |                                            `11434` | For tunnel       | Backend          | Tunnel points wrong service                            |
-| `REMOTE_OLLAMA_KEEP_ALIVE`      | Remote Ollama keep-alive                |                                              `45m` | No               | Backend          | Remote model unload behavior changes                   |
-| `REMOTE_OLLAMA_NUM_PARALLEL`    | Remote parallelism                      |                                                `1` | No               | Backend          | VRAM/performance changes                               |
+| `REMOTE_AI_OLLAMA_MODELS_PATH`  | Remote model directory                  |                      `/home/ubuntu/ollama-models` | For tunnel       | Backend          | Wake script uses wrong model path                      |
+| `REMOTE_AI_OLLAMA_LOG_PATH`     | Remote Ollama log file                  |                           `/home/ubuntu/ollama.log` | For tunnel       | Backend          | Wake script logs go missing                            |
 | `IMPORTER_ROOT`                 | Importer directory override             |                       `D:\...\tools\song-importer` | No               | Backend          | Importer launcher cannot find tool                     |
 | `IMPORTER_URL`                  | Local importer URL                      |                            `http://127.0.0.1:8765` | No               | Backend          | Admin Open Importer points wrong place                 |
 | `IMPORTER_PYTHON_PATH`          | Python executable override              | `...\tools\song-importer\.venv\Scripts\python.exe` | No               | Backend          | Importer launch fails                                  |
@@ -664,8 +704,9 @@ Database is MongoDB, either local for development or hosted MongoDB/Atlas for pr
 Local-only or operator-only parts:
 
 - Python importer UI is intended for local admin use.
-- Ollama local AI is usually local or tunneled.
-- Thunder Compute controls are backend admin operations but depend on local SSH tooling/key access.
+- Ollama local AI can be local, Thunder forwarded URL, or Thunder SSH tunnel mode.
+- Thunder Compute lifecycle is manual. Start/restore/snapshot/delete the instance from Thunder, not from the website.
+- Thunder SSH tunnel controls are optional backend admin operations and only apply when `REMOTE_AI_ENABLED=true`.
 - Reseed/sync file mutation routes should be carefully controlled in production.
 
 Vercel frontend-only limitation: if only the React app is deployed and the backend is not deployed at the same domain or configured through `VITE_API_URL`, `/api/...` calls can 404. This app does not define Vercel serverless API routes; the real API is Express.
@@ -708,7 +749,8 @@ Visitor searches for a song:
 1. Visitor opens `/explore`.
 2. [ExplorePage.jsx](../frontend/src/pages/public/ExplorePage.jsx) loads `GET /api/posts`.
 3. Frontend filters posts by search text and metadata.
-4. Visitor opens `/release/:slug` or plays from results.
+4. Search text updates the URL only on blur/Enter, so typing does not lose focus.
+5. Visitor opens `/release/:slug` or plays from results without the page jumping back to the top when query params change.
 
 User logs in and saves a song:
 
@@ -719,6 +761,16 @@ User logs in and saves a song:
 5. Frontend calls `PUT /api/auth/library/releases/:slug/save`.
 6. Backend updates `savedReleaseSlugs` on the user.
 7. `/account` loads `GET /api/auth/library` and shows saved releases.
+
+User comments, replies, and reports:
+
+1. Signed-in user opens a release page.
+2. [CommentsSection.jsx](../frontend/src/components/CommentsSection.jsx) loads visible comments through `GET /api/posts/:slug/comments`.
+3. New top-level comments call `POST /api/posts/:slug/comments`.
+4. Replies call the same route with `parentCommentId`.
+5. The UI renders commenter avatar/name and links to `/users/:id`.
+6. Non-owners can report misconduct through `POST /api/comments/:id/report`.
+7. Admin moderation sees report details through `GET /api/admin/comments`; public users do not see private report data.
 
 Admin creates/edits a post:
 
@@ -780,15 +832,15 @@ Admin runs AI catalog review:
 5. AI returns structured findings.
 6. Admin reviews, dismisses, or asks for per-finding review.
 
-Admin starts remote AI on Thunder Compute:
+Admin uses remote AI on Thunder Compute:
 
-1. Admin clicks start instance.
-2. Backend calls Thunder Compute API.
-3. Admin waits for instance SSH endpoint.
-4. Admin starts SSH tunnel.
-5. Admin wakes remote Ollama.
-6. Backend status checks `LOCAL_AI_BASE_URL` through tunnel.
-7. Admin runs assistant actions.
+1. Admin starts or restores the Thunder instance from Thunder.
+2. Ollama runs on Thunder with `OLLAMA_MODELS=/home/ubuntu/ollama-models`.
+3. In forwarded URL mode, Ollama listens on `0.0.0.0:11434` and Thunder forwards port `11434` to an HTTPS URL.
+4. Render sets `LOCAL_AI_BASE_URL` to that forwarded URL and `REMOTE_AI_ENABLED=false`.
+5. Admin AI status calls `/api/tags` through the forwarded URL and confirms installed models.
+6. Admin runs catalog review, post suggestions, or guided path suggestions.
+7. For local/operator mode instead, set `REMOTE_AI_ENABLED=true`, open the SSH tunnel, wake Ollama, and keep `LOCAL_AI_BASE_URL=http://127.0.0.1:11434`.
 
 ## 16. Error/Debugging Guide
 
@@ -843,11 +895,12 @@ Admin data regresses after restart:
 - A manual reseed can overwrite live posts/collections from the authored file.
 - Sync live store back to file before reseeding if admin changes should become authored state.
 
-Thunder Compute instance ID changed:
+Thunder forwarded URL says nothing is running:
 
-- Prefer `REMOTE_AI_POD_NAME`.
-- Leave `REMOTE_AI_POD_ID_OVERRIDE=false` unless deliberately targeting a fixed instance.
-- Ensure instance name is unique; duplicate names cause a 409-style error.
+- Confirm the forwarded port is `11434`.
+- Start Ollama with `OLLAMA_HOST=0.0.0.0:11434`; `127.0.0.1` only is not enough for Thunder's forwarder.
+- Run `ss -ltnp | grep 11434` on Thunder and confirm it shows `*:11434` or `0.0.0.0:11434`.
+- Open `https://<uuid>-11434.thundercompute.net/api/tags` directly.
 
 SSH tunnel fails:
 
@@ -859,9 +912,17 @@ SSH tunnel fails:
 Ollama not responding:
 
 - Local: run `ollama serve` and `ollama list`.
-- Remote: start instance, start tunnel, wake Ollama.
+- Thunder forwarded URL mode: start/restore the instance, start Ollama with `OLLAMA_HOST=0.0.0.0:11434`, and verify the forwarded `/api/tags`.
+- Thunder tunnel mode: start instance, start tunnel, wake Ollama.
 - Check `LOCAL_AI_BASE_URL`.
 - Check model is installed; assistant status distinguishes Ollama running from model installed.
+
+qwen3:30b is slow or reports memory errors:
+
+- First load can take more than a minute even on an A6000.
+- Check `free -h`, `nvidia-smi`, `ollama ps`, and `/home/ubuntu/ollama.log`.
+- Set `LOCAL_AI_DEFAULT_NUM_GPU=99`, `OLLAMA_NUM_PARALLEL=1`, and `OLLAMA_MAX_LOADED_MODELS=1`.
+- Increase prediction budgets for qwen3 reasoning output, or use `qwen3:14b` for faster JSON suggestions.
 
 AI hallucinated a catalog issue:
 
@@ -878,11 +939,36 @@ Vite blocked tunnel host:
 - I built this because a growing Suno song archive needs more than a playlist: it needs lyrics, versions, worlds, public browsing, private curation, and media management.
 - I learned how to connect a React/Vite frontend, Express API, MongoDB live store, Cloudinary media hosting, Python tooling, and local AI into one workflow.
 - The technically interesting part is the source-of-truth problem: MongoDB is live, JSON is authored backup/seed, and reseed/sync move data in opposite directions.
-- The hard parts were stable slugs, version-family curation, avoiding catalog drift, safe admin operations, and making AI suggestions useful without letting them mutate data automatically.
+- The hard parts were stable slugs, version-family curation, avoiding catalog drift, safe admin operations, threaded comment moderation, and making AI suggestions useful without letting them mutate data automatically.
 - Data flows from authored JSON or admin forms into MongoDB, then public React pages read normalized API responses.
 - Media streaming works by uploading files to Cloudinary once, storing `secure_url`, and letting the browser stream directly from Cloudinary.
-- The AI assistant works by summarizing the catalog, sending constrained JSON prompts to Ollama, validating returned suggestions, and requiring admin review.
-- Next improvements: first-class cover image fields in website posts, richer importer update-in-place workflows, stronger schema validation, background job persistence, and production-hardened deployment for admin-only tools.
+- Public comments are threaded by `parentCommentId`, show profile avatars, link to sanitized public profiles, and include reporting that only moderators can inspect.
+- The AI assistant works by summarizing the catalog, sending constrained JSON prompts to Ollama, validating returned suggestions, and requiring admin review. In production it can call a Thunder forwarded Ollama URL through `LOCAL_AI_BASE_URL`.
+- Next improvements: richer importer update-in-place workflows, stronger schema validation, background job persistence, clearer forwarded-URL/SSH mode UI, and more durable moderation workflows.
+
+Short explanation scripts:
+
+60-second elevator pitch:
+
+> Suno Diary is a full-stack archive for my Suno-generated songs. The public side lets visitors browse releases, collections, story worlds, guided listening paths, search results, comments, profiles, and a persistent mini-player. The backend is Express with MongoDB, Cloudinary media URLs, JWT cookie sessions, account libraries, threaded comments, reports, and admin moderation. The admin studio manages posts, collections, site content, guided paths, users, comments, reseeding, live-store sync, importer launch, and Ollama AI suggestions. The interesting part is that it solves a real catalog problem: MongoDB is the live store, JSON is the authored seed/source, Cloudinary hosts media, and AI/import tools help maintain the catalog without blindly mutating it.
+
+5-minute portfolio walkthrough:
+
+> I would start on the homepage and explain that this is not a generic blog; it is a music archive where every song has metadata, lyrics, media, collections, version status, and story context. Then I would open Collections and Guided Paths to show the difference between grouping songs and creating a listening route. After that I would play a song and explain the Cloudinary pipeline: uploads produce a `secure_url`, that URL is stored as `post.videoUrl`, and the browser streams directly from Cloudinary through the mini-player.
+>
+> Next I would open a release page and show comments, replies, profile avatars, reports, save/reaction controls, and slug-based routing. The public profile page shows only safe public data, while private library data stays behind the authenticated account page. Then I would open the admin studio and show that it is a real maintenance console: posts, collections, guided paths, comments, users, insights, reseed, sync, importer launch, and AI assistant actions.
+>
+> For the backend explanation, I would describe Express routes feeding a MongoDB store layer, with normalization in `store.js` and auth/session handling through JWT cookies. For source of truth, I would explain that `posts.local.json` is the authored catalog file, MongoDB is the live store, reseed moves file data into MongoDB, and live-store sync moves current admin-authored data back into JSON. Finally, I would show the AI assistant: it reads catalog context, builds constrained prompts, sends them to Ollama through `LOCAL_AI_BASE_URL`, and returns suggestions the admin must review.
+
+Technical interview explanation:
+
+> The frontend is a React/Vite app with React Router public/admin route trees. `App.jsx` owns auth state, theme state, and mini-player playback state; SWR hooks load public posts, collections, releases, about, and site content. The backend is Express mounted under `/api`, with public routes, auth routes, upload routes, and admin routes. MongoDB is accessed through a normalized store abstraction so posts, collections, users, comments, site content, and audit logs have consistent shape.
+>
+> The data model is slug-centered. Posts are addressed by `slug`, collections reference posts through `collectionSlugs`, guided paths reference posts through `postSlugs`, comments reference posts through `postSlug`, and replies reference comments through `parentCommentId`. Slug history allows public redirects and admin slug changes remap references. Media is not streamed by the backend: admin/importer uploads to Cloudinary, stores the returned URL, and the browser streams it from Cloudinary.
+>
+> Authentication uses JWT cookies. Public users can save releases, mark recent listens, react, update profile data, upload avatars, comment, reply, and report comments. Admin users get protected `/admin` routes for content, users, comments, insights, sync/reseed, and AI. Unsafe mutations require the trusted mutation header, and admin mutations are audited.
+>
+> The AI assistant is intentionally non-autonomous. `localAiService.js` builds compact JSON prompts, calls Ollama `/api/tags` and `/api/generate`, validates structured output, suppresses dismissed findings with decision memory, and returns suggestions for admin review. Locally it can call `http://127.0.0.1:11434`; in production it can call a Thunder forwarded Ollama URL. The SSH remote service remains available for manual tunnel/wake mode, but the app does not manage Thunder billing or lifecycle.
 
 ## 18. Demo Script
 
@@ -890,14 +976,14 @@ Vite blocked tunnel host:
 2. Open Collections. Show public-primary collections like Fractureverse, Eldoria, Original/Personal, and Standalone. Explain that collections are not just tags; they can control world styling and featured releases.
 3. Open Guided Paths. Show that paths are curated listening routes stored in `siteContent.guidedPaths`, with manual `postSlugs` and optional algorithm fields.
 4. Play a song. Click play and show the mini-player. Explain that `post.videoUrl` is a Cloudinary URL, the backend is not streaming media, and the browser plays from Cloudinary CDN.
-5. Open a release page. Show lyrics/content/comments/save/reaction controls. Mention slug-based routing and slug history.
-6. Open account/profile/library. Show saved/recent releases and profile/avatar options. Explain JWT cookie sessions and user library fields.
+5. Open a release page. Show lyrics/content/threaded comments/profile avatar links/report controls/save/reaction controls. Mention slug-based routing and slug history.
+6. Open account/profile/library, then a public listener profile. Show saved/recent releases and profile/avatar options. Explain JWT cookie sessions, private library fields, and sanitized public profiles.
 7. Open admin studio. Show Insights first: health score, coverage, issues, recent activity. Explain this is operational catalog maintenance.
 8. Edit a post or collection. Show fields like release status, version family, homepage eligibility, public visibility, collection slugs, world layer, and theme tags. Explain validations and audit logs.
-9. Run AI assistant review. Show status, selected model, catalog review, and findings. Explain Ollama/local or Thunder Compute remote flow and that suggestions must be reviewed.
+9. Run AI assistant review. Show status, selected model, catalog review, and findings. Explain Ollama/local or Thunder forwarded URL flow and that suggestions must be reviewed.
 10. Explain Cloudinary/importer. Open Importer if configured or describe `tools/song-importer`: paste JSON, attach media, duplicate check, upload, generate website-ready JSON.
 11. Explain reseed/sync. Show System page. Explain `posts.local.json -> reseed -> MongoDB` and `MongoDB -> live store sync -> posts.local.json`.
-12. End with future improvements: first-class cover art, deeper importer update modes, persistent job queue, stronger deployment separation for local-only admin AI/import tools.
+12. End with future improvements: deeper importer update modes, persistent job queue, clearer AI runtime mode display, and stronger moderation workflows.
 
 ## 19. File Map
 
@@ -925,9 +1011,11 @@ Frontend:
 - [frontend/src/pages/public/GuidedPathPage.jsx](../frontend/src/pages/public/GuidedPathPage.jsx): guided path detail.
 - [frontend/src/pages/public/PublicReleasePage.jsx](../frontend/src/pages/public/PublicReleasePage.jsx): release/song detail.
 - [frontend/src/pages/public/AccountPage.jsx](../frontend/src/pages/public/AccountPage.jsx): profile/library/avatar.
+- [frontend/src/pages/public/PublicProfilePage.jsx](../frontend/src/pages/public/PublicProfilePage.jsx): sanitized public listener profile and recent public comments.
 - [frontend/src/pages/public/LoginPage.jsx](../frontend/src/pages/public/LoginPage.jsx): login/register.
 - [frontend/src/components/MiniPlayer.jsx](../frontend/src/components/MiniPlayer.jsx): persistent player controls.
-- [frontend/src/components/CommentsSection.jsx](../frontend/src/components/CommentsSection.jsx): public comments UI.
+- [frontend/src/components/CommentsSection.jsx](../frontend/src/components/CommentsSection.jsx): threaded public comments, replies, reports, avatars, and profile links.
+- [frontend/src/components/RouteAnnouncer.jsx](../frontend/src/components/RouteAnnouncer.jsx): route announcements and path-only scroll reset.
 - [frontend/src/components/ReleaseMedia.jsx](../frontend/src/components/ReleaseMedia.jsx): release media display.
 - [frontend/src/components/EldoriaWorldMap.jsx](../frontend/src/components/EldoriaWorldMap.jsx): Eldoria themed map.
 - `frontend/src/styles/*.css`: app, public shell, admin mode, mini-player, themes, world styling.
@@ -940,7 +1028,7 @@ Backend:
 - [backend/src/lib/mongo.js](../backend/src/lib/mongo.js): MongoDB connection, Atlas fallback, transaction fallback.
 - [backend/src/lib/cloudinary.js](../backend/src/lib/cloudinary.js): Cloudinary config assertion.
 - [backend/src/data/store.js](../backend/src/data/store.js): normalized data access layer.
-- [backend/src/routes/public.routes.js](../backend/src/routes/public.routes.js): public posts, collections, comments, site content.
+- [backend/src/routes/public.routes.js](../backend/src/routes/public.routes.js): public posts, collections, comments/replies/reports, public profiles, site content.
 - [backend/src/routes/auth.routes.js](../backend/src/routes/auth.routes.js): login/register/me/library/avatar.
 - [backend/src/routes/admin.routes.js](../backend/src/routes/admin.routes.js): admin CRUD, sync, reseed, AI, importer, moderation, users.
 - [backend/src/routes/upload.routes.js](../backend/src/routes/upload.routes.js): admin video upload.
@@ -951,15 +1039,13 @@ Backend:
 - [backend/src/services/siteContentService.js](../backend/src/services/siteContentService.js): site/about/guided path normalization.
 - [backend/src/services/archiveInsights.js](../backend/src/services/archiveInsights.js): admin dashboard metrics.
 - [backend/src/services/localAiService.js](../backend/src/services/localAiService.js): Ollama assistant prompts/status/validation.
-- [backend/src/services/remoteAiService.js](../backend/src/services/remoteAiService.js): Thunder Compute instance discovery/start/stop.
-- [backend/src/services/remoteAiService.js](../backend/src/services/remoteAiService.js): SSH tunnel process management and remote Ollama wake controls.
+- [backend/src/services/remoteAiService.js](../backend/src/services/remoteAiService.js): optional Thunder SSH tunnel process management and remote Ollama wake controls.
 - [backend/src/services/liveStoreSync.js](../backend/src/services/liveStoreSync.js): MongoDB-to-posts-file sync.
 - [backend/src/services/reseedLiveSiteService.js](../backend/src/services/reseedLiveSiteService.js): background reseed job wrapper.
 - [backend/src/services/importerLauncherService.js](../backend/src/services/importerLauncherService.js): starts local Flask importer.
 - [backend/scripts/reseed-from-posts-file.js](../backend/scripts/reseed-from-posts-file.js): posts file to MongoDB reseed.
 - [backend/scripts/sync-live-store-to-posts-file.js](../backend/scripts/sync-live-store-to-posts-file.js): live store sync CLI.
 - [backend/scripts/sync-tracked-catalog-from-live.js](../backend/scripts/sync-tracked-catalog-from-live.js): tracked catalog reconciliation/diff/report.
-- [backend/scripts/remoteAiService.js](../backend/scripts/remoteAiService.js): Thunder Compute Ollama bootstrap script.
 - [backend/data/posts.local.json](../backend/data/posts.local.json): current local authored catalog in this workspace.
 - [backend/data/posts.template.json](../backend/data/posts.template.json): tracked safe template.
 
@@ -1003,7 +1089,8 @@ Docs:
 - Mini-player: persistent frontend playback UI backed by a hidden media element in [App.jsx](../frontend/src/App.jsx).
 - Admin studio: protected `/admin` UI for managing content, users, comments, operations, importer, and AI.
 - Local AI: Ollama running on the same machine the backend can reach.
-- Remote AI: Ollama running on Thunder Compute and reached through an SSH tunnel.
+- Remote AI: Ollama running on Thunder Compute and reached through either a forwarded HTTPS URL or an SSH tunnel.
 - Ollama: local model server exposing `/api/tags` and `/api/generate`.
 - Thunder Compute: GPU cloud provider used to run Ollama models remotely.
 - SSH tunnel: local port forwarding that lets backend call remote Ollama as if it were local.
+- Thunder forwarded URL: Thunder's port-forwarding mode for exposing Ollama port `11434` at an HTTPS URL used as `LOCAL_AI_BASE_URL`.
