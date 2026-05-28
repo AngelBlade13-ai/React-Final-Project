@@ -1,12 +1,18 @@
 const express = require("express");
 const crypto = require("crypto");
-const { readStore, insertComment, deleteCommentById, replaceComment } = require("../data/store");
+const {
+  readStore,
+  insertComment,
+  deleteCommentById,
+  replaceComment
+} = require("../data/store");
 const { requireUser } = require("../middleware/auth");
 const { commentWriteLimiter } = require("../middleware/rateLimiters");
 const {
   attachCommentDetails,
   canManageComment,
-  normalizeCommentInput
+  normalizeCommentInput,
+  sanitizePublicUserProfile
 } = require("../services/authUserService");
 const {
   attachCollectionDetails,
@@ -16,7 +22,10 @@ const {
   resolveCollectionBySlug,
   resolvePublishedPost
 } = require("../services/catalogService");
-const { validateCommentBody } = require("../validators/contentValidators");
+const {
+  validateCommentBody,
+  validateCommentReportInput
+} = require("../validators/contentValidators");
 
 const router = express.Router();
 
@@ -81,6 +90,7 @@ router.post("/posts/:slug/comments", commentWriteLimiter, requireUser, async (re
     }
 
     const body = String(req.body.body || "").trim();
+    const parentCommentId = String(req.body.parentCommentId || "").trim();
     const validationMessage = validateCommentBody(body);
 
     if (validationMessage) {
@@ -93,13 +103,28 @@ router.post("/posts/:slug/comments", commentWriteLimiter, requireUser, async (re
       return res.status(401).json({ message: "User session is no longer valid." });
     }
 
+    if (parentCommentId) {
+      const parentComment = store.comments.find(
+        (entry) =>
+          entry.id === parentCommentId &&
+          entry.postSlug === post.slug &&
+          String(entry.status || "visible") === "visible"
+      );
+
+      if (!parentComment) {
+        return res.status(400).json({ message: "Reply target is not available." });
+      }
+    }
+
     const timestamp = new Date().toISOString();
     const comment = {
       id: crypto.randomUUID(),
       postSlug: post.slug,
+      parentCommentId,
       authorId: user.id,
       body,
       status: "visible",
+      reports: [],
       createdAt: timestamp,
       updatedAt: timestamp
     };
@@ -138,6 +163,75 @@ router.put("/comments/:id", commentWriteLimiter, requireUser, async (req, res, n
     await replaceComment(nextComment);
 
     return res.json({ comment: attachCommentDetails(nextComment, store.users) });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/comments/:id/report", commentWriteLimiter, requireUser, async (req, res, next) => {
+  try {
+    const store = await readStore();
+    const existingComment = store.comments.find((entry) => entry.id === req.params.id);
+
+    if (!existingComment || String(existingComment.status || "visible") !== "visible") {
+      return res.status(404).json({ message: "Comment not found." });
+    }
+
+    const reporter = store.users.find((entry) => entry.id === req.user.sub && entry.status === "active");
+
+    if (!reporter) {
+      return res.status(401).json({ message: "User session is no longer valid." });
+    }
+
+    if (existingComment.authorId === reporter.id) {
+      return res.status(400).json({ message: "You cannot report your own comment." });
+    }
+
+    const reason = String(req.body.reason || "").trim();
+    const details = String(req.body.details || "").trim();
+    const validationMessage = validateCommentReportInput(reason, details);
+
+    if (validationMessage) {
+      return res.status(400).json({ message: validationMessage });
+    }
+
+    const reports = Array.isArray(existingComment.reports)
+      ? existingComment.reports
+      : [];
+    const existingOpenReport = reports.find(
+      (report) =>
+        report.reporterId === reporter.id &&
+        String(report.status || "open") !== "dismissed"
+    );
+
+    if (existingOpenReport) {
+      return res.status(409).json({ message: "You already reported this comment." });
+    }
+
+    const timestamp = new Date().toISOString();
+    const nextComment = {
+      ...existingComment,
+      reports: [
+        ...reports,
+        {
+          id: crypto.randomUUID(),
+          reporterId: reporter.id,
+          reason,
+          details,
+          status: "open",
+          createdAt: timestamp,
+          updatedAt: timestamp
+        }
+      ],
+      updatedAt: timestamp
+    };
+
+    await replaceComment(nextComment);
+
+    return res.status(201).json({
+      comment: attachCommentDetails(nextComment, store.users),
+      message: "Comment reported."
+    });
   } catch (error) {
     next(error);
   }
@@ -211,6 +305,22 @@ router.get("/site-content", async (req, res, next) => {
   try {
     const store = await readStore();
     return res.json({ siteContent: store.siteContent });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/users/:id/profile", async (req, res, next) => {
+  try {
+    const store = await readStore();
+    const user = store.users.find((entry) => entry.id === req.params.id);
+    const profile = sanitizePublicUserProfile(user, store);
+
+    if (!profile) {
+      return res.status(404).json({ message: "Profile not found." });
+    }
+
+    return res.json({ profile });
   } catch (error) {
     next(error);
   }

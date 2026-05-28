@@ -35,7 +35,7 @@ The project is intentionally structured around authored catalog data rather than
 - AI assistant:
   - Ollama-compatible API
   - local backend integration
-  - optional remote RunPod + SSH tunnel + remote Ollama bootstrap flow
+  - optional remote Thunder Compute + SSH tunnel + remote Ollama bootstrap flow
 
 ## 3. Repository Layout
 
@@ -422,7 +422,7 @@ Admin insights aggregates:
 - audit logs
 - live-store sync tools
 - AI assistant status
-- remote AI pod/tunnel/Ollama controls
+- remote AI instance/tunnel/Ollama controls
 
 ## 9. Backend Architecture
 
@@ -487,10 +487,10 @@ Major backend services include:
   - post suggestions
   - guided-path suggestions
   - new guided-path suggestions
-- `remoteOllamaService`
+- `remoteAiService`
   - remote Ollama bootstrap/wake
-- RunPod-related services
-  - pod state
+- Thunder Compute-related services
+  - instance state
   - tunnel state
 - `liveStoreSync`
   - compare and sync authored/live layers
@@ -582,22 +582,22 @@ differently, with stronger candidate validation than before.
 The site can use:
 
 - local Ollama
-- remote Ollama on RunPod
+- remote Ollama on Thunder Compute
 
 Remote workflow currently supports:
 
-- start pod
-- stop pod
+- start instance
+- stop instance
 - auto-discover SSH endpoint
 - open SSH tunnel
 - close SSH tunnel
 - wake/bootstrap Ollama remotely
-- reuse persistent model files from `/workspace/ollama-models`
+- reuse persistent model files from `/home/ubuntu/ollama-models`
 
 Important operational reality:
 
 - model files persist separately from the Ollama binary
-- fresh pods may need Ollama installed again
+- fresh instances may need Ollama installed again
 - bootstrap now handles that flow automatically
 
 ## 13. Performance Notes
@@ -1073,7 +1073,7 @@ What it does:
 - shows archive health
 - shows operational health
 - shows audit logs
-- controls assistant, remote pod, tunnel, and remote Ollama
+- controls assistant, remote instance, tunnel, and remote Ollama
 - hosts live-store sync tools
 
 ### 18.20 Admin Comments
@@ -1303,8 +1303,8 @@ These routes handle:
 
 - `GET /api/admin/insights`
 - `GET /api/admin/assistant/status`
-- `POST /api/admin/assistant/remote-pod/start`
-- `POST /api/admin/assistant/remote-pod/stop`
+- `POST /api/admin/assistant/remote-tunnel/start`
+- `POST /api/admin/assistant/remote-tunnel/stop`
 - `POST /api/admin/assistant/remote-tunnel/start`
 - `POST /api/admin/assistant/remote-tunnel/stop`
 - `POST /api/admin/assistant/remote-ollama/wake`
@@ -1397,14 +1397,14 @@ Purpose:
 
 ### 20.6 Remote AI Cold-Start Flow
 
-1. Admin starts remote pod.
-2. Backend calls RunPod API.
+1. Admin starts remote instance.
+2. Backend calls Thunder Compute API.
 3. Admin opens SSH tunnel.
 4. Backend discovers live SSH endpoint and starts the tunnel.
 5. Admin wakes remote Ollama.
 6. Backend sends bootstrap script over SSH.
 7. Remote bootstrap installs Ollama if missing.
-8. Bootstrap points Ollama at `/workspace/ollama-models`.
+8. Bootstrap points Ollama at `/home/ubuntu/ollama-models`.
 9. Bootstrap starts `ollama serve`.
 10. Backend confirms `/api/tags`.
 11. Assistant becomes usable.
@@ -1480,7 +1480,7 @@ Likely causes:
 - Ollama unavailable
 - model missing
 - tunnel missing
-- remote pod stopped
+- remote tunnel stopped
 - invalid model JSON output
 - backend normalization dropped all proposed changes
 

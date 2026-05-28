@@ -10,6 +10,7 @@ const {
   deleteCollectionById,
   deleteCommentsByAuthorId,
   deleteCommentsByPostSlug,
+  deleteCommentById,
   deleteUserById,
   deletePostById,
   insertCollection,
@@ -45,16 +46,12 @@ const {
   upsertAssistantFindingDecision
 } = require("../services/localAiService");
 const {
-  getRunpodPodStatus,
-  startRunpodPod,
-  stopRunpodPod
-} = require("../services/runpodPodService");
-const {
+  getRemoteAiStatus,
   getRemoteAiTunnelStatus,
   startRemoteAiTunnel,
-  stopRemoteAiTunnel
-} = require("../services/remoteAiTunnelService");
-const { wakeRemoteOllama } = require("../services/remoteOllamaService");
+  stopRemoteAiTunnel,
+  wakeRemoteOllama
+} = require("../services/remoteAiService");
 const {
   getPostFileReseedJob,
   startPostFileReseedJob
@@ -219,11 +216,9 @@ router.delete("/users/:id", async (req, res, next) => {
     }
 
     if (user.id === req.admin.sub) {
-      return res
-        .status(400)
-        .json({
-          message: "You cannot delete your own account while signed in."
-        });
+      return res.status(400).json({
+        message: "You cannot delete your own account while signed in."
+      });
     }
 
     if (user.role === "admin") {
@@ -989,62 +984,28 @@ router.get("/insights", async (req, res, next) => {
 router.get("/assistant/status", async (req, res, next) => {
   try {
     const assistantSelection = getAssistantModelSelection(req);
-    const [status, remotePod, remoteTunnel] = await Promise.all([
+    const [status, remoteAi] = await Promise.all([
       getLocalAiStatus(assistantSelection),
-      getRunpodPodStatus(),
-      getRemoteAiTunnelStatus()
+      getRemoteAiStatus()
     ]);
-    return res.json({ localAi: status, remotePod, remoteTunnel });
+    return res.json({
+      localAi: status,
+      remoteAi,
+      remoteTunnel: remoteAi.tunnel
+    });
   } catch (error) {
     next(error);
   }
 });
 
-router.post("/assistant/remote-pod/start", async (req, res) => {
+router.get("/assistant/remote-tunnel/status", async (req, res) => {
   try {
-    const remotePod = await startRunpodPod();
-
-    await recordAdminAuditEvent(req, {
-      action: "assistant.remote_pod_started",
-      entityType: "assistant",
-      entityId: remotePod.podId || "runpod",
-      entityLabel: remotePod.podName || "Remote AI pod",
-      details: {
-        desiredStatus: remotePod.desiredStatus,
-        provider: remotePod.provider,
-        resolveSource: remotePod.resolveSource
-      }
-    });
-
-    return res.json({ remotePod });
+    const remoteTunnel = await getRemoteAiTunnelStatus();
+    return res.json({ remoteTunnel });
   } catch (error) {
-    return res
-      .status(error.statusCode || 500)
-      .json({ message: error.message || "Failed to start the remote AI pod." });
-  }
-});
-
-router.post("/assistant/remote-pod/stop", async (req, res) => {
-  try {
-    const remotePod = await stopRunpodPod();
-
-    await recordAdminAuditEvent(req, {
-      action: "assistant.remote_pod_stopped",
-      entityType: "assistant",
-      entityId: remotePod.podId || "runpod",
-      entityLabel: remotePod.podName || "Remote AI pod",
-      details: {
-        desiredStatus: remotePod.desiredStatus,
-        provider: remotePod.provider,
-        resolveSource: remotePod.resolveSource
-      }
+    return res.status(error.statusCode || 500).json({
+      message: error.message || "Failed to read the remote AI SSH tunnel."
     });
-
-    return res.json({ remotePod });
-  } catch (error) {
-    return res
-      .status(error.statusCode || 500)
-      .json({ message: error.message || "Failed to stop the remote AI pod." });
   }
 });
 
@@ -1492,10 +1453,22 @@ router.get("/comments", async (req, res, next) => {
     const store = await readStore();
     const requestedStatus = String(req.query.status || "").trim();
     const comments = store.comments
-      .filter((comment) =>
-        !requestedStatus ? true : comment.status === requestedStatus
-      )
-      .map((comment) => attachCommentDetails(comment, store.users));
+      .filter((comment) => {
+        if (!requestedStatus) {
+          return true;
+        }
+
+        if (requestedStatus === "reported") {
+          return (Array.isArray(comment.reports) ? comment.reports : []).some(
+            (report) => String(report?.status || "open") !== "dismissed"
+          );
+        }
+
+        return comment.status === requestedStatus;
+      })
+      .map((comment) =>
+        attachCommentDetails(comment, store.users, { includeModeration: true })
+      );
 
     return res.json({ comments });
   } catch (error) {
@@ -1542,8 +1515,40 @@ router.put("/comments/:id", async (req, res, next) => {
     });
 
     return res.json({
-      comment: attachCommentDetails(nextComment, store.users)
+      comment: attachCommentDetails(nextComment, store.users, {
+        includeModeration: true
+      })
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.delete("/comments/:id", async (req, res, next) => {
+  try {
+    const store = await readStore();
+    const existingComment = store.comments.find(
+      (entry) => entry.id === req.params.id
+    );
+
+    if (!existingComment) {
+      return res.status(404).json({ message: "Comment not found." });
+    }
+
+    await deleteCommentById(existingComment.id);
+    await recordAdminAuditEvent(req, {
+      action: "comment.deleted",
+      entityType: "comment",
+      entityId: existingComment.id,
+      entityLabel: existingComment.postSlug,
+      details: {
+        authorId: existingComment.authorId,
+        postSlug: existingComment.postSlug,
+        previousStatus: existingComment.status
+      }
+    });
+
+    return res.json({ message: "Comment deleted." });
   } catch (error) {
     next(error);
   }

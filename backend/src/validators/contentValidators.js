@@ -66,10 +66,32 @@ function validateCommentStatus(status) {
   return "";
 }
 
+function validateCommentReportInput(reason, details = "") {
+  const allowedReasons = new Set([
+    "harassment",
+    "hate",
+    "spam",
+    "explicit",
+    "misinformation",
+    "other"
+  ]);
+
+  if (!allowedReasons.has(reason)) {
+    return "Choose a valid report reason.";
+  }
+
+  if (details.length > 500) {
+    return "Report details must be 500 characters or fewer.";
+  }
+
+  return "";
+}
+
 module.exports = {
   validateAboutContent,
   validateCollectionDraft,
   validateCommentBody,
+  validateCommentReportInput,
   validateCommentStatus,
   validatePostDraft,
   validateProfileUpdateInput,

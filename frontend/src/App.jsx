@@ -50,6 +50,9 @@ const GuidedPathsIndexPage = lazy(
 );
 const NotFoundPage = lazy(() => import("./pages/public/NotFoundPage"));
 const PublicHome = lazy(() => import("./pages/public/PublicHome"));
+const PublicProfilePage = lazy(
+  () => import("./pages/public/PublicProfilePage")
+);
 const PublicReleasePage = lazy(
   () => import("./pages/public/PublicReleasePage")
 );
@@ -661,6 +664,7 @@ function App() {
                 />
                 <Route path="/about" element={<AboutPage />} />
                 <Route path="/community" element={<PublicTrustPage />} />
+                <Route path="/users/:id" element={<PublicProfilePage />} />
                 <Route
                   path="/release/:slug"
                   element={

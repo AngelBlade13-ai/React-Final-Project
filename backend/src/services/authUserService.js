@@ -28,6 +28,51 @@ function sanitizeUser(user) {
   };
 }
 
+function sanitizePublicUserProfile(user, store = {}) {
+  if (!user || user.status !== "active") {
+    return null;
+  }
+
+  const visibleComments = (Array.isArray(store.comments) ? store.comments : [])
+    .filter(
+      (comment) =>
+        comment.authorId === user.id &&
+        String(comment.status || "visible") === "visible"
+    )
+    .sort((left, right) =>
+      String(right.createdAt || "").localeCompare(String(left.createdAt || ""))
+    );
+  const postsBySlug = new Map(
+    (Array.isArray(store.posts) ? store.posts : []).map((post) => [
+      post.slug,
+      post
+    ])
+  );
+
+  return {
+    id: user.id,
+    displayName: user.displayName,
+    avatarUrl: user.avatarUrl || "",
+    role: user.role === "admin" ? "admin" : "user",
+    createdAt: user.createdAt,
+    stats: {
+      visibleCommentCount: visibleComments.length
+    },
+    recentComments: visibleComments.slice(0, 8).map((comment) => {
+      const post = postsBySlug.get(comment.postSlug);
+
+      return {
+        id: comment.id,
+        body: comment.body,
+        createdAt: comment.createdAt,
+        updatedAt: comment.updatedAt,
+        postSlug: comment.postSlug,
+        postTitle: post?.title || comment.postSlug
+      };
+    })
+  };
+}
+
 function issueAuthToken(user) {
   return jwt.sign(
     {
@@ -75,23 +120,67 @@ function normalizeCommentInput(input, existingComment = {}) {
   };
 }
 
-function attachCommentDetails(comment, users) {
-  const author = users.find((user) => user.id === comment.authorId);
+function sanitizeCommentReport(report = {}, users = []) {
+  const reporter = users.find((user) => user.id === report.reporterId);
 
   return {
-    ...comment,
+    id: report.id,
+    reason: report.reason,
+    details: report.details || "",
+    status: report.status || "open",
+    createdAt: report.createdAt,
+    reporter: reporter
+      ? {
+          id: reporter.id,
+          displayName: reporter.displayName,
+          avatarUrl: reporter.avatarUrl || ""
+        }
+      : {
+          id: report.reporterId,
+          displayName: "Unknown User",
+          avatarUrl: ""
+        }
+  };
+}
+
+function attachCommentDetails(comment, users, options = {}) {
+  const author = users.find((user) => user.id === comment.authorId);
+  const reports = Array.isArray(comment.reports) ? comment.reports : [];
+  const visibleReportCount = reports.filter(
+    (report) => String(report?.status || "open") !== "dismissed"
+  ).length;
+  const responseComment = {
+    id: comment.id,
+    postSlug: comment.postSlug,
+    parentCommentId: comment.parentCommentId || "",
+    authorId: comment.authorId,
+    body: comment.body,
+    status: comment.status || "visible",
+    createdAt: comment.createdAt,
+    updatedAt: comment.updatedAt,
     author: author
       ? {
           id: author.id,
           displayName: author.displayName,
+          avatarUrl: author.avatarUrl || "",
           role: author.role
         }
       : {
           id: comment.authorId,
           displayName: "Unknown User",
+          avatarUrl: "",
           role: "user"
         }
   };
+
+  if (options.includeModeration) {
+    responseComment.reportCount = visibleReportCount;
+    responseComment.reports = reports.map((report) =>
+      sanitizeCommentReport(report, users)
+    );
+  }
+
+  return responseComment;
 }
 
 function canManageComment(actor, comment) {
@@ -105,5 +194,6 @@ module.exports = {
   issueAuthToken,
   normalizeCommentInput,
   normalizeUserInput,
+  sanitizePublicUserProfile,
   sanitizeUser
 };

@@ -91,7 +91,7 @@ Backend:
 - `ADMIN_PASSWORD_HASH` is used instead of plaintext `ADMIN_PASSWORD`.
 - `MONGODB_URI` and `MONGODB_DB_NAME` point to production MongoDB.
 - Cloudinary credentials are set if upload is required.
-- Optional AI/importer/RunPod variables are configured only when those workflows are intended for production.
+- Optional AI/importer/Thunder Compute variables are configured only when those workflows are intended for production.
 
 ## Manual Smoke Test
 

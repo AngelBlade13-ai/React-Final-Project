@@ -40,6 +40,39 @@ function buildAdminFindingLink(finding = {}) {
   return "";
 }
 
+function buildReviewTextLink(text = "", findings = []) {
+  const normalizedText = String(text || "").toLowerCase();
+  const relatedFinding = (Array.isArray(findings) ? findings : []).find(
+    (finding) => {
+      const targetSlug = String(finding?.targetSlug || "").trim().toLowerCase();
+
+      return targetSlug && normalizedText.includes(targetSlug);
+    }
+  );
+
+  return relatedFinding ? buildAdminFindingLink(relatedFinding) : "";
+}
+
+function formatOpenTargetLabel(finding = {}) {
+  const targetType = String(finding?.targetType || "catalog")
+    .trim()
+    .toLowerCase();
+
+  if (targetType === "post") {
+    return "Open Post";
+  }
+
+  if (targetType === "collection") {
+    return "Open Collection";
+  }
+
+  if (targetType === "path") {
+    return "Open Path";
+  }
+
+  return "Open Target";
+}
+
 function formatFindingTarget(finding = {}) {
   const targetType = String(finding?.targetType || "catalog")
     .trim()
@@ -94,7 +127,6 @@ export default function AdminAiRuntimePage() {
   useDocumentTitle("Admin AI Runtime");
   const { adminFetch } = useAdminContext();
   const [localAiStatus, setLocalAiStatus] = useState(null);
-  const [remotePodStatus, setRemotePodStatus] = useState(null);
   const [remoteTunnelStatus, setRemoteTunnelStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [localAiError, setLocalAiError] = useState("");
@@ -104,8 +136,6 @@ export default function AdminAiRuntimePage() {
   const [findingReviewLoadingKey, setFindingReviewLoadingKey] = useState("");
   const [findingReviewError, setFindingReviewError] = useState("");
   const [findingReviews, setFindingReviews] = useState({});
-  const [remotePodActionLoading, setRemotePodActionLoading] = useState("");
-  const [remotePodActionError, setRemotePodActionError] = useState("");
   const [remoteTunnelActionLoading, setRemoteTunnelActionLoading] =
     useState("");
   const [remoteTunnelActionError, setRemoteTunnelActionError] = useState("");
@@ -116,11 +146,6 @@ export default function AdminAiRuntimePage() {
   const [selectedAssistantProfile, setSelectedAssistantProfile] = useState(() =>
     readAssistantModelProfile()
   );
-  const assistantProvider =
-    localAiStatus?.provider === "runpod-serverless"
-      ? "RunPod Serverless"
-      : "Local Ollama";
-  const isRunpodServerless = localAiStatus?.provider === "runpod-serverless";
 
   const loadAssistantStatus = useCallback(async () => {
     try {
@@ -133,11 +158,9 @@ export default function AdminAiRuntimePage() {
       );
 
       setLocalAiStatus(data.localAi || null);
-      setRemotePodStatus(data.remotePod || null);
-      setRemoteTunnelStatus(data.remoteTunnel || null);
+      setRemoteTunnelStatus(data.remoteTunnel || data.remoteAi?.tunnel || null);
     } catch (apiError) {
       setLocalAiStatus(null);
-      setRemotePodStatus(null);
       setRemoteTunnelStatus(null);
       setLocalAiError(apiError.message);
     }
@@ -166,27 +189,6 @@ export default function AdminAiRuntimePage() {
     const nextProfile = event.target.value;
     setSelectedAssistantProfile(nextProfile);
     writeAssistantModelProfile(nextProfile);
-  }
-
-  async function handleRemotePodAction(action) {
-    try {
-      setRemotePodActionLoading(action);
-      setRemotePodActionError("");
-
-      const data = await readJson(
-        adminFetch(`${apiBaseUrl}/admin/assistant/remote-pod/${action}`, {
-          method: "POST"
-        }),
-        `Failed to ${action} the remote AI pod.`
-      );
-
-      setRemotePodStatus(data.remotePod || null);
-      await loadAssistantStatus();
-    } catch (apiError) {
-      setRemotePodActionError(apiError.message);
-    } finally {
-      setRemotePodActionLoading("");
-    }
   }
 
   async function handleRemoteTunnelAction(action) {
@@ -232,6 +234,10 @@ export default function AdminAiRuntimePage() {
     } finally {
       setRemoteOllamaActionLoading(false);
     }
+  }
+
+  async function handleRefreshModels() {
+    await loadAssistantStatus();
   }
 
   async function handleLocalAiCatalogReview() {
@@ -330,9 +336,8 @@ export default function AdminAiRuntimePage() {
         <p className="eyebrow">AI Runtime</p>
         <h2>Assistant infrastructure and catalog review tools.</h2>
         <p>
-          This workspace owns assistant status, model profile selection, local
-          Ollama or RunPod Serverless routing, and assistant-driven catalog
-          review.
+          This workspace checks Ollama, manages the SSH tunnel to Thunder, and
+          runs assistant-driven catalog review.
         </p>
       </section>
 
@@ -349,7 +354,7 @@ export default function AdminAiRuntimePage() {
         </div>
         <div className="metric-summary-grid">
           <article className="metric-summary-card">
-            <p className="note-label">{assistantProvider}</p>
+            <p className="note-label">Ollama Status</p>
             <strong>
               {localAiStatus?.available ? "Reachable" : "Unavailable"}
             </strong>
@@ -363,64 +368,46 @@ export default function AdminAiRuntimePage() {
             <p className="note-label">Model</p>
             <strong>{localAiStatus?.model || "qwen2.5:7b"}</strong>
             <span>
-              {localAiStatus?.provider === "runpod-serverless"
-                ? "Selected endpoint model profile"
-                : localAiStatus?.modelInstalled
-                  ? "Installed"
-                  : `Run: ollama pull ${localAiStatus?.model || "qwen2.5:7b"}`}
+              {localAiStatus?.modelInstalled
+                ? "Installed"
+                : `Run: ollama pull ${localAiStatus?.model || "qwen2.5:7b"}`}
             </span>
           </article>
-          {isRunpodServerless ? (
-            <article className="metric-summary-card">
-              <p className="note-label">Serverless Endpoint</p>
-              <strong>{localAiStatus?.endpointId || "Configured"}</strong>
-              <span>
-                RunPod starts workers on demand. Pod, SSH, and tunnel controls
-                are not used for this runtime.
-              </span>
-            </article>
-          ) : (
-            <>
-              <article className="metric-summary-card">
-                <p className="note-label">Remote Pod</p>
-                <strong>
-                  {remotePodStatus?.runtimeStatus || "unconfigured"}
-                </strong>
-                <span>
-                  {remotePodStatus?.message ||
-                    "Configure RunPod env vars to control a remote GPU pod."}
-                </span>
-                <small>
-                  {remotePodStatus?.configuredPodName
-                    ? `Configured name: ${remotePodStatus.configuredPodName}`
-                    : "Configured name: not set"}
-                </small>
-                <small>
-                  {remotePodStatus?.podId
-                    ? `Resolved pod ID: ${remotePodStatus.podId}`
-                    : remotePodStatus?.configuredPodId
-                      ? `Fallback pod ID: ${remotePodStatus.configuredPodId}`
-                      : "Resolved pod ID: not found"}
-                </small>
-                <small>{`Resolved by: ${remotePodStatus?.resolveSource || "none"}`}</small>
-              </article>
-              <article className="metric-summary-card">
-                <p className="note-label">SSH Tunnel</p>
-                <strong>
-                  {remoteTunnelStatus?.running
-                    ? "Active"
-                    : remoteTunnelStatus?.configured
-                      ? "Inactive"
-                      : "Unconfigured"}
-                </strong>
-                <span>
-                  {remoteTunnelStatus?.message ||
-                    "Automate the local SSH forward used by LOCAL_AI_BASE_URL."}
-                </span>
-              </article>
-            </>
-          )}
+          <article className="metric-summary-card">
+            <p className="note-label">SSH Tunnel</p>
+            <strong>
+              {remoteTunnelStatus?.running
+                ? "Active"
+                : remoteTunnelStatus?.configured
+                  ? "Inactive"
+                  : "Unconfigured"}
+            </strong>
+            <span>
+              {remoteTunnelStatus?.message ||
+                "Open the SSH tunnel after the Thunder instance is reachable."}
+            </span>
+          </article>
+          <article className="metric-summary-card">
+            <p className="note-label">Remote Target</p>
+            <strong>
+              {remoteTunnelStatus?.sshHost
+                ? `${remoteTunnelStatus.sshUser || "ubuntu"}@${remoteTunnelStatus.sshHost}`
+                : "Host not set"}
+            </strong>
+            <span>
+              {remoteTunnelStatus?.sshPort
+                ? `SSH ${remoteTunnelStatus.sshPort}; tunnel ${remoteTunnelStatus.localUrl || "local 11434"} -> ${remoteTunnelStatus.remoteHost || "127.0.0.1"}:${remoteTunnelStatus.remotePort || 11434}`
+                : remoteTunnelStatus?.sshHost
+                  ? `SSH config alias; tunnel ${remoteTunnelStatus.localUrl || "local 11434"} -> ${remoteTunnelStatus.remoteHost || "127.0.0.1"}:${remoteTunnelStatus.remotePort || 11434}`
+                  : "Set REMOTE_AI_SSH_HOST, preferably to the Thunder SSH alias."}
+            </span>
+          </article>
         </div>
+        <p className="meta">
+          Start or restore the Thunder Compute instance from Thunder first. This
+          page can open the SSH tunnel and start Ollama after the instance is
+          reachable. To stop billing, snapshot/delete the instance from Thunder.
+        </p>
         <div className="admin-form" style={{ marginTop: "1rem" }}>
           <label>
             Assistant Model Profile
@@ -446,10 +433,10 @@ export default function AdminAiRuntimePage() {
             {localAiStatus?.selectedProfileLabel
               ? `${localAiStatus.selectedProfileLabel} routes assistant requests to ${localAiStatus.model}.`
               : `Assistant requests currently target ${localAiStatus?.model || "the default Ollama model"}.`}
-            {localAiStatus?.provider === "runpod-serverless"
-              ? " Requests are sent through the configured RunPod Serverless endpoint."
-              : ""}
           </p>
+          {localAiStatus?.models?.length ? (
+            <p className="full-span meta">{`Installed models: ${localAiStatus.models.join(", ")}`}</p>
+          ) : null}
         </div>
         <div className="archive-intelligence-actions">
           <button
@@ -457,88 +444,64 @@ export default function AdminAiRuntimePage() {
             onClick={loadAssistantStatus}
             type="button"
           >
-            Refresh Status
+            Check Ollama Status
           </button>
-          {isRunpodServerless ? null : (
-            <>
-              <button
-                className="secondary-button"
-                disabled={
-                  remotePodActionLoading === "start" ||
-                  !remotePodStatus?.configured
-                }
-                onClick={() => handleRemotePodAction("start")}
-                type="button"
-              >
-                {remotePodActionLoading === "start"
-                  ? "Starting Remote Pod..."
-                  : "Start Remote AI"}
-              </button>
-              <button
-                className="secondary-button"
-                disabled={
-                  remotePodActionLoading === "stop" ||
-                  !remotePodStatus?.configured
-                }
-                onClick={() => handleRemotePodAction("stop")}
-                type="button"
-              >
-                {remotePodActionLoading === "stop"
-                  ? "Stopping Remote Pod..."
-                  : "Stop Remote AI"}
-              </button>
-              <button
-                className="secondary-button"
-                disabled={
-                  remoteTunnelActionLoading === "start" ||
-                  !remoteTunnelStatus?.configured
-                }
-                onClick={() => handleRemoteTunnelAction("start")}
-                type="button"
-              >
-                {remoteTunnelActionLoading === "start"
-                  ? "Opening Tunnel..."
-                  : "Open SSH Tunnel"}
-              </button>
-              <button
-                className="secondary-button"
-                disabled={
-                  remoteTunnelActionLoading === "stop" ||
-                  !remoteTunnelStatus?.configured
-                }
-                onClick={() => handleRemoteTunnelAction("stop")}
-                type="button"
-              >
-                {remoteTunnelActionLoading === "stop"
-                  ? "Closing Tunnel..."
-                  : "Close SSH Tunnel"}
-              </button>
-              <button
-                className="secondary-button"
-                disabled={
-                  remoteOllamaActionLoading ||
-                  (!remoteTunnelStatus?.running && !localAiStatus?.available)
-                }
-                onClick={handleRemoteOllamaWake}
-                type="button"
-              >
-                {remoteOllamaActionLoading
-                  ? "Waking Remote Ollama..."
-                  : "Wake Remote Ollama"}
-              </button>
-            </>
-          )}
+            <button
+              className="secondary-button"
+              disabled={
+                remoteTunnelActionLoading === "start" ||
+                !remoteTunnelStatus?.configured ||
+                remoteTunnelStatus?.running
+              }
+              onClick={() => handleRemoteTunnelAction("start")}
+              type="button"
+            >
+            {remoteTunnelActionLoading === "start"
+              ? "Starting SSH Tunnel..."
+              : "Start SSH Tunnel"}
+          </button>
+            <button
+              className="secondary-button"
+              disabled={
+                remoteTunnelActionLoading === "stop" ||
+                !remoteTunnelStatus?.configured ||
+                !remoteTunnelStatus?.managed
+              }
+              onClick={() => handleRemoteTunnelAction("stop")}
+              type="button"
+            >
+            {remoteTunnelActionLoading === "stop"
+              ? "Stopping SSH Tunnel..."
+              : "Stop SSH Tunnel"}
+          </button>
+          <button
+            className="secondary-button"
+            disabled={
+              remoteOllamaActionLoading || !remoteTunnelStatus?.configured
+            }
+            onClick={handleRemoteOllamaWake}
+            type="button"
+          >
+            {remoteOllamaActionLoading ? "Waking Ollama..." : "Wake Ollama"}
+          </button>
+          <button
+            className="secondary-button"
+            onClick={handleRefreshModels}
+            type="button"
+          >
+            Refresh Models
+          </button>
         </div>
-        {!isRunpodServerless && remotePodActionError ? (
-          <p className="error-text">{remotePodActionError}</p>
-        ) : null}
-        {!isRunpodServerless && remoteTunnelActionError ? (
+        {remoteTunnelActionError ? (
           <p className="error-text">{remoteTunnelActionError}</p>
         ) : null}
-        {!isRunpodServerless && remoteOllamaActionError ? (
+        {remoteOllamaActionError ? (
           <p className="error-text">{remoteOllamaActionError}</p>
         ) : null}
-        {!isRunpodServerless && remoteOllamaMessage ? (
+        {remoteTunnelStatus?.lastError ? (
+          <p className="error-text">{remoteTunnelStatus.lastError}</p>
+        ) : null}
+        {remoteOllamaMessage ? (
           <p className="meta">{remoteOllamaMessage}</p>
         ) : null}
       </section>
@@ -683,23 +646,47 @@ export default function AdminAiRuntimePage() {
                     </button>
                     {targetLink ? (
                       <Link className="secondary-button" to={targetLink}>
-                        Open Target
+                        {formatOpenTargetLabel(finding)}
                       </Link>
                     ) : null}
                   </div>
                 </article>
               );
             })}
-            {(localAiReview.risks || []).map((risk) => (
-              <article className="insight-sample-link" key={risk}>
-                <strong>{risk}</strong>
-              </article>
-            ))}
-            {(localAiReview.suggestedActions || []).map((action) => (
-              <article className="insight-sample-link" key={action}>
-                <strong>{action}</strong>
-              </article>
-            ))}
+            {(localAiReview.risks || []).map((risk) => {
+              const targetLink = buildReviewTextLink(
+                risk,
+                localAiReview.findings
+              );
+
+              return (
+                <article className="insight-sample-link" key={risk}>
+                  <strong>{risk}</strong>
+                  {targetLink ? (
+                    <Link className="secondary-button" to={targetLink}>
+                      Open Related Target
+                    </Link>
+                  ) : null}
+                </article>
+              );
+            })}
+            {(localAiReview.suggestedActions || []).map((action) => {
+              const targetLink = buildReviewTextLink(
+                action,
+                localAiReview.findings
+              );
+
+              return (
+                <article className="insight-sample-link" key={action}>
+                  <strong>{action}</strong>
+                  {targetLink ? (
+                    <Link className="secondary-button" to={targetLink}>
+                      Open Related Target
+                    </Link>
+                  ) : null}
+                </article>
+              );
+            })}
           </div>
         ) : null}
       </section>

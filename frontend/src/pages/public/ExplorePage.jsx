@@ -119,10 +119,13 @@ export default function ExplorePage({ onPlayTrack }) {
               Find a song
               <input
                 className="explore-search-input"
-                onChange={(event) => {
-                  const nextQuery = event.target.value;
-                  setQuery(nextQuery);
-                  updateSearchState({ query: nextQuery });
+                onBlur={() => updateSearchState({ query })}
+                onChange={(event) => setQuery(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    updateSearchState({ query });
+                  }
                 }}
                 placeholder="Search titles, notes, lyrics, and excerpts"
                 type="search"

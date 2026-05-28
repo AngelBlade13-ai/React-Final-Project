@@ -782,12 +782,28 @@ function normalizeComment(comment) {
     return null;
   }
 
+  const reports = Array.isArray(comment.reports)
+    ? comment.reports
+        .map((report) => ({
+          id: String(report?.id || crypto.randomUUID()).trim(),
+          reporterId: String(report?.reporterId || "").trim(),
+          reason: String(report?.reason || "other").trim() || "other",
+          details: String(report?.details || "").trim(),
+          status: String(report?.status || "open").trim() || "open",
+          createdAt: report?.createdAt || new Date().toISOString(),
+          updatedAt: report?.updatedAt || report?.createdAt || new Date().toISOString()
+        }))
+        .filter((report) => report.reporterId)
+    : [];
+
   return {
     id: comment.id || crypto.randomUUID(),
     postSlug: String(comment.postSlug || "").trim(),
+    parentCommentId: String(comment.parentCommentId || "").trim(),
     authorId: String(comment.authorId || "").trim(),
     body: String(comment.body || "").trim(),
     status: String(comment.status || "visible").trim() || "visible",
+    reports,
     createdAt: comment.createdAt || new Date().toISOString(),
     updatedAt:
       comment.updatedAt || comment.createdAt || new Date().toISOString()

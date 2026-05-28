@@ -1,10 +1,5 @@
 const crypto = require("crypto");
 const config = require("../config");
-const {
-  getRunpodServerlessStatus,
-  isRunpodServerlessProvider,
-  requestRunpodServerlessGenerate
-} = require("./runpodServerlessAiService");
 const { slugify } = require("../utils/slugify");
 
 const DEFAULT_REVIEW_RESULT = {
@@ -52,6 +47,51 @@ const FIELD_ASSESSMENT_STATUSES = new Set([
   "missing",
   "uncertain"
 ]);
+const REVIEW_FINDING_TARGET_FIELDS = {
+  post: new Set([
+    "published",
+    "ispubliclyvisible",
+    "ishomepageeligible",
+    "releasestatus",
+    "collectionslugs",
+    "collections",
+    "subcategory",
+    "worldlayer",
+    "themetags",
+    "excerpt",
+    "content",
+    "contentpreview",
+    "versionfamily",
+    "isprimaryversion"
+  ]),
+  collection: new Set([
+    "title",
+    "description",
+    "featuredreleaseslug",
+    "ispublicprimary",
+    "themetags",
+    "worldlayers"
+  ]),
+  path: new Set([
+    "title",
+    "eyebrow",
+    "intro",
+    "moodnote",
+    "themehint",
+    "postslugs",
+    "algorithm",
+    "algorithm.preset",
+    "algorithm.collectionslug",
+    "algorithm.collectionslugs",
+    "algorithm.sectionkeys",
+    "algorithm.themetags",
+    "algorithm.worldlayers",
+    "algorithm.releasestatuses",
+    "algorithm.match",
+    "algorithm.maxitems",
+    "algorithm.sort"
+  ])
+};
 const ALLOWED_PATH_ALGORITHM_SORTS = new Set([
   "curated",
   "fractureverse",
@@ -280,6 +320,17 @@ async function fetchOllama(path, options = {}) {
     });
 
     return response;
+  } catch (error) {
+    if (error?.name === "AbortError") {
+      const timeoutError = new Error(
+        `Timed out after ${config.localAiTimeoutMs} ms while waiting for Ollama.`
+      );
+      timeoutError.statusCode = 504;
+      timeoutError.cause = error;
+      throw timeoutError;
+    }
+
+    throw error;
   } finally {
     timeout.clear();
   }
@@ -311,11 +362,6 @@ function buildAvailableStatus(models = [], options = {}) {
 }
 
 async function getLocalAiStatus(options = {}) {
-  if (isRunpodServerlessProvider()) {
-    const selection = resolveRequestedModel(options);
-    return getRunpodServerlessStatus(selection);
-  }
-
   if (!config.localAiEnabled) {
     return buildUnavailableStatus(
       "Local AI is disabled by LOCAL_AI_ENABLED=false.",
@@ -368,15 +414,6 @@ async function requestGenerate({
   generationOptions,
   format = "json"
 }) {
-  if (isRunpodServerlessProvider()) {
-    return requestRunpodServerlessGenerate({
-      model,
-      prompt,
-      generationOptions,
-      format
-    });
-  }
-
   const response = await fetchOllama("/api/generate", {
     method: "POST",
     headers: {
@@ -461,6 +498,85 @@ function normalizeTextList(value, limit = 8) {
     : [];
 }
 
+function normalizeReviewFieldPath(value = "") {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\[[^\]]*\]/g, "")
+    .replace(/[^a-z0-9.]+/g, "")
+    .replace(/\.+/g, ".")
+    .replace(/^\.+|\.+$/g, "");
+}
+
+function reviewFindingTargetsKnownField(finding = {}) {
+  const targetType = String(finding.targetType || "catalog")
+    .trim()
+    .toLowerCase();
+
+  if (targetType === "catalog") {
+    return true;
+  }
+
+  const field = normalizeReviewFieldPath(finding.field);
+  const allowedFields = REVIEW_FINDING_TARGET_FIELDS[targetType];
+
+  if (!field || !allowedFields) {
+    return false;
+  }
+
+  if (allowedFields.has(field)) {
+    return true;
+  }
+
+  return [...allowedFields].some(
+    (allowedField) => field.startsWith(`${allowedField}.`)
+  );
+}
+
+function reviewFindingHasActionableEvidence(finding = {}) {
+  const targetSlug = String(finding.targetSlug || "").trim();
+  const field = String(finding.field || "").trim();
+  const text = `${finding.issue || ""} ${finding.recommendedAction || ""}`;
+  const quotedEvidence = extractQuotedTokens(text).filter((token) => {
+    const comparableToken = normalizeComparableText(token);
+
+    return (
+      comparableToken &&
+      comparableToken !== normalizeComparableText(targetSlug) &&
+      comparableToken !== normalizeComparableText(field)
+    );
+  });
+
+  if (!field && String(finding.targetType || "").toLowerCase() !== "catalog") {
+    return false;
+  }
+
+  if (findingClaimsMissingValue(finding)) {
+    return true;
+  }
+
+  if (quotedEvidence.length) {
+    return true;
+  }
+
+  if (
+    /\b(current|existing|actual|now)\b/i.test(text) &&
+    /\b(expected|should|but|instead|conflicts?|contradicts?|mismatch)\b/i.test(text)
+  ) {
+    return true;
+  }
+
+  if (
+    /\b(set|change|replace|move|remove|add)\b/i.test(text) &&
+    /\b(to|from|because|with)\b/i.test(text) &&
+    !/\b(fix|update|review|adjust)\b\s+[^.]{0,40}$/i.test(text.trim())
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
 function normalizeReviewResult(value = {}, allowedTargets = null) {
   const findings = Array.isArray(value.findings)
     ? value.findings
@@ -508,13 +624,25 @@ function normalizeReviewResult(value = {}, allowedTargets = null) {
             }
           }
 
-          return {
+          const finding = {
             severity,
             targetType,
             targetSlug,
             field,
             issue,
             recommendedAction
+          };
+
+          if (allowedTargets && !reviewFindingHasActionableEvidence(finding)) {
+            return null;
+          }
+
+          if (allowedTargets && !reviewFindingTargetsKnownField(finding)) {
+            return null;
+          }
+
+          return {
+            ...finding
           };
         })
         .filter(Boolean)
@@ -1178,6 +1306,38 @@ function normalizeSuggestionPatch(
   }, {});
 }
 
+function reconcileFieldAssessmentsWithPatch(
+  fieldAssessments = [],
+  suggestedPatch = {}
+) {
+  const patchFields = new Set(Object.keys(suggestedPatch || {}));
+  const downgradedFields = [];
+  const nextAssessments = fieldAssessments.map((entry) => {
+    if (
+      (entry.status === "improve" || entry.status === "missing") &&
+      !patchFields.has(entry.field)
+    ) {
+      downgradedFields.push(entry.field);
+
+      return {
+        ...entry,
+        status: "uncertain",
+        reason: [
+          entry.reason,
+          "No usable patch value survived validation for this field."
+        ].filter(Boolean).join(" ")
+      };
+    }
+
+    return entry;
+  });
+
+  return {
+    fieldAssessments: nextAssessments,
+    downgradedFields
+  };
+}
+
 function normalizePostSuggestionResult(
   value = {},
   collections = [],
@@ -1188,18 +1348,30 @@ function normalizePostSuggestionResult(
     currentDraft
   );
   const allowedFields = getAllowedPatchFields(fieldAssessments);
+  const suggestedPatch = normalizeSuggestionPatch(
+    value.suggestedPatch,
+    collections,
+    currentDraft,
+    allowedFields
+  );
+  const reconciled = reconcileFieldAssessmentsWithPatch(
+    fieldAssessments,
+    suggestedPatch
+  );
+  const warnings = normalizeTextList(value.warnings, 5);
+
+  if (reconciled.downgradedFields.length) {
+    warnings.push(
+      `The assistant marked ${reconciled.downgradedFields.join(", ")} as needing work but did not return a usable patch for ${reconciled.downgradedFields.length === 1 ? "that field" : "those fields"}.`
+    );
+  }
 
   return {
     summary: String(value.summary || "").trim(),
-    fieldAssessments,
+    fieldAssessments: reconciled.fieldAssessments,
     rationale: normalizeTextList(value.rationale, 5),
-    warnings: normalizeTextList(value.warnings, 5),
-    suggestedPatch: normalizeSuggestionPatch(
-      value.suggestedPatch,
-      collections,
-      currentDraft,
-      allowedFields
-    )
+    warnings: [...new Set(warnings)].slice(0, 5),
+    suggestedPatch
   };
 }
 
@@ -1268,7 +1440,13 @@ function summarizeCollectionForAssistant(collection = {}) {
   return {
     slug: collection.slug,
     title: collection.title,
-    theme: collection.theme || "",
+    description: String(collection.description || "")
+      .trim()
+      .slice(0, 220),
+    themeTags: Array.isArray(collection.themeTags) ? collection.themeTags : [],
+    worldLayers: Array.isArray(collection.worldLayers)
+      ? collection.worldLayers
+      : [],
     isPublicPrimary: Boolean(collection.isPublicPrimary),
     featuredReleaseSlug: collection.featuredReleaseSlug || ""
   };
@@ -1942,13 +2120,17 @@ function buildCatalogContext(store = {}) {
       publishedPosts: posts.filter((post) => post.published).length
     },
     collections: collections
-      .filter((collection) => collection.isPublicPrimary || collection.theme)
+      .filter((collection) => collection.isPublicPrimary)
       .slice(0, 12)
       .map(summarizeCollectionForAssistant),
     guidedPaths: guidedPaths.map((path) => ({
       slug: path.slug,
       title: path.title,
+      themeHint: path.themeHint || "",
       count: Array.isArray(path.postSlugs) ? path.postSlugs.length : 0,
+      postSlugs: Array.isArray(path.postSlugs)
+        ? path.postSlugs.slice(0, 16)
+        : [],
       algorithm: path.algorithm || {}
     })),
     samplePosts: postsNeedingReview.map(summarizePostForAssistant)
@@ -1965,6 +2147,10 @@ async function generateJson(prompt, options = {}) {
 
   if (config.localAiNumThread > 0) {
     generationOptions.num_thread = config.localAiNumThread;
+  }
+
+  if (Number.isFinite(config.localAiDefaultNumGpu)) {
+    generationOptions.num_gpu = config.localAiDefaultNumGpu;
   }
 
   clearLocalAiStatusCache();
@@ -2010,6 +2196,9 @@ async function generateJson(prompt, options = {}) {
         temperature: 0,
         num_ctx: Math.max(2048, generationOptions.num_ctx),
         num_predict: Math.max(500, generationOptions.num_predict),
+        ...(Number.isFinite(config.localAiDefaultNumGpu)
+          ? { num_gpu: config.localAiDefaultNumGpu }
+          : {}),
         ...(config.localAiNumThread > 0
           ? { num_thread: config.localAiNumThread }
           : {})
@@ -2054,14 +2243,22 @@ async function reviewCatalogWithLocalAi(store, options = {}) {
   const prompt = [
     "Return only compact JSON for this music archive admin review.",
     "Do not invent slugs. No code advice.",
+    "Only create a finding when the JSON context contains direct evidence. If the issue is only a hunch, omit it.",
+    "Every finding must include targetType, targetSlug, field, a concrete issue, and a concrete recommendedAction. Do not put target slugs only in suggestedActions.",
+    "The issue or recommendedAction must quote the current value, missing value, or expected value that proves the finding.",
     "Be conservative about editorial taxonomy changes.",
+    "Collection theme values are UI styling tokens and are intentionally absent from this context. Never infer genre, world, or story taxonomy from collection styling.",
+    "Collections do not have a singular worldLayer field. Do not create collection findings for worldLayer.",
     "Do not recommend adding themeTags solely because a title, subCategory, or worldLayer sounds related to a motif.",
+    "Do not recommend worldLayer changes unless the current worldLayer is empty or directly contradicts collectionSlugs, subCategory, themeTags, excerpt, or contentPreview.",
+    "Do not recommend guided path algorithm changes unless the current guidedPaths entry has an explicit algorithm mismatch in the JSON context.",
+    "Do not call something a collection issue when the target is a guided path; use targetType path for guided path problems.",
     "Do not treat the absence of a literal matching tag as a problem when the current tags are already coherent with the excerpt and content preview.",
     "Prefer structural issues over subjective metadata expansion: empty or contradictory fields, public visibility mismatches, broken collection/path relationships, and obvious categorization drift.",
     "If a post appears publication-ready and internally coherent, leave it out of findings.",
     'Shape: {"summary":"one sentence","risks":["risk"],"suggestedActions":["action"],"findings":[{"severity":"warning","targetType":"post|collection|path|catalog","targetSlug":"existing-slug-or-empty","field":"fieldName-or-empty","issue":"what is wrong","recommendedAction":"what to do next"}]}.',
     "Use at most 3 risks and 3 actions.",
-    "Use at most 5 findings.",
+    "Use at most 3 findings.",
     "Only use targetSlug values that already exist in the JSON context.",
     "Findings should be concrete and actionable, not vague observations.",
     "",
@@ -2085,13 +2282,21 @@ async function reviewCatalogWithLocalAi(store, options = {}) {
     "Return only compact JSON for this music archive admin review.",
     "Your previous response was empty or unusable.",
     "You must return at least one non-empty field.",
+    "Only create a finding when the JSON context contains direct evidence. If the catalog looks healthy, return a concise summary and suggestedAction instead of a weak finding.",
+    "Every finding must include targetType, targetSlug, field, a concrete issue, and a concrete recommendedAction. Do not put target slugs only in suggestedActions.",
+    "The issue or recommendedAction must quote the current value, missing value, or expected value that proves the finding.",
     "Be conservative about editorial taxonomy changes.",
+    "Collection theme values are UI styling tokens and are intentionally absent from this context. Never infer genre, world, or story taxonomy from collection styling.",
+    "Collections do not have a singular worldLayer field. Do not create collection findings for worldLayer.",
     "Do not recommend adding themeTags solely because a title, subCategory, or worldLayer sounds related to a motif.",
+    "Do not recommend worldLayer changes unless the current worldLayer is empty or directly contradicts collectionSlugs, subCategory, themeTags, excerpt, or contentPreview.",
+    "Do not recommend guided path algorithm changes unless the current guidedPaths entry has an explicit algorithm mismatch in the JSON context.",
+    "Do not call something a collection issue when the target is a guided path; use targetType path for guided path problems.",
     "Do not treat the absence of a literal matching tag as a problem when the current tags are already coherent with the excerpt and content preview.",
     "Prefer structural issues over subjective metadata expansion: empty or contradictory fields, public visibility mismatches, broken collection/path relationships, and obvious categorization drift.",
     'Shape: {"summary":"one sentence","risks":["risk"],"suggestedActions":["action"],"findings":[{"severity":"warning","targetType":"post|collection|path|catalog","targetSlug":"existing-slug-or-empty","field":"fieldName-or-empty","issue":"what is wrong","recommendedAction":"what to do next"}]}.',
     "Use at most 3 risks and 3 actions.",
-    "Use at most 5 findings.",
+    "Use at most 3 findings.",
     "Only use targetSlug values that already exist in the JSON context.",
     "If the catalog looks broadly healthy, still provide a concise summary and at least one concrete suggestedAction.",
     "",
@@ -2136,6 +2341,8 @@ async function suggestPostDraftWithLocalAi(store, postDraft = {}, options = {}) 
     "Return only compact JSON for one music archive post draft.",
     "First assess each field as keep, improve, missing, or uncertain.",
     "Only patch fields marked improve or missing.",
+    "Do not mark a field improve or missing unless you also provide a valid suggestedPatch value for that exact field.",
+    "If the draft is already coherent, return a summary, mark fields keep, and leave suggestedPatch empty.",
     "Be decisive and avoid churn: if a field is already clear, coherent, and publication-ready, mark it keep.",
     "If content already uses a structured release-note format with fields like Universe, Characters, POV, Version, Theme, Mood, Source, or Notes, mark content keep unless it is inaccurate or broken.",
     "If excerpt is already specific, public-facing, and under 280 characters, mark excerpt keep.",
@@ -2147,6 +2354,7 @@ async function suggestPostDraftWithLocalAi(store, postDraft = {}, options = {}) 
     "Use comparablePosts only as style or canon context reference. Do not copy their wording or merge their facts into the current draft.",
     "Do not invent collection slugs. Use only provided collection slugs.",
     "For metadata fields, suggest a field only if it improves or changes the current value. Do not repeat existing values.",
+    "Do not change worldLayer, subCategory, releaseStatus, themeTags, or collectionSlugs unless the current value is empty, invalid, contradictory, or clearly weaker than the replacement.",
     'Shape: {"summary":"one sentence","fieldAssessments":[{"field":"excerpt","status":"keep","reason":"why"}],"suggestedPatch":{"excerpt":"","content":"","subCategory":"","worldLayer":"","themeTags":[""],"releaseStatus":"canon","collectionSlugs":[""]},"rationale":["reason"],"warnings":["warning"]}.',
     "Omit fields that should not change. Use at most 5 themeTags, 4 rationale items, and 3 warnings. Keep content under 140 words.",
     "",
@@ -2173,6 +2381,7 @@ async function suggestPostDraftWithLocalAi(store, postDraft = {}, options = {}) 
       "Return only compact JSON for one music archive post draft.",
       "Your previous answer assessed fields as improve or missing but did not produce a usable patch.",
       "Retry with stronger, more decisive suggestions only for fields that genuinely need change.",
+      "Do not mark a field improve or missing unless you also provide a valid suggestedPatch value for that exact field.",
       "If you suggest excerpt, it must be publication-ready and materially different from the current excerpt.",
       "If you suggest content, it must be a structured release note and materially better than the current content.",
       "If no field truly needs change, mark every field keep and return an empty suggestedPatch.",
@@ -2195,13 +2404,11 @@ async function suggestPostDraftWithLocalAi(store, postDraft = {}, options = {}) 
       postDraft
     );
 
-    if (Object.keys(retryResult.suggestedPatch || {}).length) {
-      return {
-        ...retryResult,
-        generatedAt: new Date().toISOString(),
-        model: status.model
-      };
-    }
+    return {
+      ...retryResult,
+      generatedAt: new Date().toISOString(),
+      model: status.model
+    };
   }
 
   return {
@@ -2253,10 +2460,8 @@ async function reviewCatalogFindingWithLocalAi(
   options = {}
 ) {
   const status = await assertLocalAiReady(options);
-  const allowedTargets = buildCatalogReviewTargets(store);
   const normalizedFinding = normalizeReviewResult(
-    { findings: [finding] },
-    allowedTargets
+    { findings: [finding] }
   ).findings[0];
 
   if (!normalizedFinding) {
@@ -2357,6 +2562,7 @@ async function suggestGuidedPathWithLocalAi(
   const prompt = [
     "Return only compact JSON for one guided listening path in a music archive.",
     "Improve path membership and rules for the currentPath.",
+    "If currentPath is already coherent, return a summary and leave suggestedPatch empty.",
     "Use exact post slugs only from publicPosts. Do not invent slugs.",
     "Never clear currentPath.postSlugs unless you return a non-empty replacement postSlugs list.",
     "Only keep algorithm.preset=homepage when the path is actually a broad newcomer/homepage route and has no specific collection, world, section, or theme scope.",
@@ -2365,6 +2571,7 @@ async function suggestGuidedPathWithLocalAi(
     "For homepage-style paths, do not rename or frame the path as a single-world route unless the selected posts genuinely justify that scope.",
     "If the path needs a carefully curated sequence, use suggestedPatch.postSlugs.",
     "If the path should stay dynamic, use suggestedPatch.algorithm with only provided collection slugs, release statuses, and sort values.",
+    "Do not suggest algorithm changes just to make the route look more structured. Change algorithm only when the current rules select the wrong songs or conflict with the path title, themeHint, or intro.",
     "If currentPath already has algorithm.collectionSlug and no postSlugs, preserve the algorithm approach only when that collection still matches the path title and themeHint; otherwise return manual postSlugs.",
     "Do not include unrelated or merely adjacent songs. Prefer precision over count.",
     'Shape: {"summary":"one sentence","mode":"manual|algorithm|hybrid","suggestedPatch":{"title":"","eyebrow":"","intro":"","moodNote":"","themeHint":"","postSlugs":[""],"algorithm":{}},"rationale":["reason"],"warnings":["warning"]}.',
@@ -2413,6 +2620,7 @@ async function suggestNewGuidedPathWithLocalAi(
   const prompt = [
     "Return only compact JSON for one NEW guided listening path in a music archive.",
     "Find a meaningful catalog gap using publicPosts and collections.",
+    "If there is no clear catalog gap, return an empty suggestedPatch and explain that in summary.",
     "The new path must be clearly distinct from existingPaths. Do not make a minor rename, mood variant, or near-duplicate sequence.",
     "Use exact post slugs only from publicPosts. Do not invent slugs.",
     "The title must describe the actual selected path, not a mashup of existing path names or world titles.",
@@ -2468,7 +2676,10 @@ module.exports = {
     normalizeFindingReviewResult,
     normalizeGuidedPathSuggestionResult,
     normalizeNewGuidedPathSuggestionResult,
+    normalizeReviewResult,
+    reviewFindingTargetsKnownField,
     resolveRequestedModel,
+    reviewFindingHasActionableEvidence,
     summarizePostForAssistant,
     titleFitsSuggestedMembership
   }

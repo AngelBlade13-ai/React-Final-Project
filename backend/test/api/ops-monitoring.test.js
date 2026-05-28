@@ -176,7 +176,7 @@ test("local assistant endpoints fail safely when local AI is disabled", async (t
   assert.equal(statusResponse.status, 200);
   assert.equal(statusResponse.body.localAi.available, false);
   assert.equal(statusResponse.body.localAi.enabled, false);
-  assert.equal(statusResponse.body.remotePod.configured, false);
+  assert.equal(statusResponse.body.remoteTunnel.configured, false);
 
   const reviewResponse = await context.agent
     .post("/api/admin/assistant/catalog-review")
@@ -226,25 +226,7 @@ test("local assistant endpoints fail safely when local AI is disabled", async (t
   assert.equal(newPathSuggestionResponse.status, 503);
   assert.match(newPathSuggestionResponse.body.message, /disabled/i);
 
-  const remoteStartResponse = await context.agent
-    .post("/api/admin/assistant/remote-pod/start")
-    .set(context.mutationHeaders);
-
-  assert.equal(remoteStartResponse.status, 503);
-  assert.match(
-    remoteStartResponse.body.message,
-    /runpod_api_key|runpod_pod_id/i
-  );
-
-  const remoteStopResponse = await context.agent
-    .post("/api/admin/assistant/remote-pod/stop")
-    .set(context.mutationHeaders);
-
-  assert.equal(remoteStopResponse.status, 503);
-  assert.match(
-    remoteStopResponse.body.message,
-    /runpod_api_key|runpod_pod_id/i
-  );
+  assert.equal(statusResponse.body.remoteTunnel.configured, false);
 });
 
 test("assistant status reflects the selected model profile and installed models", async (t) => {
@@ -349,8 +331,9 @@ test("assistant requests fail safely when the selected model profile is not inst
 test("catalog review retries once when the model returns an empty response", async (t) => {
   const originalFetch = global.fetch;
   let generateCallCount = 0;
+  const generateBodies = [];
 
-  global.fetch = async (url) => {
+  global.fetch = async (url, init = {}) => {
     const normalizedUrl = String(url);
 
     if (normalizedUrl.endsWith("/api/tags")) {
@@ -364,6 +347,7 @@ test("catalog review retries once when the model returns an empty response", asy
 
     if (normalizedUrl.endsWith("/api/generate")) {
       generateCallCount += 1;
+      generateBodies.push(JSON.parse(init.body));
 
       return {
         ok: true,
@@ -386,7 +370,8 @@ test("catalog review retries once when the model returns an empty response", asy
   };
 
   const context = await createApiTestContext({
-    LOCAL_AI_ENABLED: "true"
+    LOCAL_AI_ENABLED: "true",
+    LOCAL_AI_DEFAULT_NUM_GPU: "99"
   });
   t.after(async () => {
     global.fetch = originalFetch;
@@ -414,48 +399,39 @@ test("catalog review retries once when the model returns an empty response", asy
     "Tighten one or two collection highlights."
   ]);
   assert.equal(generateCallCount, 2);
+  assert.equal(generateBodies[0].options.num_gpu, 99);
 });
 
-test("catalog review can use RunPod Serverless as the assistant provider", async (t) => {
+test("catalog review reports Ollama generation timeouts clearly", async (t) => {
   const originalFetch = global.fetch;
-  let requestBody = null;
 
-  global.fetch = async (url, options = {}) => {
+  global.fetch = async (url) => {
     const normalizedUrl = String(url);
 
-    if (
-      normalizedUrl === "https://api.runpod.ai/v2/endpoint_test_123/runsync"
-    ) {
-      requestBody = JSON.parse(options.body);
-
+    if (normalizedUrl.endsWith("/api/tags")) {
       return {
         ok: true,
         json: async () => ({
-          status: "COMPLETED",
-          output: {
-            response: JSON.stringify({
-              summary: "Serverless review completed.",
-              risks: [],
-              suggestedActions: ["Review one public collection highlight."]
-            })
-          }
+          models: [{ name: "qwen3:30b" }]
         })
       };
+    }
+
+    if (normalizedUrl.endsWith("/api/generate")) {
+      const error = new Error("This operation was aborted");
+      error.name = "AbortError";
+      throw error;
     }
 
     throw new Error(`Unexpected fetch URL: ${normalizedUrl}`);
   };
 
   const context = await createApiTestContext({
-    ASSISTANT_AI_PROVIDER: "runpod-serverless",
     LOCAL_AI_ENABLED: "true",
-    RUNPOD_API_KEY: "test-runpod-key",
-    RUNPOD_SERVERLESS_ENDPOINT_ID: "endpoint_test_123"
+    LOCAL_AI_TIMEOUT_MS: "1234"
   });
   t.after(async () => {
     global.fetch = originalFetch;
-    delete process.env.ASSISTANT_AI_PROVIDER;
-    delete process.env.RUNPOD_SERVERLESS_ENDPOINT_ID;
     await context.close();
   });
 
@@ -469,22 +445,15 @@ test("catalog review can use RunPod Serverless as the assistant provider", async
 
   assert.equal(loginResponse.status, 200);
 
-  const statusResponse = await context.agent.get("/api/admin/assistant/status");
-
-  assert.equal(statusResponse.status, 200);
-  assert.equal(statusResponse.body.localAi.provider, "runpod-serverless");
-  assert.equal(statusResponse.body.localAi.available, true);
-  assert.equal(statusResponse.body.localAi.modelInstalled, true);
-
   const response = await context.agent
     .post("/api/admin/assistant/catalog-review")
-    .set(context.mutationHeaders);
+    .set(context.mutationHeaders)
+    .send({
+      profile: "thorough"
+    });
 
-  assert.equal(response.status, 200);
-  assert.equal(response.body.review.summary, "Serverless review completed.");
-  assert.equal(response.body.review.model, "qwen2.5:7b");
-  assert.equal(requestBody.input.method_name, "generate");
-  assert.match(requestBody.input.input.prompt, /music archive admin review/);
+  assert.equal(response.status, 504);
+  assert.match(response.body.message, /Timed out after 1234 ms/);
 });
 
 test("catalog finding review stores post assistant decision memory", async (t) => {
@@ -597,70 +566,13 @@ test("catalog finding review stores post assistant decision memory", async (t) =
   );
 });
 
-test("remote AI pod controls proxy runpod start stop and status safely", async (t) => {
-  const originalFetch = global.fetch;
-  const fetchCalls = [];
-  let desiredStatus = "RUNNING";
-
-  global.fetch = async (url, options = {}) => {
-    const normalizedUrl = String(url);
-    fetchCalls.push({ url: normalizedUrl, method: options.method || "GET" });
-
-    if (normalizedUrl === "https://rest.runpod.io/v1/pods/pod_test_123") {
-      return {
-        ok: true,
-        json: async () => ({
-          id: "pod_test_123",
-          name: "Remote AI",
-          desiredStatus,
-          costPerHr: "0.46",
-          publicIp: "213.192.2.117",
-          portMappings: {
-            22: 40179
-          },
-          lastStartedAt: "2026-05-06T19:00:00.000Z",
-          lastStatusChange: "started"
-        })
-      };
-    }
-
-    if (normalizedUrl === "https://rest.runpod.io/v1/pods/pod_test_123/start") {
-      desiredStatus = "RUNNING";
-      return {
-        ok: true,
-        json: async () => ({})
-      };
-    }
-
-    if (normalizedUrl === "https://rest.runpod.io/v1/pods/pod_test_123/stop") {
-      desiredStatus = "EXITED";
-      return {
-        ok: true,
-        json: async () => ({})
-      };
-    }
-
-    if (normalizedUrl.endsWith("/api/tags")) {
-      return {
-        ok: true,
-        json: async () => ({
-          models: [{ name: "qwen2.5:7b" }]
-        })
-      };
-    }
-
-    throw new Error(`Unexpected fetch URL: ${normalizedUrl}`);
-  };
-
+test("remote AI tunnel status reports missing Thunder SSH host clearly", async (t) => {
   const context = await createApiTestContext({
-    RUNPOD_API_KEY: "test-runpod-key",
-    RUNPOD_POD_NAME: "",
-    RUNPOD_POD_ID_OVERRIDE: "false",
-    RUNPOD_POD_ID: "pod_test_123"
+    REMOTE_AI_ENABLED: "true",
+    REMOTE_AI_SSH_HOST: "",
+    REMOTE_AI_SSH_KEY_PATH: ""
   });
-
   t.after(async () => {
-    global.fetch = originalFetch;
     await context.close();
   });
 
@@ -677,84 +589,26 @@ test("remote AI pod controls proxy runpod start stop and status safely", async (
   const statusResponse = await context.agent.get("/api/admin/assistant/status");
 
   assert.equal(statusResponse.status, 200);
-  assert.equal(statusResponse.body.remotePod.configured, true);
-  assert.equal(statusResponse.body.remotePod.runtimeStatus, "running");
-  assert.equal(statusResponse.body.remotePod.podId, "pod_test_123");
-  assert.equal(statusResponse.body.remotePod.sshHost, "213.192.2.117");
-  assert.equal(statusResponse.body.remotePod.sshPort, 40179);
-  assert.equal(statusResponse.body.remotePod.sshReady, true);
+  assert.equal(statusResponse.body.remoteTunnel.configured, false);
+  assert.match(statusResponse.body.remoteTunnel.message, /REMOTE_AI_SSH_HOST/);
 
   const startResponse = await context.agent
-    .post("/api/admin/assistant/remote-pod/start")
+    .post("/api/admin/assistant/remote-tunnel/start")
     .set(context.mutationHeaders);
 
-  assert.equal(startResponse.status, 200);
-  assert.equal(startResponse.body.remotePod.runtimeStatus, "running");
-
-  const stopResponse = await context.agent
-    .post("/api/admin/assistant/remote-pod/stop")
-    .set(context.mutationHeaders);
-
-  assert.equal(stopResponse.status, 200);
-  assert.equal(stopResponse.body.remotePod.runtimeStatus, "stopped");
-
-  assert.ok(
-    fetchCalls.some(
-      (call) =>
-        call.url === "https://rest.runpod.io/v1/pods/pod_test_123/start" &&
-        call.method === "POST"
-    )
-  );
-  assert.ok(
-    fetchCalls.some(
-      (call) =>
-        call.url === "https://rest.runpod.io/v1/pods/pod_test_123/stop" &&
-        call.method === "POST"
-    )
-  );
+  assert.equal(startResponse.status, 503);
+  assert.match(startResponse.body.message, /REMOTE_AI_SSH_HOST/);
 });
 
-test("remote AI pod status resolves runpod pod by configured name", async (t) => {
-  const originalFetch = global.fetch;
-
-  global.fetch = async (url) => {
-    const normalizedUrl = String(url);
-
-    if (normalizedUrl === "https://rest.runpod.io/v1/pods") {
-      return {
-        ok: true,
-        json: async () => ({
-          pods: [
-            {
-              id: "pod_named_123",
-              name: "angelina-ollama-admin",
-              desiredStatus: "RUNNING",
-              machineId: "machine_123",
-              gpuDisplayName: "RTX 4090",
-              publicIp: "213.192.2.117",
-              portMappings: { 22: 40179 }
-            }
-          ]
-        })
-      };
-    }
-
-    if (normalizedUrl.endsWith("/api/tags")) {
-      return { ok: true, json: async () => ({ models: [] }) };
-    }
-
-    throw new Error(`Unexpected fetch URL: ${normalizedUrl}`);
-  };
-
+test("remote AI tunnel status allows Thunder SSH config aliases without a key path", async (t) => {
   const context = await createApiTestContext({
-    RUNPOD_API_KEY: "test-runpod-key",
-    RUNPOD_POD_ID: "",
-    RUNPOD_POD_ID_OVERRIDE: "false",
-    RUNPOD_POD_NAME: "angelina-ollama-admin"
+    REMOTE_AI_TUNNEL_TEST_MODE: "true",
+    REMOTE_AI_ENABLED: "true",
+    REMOTE_AI_SSH_HOST: "tnr-0",
+    REMOTE_AI_SSH_PORT: "",
+    REMOTE_AI_SSH_KEY_PATH: ""
   });
-
   t.after(async () => {
-    global.fetch = originalFetch;
     await context.close();
   });
 
@@ -771,213 +625,22 @@ test("remote AI pod status resolves runpod pod by configured name", async (t) =>
   const response = await context.agent.get("/api/admin/assistant/status");
 
   assert.equal(response.status, 200);
-  assert.equal(response.body.remotePod.resolveSource, "name");
-  assert.equal(
-    response.body.remotePod.configuredPodName,
-    "angelina-ollama-admin"
-  );
-  assert.equal(response.body.remotePod.podId, "pod_named_123");
-  assert.equal(response.body.remotePod.machineId, "machine_123");
-  assert.equal(response.body.remotePod.gpuDisplayName, "RTX 4090");
+  assert.equal(response.body.remoteTunnel.configured, true);
+  assert.equal(response.body.remoteTunnel.sshHost, "tnr-0");
+  assert.equal(response.body.remoteTunnel.sshPort, null);
 });
 
-test("remote AI pod status falls back to runpod pod id when name is missing", async (t) => {
-  const originalFetch = global.fetch;
-
-  global.fetch = async (url) => {
-    const normalizedUrl = String(url);
-
-    if (normalizedUrl === "https://rest.runpod.io/v1/pods") {
-      return { ok: true, json: async () => ({ pods: [] }) };
-    }
-
-    if (normalizedUrl === "https://rest.runpod.io/v1/pods/pod_fallback_123") {
-      return {
-        ok: true,
-        json: async () => ({
-          id: "pod_fallback_123",
-          name: "fallback-pod",
-          desiredStatus: "EXITED"
-        })
-      };
-    }
-
-    if (normalizedUrl.endsWith("/api/tags")) {
-      return { ok: true, json: async () => ({ models: [] }) };
-    }
-
-    throw new Error(`Unexpected fetch URL: ${normalizedUrl}`);
-  };
-
-  const context = await createApiTestContext({
-    RUNPOD_API_KEY: "test-runpod-key",
-    RUNPOD_POD_NAME: "missing-name",
-    RUNPOD_POD_ID_OVERRIDE: "false",
-    RUNPOD_POD_ID: "pod_fallback_123"
-  });
-
-  t.after(async () => {
-    global.fetch = originalFetch;
-    await context.close();
-  });
-
-  const loginResponse = await context.agent
-    .post("/api/admin/login")
-    .set(context.mutationHeaders)
-    .send({
-      email: "admin@example.com",
-      password: "Admin123!"
-    });
-
-  assert.equal(loginResponse.status, 200);
-
-  const response = await context.agent.get("/api/admin/assistant/status");
-
-  assert.equal(response.status, 200);
-  assert.equal(response.body.remotePod.resolveSource, "id");
-  assert.equal(response.body.remotePod.configuredPodName, "missing-name");
-  assert.equal(response.body.remotePod.configuredPodId, "pod_fallback_123");
-  assert.equal(response.body.remotePod.podId, "pod_fallback_123");
-});
-
-test("remote AI pod status reports helpful errors for missing and duplicate runpod names", async (t) => {
-  const originalFetch = global.fetch;
-  let mode = "missing";
-
-  global.fetch = async (url) => {
-    const normalizedUrl = String(url);
-
-    if (normalizedUrl === "https://rest.runpod.io/v1/pods") {
-      return {
-        ok: true,
-        json: async () => ({
-          pods:
-            mode === "duplicate"
-              ? [
-                  {
-                    id: "pod_a",
-                    name: "duplicate-name",
-                    desiredStatus: "RUNNING"
-                  },
-                  {
-                    id: "pod_b",
-                    name: "duplicate-name",
-                    desiredStatus: "EXITED"
-                  }
-                ]
-              : []
-        })
-      };
-    }
-
-    if (normalizedUrl.endsWith("/api/tags")) {
-      return { ok: true, json: async () => ({ models: [] }) };
-    }
-
-    throw new Error(`Unexpected fetch URL: ${normalizedUrl}`);
-  };
-
-  const missingContext = await createApiTestContext({
-    RUNPOD_API_KEY: "test-runpod-key",
-    RUNPOD_POD_NAME: "missing-name",
-    RUNPOD_POD_ID: "",
-    RUNPOD_POD_ID_OVERRIDE: "false"
-  });
-
-  t.after(async () => {
-    global.fetch = originalFetch;
-    await missingContext.close();
-  });
-
-  const missingLoginResponse = await missingContext.agent
-    .post("/api/admin/login")
-    .set(missingContext.mutationHeaders)
-    .send({
-      email: "admin@example.com",
-      password: "Admin123!"
-    });
-
-  assert.equal(missingLoginResponse.status, 200);
-
-  const missingResponse = await missingContext.agent.get(
-    "/api/admin/assistant/status"
-  );
-
-  assert.equal(missingResponse.status, 200);
-  assert.equal(missingResponse.body.remotePod.runtimeStatus, "error");
-  assert.match(
-    missingResponse.body.remotePod.message,
-    /No RunPod pod found with name "missing-name"/
-  );
-
-  mode = "duplicate";
-  const duplicateContext = await createApiTestContext({
-    RUNPOD_API_KEY: "test-runpod-key",
-    RUNPOD_POD_NAME: "duplicate-name",
-    RUNPOD_POD_ID: "",
-    RUNPOD_POD_ID_OVERRIDE: "false"
-  });
-
-  t.after(async () => {
-    await duplicateContext.close();
-  });
-
-  const duplicateLoginResponse = await duplicateContext.agent
-    .post("/api/admin/login")
-    .set(duplicateContext.mutationHeaders)
-    .send({
-      email: "admin@example.com",
-      password: "Admin123!"
-    });
-
-  assert.equal(duplicateLoginResponse.status, 200);
-
-  const duplicateResponse = await duplicateContext.agent.get(
-    "/api/admin/assistant/status"
-  );
-
-  assert.equal(duplicateResponse.status, 200);
-  assert.equal(duplicateResponse.body.remotePod.runtimeStatus, "error");
-  assert.match(
-    duplicateResponse.body.remotePod.message,
-    /Multiple RunPod pods are named "duplicate-name"/
-  );
-});
-
-test("remote AI tunnel controls report and toggle tunnel state safely", async (t) => {
-  const originalFetch = global.fetch;
-  global.fetch = async (url) => {
-    const normalizedUrl = String(url);
-
-    if (normalizedUrl === "https://rest.runpod.io/v1/pods/pod_test_123") {
-      return {
-        ok: true,
-        json: async () => ({
-          id: "pod_test_123",
-          desiredStatus: "RUNNING",
-          publicIp: "213.192.2.117",
-          portMappings: {
-            22: 40179
-          }
-        })
-      };
-    }
-
-    throw new Error(`Unexpected fetch URL: ${normalizedUrl}`);
-  };
-
+test("remote AI tunnel controls report and toggle Thunder tunnel state safely", async (t) => {
   const context = await createApiTestContext({
     REMOTE_AI_TUNNEL_TEST_MODE: "true",
     REMOTE_AI_TUNNEL_TEST_RUNNING: "false",
-    RUNPOD_API_KEY: "test-runpod-key",
-    RUNPOD_POD_NAME: "",
-    RUNPOD_POD_ID_OVERRIDE: "false",
-    RUNPOD_POD_ID: "pod_test_123",
-    RUNPOD_SSH_USER: "root",
-    RUNPOD_SSH_KEY_PATH: "~/.ssh/id_ed25519"
+    REMOTE_AI_ENABLED: "true",
+    REMOTE_AI_SSH_HOST: "203.0.113.10",
+    REMOTE_AI_SSH_PORT: "22",
+    REMOTE_AI_SSH_USER: "ubuntu",
+    REMOTE_AI_SSH_KEY_PATH: "~/.ssh/thunder_ed25519"
   });
   t.after(async () => {
-    global.fetch = originalFetch;
     await context.close();
   });
 
@@ -996,8 +659,9 @@ test("remote AI tunnel controls report and toggle tunnel state safely", async (t
   assert.equal(statusResponse.status, 200);
   assert.equal(statusResponse.body.remoteTunnel.configured, true);
   assert.equal(statusResponse.body.remoteTunnel.running, false);
-  assert.equal(statusResponse.body.remoteTunnel.sshHost, "213.192.2.117");
-  assert.equal(statusResponse.body.remoteTunnel.sshPort, 40179);
+  assert.equal(statusResponse.body.remoteTunnel.sshHost, "203.0.113.10");
+  assert.equal(statusResponse.body.remoteTunnel.sshUser, "ubuntu");
+  assert.equal(statusResponse.body.remoteTunnel.remoteHost, "127.0.0.1");
 
   const startResponse = await context.agent
     .post("/api/admin/assistant/remote-tunnel/start")
@@ -1005,8 +669,6 @@ test("remote AI tunnel controls report and toggle tunnel state safely", async (t
 
   assert.equal(startResponse.status, 200);
   assert.equal(startResponse.body.remoteTunnel.running, true);
-  assert.equal(startResponse.body.remoteTunnel.sshHost, "213.192.2.117");
-  assert.equal(startResponse.body.remoteTunnel.sshPort, 40179);
 
   const stopResponse = await context.agent
     .post("/api/admin/assistant/remote-tunnel/stop")
@@ -1016,51 +678,23 @@ test("remote AI tunnel controls report and toggle tunnel state safely", async (t
   assert.equal(stopResponse.body.remoteTunnel.running, false);
 });
 
-test("remote Ollama wake control starts ollama serve through ssh safely", async (t) => {
+test("remote Ollama wake control starts Ollama through Thunder SSH safely", async (t) => {
   const originalSpawn = require("node:child_process").spawn;
   const childProcess = require("node:child_process");
-  const originalFetch = global.fetch;
-
-  global.fetch = async (url) => {
-    const normalizedUrl = String(url);
-
-    if (normalizedUrl === "https://rest.runpod.io/v1/pods/pod_test_123") {
-      return {
-        ok: true,
-        json: async () => ({
-          id: "pod_test_123",
-          desiredStatus: "RUNNING",
-          publicIp: "213.192.2.117",
-          portMappings: {
-            22: 40179
-          }
-        })
-      };
-    }
-
-    if (normalizedUrl.endsWith("/api/tags")) {
-      return {
-        ok: true,
-        json: async () => ({
-          models: [{ name: "qwen2.5:7b" }]
-        })
-      };
-    }
-
-    throw new Error(`Unexpected fetch URL: ${normalizedUrl}`);
-  };
+  let wakeScript = "";
 
   const context = await createApiTestContext({
-    RUNPOD_API_KEY: "test-runpod-key",
-    RUNPOD_POD_NAME: "",
-    RUNPOD_POD_ID_OVERRIDE: "false",
-    RUNPOD_POD_ID: "pod_test_123",
-    RUNPOD_SSH_KEY_PATH: "~/.ssh/id_ed25519"
+    REMOTE_AI_ENABLED: "true",
+    REMOTE_AI_SSH_HOST: "203.0.113.10",
+    REMOTE_AI_SSH_PORT: "22",
+    REMOTE_AI_SSH_USER: "ubuntu",
+    REMOTE_AI_SSH_KEY_PATH: "~/.ssh/thunder_ed25519",
+    REMOTE_AI_OLLAMA_MODELS_PATH: "/home/ubuntu/ollama-models",
+    REMOTE_AI_OLLAMA_LOG_PATH: "/home/ubuntu/ollama.log"
   });
 
   t.after(async () => {
     childProcess.spawn = originalSpawn;
-    global.fetch = originalFetch;
     await context.close();
   });
 
@@ -1070,7 +704,9 @@ test("remote Ollama wake control starts ollama serve through ssh safely", async 
     child.stdout = new EventEmitter();
     child.stderr = new EventEmitter();
     child.stdin = {
-      write() {},
+      write(value) {
+        wakeScript += String(value || "");
+      },
       end() {}
     };
     child.kill = () => {};
@@ -1078,7 +714,7 @@ test("remote Ollama wake control starts ollama serve through ssh safely", async 
     process.nextTick(() => {
       child.stdout.emit(
         "data",
-        '__OLLAMA_INSTALLED__=1\n__OLLAMA_STARTED__=1\n{"models":[{"name":"qwen2.5:7b"}]}'
+        '__OLLAMA_STARTED__=1\n{"models":[{"name":"qwen2.5:7b"}]}'
       );
       child.emit("close", 0);
     });
@@ -1103,18 +739,16 @@ test("remote Ollama wake control starts ollama serve through ssh safely", async 
   assert.equal(wakeResponse.status, 200);
   assert.equal(wakeResponse.body.remoteOllama.available, true);
   assert.equal(wakeResponse.body.remoteOllama.running, true);
-  assert.equal(wakeResponse.body.remoteOllama.installedNow, true);
   assert.equal(wakeResponse.body.remoteOllama.startedNow, true);
-  assert.equal(wakeResponse.body.remoteOllama.retriedStart, false);
   assert.equal(wakeResponse.body.remoteOllama.modelInstalled, true);
   assert.equal(
     wakeResponse.body.remoteOllama.modelsPath,
-    "/workspace/ollama-models"
+    "/home/ubuntu/ollama-models"
   );
-  assert.equal(wakeResponse.body.remoteOllama.sshHost, "213.192.2.117");
-  assert.equal(wakeResponse.body.remoteOllama.sshPort, 40179);
+  assert.match(wakeScript, /OLLAMA_MODELS="\/home\/ubuntu\/ollama-models"/);
+  assert.match(wakeScript, /nohup ollama serve/);
+  assert.doesNotMatch(wakeScript, /systemctl|systemd|sudo/);
 });
-
 test("admin importer launcher starts the local importer behind admin auth", async (t) => {
   const context = await createApiTestContext({
     IMPORTER_LAUNCH_TEST_RESULT: "started"

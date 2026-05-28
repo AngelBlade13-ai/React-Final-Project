@@ -12,7 +12,7 @@ Primary users:
 - The site owner/admin who curates songs, world collections, guided paths, media, and catalog quality.
 - Developers/instructors/interviewers reviewing a full-stack portfolio project with real data flows.
 
-This is more than a basic CRUD app because it includes media hosting, MongoDB persistence, authored JSON seed files, public/private role separation, JWT cookie sessions, account libraries, comment moderation, operational audit logs, catalog reseeding, live-store-to-file sync, a separate Python import pipeline, Cloudinary upload, AI-assisted review through Ollama, and optional RunPod GPU runtime control.
+This is more than a basic CRUD app because it includes media hosting, MongoDB persistence, authored JSON seed files, public/private role separation, JWT cookie sessions, account libraries, comment moderation, operational audit logs, catalog reseeding, live-store-to-file sync, a separate Python import pipeline, Cloudinary upload, AI-assisted review through Ollama, and optional Thunder Compute GPU runtime control.
 
 ## 2. Tech Stack
 
@@ -32,7 +32,7 @@ Flask importer UI is present. [web_app.py](../tools/song-importer/src/web_app.py
 
 Ollama powers the admin AI assistant. [localAiService.js](../backend/src/services/localAiService.js) checks `/api/tags`, calls `/api/generate`, builds JSON-only prompts, validates returned structures, and exposes catalog review, post suggestions, guided path suggestions, and finding decisions.
 
-RunPod is optional remote GPU infrastructure for Ollama. [runpodPodService.js](../backend/src/services/runpodPodService.js) discovers/starts/stops pods. [remoteAiTunnelService.js](../backend/src/services/remoteAiTunnelService.js) opens an SSH local port forward. [remoteOllamaService.js](../backend/src/services/remoteOllamaService.js) installs/wakes Ollama on the pod and uses `/workspace/ollama-models` for persistent models.
+Thunder Compute is optional remote GPU infrastructure for Ollama. The app does not manage the Thunder instance lifecycle; `backend/src/services/remoteAiService.js` opens an SSH tunnel and wakes Ollama with `nohup` after you manually start or restore the instance.
 
 Deployment setup is present in `README.md`: frontend on Vercel, backend on Render, MongoDB as the database, and Cloudinary as media hosting. The README lists a live frontend `https://react-final-project-seven-sigma.vercel.app` and backend `https://react-final-project-cnk7.onrender.com`.
 
@@ -96,7 +96,7 @@ Admin UI
   -> /api/admin/assistant/*
   -> localAiService builds compact JSON prompt
   -> Ollama at LOCAL_AI_BASE_URL
-  -> local machine or RunPod through SSH tunnel
+  -> local machine or Thunder Compute through SSH tunnel
   -> structured suggestions/findings
   -> admin reviews before applying anything
 ```
@@ -151,7 +151,7 @@ Reseed from posts file: [AdminSystemPage.jsx](../frontend/src/pages/admin/AdminS
 
 Importer launcher: AdminLayout calls `POST /api/admin/importer/launch`. [importerLauncherService.js](../backend/src/services/importerLauncherService.js) checks if `IMPORTER_URL` is reachable, otherwise starts `tools/song-importer/main.py --web --website-root <root> --website-posts <config.postsFile> --port <port> --no-browser`.
 
-AI assistant panel/status/actions: [AdminAiRuntimePage.jsx](../frontend/src/pages/admin/AdminAiRuntimePage.jsx), [AdminPostsPage.jsx](../frontend/src/pages/admin/AdminPostsPage.jsx), and [AdminPathsPage.jsx](../frontend/src/pages/admin/AdminPathsPage.jsx) call assistant routes. Status: `GET /api/admin/assistant/status`. Runtime: remote pod start/stop, tunnel start/stop, remote Ollama wake. Suggestions: catalog review, catalog finding review/dismiss, post suggestions, guided path suggestions.
+AI assistant panel/status/actions: [AdminAiRuntimePage.jsx](../frontend/src/pages/admin/AdminAiRuntimePage.jsx), [AdminPostsPage.jsx](../frontend/src/pages/admin/AdminPostsPage.jsx), and [AdminPathsPage.jsx](../frontend/src/pages/admin/AdminPathsPage.jsx) call assistant routes. Status: `GET /api/admin/assistant/status`. Runtime: remote tunnel start/stop, tunnel start/stop, remote Ollama wake. Suggestions: catalog review, catalog finding review/dismiss, post suggestions, guided path suggestions.
 
 Protection against accidental changes:
 
@@ -487,21 +487,21 @@ Backend prompt building: [localAiService.js](../backend/src/services/localAiServ
 
 Backend to Ollama: `fetchOllama()` calls `${LOCAL_AI_BASE_URL}/api/tags` for status and `/api/generate` for generation. `requestGenerate()` uses `stream: false`, `format: "json"`, `think: false`, keep-alive, context, and prediction limits from env.
 
-Local/remote Ollama: locally, `LOCAL_AI_BASE_URL` can be `http://127.0.0.1:11434`. Remotely, RunPod hosts Ollama and the backend still calls `localhost:11434` after an SSH tunnel maps local port 11434 to the pod’s remote 11434.
+Local/remote Ollama: locally, `LOCAL_AI_BASE_URL` can be `http://127.0.0.1:11434`. Remotely, Thunder Compute hosts Ollama and the backend still calls `localhost:11434` after an SSH tunnel maps local port 11434 to the instance’s remote 11434.
 
-RunPod purpose: provide a GPU machine for larger local models without running them on the laptop. [remoteOllamaService.js](../backend/src/services/remoteOllamaService.js) installs/wakes Ollama and stores models under `/workspace/ollama-models`.
+Thunder Compute purpose: provide a GPU machine for larger Ollama models without running them on the laptop. Models live under `/home/ubuntu/ollama-models`.
 
-SSH tunnel purpose: [remoteAiTunnelService.js](../backend/src/services/remoteAiTunnelService.js) runs:
+SSH tunnel purpose: `backend/src/services/remoteAiService.js` runs:
 
 ```text
-ssh -N -L localPort:remoteHost:remotePort user@podHost -p podSshPort -i key
+ssh -N -L localPort:remoteHost:remotePort user@instanceHost -p instanceSshPort -i key
 ```
 
-That makes `http://127.0.0.1:11434` on the backend machine reach Ollama running inside the pod.
+That makes `http://127.0.0.1:11434` on the backend machine reach Ollama running inside the instance.
 
-Network volume: RunPod pods can be ephemeral. Storing models in `/workspace/ollama-models` on a persistent volume prevents losing downloaded model files when the pod stops/restarts.
+Network volume: Thunder Compute instances can be ephemeral. Storing models in `/home/ubuntu/ollama-models` on a persistent volume prevents losing downloaded model files when the tunnel stops/restarts.
 
-`RUNPOD_POD_NAME` is better than hardcoding `RUNPOD_POD_ID` because pod IDs can change when pods are recreated. [runpodPodService.js](../backend/src/services/runpodPodService.js) can discover a unique pod by name, while `RUNPOD_POD_ID` is treated as fallback or explicit override through `RUNPOD_POD_ID_OVERRIDE=true`.
+`REMOTE_AI_POD_NAME` is better than hardcoding `REMOTE_AI_POD_ID` because instance IDs can change when instances are recreated. [remoteAiService.js](../backend/src/services/remoteAiService.js) can discover a unique instance by name, while `REMOTE_AI_POD_ID` is treated as fallback or explicit override through `REMOTE_AI_POD_ID_OVERRIDE=true`.
 
 Catalog review flow:
 
@@ -519,8 +519,8 @@ Admin clicks catalog review
 Remote AI flow:
 
 ```text
-Start pod
-  -> POST /api/admin/assistant/remote-pod/start
+Start instance
+  -> POST /api/admin/assistant/remote-tunnel/start
 Open tunnel
   -> POST /api/admin/assistant/remote-tunnel/start
 Wake Ollama
@@ -531,36 +531,36 @@ Backend calls localhost:11434
 
 AI findings must be reviewed because the model can hallucinate, misread editorial intent, over-tag, or suggest subjective changes. The code tries to reduce this with conservative prompts, allowed target validation, finding fingerprints, state hashes, and decision memory, but final authority remains the admin.
 
-## 12. RunPod/Ollama Operational Explanation
+## 12. Thunder Compute/Ollama Operational Explanation
 
-RunPod is used when local hardware is not enough for the selected Ollama model. The GPU pod hosts the Ollama server, while the backend continues to use the same Ollama HTTP API.
+Thunder Compute is used when local hardware is not enough for the selected Ollama model. The GPU instance hosts the Ollama server, while the backend continues to use the same Ollama HTTP API.
 
-The GPU pod hosts Ollama by installing `/usr/local/bin/ollama` if missing, setting `OLLAMA_MODELS=/workspace/ollama-models`, and starting `ollama serve`. This appears in [runpod-bootstrap-ollama.sh](../backend/scripts/runpod-bootstrap-ollama.sh) and the inline wake script in [remoteOllamaService.js](../backend/src/services/remoteOllamaService.js).
+The Thunder instance hosts Ollama. The wake script sets `OLLAMA_MODELS=/home/ubuntu/ollama-models` and starts `ollama serve` with `nohup`, without `systemd` or `sudo`.
 
-The network volume prevents losing models because downloaded model files are written under `/workspace/ollama-models` instead of a disposable container path.
+The network volume prevents losing models because downloaded model files are written under `/home/ubuntu/ollama-models` instead of a disposable container path.
 
-To download models, SSH into the pod or use the pod terminal after Ollama is running and run commands such as:
+To download models, SSH into the instance or use the instance terminal after Ollama is running and run commands such as:
 
 ```bash
-OLLAMA_MODELS=/workspace/ollama-models ollama pull qwen2.5:7b
-OLLAMA_MODELS=/workspace/ollama-models ollama pull qwen3:14b
+OLLAMA_MODELS=/home/ubuntu/ollama-models ollama pull qwen2.5:7b
+OLLAMA_MODELS=/home/ubuntu/ollama-models ollama pull qwen3:14b
 ```
 
-Backend pod discovery: [runpodPodService.js](../backend/src/services/runpodPodService.js) calls `GET /pods`, finds the unique pod named `RUNPOD_POD_NAME`, or falls back to `GET /pods/:id`. It reads `desiredStatus`, `publicIp`, and `portMappings["22"]` for SSH.
+Backend instance discovery: [remoteAiService.js](../backend/src/services/remoteAiService.js) calls `GET /instances`, finds the unique instance named `REMOTE_AI_POD_NAME`, or falls back to `GET /instances/:id`. It reads `desiredStatus`, `publicIp`, and `portMappings["22"]` for SSH.
 
 Actions:
 
-- Start: `POST /api/admin/assistant/remote-pod/start` asks RunPod to start the pod.
-- Stop: `POST /api/admin/assistant/remote-pod/stop` asks RunPod to stop it.
+- Start: `POST /api/admin/assistant/remote-tunnel/start` asks Thunder Compute to start the instance.
+- Stop: `POST /api/admin/assistant/remote-tunnel/stop` asks Thunder Compute to stop it.
 - Tunnel start: `POST /api/admin/assistant/remote-tunnel/start` opens local port forwarding.
 - Tunnel stop: kills the stored SSH process and clears `remote-ai-tunnel.json`.
 - Wake: `POST /api/admin/assistant/remote-ollama/wake` installs/starts Ollama and checks `/api/tags`.
 
 What can go wrong:
 
-- RunPod API key missing or invalid.
-- Pod name not unique or not found.
-- Pod is running but SSH port is not published yet.
+- Thunder Compute API key missing or invalid.
+- Instance name not unique or not found.
+- Instance is running but SSH port is not published yet.
 - SSH key path wrong or key not authorized.
 - Local port 11434 already in use.
 - Ollama installed but model not pulled.
@@ -574,17 +574,17 @@ Env vars:
 - `LOCAL_AI_BASE_URL`: Ollama HTTP base URL the backend calls.
 - `LOCAL_AI_MODEL`: default model name.
 - `LOCAL_AI_TIMEOUT_MS`: model request timeout.
-- `RUNPOD_API_KEY`: RunPod API token.
-- `RUNPOD_POD_NAME`: preferred unique pod identifier.
-- `RUNPOD_POD_ID`: fallback pod id.
-- `RUNPOD_API_BASE_URL`: RunPod REST API base.
-- `RUNPOD_SSH_HOST`: manual SSH host override.
-- `RUNPOD_SSH_PORT`: manual/default SSH port.
-- `RUNPOD_SSH_USER`: SSH username, usually `root`.
-- `RUNPOD_SSH_KEY_PATH`: private key for SSH.
-- `RUNPOD_TUNNEL_LOCAL_PORT`: local port exposed to backend.
-- `RUNPOD_TUNNEL_REMOTE_HOST`: remote host inside pod, usually `127.0.0.1`.
-- `RUNPOD_TUNNEL_REMOTE_PORT`: remote Ollama port, usually `11434`.
+- `REMOTE_AI_SSH_HOST`: Thunder SSH host.
+- `REMOTE_AI_POD_NAME`: preferred unique instance identifier.
+- `REMOTE_AI_POD_ID`: fallback instance id.
+- `REMOTE_AI_SSH_KEY_PATH`: private key path for SSH.
+- `REMOTE_AI_SSH_HOST`: manual SSH host override.
+- `REMOTE_AI_SSH_PORT`: manual/default SSH port.
+- `REMOTE_AI_SSH_USER`: SSH username, usually `root`.
+- `REMOTE_AI_SSH_KEY_PATH`: private key for SSH.
+- `REMOTE_AI_TUNNEL_LOCAL_PORT`: local port exposed to backend.
+- `REMOTE_AI_TUNNEL_REMOTE_HOST`: remote host inside instance, usually `127.0.0.1`.
+- `REMOTE_AI_TUNNEL_REMOTE_PORT`: remote Ollama port, usually `11434`.
 
 ## 13. Environment Variables
 
@@ -618,7 +618,8 @@ Sanitized table:
 | `LOCAL_AI_BASE_URL`             | Ollama API URL                          |                           `http://127.0.0.1:11434` | For AI           | Backend          | Assistant cannot reach Ollama                          |
 | `LOCAL_AI_MODEL`                | Default Ollama model                    |                                       `qwen2.5:7b` | For AI           | Backend          | Model not installed/status warning                     |
 | `LOCAL_AI_MODEL_PROFILES`       | JSON model profile list                 |            `[{"key":"fast","model":"qwen2.5:7b"}]` | No               | Backend          | Profile picker defaults only                           |
-| `LOCAL_AI_TIMEOUT_MS`           | Ollama timeout                          |                                           `120000` | No               | Backend          | AI requests timeout too soon/late                      |
+| `LOCAL_AI_TIMEOUT_MS`           | Ollama timeout                          |                                           `600000` | No               | Backend          | AI requests timeout too soon/late                      |
+| `LOCAL_AI_DEFAULT_NUM_GPU`      | Ollama GPU-layer hint                   |                                               `99` | No               | Backend          | Larger local models may fall back to CPU               |
 | `LOCAL_AI_STATUS_CACHE_MS`      | Status cache lifetime                   |                                             `8000` | No               | Backend          | Stale/noisy status checks                              |
 | `LOCAL_AI_KEEP_ALIVE`           | Ollama keep-alive                       |                                              `45m` | No               | Backend          | Model unload behavior changes                          |
 | `LOCAL_AI_DEFAULT_NUM_CTX`      | Default context size                    |                                             `4096` | No               | Backend          | Prompt capacity changes                                |
@@ -627,18 +628,16 @@ Sanitized table:
 | `LOCAL_AI_POST_NUM_PREDICT`     | Post suggestion budget                  |                                              `700` | No               | Backend          | Post suggestions truncated/verbose                     |
 | `LOCAL_AI_PATH_NUM_PREDICT`     | Path suggestion budget                  |                                              `850` | No               | Backend          | Path suggestions truncated/verbose                     |
 | `LOCAL_AI_NEW_PATH_NUM_PREDICT` | New path suggestion budget              |                                              `900` | No               | Backend          | New path suggestions truncated/verbose                 |
-| `RUNPOD_API_KEY`                | RunPod API auth                         |                                   `rp_...redacted` | For remote AI    | Backend          | Pod controls fail                                      |
-| `RUNPOD_POD_NAME`               | Preferred pod discovery name            |                            `angelina-ollama-admin` | For remote AI    | Backend          | Pod discovery fails                                    |
-| `RUNPOD_POD_ID`                 | Fallback pod id                         |                                           `abc123` | No               | Backend          | Fallback controls unavailable                          |
-| `RUNPOD_POD_ID_OVERRIDE`        | Force pod id over name                  |                                            `false` | No               | Backend          | May target stale pod                                   |
-| `RUNPOD_API_BASE_URL`           | RunPod API base                         |                        `https://rest.runpod.io/v1` | No               | Backend          | Pod API calls fail                                     |
-| `RUNPOD_SSH_HOST`               | Manual SSH host                         |                                     `203.0.113.10` | No               | Backend          | Tunnel relies on API discovery                         |
-| `RUNPOD_SSH_PORT`               | SSH port                                |                                               `22` | For tunnel       | Backend          | SSH connection fails                                   |
-| `RUNPOD_SSH_USER`               | SSH user                                |                                             `root` | For tunnel       | Backend          | SSH login fails                                        |
-| `RUNPOD_SSH_KEY_PATH`           | Private key path                        |                                `~/.ssh/id_ed25519` | For tunnel       | Backend          | SSH auth fails                                         |
-| `RUNPOD_TUNNEL_LOCAL_PORT`      | Local forwarded port                    |                                            `11434` | For tunnel       | Backend          | Backend cannot reach expected local port               |
-| `RUNPOD_TUNNEL_REMOTE_HOST`     | Remote host                             |                                        `127.0.0.1` | For tunnel       | Backend          | Tunnel points wrong place                              |
-| `RUNPOD_TUNNEL_REMOTE_PORT`     | Remote Ollama port                      |                                            `11434` | For tunnel       | Backend          | Tunnel points wrong service                            |
+| `REMOTE_AI_POD_NAME`            | Preferred instance discovery name       |                            `angelina-ollama-admin` | For remote AI    | Backend          | Instance discovery fails                               |
+| `REMOTE_AI_POD_ID`              | Fallback instance id                    |                                           `abc123` | No               | Backend          | Fallback controls unavailable                          |
+| `REMOTE_AI_POD_ID_OVERRIDE`     | Force instance id over name             |                                            `false` | No               | Backend          | May target stale instance                              |
+| `REMOTE_AI_SSH_HOST`            | Manual SSH host                         |                                     `203.0.113.10` | No               | Backend          | Tunnel relies on API discovery                         |
+| `REMOTE_AI_SSH_PORT`            | SSH port                                |                                               `22` | For tunnel       | Backend          | SSH connection fails                                   |
+| `REMOTE_AI_SSH_USER`            | SSH user                                |                                             `root` | For tunnel       | Backend          | SSH login fails                                        |
+| `REMOTE_AI_SSH_KEY_PATH`        | Private key path                        |                                `~/.ssh/id_ed25519` | For tunnel       | Backend          | SSH auth fails                                         |
+| `REMOTE_AI_TUNNEL_LOCAL_PORT`   | Local forwarded port                    |                                            `11434` | For tunnel       | Backend          | Backend cannot reach expected local port               |
+| `REMOTE_AI_TUNNEL_REMOTE_HOST`  | Remote host                             |                                        `127.0.0.1` | For tunnel       | Backend          | Tunnel points wrong place                              |
+| `REMOTE_AI_TUNNEL_REMOTE_PORT`  | Remote Ollama port                      |                                            `11434` | For tunnel       | Backend          | Tunnel points wrong service                            |
 | `REMOTE_OLLAMA_KEEP_ALIVE`      | Remote Ollama keep-alive                |                                              `45m` | No               | Backend          | Remote model unload behavior changes                   |
 | `REMOTE_OLLAMA_NUM_PARALLEL`    | Remote parallelism                      |                                                `1` | No               | Backend          | VRAM/performance changes                               |
 | `IMPORTER_ROOT`                 | Importer directory override             |                       `D:\...\tools\song-importer` | No               | Backend          | Importer launcher cannot find tool                     |
@@ -666,7 +665,7 @@ Local-only or operator-only parts:
 
 - Python importer UI is intended for local admin use.
 - Ollama local AI is usually local or tunneled.
-- RunPod controls are backend admin operations but depend on local SSH tooling/key access.
+- Thunder Compute controls are backend admin operations but depend on local SSH tooling/key access.
 - Reseed/sync file mutation routes should be carefully controlled in production.
 
 Vercel frontend-only limitation: if only the React app is deployed and the backend is not deployed at the same domain or configured through `VITE_API_URL`, `/api/...` calls can 404. This app does not define Vercel serverless API routes; the real API is Express.
@@ -688,7 +687,7 @@ If `CLIENT_URL` does not match the browser origin exactly, credentialed requests
 - Render backend public endpoints return 200.
 - Production public API calls for `site-content`, `posts`, and `collections` work.
 - Production auth/session health passed: login works, refresh preserves the session, and account/library behavior works.
-- RunPod `/workspace/ollama-models` persistence is confirmed on the network volume.
+- Thunder Compute `/home/ubuntu/ollama-models` persistence is confirmed on the network volume.
 - Reseed endpoint/test behavior has been fixed.
 - Cloudinary video upload and avatar upload are implemented.
 - Public playback uses `post.videoUrl`.
@@ -781,11 +780,11 @@ Admin runs AI catalog review:
 5. AI returns structured findings.
 6. Admin reviews, dismisses, or asks for per-finding review.
 
-Admin starts remote AI on RunPod:
+Admin starts remote AI on Thunder Compute:
 
-1. Admin clicks start pod.
-2. Backend calls RunPod API.
-3. Admin waits for pod SSH endpoint.
+1. Admin clicks start instance.
+2. Backend calls Thunder Compute API.
+3. Admin waits for instance SSH endpoint.
 4. Admin starts SSH tunnel.
 5. Admin wakes remote Ollama.
 6. Backend status checks `LOCAL_AI_BASE_URL` through tunnel.
@@ -844,23 +843,23 @@ Admin data regresses after restart:
 - A manual reseed can overwrite live posts/collections from the authored file.
 - Sync live store back to file before reseeding if admin changes should become authored state.
 
-RunPod pod ID changed:
+Thunder Compute instance ID changed:
 
-- Prefer `RUNPOD_POD_NAME`.
-- Leave `RUNPOD_POD_ID_OVERRIDE=false` unless deliberately targeting a fixed pod.
-- Ensure pod name is unique; duplicate names cause a 409-style error.
+- Prefer `REMOTE_AI_POD_NAME`.
+- Leave `REMOTE_AI_POD_ID_OVERRIDE=false` unless deliberately targeting a fixed instance.
+- Ensure instance name is unique; duplicate names cause a 409-style error.
 
 SSH tunnel fails:
 
-- Check `RUNPOD_SSH_KEY_PATH`.
-- Check pod is running and SSH port is ready in status.
-- Check local port `RUNPOD_TUNNEL_LOCAL_PORT` is free.
+- Check `REMOTE_AI_SSH_KEY_PATH`.
+- Check instance is running and SSH port is ready in status.
+- Check local port `REMOTE_AI_TUNNEL_LOCAL_PORT` is free.
 - Inspect `backend/src/data/remote-ai-tunnel.log`.
 
 Ollama not responding:
 
 - Local: run `ollama serve` and `ollama list`.
-- Remote: start pod, start tunnel, wake Ollama.
+- Remote: start instance, start tunnel, wake Ollama.
 - Check `LOCAL_AI_BASE_URL`.
 - Check model is installed; assistant status distinguishes Ollama running from model installed.
 
@@ -895,7 +894,7 @@ Vite blocked tunnel host:
 6. Open account/profile/library. Show saved/recent releases and profile/avatar options. Explain JWT cookie sessions and user library fields.
 7. Open admin studio. Show Insights first: health score, coverage, issues, recent activity. Explain this is operational catalog maintenance.
 8. Edit a post or collection. Show fields like release status, version family, homepage eligibility, public visibility, collection slugs, world layer, and theme tags. Explain validations and audit logs.
-9. Run AI assistant review. Show status, selected model, catalog review, and findings. Explain Ollama/local or RunPod remote flow and that suggestions must be reviewed.
+9. Run AI assistant review. Show status, selected model, catalog review, and findings. Explain Ollama/local or Thunder Compute remote flow and that suggestions must be reviewed.
 10. Explain Cloudinary/importer. Open Importer if configured or describe `tools/song-importer`: paste JSON, attach media, duplicate check, upload, generate website-ready JSON.
 11. Explain reseed/sync. Show System page. Explain `posts.local.json -> reseed -> MongoDB` and `MongoDB -> live store sync -> posts.local.json`.
 12. End with future improvements: first-class cover art, deeper importer update modes, persistent job queue, stronger deployment separation for local-only admin AI/import tools.
@@ -952,16 +951,15 @@ Backend:
 - [backend/src/services/siteContentService.js](../backend/src/services/siteContentService.js): site/about/guided path normalization.
 - [backend/src/services/archiveInsights.js](../backend/src/services/archiveInsights.js): admin dashboard metrics.
 - [backend/src/services/localAiService.js](../backend/src/services/localAiService.js): Ollama assistant prompts/status/validation.
-- [backend/src/services/runpodPodService.js](../backend/src/services/runpodPodService.js): RunPod pod discovery/start/stop.
-- [backend/src/services/remoteAiTunnelService.js](../backend/src/services/remoteAiTunnelService.js): SSH tunnel process management.
-- [backend/src/services/remoteOllamaService.js](../backend/src/services/remoteOllamaService.js): remote Ollama install/start/status.
+- [backend/src/services/remoteAiService.js](../backend/src/services/remoteAiService.js): Thunder Compute instance discovery/start/stop.
+- [backend/src/services/remoteAiService.js](../backend/src/services/remoteAiService.js): SSH tunnel process management and remote Ollama wake controls.
 - [backend/src/services/liveStoreSync.js](../backend/src/services/liveStoreSync.js): MongoDB-to-posts-file sync.
 - [backend/src/services/reseedLiveSiteService.js](../backend/src/services/reseedLiveSiteService.js): background reseed job wrapper.
 - [backend/src/services/importerLauncherService.js](../backend/src/services/importerLauncherService.js): starts local Flask importer.
 - [backend/scripts/reseed-from-posts-file.js](../backend/scripts/reseed-from-posts-file.js): posts file to MongoDB reseed.
 - [backend/scripts/sync-live-store-to-posts-file.js](../backend/scripts/sync-live-store-to-posts-file.js): live store sync CLI.
 - [backend/scripts/sync-tracked-catalog-from-live.js](../backend/scripts/sync-tracked-catalog-from-live.js): tracked catalog reconciliation/diff/report.
-- [backend/scripts/runpod-bootstrap-ollama.sh](../backend/scripts/runpod-bootstrap-ollama.sh): RunPod Ollama bootstrap script.
+- [backend/scripts/remoteAiService.js](../backend/scripts/remoteAiService.js): Thunder Compute Ollama bootstrap script.
 - [backend/data/posts.local.json](../backend/data/posts.local.json): current local authored catalog in this workspace.
 - [backend/data/posts.template.json](../backend/data/posts.template.json): tracked safe template.
 
@@ -1005,7 +1003,7 @@ Docs:
 - Mini-player: persistent frontend playback UI backed by a hidden media element in [App.jsx](../frontend/src/App.jsx).
 - Admin studio: protected `/admin` UI for managing content, users, comments, operations, importer, and AI.
 - Local AI: Ollama running on the same machine the backend can reach.
-- Remote AI: Ollama running on RunPod and reached through an SSH tunnel.
+- Remote AI: Ollama running on Thunder Compute and reached through an SSH tunnel.
 - Ollama: local model server exposing `/api/tags` and `/api/generate`.
-- RunPod: GPU cloud provider used to run Ollama models remotely.
+- Thunder Compute: GPU cloud provider used to run Ollama models remotely.
 - SSH tunnel: local port forwarding that lets backend call remote Ollama as if it were local.

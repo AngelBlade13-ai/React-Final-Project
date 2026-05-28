@@ -45,6 +45,7 @@ async function createApiTestContext(overrides = {}) {
 
   return {
     agent: request.agent(app),
+    app,
     client: request(app),
     mutationHeaders,
     async close() {

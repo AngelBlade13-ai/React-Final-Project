@@ -1,6 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const { PassThrough } = require("node:stream");
+const request = require("supertest");
 const { createApiTestContext } = require("../helpers/createApiTestContext");
 
 test("user registration sets a cookie-backed session that auth/me can restore", async (t) => {
@@ -381,6 +382,137 @@ test("avatar upload returns a clear message when Cloudinary fails", async (t) =>
   assert.equal(
     avatarResponse.body.message,
     "Profile picture could not be uploaded. Try again in a moment."
+  );
+});
+
+test("comments include avatars, support replies, reports, profiles, and admin deletion", async (t) => {
+  const context = await createApiTestContext();
+  const ownerAgent = context.agent;
+  const reporterAgent = request.agent(context.app);
+  const { readStore, replaceUser } = require("../../src/data/store");
+
+  t.after(async () => {
+    await context.close();
+  });
+
+  const postsResponse = await context.client.get("/api/posts");
+  const targetPost = postsResponse.body.posts[0];
+
+  assert.ok(targetPost?.slug);
+
+  const ownerRegisterResponse = await ownerAgent
+    .post("/api/auth/register")
+    .send({
+      displayName: "Comment Owner",
+      email: "comment-owner@example.com",
+      password: "Password123!"
+    })
+    .set(context.mutationHeaders);
+
+  assert.equal(ownerRegisterResponse.status, 201);
+
+  const storeAfterOwner = await readStore();
+  const owner = storeAfterOwner.users.find(
+    (user) => user.email === "comment-owner@example.com"
+  );
+
+  await replaceUser({
+    ...owner,
+    avatarUrl: "https://example.com/avatar-owner.jpg"
+  });
+
+  const commentResponse = await ownerAgent
+    .post(`/api/posts/${targetPost.slug}/comments`)
+    .send({ body: "This release hit hard." })
+    .set(context.mutationHeaders);
+
+  assert.equal(commentResponse.status, 201);
+  assert.equal(
+    commentResponse.body.comment.author.avatarUrl,
+    "https://example.com/avatar-owner.jpg"
+  );
+  assert.equal(commentResponse.body.comment.parentCommentId, "");
+  assert.equal(commentResponse.body.comment.reports, undefined);
+
+  const parentCommentId = commentResponse.body.comment.id;
+
+  const profileResponse = await context.client.get(
+    `/api/users/${owner.id}/profile`
+  );
+
+  assert.equal(profileResponse.status, 200);
+  assert.equal(profileResponse.body.profile.displayName, "Comment Owner");
+  assert.equal(profileResponse.body.profile.email, undefined);
+  assert.equal(profileResponse.body.profile.recentComments.length, 1);
+
+  const reporterRegisterResponse = await reporterAgent
+    .post("/api/auth/register")
+    .send({
+      displayName: "Reporter",
+      email: "reporter@example.com",
+      password: "Password123!"
+    })
+    .set(context.mutationHeaders);
+
+  assert.equal(reporterRegisterResponse.status, 201);
+
+  const replyResponse = await reporterAgent
+    .post(`/api/posts/${targetPost.slug}/comments`)
+    .send({
+      body: "Replying to this thought.",
+      parentCommentId
+    })
+    .set(context.mutationHeaders);
+
+  assert.equal(replyResponse.status, 201);
+  assert.equal(replyResponse.body.comment.parentCommentId, parentCommentId);
+
+  const reportResponse = await reporterAgent
+    .post(`/api/comments/${parentCommentId}/report`)
+    .send({
+      reason: "other",
+      details: "Needs a moderator review."
+    })
+    .set(context.mutationHeaders);
+
+  assert.equal(reportResponse.status, 201);
+  assert.equal(reportResponse.body.comment.reports, undefined);
+
+  const adminLoginResponse = await ownerAgent
+    .post("/api/auth/login")
+    .send({
+      email: "admin@example.com",
+      password: "Admin123!"
+    })
+    .set(context.mutationHeaders);
+
+  assert.equal(adminLoginResponse.status, 200);
+  assert.equal(adminLoginResponse.body.user.role, "admin");
+
+  const adminCommentsResponse = await ownerAgent.get("/api/admin/comments");
+
+  assert.equal(adminCommentsResponse.status, 200);
+  const reportedComment = adminCommentsResponse.body.comments.find(
+    (comment) => comment.id === parentCommentId
+  );
+
+  assert.equal(reportedComment.reportCount, 1);
+  assert.equal(reportedComment.reports[0].reason, "other");
+  assert.equal(reportedComment.reports[0].reporter.displayName, "Reporter");
+
+  const deleteResponse = await ownerAgent
+    .delete(`/api/admin/comments/${parentCommentId}`)
+    .set(context.mutationHeaders);
+
+  assert.equal(deleteResponse.status, 200);
+
+  const afterDeleteResponse = await ownerAgent.get("/api/admin/comments");
+
+  assert.equal(
+    afterDeleteResponse.body.comments.some(
+      (comment) => comment.id === parentCommentId
+    ),
+    false
   );
 });
 

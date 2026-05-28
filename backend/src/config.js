@@ -32,53 +32,43 @@ const config = {
   importerUrl: process.env.IMPORTER_URL || "http://127.0.0.1:8765",
   importerPythonPath: process.env.IMPORTER_PYTHON_PATH || "",
   localAiEnabled: process.env.LOCAL_AI_ENABLED !== "false",
-  assistantAiProvider:
-    process.env.ASSISTANT_AI_PROVIDER ||
-    process.env.LOCAL_AI_PROVIDER ||
-    "ollama",
   localAiBaseUrl: process.env.LOCAL_AI_BASE_URL || "http://127.0.0.1:11434",
   localAiModel: process.env.LOCAL_AI_MODEL || "qwen2.5:7b",
   localAiModelProfilesRaw: process.env.LOCAL_AI_MODEL_PROFILES || "",
-  localAiTimeoutMs: Number(process.env.LOCAL_AI_TIMEOUT_MS) || 120000,
+    localAiTimeoutMs: Number(process.env.LOCAL_AI_TIMEOUT_MS) || 600000,
   localAiStatusCacheMs: Number(process.env.LOCAL_AI_STATUS_CACHE_MS) || 8000,
   localAiKeepAlive: process.env.LOCAL_AI_KEEP_ALIVE || "45m",
   localAiDefaultNumCtx: Number(process.env.LOCAL_AI_DEFAULT_NUM_CTX) || 4096,
-  localAiDefaultNumPredict:
-    Number(process.env.LOCAL_AI_DEFAULT_NUM_PREDICT) || 320,
-  localAiNumThread: Number(process.env.LOCAL_AI_NUM_THREAD) || 0,
+    localAiDefaultNumPredict:
+      Number(process.env.LOCAL_AI_DEFAULT_NUM_PREDICT) || 320,
+    localAiDefaultNumGpu:
+      String(process.env.LOCAL_AI_DEFAULT_NUM_GPU || "").trim() === ""
+        ? null
+        : Number(process.env.LOCAL_AI_DEFAULT_NUM_GPU),
+    localAiNumThread: Number(process.env.LOCAL_AI_NUM_THREAD) || 0,
   localAiPostNumPredict: Number(process.env.LOCAL_AI_POST_NUM_PREDICT) || 700,
   localAiPathNumPredict: Number(process.env.LOCAL_AI_PATH_NUM_PREDICT) || 850,
   localAiNewPathNumPredict:
     Number(process.env.LOCAL_AI_NEW_PATH_NUM_PREDICT) || 900,
-  runpodPodName: process.env.RUNPOD_POD_NAME || "",
-  runpodPodId: process.env.RUNPOD_POD_ID || "",
-  runpodPodIdOverride: process.env.RUNPOD_POD_ID_OVERRIDE === "true",
-  runpodApiKey: process.env.RUNPOD_API_KEY || "",
-  runpodApiBaseUrl:
-    process.env.RUNPOD_API_BASE_URL || "https://rest.runpod.io/v1",
-  runpodServerlessEndpointId:
-    process.env.RUNPOD_SERVERLESS_ENDPOINT_ID || "",
-  runpodServerlessApiBaseUrl:
-    process.env.RUNPOD_SERVERLESS_API_BASE_URL || "https://api.runpod.ai/v2",
-  runpodServerlessInputMode:
-    process.env.RUNPOD_SERVERLESS_INPUT_MODE || "ollama",
-  runpodServerlessTimeoutMs:
-    Number(process.env.RUNPOD_SERVERLESS_TIMEOUT_MS) ||
-    Number(process.env.LOCAL_AI_TIMEOUT_MS) ||
-    180000,
-  runpodSshHost: process.env.RUNPOD_SSH_HOST || "",
-  runpodSshPort: Number(process.env.RUNPOD_SSH_PORT) || 22,
-  runpodSshUser: process.env.RUNPOD_SSH_USER || "root",
-  runpodSshKeyPath: process.env.RUNPOD_SSH_KEY_PATH || "",
-  runpodTunnelLocalPort: Number(process.env.RUNPOD_TUNNEL_LOCAL_PORT) || 11434,
-  runpodTunnelRemoteHost: process.env.RUNPOD_TUNNEL_REMOTE_HOST || "127.0.0.1",
-  runpodTunnelRemotePort:
-    Number(process.env.RUNPOD_TUNNEL_REMOTE_PORT) || 11434,
-  remoteOllamaKeepAlive:
-    process.env.REMOTE_OLLAMA_KEEP_ALIVE ||
-    process.env.LOCAL_AI_KEEP_ALIVE ||
-    "45m",
-  remoteOllamaNumParallel: Number(process.env.REMOTE_OLLAMA_NUM_PARALLEL) || 1,
+  remoteAiEnabled: process.env.REMOTE_AI_ENABLED !== "false",
+  remoteAiSshHost: process.env.REMOTE_AI_SSH_HOST || "",
+    remoteAiSshPort:
+      String(process.env.REMOTE_AI_SSH_PORT || "").trim() === ""
+        ? null
+        : Number(process.env.REMOTE_AI_SSH_PORT) || 22,
+  remoteAiSshUser: process.env.REMOTE_AI_SSH_USER || "ubuntu",
+  remoteAiSshKeyPath: process.env.REMOTE_AI_SSH_KEY_PATH || "",
+  remoteAiTunnelLocalPort:
+    Number(process.env.REMOTE_AI_TUNNEL_LOCAL_PORT) || 11434,
+  remoteAiTunnelRemoteHost:
+    process.env.REMOTE_AI_TUNNEL_REMOTE_HOST || "127.0.0.1",
+  remoteAiTunnelRemotePort:
+    Number(process.env.REMOTE_AI_TUNNEL_REMOTE_PORT) || 11434,
+  remoteAiOllamaModelsPath:
+    process.env.REMOTE_AI_OLLAMA_MODELS_PATH ||
+    "/home/ubuntu/ollama-models",
+  remoteAiOllamaLogPath:
+    process.env.REMOTE_AI_OLLAMA_LOG_PATH || "/home/ubuntu/ollama.log",
   operationalSeedFile:
     process.env.OPERATIONAL_SEED_FILE ||
     path.join(__dirname, "..", "data", "operational-seed.local.json"),

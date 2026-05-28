@@ -9,6 +9,10 @@ function getCommentAuthor(comment) {
   return comment?.author?.displayName || "Unknown user";
 }
 
+function getInitial(name = "U") {
+  return String(name || "U").trim().slice(0, 1).toUpperCase() || "U";
+}
+
 export default function AdminCommentsPage() {
   useDocumentTitle("Admin Comments");
   const { adminFetch, posts } = useAdminContext();
@@ -79,10 +83,38 @@ export default function AdminCommentsPage() {
     }
   }
 
+  async function deleteComment(commentId) {
+    try {
+      setUpdatingId(commentId);
+      setError("");
+      const response = await adminFetch(`${apiBaseUrl}/admin/comments/${commentId}`, {
+        method: "DELETE"
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to delete comment.");
+      }
+
+      setComments((current) =>
+        current.filter((comment) => comment.id !== commentId)
+      );
+    } catch (apiError) {
+      setError(apiError.message);
+    } finally {
+      setUpdatingId("");
+    }
+  }
+
   const normalizedQuery = deferredQuery.trim().toLowerCase();
   const filteredComments = comments.filter((comment) => {
     const post = posts.find((entry) => entry.slug === comment.postSlug);
-    const matchesStatus = statusFilter === "all" || String(comment.status || "visible") === statusFilter;
+    const reportCount = Number(comment.reportCount || 0);
+    const matchesStatus =
+      statusFilter === "all" ||
+      (statusFilter === "reported"
+        ? reportCount > 0
+        : String(comment.status || "visible") === statusFilter);
     const haystack = [comment.body, getCommentAuthor(comment), post?.title || "", comment.postSlug].join(" ").toLowerCase();
     const matchesQuery = !normalizedQuery || haystack.includes(normalizedQuery);
 
@@ -91,7 +123,9 @@ export default function AdminCommentsPage() {
   const counts = {
     all: comments.length,
     visible: comments.filter((comment) => comment.status === "visible").length,
-    hidden: comments.filter((comment) => comment.status === "hidden").length
+    hidden: comments.filter((comment) => comment.status === "hidden").length,
+    reported: comments.filter((comment) => Number(comment.reportCount || 0) > 0)
+      .length
   };
 
   return (
@@ -120,7 +154,8 @@ export default function AdminCommentsPage() {
           {[
             { key: "all", label: "All comments" },
             { key: "visible", label: "Visible" },
-            { key: "hidden", label: "Hidden" }
+            { key: "hidden", label: "Hidden" },
+            { key: "reported", label: "Reported" }
           ].map((option) => (
             <button
               className={`filter-chip${statusFilter === option.key ? " active" : ""}`}
@@ -158,22 +193,54 @@ export default function AdminCommentsPage() {
           <div className="comment-list admin-comment-list">
             {filteredComments.map((comment) => {
               const post = posts.find((entry) => entry.slug === comment.postSlug);
+              const authorName = getCommentAuthor(comment);
 
               return (
                 <article className="comment-card admin-comment-card" key={comment.id}>
                   <div className="comment-card-head">
-                    <div>
+                    <div className="admin-comment-title-stack">
                       <h3>{post?.title || "Missing release"}</h3>
                       <p className="comment-meta">
-                        {getCommentAuthor(comment)} | {formatPostDate(comment.createdAt)} | {formatRelativeTime(comment.createdAt)}
+                        {formatPostDate(comment.createdAt)} | {formatRelativeTime(comment.createdAt)}
                       </p>
+                      <Link className="comment-author-link" to={`/users/${comment.author?.id}`}>
+                        <span aria-hidden="true" className="comment-author-avatar">
+                          {comment.author?.avatarUrl ? (
+                            <img alt="" src={comment.author.avatarUrl} />
+                          ) : (
+                            getInitial(authorName)
+                          )}
+                        </span>
+                        <span>{authorName}</span>
+                      </Link>
                     </div>
-                    <span className={`activity-status-pill status-${comment.status || "visible"}`}>{comment.status || "visible"}</span>
+                    <div className="comment-moderation-flags">
+                      <span className={`activity-status-pill status-${comment.status || "visible"}`}>{comment.status || "visible"}</span>
+                      {comment.reportCount ? (
+                        <span className="activity-status-pill status-warning">
+                          {comment.reportCount} report{comment.reportCount === 1 ? "" : "s"}
+                        </span>
+                      ) : null}
+                    </div>
                   </div>
                   <p className="comment-body">{comment.body}</p>
+                  {comment.reports?.length ? (
+                    <div className="comment-report-summary">
+                      <strong>Reports</strong>
+                      {comment.reports.map((report) => (
+                        <p key={report.id}>
+                          {report.reason} by {report.reporter?.displayName || "Unknown user"}
+                          {report.details ? `: ${report.details}` : ""}
+                        </p>
+                      ))}
+                    </div>
+                  ) : null}
                   <div className="admin-comment-footer">
                     <div className="admin-comment-meta-stack">
                       <span>{`Slug: ${comment.postSlug}`}</span>
+                      {comment.parentCommentId ? (
+                        <span>{`Reply to: ${comment.parentCommentId}`}</span>
+                      ) : null}
                       {post ? (
                         <Link className="inline-link" to={`/release/${comment.postSlug}`}>
                           View public release
@@ -198,6 +265,14 @@ export default function AdminCommentsPage() {
                         type="button"
                       >
                         {updatingId === comment.id && comment.status !== "hidden" ? "Saving..." : "Hide"}
+                      </button>
+                      <button
+                        className="danger-button"
+                        disabled={updatingId === comment.id}
+                        onClick={() => deleteComment(comment.id)}
+                        type="button"
+                      >
+                        {updatingId === comment.id ? "Deleting..." : "Delete"}
                       </button>
                     </div>
                   </div>

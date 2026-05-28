@@ -16,7 +16,10 @@ const {
     normalizeFindingReviewResult,
     normalizeGuidedPathSuggestionResult,
     normalizeNewGuidedPathSuggestionResult,
+    normalizeReviewResult,
     normalizePostSuggestionResult,
+    reviewFindingHasActionableEvidence,
+    reviewFindingTargetsKnownField,
     summarizePostForAssistant,
     titleFitsSuggestedMembership
   }
@@ -82,6 +85,18 @@ test("normalizePostSuggestionResult filters weak excerpt and content patches", (
   );
 
   assert.deepEqual(result.suggestedPatch, {});
+  assert.deepEqual(
+    result.fieldAssessments.map((entry) => [entry.field, entry.status]),
+    [
+      ["excerpt", "keep"],
+      ["content", "uncertain"]
+    ]
+  );
+  assert.ok(
+    result.warnings.some((warning) =>
+      warning.includes("did not return a usable patch")
+    )
+  );
 });
 
 test("normalizePostSuggestionResult filters reordered metadata that repeats current values", () => {
@@ -119,6 +134,9 @@ test("normalizePostSuggestionResult filters reordered metadata that repeats curr
   );
 
   assert.deepEqual(result.suggestedPatch, {});
+  assert.ok(
+    result.fieldAssessments.every((entry) => entry.status === "uncertain")
+  );
 });
 
 test("hasUsableReviewResult rejects fully empty catalog reviews", () => {
@@ -176,6 +194,116 @@ test("hasUsableReviewResult counts findings as usable review content", () => {
       ]
     }),
     true
+  );
+});
+
+test("catalog review normalization drops vague targeted findings", () => {
+  const allowedTargets = {
+    posts: new Set(["you-wanted-a-hero"]),
+    collections: new Set(),
+    paths: new Set(["identity-becoming"])
+  };
+  const result = normalizeReviewResult(
+    {
+      findings: [
+        {
+          severity: "warning",
+          targetType: "post",
+          targetSlug: "you-wanted-a-hero",
+          field: "worldLayer",
+          issue: "worldLayer mismatch",
+          recommendedAction: "Update worldLayer for 'you-wanted-a-hero'"
+        },
+        {
+          severity: "warning",
+          targetType: "path",
+          targetSlug: "identity-becoming",
+          field: "algorithm.collectionSlug",
+          issue:
+            "Current algorithm.collectionSlug is 'fractureverse' but the title points at identity.",
+          recommendedAction:
+            "Change algorithm.collectionSlug to 'original-personal' or switch to manual postSlugs."
+        }
+      ]
+    },
+    allowedTargets
+  );
+
+  assert.equal(result.findings.length, 1);
+  assert.equal(result.findings[0].targetSlug, "identity-becoming");
+});
+
+test("reviewFindingHasActionableEvidence accepts missing fields and quoted values", () => {
+  assert.equal(
+    reviewFindingHasActionableEvidence({
+      targetType: "post",
+      targetSlug: "example",
+      field: "themeTags",
+      issue: "themeTags are missing.",
+      recommendedAction: "Add themeTags that match the excerpt."
+    }),
+    true
+  );
+  assert.equal(
+    reviewFindingHasActionableEvidence({
+      targetType: "post",
+      targetSlug: "example",
+      field: "worldLayer",
+      issue: "worldLayer is 'eldoria' but collectionSlugs include 'fractureverse'.",
+      recommendedAction: "Change worldLayer to 'fractureverse'."
+    }),
+    true
+  );
+});
+
+test("catalog review normalization drops collection worldLayer and styling-theme findings", () => {
+  const allowedTargets = {
+    posts: new Set(),
+    collections: new Set(["villain-anthology"]),
+    paths: new Set()
+  };
+  const result = normalizeReviewResult(
+    {
+      findings: [
+        {
+          severity: "warning",
+          targetType: "collection",
+          targetSlug: "villain-anthology",
+          field: "worldLayer",
+          issue:
+            "Collection uses 'villain' worldLayer but theme is 'villain'.",
+          recommendedAction:
+            "Set worldLayer to 'villain' for consistency with collection theme."
+        },
+        {
+          severity: "warning",
+          targetType: "collection",
+          targetSlug: "villain-anthology",
+          field: "theme",
+          issue: "Collection theme is 'villain'.",
+          recommendedAction: "Treat theme as a story taxonomy value."
+        },
+        {
+          severity: "warning",
+          targetType: "collection",
+          targetSlug: "villain-anthology",
+          field: "featuredReleaseSlug",
+          issue: "featuredReleaseSlug is missing.",
+          recommendedAction: "Select a featured release for the collection."
+        }
+      ]
+    },
+    allowedTargets
+  );
+
+  assert.equal(result.findings.length, 1);
+  assert.equal(result.findings[0].field, "featuredReleaseSlug");
+  assert.equal(
+    reviewFindingTargetsKnownField({
+      targetType: "collection",
+      field: "worldLayer"
+    }),
+    false
   );
 });
 
