@@ -13,7 +13,7 @@ export default function RouteAnnouncer() {
       const pageTitle = document.title || "Page updated";
       setAnnouncement(pageTitle);
     });
-  }, [location.pathname, location.search]);
+  }, [location.pathname]);
 
   return (
     <p aria-live="polite" className="route-announcer">
