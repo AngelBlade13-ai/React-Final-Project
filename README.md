@@ -4,6 +4,14 @@ Suno Diary is a full-stack music archive built with React, Vite, Express, and Mo
 
 The public site is designed as a curated music archive rather than a plain CRUD demo: releases can belong to authored worlds, collection pages can carry custom themes, and the admin side supports catalog maintenance, moderation, operational health, and AI-assisted review workflows.
 
+## Project Background
+
+**Problem:** AI music tools like Suno make it easy to generate music but provide no meaningful way to present, organize, or contextualize a growing catalog. Artists are left with raw exports and no home for their work.
+
+**Target audience:** AI music creators who want a professional, curated archive for their catalog — with public discovery, community comments, editorial context, and admin tools for ongoing catalog management.
+
+**Instructor consultation:** Project concept and stack were reviewed with the course instructor prior to development. The MERN stack was confirmed as appropriate for the scope. During the final demo, the instructor provided positive feedback on the completed project and noted that future reviewers may ask about course SCOs (Student Course Outcomes), which this project addresses through full-stack development, version control, testing, and deployment.
+
 ## Reviewer Quick Start
 
 Live frontend:
