@@ -53,11 +53,11 @@ project-root/
 - Public user registration, login, logout, and account editing
 - CRUD API for posts, collections, about content, and comments
 - MongoDB persistence for posts, collections, site content, users, and comments
-- Public comments with edit and delete controls for the comment author
+- Public comments with avatars, public profile links, replies, reports, and edit/delete controls for the comment author
 - Admin archive intelligence dashboard with health scoring, readiness signals, and quick-win surfacing
-- Admin comment moderation workspace with search plus hide and restore controls
+- Admin comment moderation workspace with reported-comment filtering, report details, hide/show controls, and delete controls
 - Structured request logging, `x-request-id` tracing, runtime health snapshots, and persisted admin audit logs
-- Optional local Ollama-backed admin assistant test bench for non-destructive catalog review
+- Optional Ollama-backed admin assistant for non-destructive catalog review, post suggestions, and guided path suggestions
 - Themed collection and release pages with responsive layout
 - Dynamic page titles and a custom threshold favicon
 - Graceful public loading, error, retry, and 404 recovery states
@@ -68,6 +68,8 @@ project-root/
 ### 1. Install dependencies
 
 ```bash
+npm install
+
 cd backend
 npm install
 
@@ -86,7 +88,7 @@ Required backend values:
 - `JWT_SECRET`
 - `ADMIN_EMAIL`
 - `ADMIN_PASSWORD` or `ADMIN_PASSWORD_HASH`
-- `MONGODB_URI`
+- `MONGODB_URI` (MongoDB Atlas or another reachable MongoDB connection string)
 - `MONGODB_DB_NAME`
 
 Optional backend operations values:
@@ -131,13 +133,9 @@ For an instructor demo from the deployed Vercel site, deploy the importer as a s
 
 Hosted importer mode is for preview/import preparation. It does not write directly into the deployed website repository or reseed MongoDB.
 
-### 3. Start MongoDB
+### 3. Confirm MongoDB access
 
-Example local Docker command:
-
-```bash
-docker run --name suno-mongo -p 27017:27017 -d mongo:8
-```
+The app expects `MONGODB_URI` to point at a reachable MongoDB database. For this deployed project, that is normally MongoDB Atlas. Local development can use Atlas too; you do not need to run a Docker MongoDB container unless you specifically want a local-only database.
 
 ### 4. Start the backend
 
@@ -156,31 +154,39 @@ npm run dev
 ## Verification
 
 ```bash
+npm run ci
+
+# Or run the major gates separately:
 npm run lint
+npm run format:check
 npm run test:unit
 npm run test:api
 npm run verify
+npm run test:e2e
 
+cd tools/song-importer
+.\.venv\Scripts\python.exe -m pytest
+
+cd ../..
+python tools/content_audit.py --format markdown
+```
+
+Operational checks that touch live data or local backups should be run intentionally:
+
+```bash
 cd backend
-npm run verify
+
 npm run catalog:diff-live
 npm run backup:ops -- --label=smoke
-
-cd ../frontend
-npm run verify
-
-python tools/content_audit.py
 ```
 
 On first backend startup, the API seeds MongoDB from the local authored catalog file if the database is empty. By default that file is `backend/data/posts.local.json`.
 
 Current quality gate notes:
 
-- `npm run lint` passes.
-- `npm run verify --prefix frontend` passes.
-- `npm run test:unit --prefix frontend` passes.
-- `npm run test:unit --prefix backend` passes.
-- `npm run format:check` may report pre-existing formatting drift across docs/tests. Treat a formatting-only cleanup as its own commit so deploy polish diffs stay reviewable.
+- `npm run ci` passes.
+- importer pytest passes from `tools/song-importer`.
+- Generated build, report, cache, and output folders are ignored and should not be committed.
 
 ## Usage
 
@@ -190,7 +196,8 @@ Current quality gate notes:
 2. Create an account with display name, email, and password
 3. Open `/account` to manage the profile and library
 4. Add, edit, or delete your own comments
-5. Use the account page to update your display name or password
+5. Reply to comments or report misconduct when needed
+6. Use the account page to update your display name, avatar, or password
 
 ### Admin flow
 
@@ -200,8 +207,9 @@ Current quality gate notes:
 4. Create, edit, and delete posts and collections
 5. Update About page content
 6. Open `/admin/insights` for archive health, runtime status, and the admin audit trail
-7. Open `/admin/comments` for moderation
-8. Use `Open Importer` to launch the local Python importer from the admin shell
+7. Open `/admin/comments` for comment and report moderation
+8. Use `Open Importer` when the local or hosted importer integration is configured
+9. Use `/admin/ai-runtime` to confirm Ollama/Thunder status before running assistant reviews
 
 ## Authentication
 
@@ -430,7 +438,7 @@ Update response example:
 Frontend:
 
 - Set `VITE_API_URL` to the deployed backend API base, for example `https://react-final-project-cnk7.onrender.com/api`.
-- Set `VITE_IMPORTER_URL` only when the local importer integration is intentionally exposed.
+- For the deployed importer demo, set `VITE_IMPORTER_ENABLED=true` and `VITE_IMPORTER_URL` to the hosted importer service URL.
 - Build command: `npm run build` from `frontend/`.
 - Output directory: `frontend/dist`.
 
@@ -441,8 +449,16 @@ Backend:
 - Prefer `ADMIN_PASSWORD_HASH` over plaintext `ADMIN_PASSWORD`.
 - Set `MONGODB_URI` and `MONGODB_DB_NAME` for the production database.
 - Set Cloudinary credentials if admin video upload is needed.
-- Keep optional local/remote AI and importer variables disabled unless those services are intentionally configured.
+- For the deployed importer demo, set `IMPORTER_ENABLED=true`, `IMPORTER_LAUNCH_MODE=external`, and `IMPORTER_URL` to the hosted importer service URL.
+- Keep optional AI and importer variables disabled unless those services are intentionally configured.
 - Start command: `npm start` from `backend/`.
+
+Hosted importer service:
+
+- Deploy as a separate Python web service.
+- Build command from repo root: `pip install -r tools/song-importer/requirements.txt`.
+- Start command from repo root: `python tools/song-importer/start_hosted.py`.
+- Set Cloudinary credentials on this service if media upload should be demonstrated.
 
 Pre-release checks:
 
