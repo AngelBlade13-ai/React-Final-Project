@@ -352,6 +352,13 @@ the deployed website repository. Set `CLOUDINARY_CLOUD_NAME`,
 `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` on that service if you want to
 demonstrate media upload. Set `IMPORTER_NO_UPLOAD=true` for a preview-only demo.
 
+Hosted mode is intentionally not the production write path. A hosted Render
+importer can only write to its own deployed filesystem, which does not update
+GitHub, Vercel, or the live MongoDB catalog. Use hosted mode to demonstrate
+normalization, duplicate detection, Cloudinary upload, and website-ready JSON.
+Use local workstation mode for real apply/reseed work so file changes, backups,
+database reseed, review, commit, and deployment stay traceable.
+
 The local browser window lets you:
 
 1. choose `New Song Import` or `Lyrics Merge`

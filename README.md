@@ -106,8 +106,8 @@ Optional backend operations values:
 
 The song importer can be used two ways:
 
-- Local workstation mode: the backend launches the bundled Flask importer from `tools/song-importer`.
-- Hosted demo mode: a separate Python web service runs the importer, and the admin button opens that external URL.
+- Local workstation mode: the backend launches the bundled Flask importer from `tools/song-importer`. This is the intended mode for real apply/reseed work.
+- Hosted demo mode: a separate Python web service runs the importer, and the admin button opens that external URL. This is preview-only by design.
 
 Create the local virtualenv before using **Open Importer** in local workstation mode:
 
@@ -131,7 +131,7 @@ For an instructor demo from the deployed Vercel site, deploy the importer as a s
 - Backend Render env: `IMPORTER_ENABLED=true`, `IMPORTER_LAUNCH_MODE=external`, `IMPORTER_URL=https://your-importer-service.onrender.com`.
 - Vercel env: `VITE_IMPORTER_ENABLED=true`, `VITE_IMPORTER_URL=https://your-importer-service.onrender.com`.
 
-Hosted importer mode is for preview/import preparation. It does not write directly into the deployed website repository or reseed MongoDB.
+Hosted importer mode is for preview/import preparation. It intentionally does not write directly into the deployed website repository or reseed MongoDB, because a Render service can only mutate its own temporary deployed filesystem. Real catalog writes should happen from a local repo checkout so the file change, backup, reseed, review, commit, and deploy all happen in a traceable workflow.
 
 ### 3. Confirm MongoDB access
 
@@ -210,6 +210,11 @@ Current quality gate notes:
 7. Open `/admin/comments` for comment and report moderation
 8. Use `Open Importer` when the local or hosted importer integration is configured
 9. Use `/admin/ai-runtime` to confirm Ollama/Thunder status before running assistant reviews
+
+Importer note:
+
+- The hosted importer is a deliberate preview/demo surface for instructors: paste JSON, attach media, upload to Cloudinary if configured, check duplicates, and generate website-ready output.
+- Apply/reseed actions are intentionally local-only. Run the importer from your local repo when you want to write `posts.local.json`, create backups, reseed MongoDB, and commit the result.
 
 ## Authentication
 
@@ -459,6 +464,7 @@ Hosted importer service:
 - Build command from repo root: `pip install -r tools/song-importer/requirements.txt`.
 - Start command from repo root: `python tools/song-importer/start_hosted.py`.
 - Set Cloudinary credentials on this service if media upload should be demonstrated.
+- This service is intentionally preview-only. Do not use it as the write path for the live catalog.
 
 Pre-release checks:
 

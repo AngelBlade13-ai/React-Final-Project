@@ -98,6 +98,7 @@ Backend:
 - Cloudinary credentials are set if upload is required.
 - For a deployed importer demo, Render backend has `IMPORTER_ENABLED=true`, `IMPORTER_LAUNCH_MODE=external`, and `IMPORTER_URL` set to the separate Python importer service URL.
 - Without a separate hosted importer service, `IMPORTER_ENABLED` is unset or `false` on Render.
+- Hosted importer mode is preview-only by design. Real apply/reseed remains local/operator-run from the repo checkout so catalog writes can be backed up, reviewed, committed, and deployed.
 - Optional AI/Thunder Compute variables are configured only when those workflows are intended for production.
 - For Thunder forwarded Ollama mode, `LOCAL_AI_BASE_URL` points to the forwarded Ollama host, `LOCAL_AI_DEFAULT_NUM_GPU=99`, and `REMOTE_AI_ENABLED=false`.
 - For SSH tunnel mode, `REMOTE_AI_ENABLED=true` and the `REMOTE_AI_*` SSH/tunnel values are configured.
@@ -109,6 +110,7 @@ Importer:
 - `cd tools/song-importer && .\.venv\Scripts\python.exe main.py --demo --dry-run` works from a fresh checkout.
 - Website preview mode works without applying changes: `.\.venv\Scripts\python.exe main.py --website-root "<repo>" --input input\new_songs.json --output-dir output\website-smoke --no-upload --dry-run`.
 - Hosted demo service, if used, builds with `pip install -r tools/song-importer/requirements.txt` and starts with `python tools/song-importer/start_hosted.py`.
+- Hosted demo service can preview/import-prep and optionally upload to Cloudinary, but apply/reseed controls should stay disabled unless the importer is running locally with a real website target.
 
 ## Manual Smoke Test
 

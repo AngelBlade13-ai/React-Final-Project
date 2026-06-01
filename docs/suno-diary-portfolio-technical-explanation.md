@@ -408,6 +408,8 @@ Reseed option: CLI `--reseed-website` and browser apply can run reseed after wri
 
 Demo mode: `python main.py --web --demo` uses sample input, disables upload, writes to `output/demo`, and disables website apply/reseed.
 
+Hosted importer mode: `python tools/song-importer/start_hosted.py` exists for the deployed instructor demo. It is intentionally a preview/import-preparation surface, not the production write path. A hosted Render importer can generate normalized output, duplicate reports, website-ready JSON, and Cloudinary URLs, but it should not be treated as the source that mutates the live site because writes would only affect the service's deployed filesystem. Real apply/reseed work stays local/operator-run from the repo checkout so `posts.local.json` changes can be backed up, reviewed, committed, pushed, and then deployed.
+
 Important files:
 
 - [main.py](../tools/song-importer/main.py): CLI entry.
@@ -706,7 +708,7 @@ Database is MongoDB, either local for development or hosted MongoDB/Atlas for pr
 
 Local-only or operator-only parts:
 
-- Python importer UI is normally a local admin tool. For an instructor demo, it can also run as a separate hosted Python service with `tools/song-importer/start_hosted.py`; the deployed admin then opens that URL through `IMPORTER_LAUNCH_MODE=external`.
+- Python importer UI is normally a local admin tool. For an instructor demo, it can also run as a separate hosted Python service with `tools/song-importer/start_hosted.py`; the deployed admin then opens that URL through `IMPORTER_LAUNCH_MODE=external`. Hosted mode is deliberately preview-only. Apply/reseed remains local-only so catalog writes are not hidden inside an ephemeral hosted filesystem.
 - Ollama local AI can be local, Thunder forwarded URL, or Thunder SSH tunnel mode.
 - Thunder Compute lifecycle is manual. Start/restore/snapshot/delete the instance from Thunder, not from the website.
 - Thunder SSH tunnel controls are optional backend admin operations and only apply when `REMOTE_AI_ENABLED=true`.
@@ -808,6 +810,8 @@ Admin imports a new song from Python tool:
 4. Admin reviews duplicate/import report.
 5. Apply writes merged catalog preview/backups and updates the posts file.
 6. Reseed writes file data to MongoDB.
+
+For the hosted instructor demo, steps 1-4 still demonstrate the workflow, but apply/reseed is intentionally disabled unless a real local website target is configured. The hosted service is for preview/import-ready output, not live catalog mutation.
 
 Admin uploads media to Cloudinary:
 
