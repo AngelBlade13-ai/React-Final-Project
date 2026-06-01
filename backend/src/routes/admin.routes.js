@@ -1344,9 +1344,11 @@ router.post("/importer/launch", async (req, res, next) => {
     });
 
     return res.json({
-      message: result.alreadyRunning
-        ? "Importer is already running."
-        : "Importer launched.",
+      message: result.external
+        ? "Importer URL is configured."
+        : result.alreadyRunning
+          ? "Importer is already running."
+          : "Importer launched.",
       importer: result
     });
   } catch (error) {

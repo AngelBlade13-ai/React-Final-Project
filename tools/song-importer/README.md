@@ -339,6 +339,19 @@ Demo mode uses:
 - upload disabled
 - website apply/reseed disabled until a website target is configured
 
+For a hosted instructor demo, deploy this importer as its own Python web
+service and start it with:
+
+```bash
+python tools/song-importer/start_hosted.py
+```
+
+The hosted entry point uses the bundled sample catalog/input, writes generated
+artifacts under `tools/song-importer/output/hosted`, and does not apply or reseed
+the deployed website repository. Set `CLOUDINARY_CLOUD_NAME`,
+`CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` on that service if you want to
+demonstrate media upload. Set `IMPORTER_NO_UPLOAD=true` for a preview-only demo.
+
 The local browser window lets you:
 
 1. choose `New Song Import` or `Lyrics Merge`

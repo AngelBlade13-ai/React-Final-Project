@@ -249,7 +249,8 @@ test("reviewFindingHasActionableEvidence accepts missing fields and quoted value
       targetType: "post",
       targetSlug: "example",
       field: "worldLayer",
-      issue: "worldLayer is 'eldoria' but collectionSlugs include 'fractureverse'.",
+      issue:
+        "worldLayer is 'eldoria' but collectionSlugs include 'fractureverse'.",
       recommendedAction: "Change worldLayer to 'fractureverse'."
     }),
     true
@@ -270,8 +271,7 @@ test("catalog review normalization drops collection worldLayer and styling-theme
           targetType: "collection",
           targetSlug: "villain-anthology",
           field: "worldLayer",
-          issue:
-            "Collection uses 'villain' worldLayer but theme is 'villain'.",
+          issue: "Collection uses 'villain' worldLayer but theme is 'villain'.",
           recommendedAction:
             "Set worldLayer to 'villain' for consistency with collection theme."
         },

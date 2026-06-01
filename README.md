@@ -96,11 +96,18 @@ Optional backend operations values:
 - `ENABLE_ADMIN_AUDIT_LOGGING`
 - `SLOW_REQUEST_THRESHOLD_MS`
 - `MONITORING_WEBHOOK_URL`
+- `IMPORTER_ENABLED` (`true` for local workstation use; leave unset or `false` on Render)
+- `IMPORTER_LAUNCH_MODE` (`local` to spawn Flask locally, `external` to open a separately hosted importer URL)
 - `IMPORTER_ROOT` (optional override; defaults to `tools/song-importer`)
 - `IMPORTER_URL`
 - `IMPORTER_PYTHON_PATH` (optional override; defaults to the bundled importer's virtualenv Python)
 
-The local song importer is vendored at `tools/song-importer`. Create its virtualenv there before using **Open Importer**:
+The song importer can be used two ways:
+
+- Local workstation mode: the backend launches the bundled Flask importer from `tools/song-importer`.
+- Hosted demo mode: a separate Python web service runs the importer, and the admin button opens that external URL.
+
+Create the local virtualenv before using **Open Importer** in local workstation mode:
 
 ```bash
 cd tools/song-importer
@@ -111,7 +118,18 @@ python -m venv .venv
 Frontend API base URL:
 
 - `VITE_API_URL`
+- `VITE_IMPORTER_ENABLED` (`true` locally; unset or `false` for the deployed Vercel build)
 - `VITE_IMPORTER_URL`
+
+For an instructor demo from the deployed Vercel site, deploy the importer as a separate Render Python web service:
+
+- Build command: `pip install -r tools/song-importer/requirements.txt`
+- Start command: `python tools/song-importer/start_hosted.py`
+- Optional importer env: `IMPORTER_DEMO_MODE=false`, `IMPORTER_NO_UPLOAD=false`, and Cloudinary credentials if media upload should be demonstrated.
+- Backend Render env: `IMPORTER_ENABLED=true`, `IMPORTER_LAUNCH_MODE=external`, `IMPORTER_URL=https://your-importer-service.onrender.com`.
+- Vercel env: `VITE_IMPORTER_ENABLED=true`, `VITE_IMPORTER_URL=https://your-importer-service.onrender.com`.
+
+Hosted importer mode is for preview/import preparation. It does not write directly into the deployed website repository or reseed MongoDB.
 
 ### 3. Start MongoDB
 

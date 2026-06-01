@@ -21,7 +21,10 @@ backend/src/data/remote-ai-tunnel.log
 backend/output/
 tools/song-importer/.venv/
 tools/song-importer/output/
-tools/song-importer/input/
+tools/song-importer/input/*
+!tools/song-importer/input/.gitkeep
+!tools/song-importer/input/existing_catalog.json
+!tools/song-importer/input/new_songs.json
 tools/song-importer/.env
 __pycache__/
 *.py[cod]

@@ -17,6 +17,7 @@ import {
   emptyPost,
   emptySiteSettings,
   emptyThemeProfile,
+  importerEnabled,
   importerBaseUrl
 } from "../lib/site";
 
@@ -726,15 +727,17 @@ export default function AdminLayout({ onAdminLogout, theme, setTheme }) {
         </div>
         <div className="hero-actions-row admin-hero-actions">
           <ThemeToggle setTheme={setTheme} theme={theme} />
-          <button
-            className="hero-link"
-            disabled={importerLaunching}
-            onClick={handleOpenImporter}
-            title="Launch the local importer and open it in a new tab"
-            type="button"
-          >
-            {importerLaunching ? "Opening Importer" : "Open Importer"}
-          </button>
+          {importerEnabled ? (
+            <button
+              className="hero-link"
+              disabled={importerLaunching}
+              onClick={handleOpenImporter}
+              title="Open the configured importer in a new tab"
+              type="button"
+            >
+              {importerLaunching ? "Opening Importer" : "Open Importer"}
+            </button>
+          ) : null}
           <Link className="hero-link secondary-link" to="/">
             View Site
           </Link>

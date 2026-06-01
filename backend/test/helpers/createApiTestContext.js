@@ -22,6 +22,17 @@ async function createApiTestContext(overrides = {}) {
     }
   });
 
+  [
+    "IMPORTER_ENABLED",
+    "IMPORTER_LAUNCH_MODE",
+    "IMPORTER_LAUNCH_TEST_RESULT",
+    "IMPORTER_PYTHON_PATH",
+    "IMPORTER_ROOT",
+    "IMPORTER_URL"
+  ].forEach((key) => {
+    delete process.env[key];
+  });
+
   process.env.NODE_ENV = "test";
   process.env.CLIENT_URL = "http://127.0.0.1:4173";
   process.env.JWT_SECRET = "test-secret";

@@ -16,15 +16,46 @@ const DEFAULT_IMPORTER_LOG_DIR = path.resolve(
 );
 
 async function launchImporter(options = {}) {
-  if (Object.prototype.hasOwnProperty.call(process.env, "IMPORTER_LAUNCH_TEST_RESULT")) {
+  if (
+    Object.prototype.hasOwnProperty.call(
+      process.env,
+      "IMPORTER_LAUNCH_TEST_RESULT"
+    )
+  ) {
     return {
       url: config.importerUrl,
-      alreadyRunning: process.env.IMPORTER_LAUNCH_TEST_RESULT === "already-running",
+      alreadyRunning:
+        process.env.IMPORTER_LAUNCH_TEST_RESULT === "already-running",
       started: process.env.IMPORTER_LAUNCH_TEST_RESULT !== "already-running"
     };
   }
 
-  const importerUrl = normalizeImporterUrl(options.importerUrl || config.importerUrl);
+  if (!config.importerEnabled) {
+    const error = new Error(
+      "Importer launcher is disabled for this backend. Run the importer locally, or set IMPORTER_ENABLED=true with IMPORTER_LAUNCH_MODE=external and IMPORTER_URL pointing to a trusted hosted importer service."
+    );
+    error.statusCode = 503;
+    throw error;
+  }
+
+  const importerUrl = normalizeImporterUrl(
+    options.importerUrl || config.importerUrl
+  );
+  const launchMode = String(
+    options.launchMode || config.importerLaunchMode || "local"
+  )
+    .trim()
+    .toLowerCase();
+
+  if (launchMode === "external") {
+    return {
+      url: importerUrl,
+      alreadyRunning: true,
+      started: false,
+      external: true,
+      logPath: ""
+    };
+  }
 
   if (await isImporterReachable(importerUrl)) {
     return {
@@ -35,15 +66,24 @@ async function launchImporter(options = {}) {
     };
   }
 
-  const importerRoot = path.resolve(options.importerRoot || config.importerRoot);
+  const importerRoot = path.resolve(
+    options.importerRoot || config.importerRoot
+  );
   const mainPath = path.join(importerRoot, "main.py");
   const pythonPath =
     options.pythonPath ||
     config.importerPythonPath ||
-    path.join(importerRoot, ".venv", process.platform === "win32" ? "Scripts\\python.exe" : "bin/python");
+    path.join(
+      importerRoot,
+      ".venv",
+      process.platform === "win32" ? "Scripts\\python.exe" : "bin/python"
+    );
 
   await assertFileExists(mainPath, "Importer entry point was not found.");
-  await assertFileExists(pythonPath, "Importer Python executable was not found.");
+  await assertFileExists(
+    pythonPath,
+    "Importer Python executable was not found."
+  );
 
   const port = resolvePort(importerUrl);
   const logPath = await createImporterLogPath();

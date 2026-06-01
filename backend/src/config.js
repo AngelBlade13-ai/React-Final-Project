@@ -1,7 +1,16 @@
 const path = require("path");
 
+const nodeEnv = process.env.NODE_ENV || "development";
+const isHostedRuntime = Boolean(
+  process.env.RENDER || process.env.VERCEL || process.env.K_SERVICE
+);
+const importerEnabled =
+  process.env.IMPORTER_ENABLED === undefined
+    ? nodeEnv !== "production" && !isHostedRuntime
+    : process.env.IMPORTER_ENABLED === "true";
+
 const config = {
-  nodeEnv: process.env.NODE_ENV || "development",
+  nodeEnv,
   port: Number(process.env.PORT) || 4000,
   clientUrl: process.env.CLIENT_URL || "http://localhost:5173",
   logLevel: process.env.LOG_LEVEL || "info",
@@ -29,33 +38,35 @@ const config = {
   importerRoot:
     process.env.IMPORTER_ROOT ||
     path.resolve(__dirname, "..", "..", "tools", "song-importer"),
+  importerEnabled,
+  importerLaunchMode: process.env.IMPORTER_LAUNCH_MODE || "local",
   importerUrl: process.env.IMPORTER_URL || "http://127.0.0.1:8765",
   importerPythonPath: process.env.IMPORTER_PYTHON_PATH || "",
   localAiEnabled: process.env.LOCAL_AI_ENABLED !== "false",
   localAiBaseUrl: process.env.LOCAL_AI_BASE_URL || "http://127.0.0.1:11434",
   localAiModel: process.env.LOCAL_AI_MODEL || "qwen2.5:7b",
   localAiModelProfilesRaw: process.env.LOCAL_AI_MODEL_PROFILES || "",
-    localAiTimeoutMs: Number(process.env.LOCAL_AI_TIMEOUT_MS) || 600000,
+  localAiTimeoutMs: Number(process.env.LOCAL_AI_TIMEOUT_MS) || 600000,
   localAiStatusCacheMs: Number(process.env.LOCAL_AI_STATUS_CACHE_MS) || 8000,
   localAiKeepAlive: process.env.LOCAL_AI_KEEP_ALIVE || "45m",
   localAiDefaultNumCtx: Number(process.env.LOCAL_AI_DEFAULT_NUM_CTX) || 4096,
-    localAiDefaultNumPredict:
-      Number(process.env.LOCAL_AI_DEFAULT_NUM_PREDICT) || 320,
-    localAiDefaultNumGpu:
-      String(process.env.LOCAL_AI_DEFAULT_NUM_GPU || "").trim() === ""
-        ? null
-        : Number(process.env.LOCAL_AI_DEFAULT_NUM_GPU),
-    localAiNumThread: Number(process.env.LOCAL_AI_NUM_THREAD) || 0,
+  localAiDefaultNumPredict:
+    Number(process.env.LOCAL_AI_DEFAULT_NUM_PREDICT) || 320,
+  localAiDefaultNumGpu:
+    String(process.env.LOCAL_AI_DEFAULT_NUM_GPU || "").trim() === ""
+      ? null
+      : Number(process.env.LOCAL_AI_DEFAULT_NUM_GPU),
+  localAiNumThread: Number(process.env.LOCAL_AI_NUM_THREAD) || 0,
   localAiPostNumPredict: Number(process.env.LOCAL_AI_POST_NUM_PREDICT) || 700,
   localAiPathNumPredict: Number(process.env.LOCAL_AI_PATH_NUM_PREDICT) || 850,
   localAiNewPathNumPredict:
     Number(process.env.LOCAL_AI_NEW_PATH_NUM_PREDICT) || 900,
   remoteAiEnabled: process.env.REMOTE_AI_ENABLED !== "false",
   remoteAiSshHost: process.env.REMOTE_AI_SSH_HOST || "",
-    remoteAiSshPort:
-      String(process.env.REMOTE_AI_SSH_PORT || "").trim() === ""
-        ? null
-        : Number(process.env.REMOTE_AI_SSH_PORT) || 22,
+  remoteAiSshPort:
+    String(process.env.REMOTE_AI_SSH_PORT || "").trim() === ""
+      ? null
+      : Number(process.env.REMOTE_AI_SSH_PORT) || 22,
   remoteAiSshUser: process.env.REMOTE_AI_SSH_USER || "ubuntu",
   remoteAiSshKeyPath: process.env.REMOTE_AI_SSH_KEY_PATH || "",
   remoteAiTunnelLocalPort:
@@ -65,8 +76,7 @@ const config = {
   remoteAiTunnelRemotePort:
     Number(process.env.REMOTE_AI_TUNNEL_REMOTE_PORT) || 11434,
   remoteAiOllamaModelsPath:
-    process.env.REMOTE_AI_OLLAMA_MODELS_PATH ||
-    "/home/ubuntu/ollama-models",
+    process.env.REMOTE_AI_OLLAMA_MODELS_PATH || "/home/ubuntu/ollama-models",
   remoteAiOllamaLogPath:
     process.env.REMOTE_AI_OLLAMA_LOG_PATH || "/home/ubuntu/ollama.log",
   operationalSeedFile:

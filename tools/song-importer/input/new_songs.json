@@ -1,0 +1,28 @@
+[
+  {
+    "title": "Heaven Wakes in Me",
+    "lyrics": "Example lyrics for a new import.",
+    "sunoPrompt": "Cinematic pop with angelic vocals and a rising chorus.",
+    "notes": "Standalone demo import for the website pipeline.",
+    "sourceTag": "suno",
+    "collectionSlugs": ["original-personal"],
+    "subCategory": "identity",
+    "worldLayer": "",
+    "themeTags": ["identity", "awakening", "celestial"],
+    "videoUrl": "",
+    "coverImageUrl": ""
+  },
+  {
+    "title": "Hope's Song",
+    "lyrics": "Duplicate demo lyrics.",
+    "sunoPrompt": "Orchestral reprise.",
+    "notes": "This intentionally matches the existing catalog and should be blocked as a duplicate.",
+    "sourceTag": "suno",
+    "collectionSlugs": ["original-personal"],
+    "subCategory": "reflection",
+    "worldLayer": "",
+    "themeTags": ["hope", "reflection"],
+    "videoUrl": "",
+    "coverImageUrl": ""
+  }
+]

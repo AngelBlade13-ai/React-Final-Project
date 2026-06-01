@@ -678,12 +678,15 @@ Sanitized table:
 | `REMOTE_AI_TUNNEL_LOCAL_PORT`   | Local forwarded port                    |                                            `11434` | For tunnel       | Backend          | Backend cannot reach expected local port               |
 | `REMOTE_AI_TUNNEL_REMOTE_HOST`  | Remote host                             |                                        `127.0.0.1` | For tunnel       | Backend          | Tunnel points wrong place                              |
 | `REMOTE_AI_TUNNEL_REMOTE_PORT`  | Remote Ollama port                      |                                            `11434` | For tunnel       | Backend          | Tunnel points wrong service                            |
-| `REMOTE_AI_OLLAMA_MODELS_PATH`  | Remote model directory                  |                      `/home/ubuntu/ollama-models` | For tunnel       | Backend          | Wake script uses wrong model path                      |
-| `REMOTE_AI_OLLAMA_LOG_PATH`     | Remote Ollama log file                  |                           `/home/ubuntu/ollama.log` | For tunnel       | Backend          | Wake script logs go missing                            |
+| `REMOTE_AI_OLLAMA_MODELS_PATH`  | Remote model directory                  |                       `/home/ubuntu/ollama-models` | For tunnel       | Backend          | Wake script uses wrong model path                      |
+| `REMOTE_AI_OLLAMA_LOG_PATH`     | Remote Ollama log file                  |                          `/home/ubuntu/ollama.log` | For tunnel       | Backend          | Wake script logs go missing                            |
 | `IMPORTER_ROOT`                 | Importer directory override             |                       `D:\...\tools\song-importer` | No               | Backend          | Importer launcher cannot find tool                     |
+| `IMPORTER_ENABLED`              | Enables admin importer launcher         |                                             `true` | Optional         | Backend          | Admin importer button fails or stays disabled          |
+| `IMPORTER_LAUNCH_MODE`          | Importer launch strategy                |                                         `external` | Hosted demo      | Backend          | Backend may spawn local Python instead of opening URL  |
 | `IMPORTER_URL`                  | Local importer URL                      |                            `http://127.0.0.1:8765` | No               | Backend          | Admin Open Importer points wrong place                 |
 | `IMPORTER_PYTHON_PATH`          | Python executable override              | `...\tools\song-importer\.venv\Scripts\python.exe` | No               | Backend          | Importer launch fails                                  |
 | `VITE_API_URL`                  | Frontend API base                       |                        `http://localhost:4000/api` | Yes frontend     | Frontend         | Public/admin API calls fail or hit wrong backend       |
+| `VITE_IMPORTER_ENABLED`         | Shows local importer launch UI          |                                             `true` | Local only       | Frontend         | Hosted admin may show a button that cannot work        |
 | `VITE_IMPORTER_URL`             | Frontend importer link base             |                            `http://127.0.0.1:8765` | No               | Frontend         | Importer link opens wrong URL                          |
 | `WEBSITE_ROOT`                  | Importer website root fallback          |       `D:\Docs\Active Project\React Final Project` | No               | Importer         | Website integration cannot resolve repo                |
 | `WEBSITE_POSTS_PATH`            | Importer direct posts path              |                `...\backend\data\posts.local.json` | No               | Importer         | Importer reads/writes wrong catalog                    |
@@ -703,7 +706,7 @@ Database is MongoDB, either local for development or hosted MongoDB/Atlas for pr
 
 Local-only or operator-only parts:
 
-- Python importer UI is intended for local admin use.
+- Python importer UI is normally a local admin tool. For an instructor demo, it can also run as a separate hosted Python service with `tools/song-importer/start_hosted.py`; the deployed admin then opens that URL through `IMPORTER_LAUNCH_MODE=external`.
 - Ollama local AI can be local, Thunder forwarded URL, or Thunder SSH tunnel mode.
 - Thunder Compute lifecycle is manual. Start/restore/snapshot/delete the instance from Thunder, not from the website.
 - Thunder SSH tunnel controls are optional backend admin operations and only apply when `REMOTE_AI_ENABLED=true`.

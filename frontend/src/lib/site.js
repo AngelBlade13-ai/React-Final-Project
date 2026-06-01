@@ -1,5 +1,9 @@
 export const apiBaseUrl =
   import.meta.env.VITE_API_URL || "http://localhost:4000/api";
+export const importerEnabled =
+  import.meta.env.VITE_IMPORTER_ENABLED === undefined
+    ? import.meta.env.DEV
+    : import.meta.env.VITE_IMPORTER_ENABLED === "true";
 export const importerBaseUrl =
   import.meta.env.VITE_IMPORTER_URL || "http://127.0.0.1:8765";
 export const themeKey = "suno-blog-theme";

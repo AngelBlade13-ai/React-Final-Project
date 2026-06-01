@@ -792,3 +792,59 @@ test("admin importer launcher starts the local importer behind admin auth", asyn
   assert.equal(importerAuditEntry.entityType, "tool");
   assert.equal(importerAuditEntry.entityId, "song-importer");
 });
+
+test("admin importer launcher fails clearly when disabled for production", async (t) => {
+  const context = await createApiTestContext({
+    IMPORTER_ENABLED: "false"
+  });
+  t.after(async () => {
+    await context.close();
+  });
+
+  const loginResponse = await context.agent
+    .post("/api/admin/login")
+    .set(context.mutationHeaders)
+    .send({
+      email: "admin@example.com",
+      password: "Admin123!"
+    });
+  assert.equal(loginResponse.status, 200);
+
+  const response = await context.agent
+    .post("/api/admin/importer/launch")
+    .set(context.mutationHeaders);
+
+  assert.equal(response.status, 503);
+  assert.match(response.body.message, /Importer launcher is disabled/i);
+  assert.match(response.body.message, /IMPORTER_LAUNCH_MODE=external/i);
+});
+
+test("admin importer launcher can open an externally hosted importer", async (t) => {
+  const context = await createApiTestContext({
+    IMPORTER_ENABLED: "true",
+    IMPORTER_LAUNCH_MODE: "external",
+    IMPORTER_URL: "https://importer.example.test"
+  });
+  t.after(async () => {
+    await context.close();
+  });
+
+  const loginResponse = await context.agent
+    .post("/api/admin/login")
+    .set(context.mutationHeaders)
+    .send({
+      email: "admin@example.com",
+      password: "Admin123!"
+    });
+  assert.equal(loginResponse.status, 200);
+
+  const response = await context.agent
+    .post("/api/admin/importer/launch")
+    .set(context.mutationHeaders);
+
+  assert.equal(response.status, 200);
+  assert.equal(response.body.importer.external, true);
+  assert.equal(response.body.importer.started, false);
+  assert.equal(response.body.importer.alreadyRunning, true);
+  assert.equal(response.body.importer.url, "https://importer.example.test/");
+});
