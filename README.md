@@ -117,6 +117,15 @@ python -m venv .venv
 .venv\Scripts\python -m pip install -r requirements.txt
 ```
 
+For the local admin **Open Importer** button to launch the local tool:
+
+- Run the Express backend locally with `cd backend && npm run dev`.
+- Run the Vite frontend locally with `cd frontend && npm run dev`.
+- Leave `frontend/.env` unset or set `VITE_API_URL=http://localhost:4000/api`.
+- Leave `IMPORTER_LAUNCH_MODE` unset or set `IMPORTER_LAUNCH_MODE=local` in `backend/.env`.
+- Use `IMPORTER_URL=http://127.0.0.1:8765` unless you intentionally chose another local importer port.
+- Restart both dev servers after changing any Vite/backend env values.
+
 Frontend API base URL:
 
 - `VITE_API_URL`
